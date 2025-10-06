@@ -717,6 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveState(true);
       const rowsSnapshot = cloneDeep(state.rows);
       const generatedAtIso = new Date().toISOString();
+      const presentationData = preparePresentationData(funds, portfolioSummary, outCurr, fxRate);
       const exportPayload = {
           generatedAt: generatedAtIso,
           outCurr,
@@ -754,7 +755,8 @@ document.addEventListener('DOMContentLoaded', () => {
               hasData: portfolioSummary.hasData
           },
           rows: rowsSnapshot,
-          meta: { clientName, generatedAt: generatedAtIso }
+          meta: { clientName, generatedAt: generatedAtIso },
+          presentation: presentationData
       };
 
       state.meta.generatedAt = exportPayload.generatedAt;
@@ -772,32 +774,669 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Prezentace byla připravena ke stažení.');
   };
 
+  const preparePresentationData = (funds, portfolioSummary, outCurr, fxRate) => {
+      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
+      const grouped = new Map();
+      const depositsByDay = new Map();
+
+      funds.forEach(f => {
+          if (!f.fund) return;
+          const fundName = f.fund;
+          let group = grouped.get(fundName);
+          if (!group) {
+              group = {
+                  name: fundName,
+                  color: getColor(fundName),
+                  transactions: [],
+                  totalInvest: 0,
+                  totalCurrent: 0,
+                  weightedDuration: 0,
+                  cfs: [],
+                  latestDate: null
+              };
+              grouped.set(fundName, group);
+          }
+
+          const investConverted = convert(f.invest, f.curr);
+          const currentConverted = convert(f.current, f.curr);
+          const effectiveDate = f.dateIn instanceof Date ? new Date(f.dateIn.getTime()) : null;
+
+          if (isFinite(investConverted)) {
+              group.totalInvest += investConverted;
+              if (effectiveDate) {
+                  group.cfs.push({ date: effectiveDate, amount: -investConverted });
+                  const dayKey = effectiveDate.toISOString().split('T')[0];
+                  let aggregate = depositsByDay.get(dayKey);
+                  if (!aggregate) {
+                      aggregate = { date: new Date(effectiveDate.getTime()), amount: 0, entries: [] };
+                      depositsByDay.set(dayKey, aggregate);
+                  }
+                  aggregate.amount += investConverted;
+                  aggregate.entries.push({ fund: fundName, amount: investConverted });
+              }
+              if (isFinite(f.months)) {
+                  group.weightedDuration += investConverted * f.months;
+              }
+          }
+
+          if (isFinite(currentConverted)) {
+              group.totalCurrent += currentConverted;
+          }
+
+          if (f.currDate instanceof Date) {
+              const dateClone = new Date(f.currDate.getTime());
+              group.latestDate = group.latestDate && group.latestDate > dateClone ? group.latestDate : dateClone;
+          }
+
+          group.transactions.push({
+              effectiveDate,
+              displayDate: f.originalDateIn instanceof Date ? new Date(f.originalDateIn.getTime()) : (effectiveDate ? new Date(effectiveDate.getTime()) : null),
+              investConverted,
+              pnlConverted: (isFinite(investConverted) && isFinite(currentConverted)) ? currentConverted - investConverted : NaN,
+              ret: f.ret,
+              irr: f.irr,
+              months: f.months
+          });
+      });
+
+      const fundsView = [];
+      grouped.forEach(group => {
+          group.transactions.sort((a, b) => {
+              if (a.effectiveDate && b.effectiveDate) return a.effectiveDate - b.effectiveDate;
+              if (a.effectiveDate) return -1;
+              if (b.effectiveDate) return 1;
+              return 0;
+          });
+          group.transactions.forEach((tx, index) => {
+              tx.label = index === 0 ? 'První vklad' : `Dokup #${index}`;
+          });
+          const latestTransactionDate = group.latestDate || (group.transactions[group.transactions.length - 1]?.effectiveDate || null);
+          if (isFinite(group.totalCurrent) && latestTransactionDate) {
+              group.cfs.push({ date: latestTransactionDate, amount: group.totalCurrent });
+          }
+          const fundIrr = group.cfs.length >= 2 ? finance.xirr(group.cfs) : NaN;
+          const weightedAvgMonths = group.totalInvest > 0 ? group.weightedDuration / group.totalInvest : NaN;
+          fundsView.push({
+              name: group.name,
+              color: group.color,
+              totalInvest: group.totalInvest,
+              totalCurrent: group.totalCurrent,
+              pnl: group.totalCurrent - group.totalInvest,
+              irr: fundIrr,
+              weightedMonths: weightedAvgMonths,
+              latestDate: latestTransactionDate,
+              transactions: group.transactions.map(tx => ({
+                  label: tx.label,
+                  displayDate: tx.displayDate ? tx.displayDate.toISOString() : null,
+                  investConverted: tx.investConverted,
+                  pnlConverted: tx.pnlConverted,
+                  ret: tx.ret,
+                  irr: tx.irr,
+                  months: tx.months
+              }))
+          });
+      });
+
+      fundsView.sort((a, b) => (isFinite(b.totalCurrent) ? b.totalCurrent : 0) - (isFinite(a.totalCurrent) ? a.totalCurrent : 0));
+
+      const pieData = fundsView
+          .filter(f => isFinite(f.totalCurrent) && f.totalCurrent > 0)
+          .map(f => ({ name: f.name, color: f.color, value: f.totalCurrent }));
+
+      const aggregatedDeposits = Array.from(depositsByDay.values()).sort((a, b) => a.date - b.date);
+
+      const buildLineChartDataset = () => {
+          if (!aggregatedDeposits.length) return null;
+          const irr = portfolioSummary?.portfolioIrr;
+          const dailyRate = isFinite(irr) ? Math.pow(1 + irr, 1 / 365.25) - 1 : 0;
+          const firstDate = new Date(aggregatedDeposits[0].date.getTime());
+          let lastDate = new Date(firstDate.getTime());
+          let runningValue = 0;
+          let cumulativeContrib = 0;
+          const historicalPoints = [{ date: firstDate.toISOString(), value: 0, contributions: 0 }];
+          const depositPoints = [];
+
+          aggregatedDeposits.forEach(dep => {
+              const dateClone = new Date(dep.date.getTime());
+              const days = Math.max(0, (dateClone - lastDate) / MS_PER_DAY);
+              if (days > 0 && runningValue > 0) {
+                  runningValue *= Math.pow(1 + dailyRate, days);
+                  historicalPoints.push({ date: new Date(dateClone.getTime()).toISOString(), value: runningValue, contributions: cumulativeContrib });
+              }
+              runningValue += dep.amount;
+              cumulativeContrib += dep.amount;
+              historicalPoints.push({ date: dateClone.toISOString(), value: runningValue, contributions: cumulativeContrib });
+              depositPoints.push({
+                  date: dateClone.toISOString(),
+                  amount: dep.amount,
+                  cumulativeValue: runningValue,
+                  entries: dep.entries.map(entry => ({ fund: entry.fund, amount: entry.amount }))
+              });
+              lastDate = dateClone;
+          });
+
+          const valuationDate = portfolioSummary?.maxValuationDate instanceof Date
+              ? new Date(portfolioSummary.maxValuationDate.getTime())
+              : new Date(lastDate.getTime());
+          const valuationDays = Math.max(0, (valuationDate - lastDate) / MS_PER_DAY);
+          const valuationValue = runningValue * Math.pow(1 + dailyRate, valuationDays);
+          historicalPoints.push({ date: valuationDate.toISOString(), value: valuationValue, contributions: cumulativeContrib });
+
+          const projectionPoints = [];
+          const futureMarkers = [];
+          if (isFinite(irr) && irr > -1) {
+              for (let year = valuationDate.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
+                  const projectionDate = new Date(year, 11, 31);
+                  if (projectionDate <= valuationDate) continue;
+                  const daysAhead = Math.max(0, (projectionDate - valuationDate) / MS_PER_DAY);
+                  const projectedValue = valuationValue * Math.pow(1 + dailyRate, daysAhead);
+                  projectionPoints.push({ date: projectionDate.toISOString(), value: projectedValue });
+                  if ((year - valuationDate.getFullYear()) % 4 === 0 || year === CHART_END_YEAR) {
+                      futureMarkers.push({ date: projectionDate.toISOString(), value: projectedValue, label: `${year}` });
+                  }
+              }
+          }
+
+          return {
+              firstDate: firstDate.toISOString(),
+              valuationDate: valuationDate.toISOString(),
+              valuationValue,
+              cumulativeContributions: cumulativeContrib,
+              points: historicalPoints,
+              projectionPoints,
+              depositPoints,
+              futureMarkers
+          };
+      };
+
+      return {
+          fundsView,
+          pieData,
+          lineChart: buildLineChartDataset()
+      };
+  };
+
+  const escapeHtml = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+  };
+
   const buildClientPresentationHTML = (payload) => {
-      const toastEl = elements.toastContainer || document.getElementById('toast-container');
-      if (toastEl) {
-          toastEl.innerHTML = '';
-      }
-      const serializer = new XMLSerializer();
-      let html = serializer.serializeToString(document.documentElement);
-      if (html.includes('data-mode="advisor"')) {
-          html = html.replace('data-mode="advisor"', 'data-mode="client"');
-      } else {
-          html = html.replace('<body', '<body data-mode="client"');
-      }
+      const summary = payload.summary || {};
+      const presentation = payload.presentation || { fundsView: [], pieData: [], lineChart: null };
+      const outCurr = payload.outCurr || 'CZK';
+      const nf0 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const nf1 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      const nf2 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formatNumber = (value, digits = 0) => {
+          if (!isFinite(value)) return '—';
+          if (digits === 1) return nf1.format(value);
+          if (digits === 2) return nf2.format(value);
+          return nf0.format(value);
+      };
+      const formatPercent = (value) => isFinite(value) ? `${nf2.format(value * 100)} %` : '—';
+      const formatDate = (iso) => {
+          if (!iso) return '—';
+          const date = new Date(iso);
+          return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('cs-CZ');
+      };
+      const formatDateTime = (iso) => {
+          if (!iso) return '—';
+          const date = new Date(iso);
+          return isNaN(date.getTime()) ? '—' : date.toLocaleString('cs-CZ');
+      };
+
+      const fundsMarkup = presentation.fundsView.length
+          ? presentation.fundsView.map(fund => {
+              const transactionsRows = fund.transactions.map(tx => `
+                  <tr class="border-t border-slate-200/70">
+                      <td class="py-2 pr-3 text-sm text-slate-600">${escapeHtml(tx.label)} <span class="text-slate-400">(${formatDate(tx.displayDate)})</span></td>
+                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${formatNumber(tx.investConverted)}</td>
+                      <td class="py-2 pr-3 text-right tabular text-sm ${tx.pnlConverted >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatNumber(tx.pnlConverted)}</td>
+                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${formatPercent(tx.ret)}</td>
+                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${isFinite(tx.months) ? `${formatNumber(tx.months, 1)} měs.` : '—'}</td>
+                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${isFinite(tx.irr) ? `${formatPercent(tx.irr)} p.a.` : '—'}</td>
+                  </tr>`).join('');
+              const latestIso = fund.latestDate instanceof Date ? fund.latestDate.toISOString() : fund.latestDate;
+              return `
+                  <section class="card overflow-hidden">
+                      <div class="grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-4 p-6">
+                          <div class="md:col-span-2">
+                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Fond</div>
+                              <div class="mt-2 flex items-center gap-3">
+                                  <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${fund.color}"></span>
+                                  <span class="font-semibold text-lg text-slate-900">${escapeHtml(fund.name)}</span>
+                              </div>
+                              <div class="mt-2 text-xs text-slate-400">Poslední ocenění: ${formatDate(latestIso)}</div>
+                          </div>
+                          <div>
+                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Aktuální hodnota</div>
+                              <div class="mt-2 font-semibold tabular text-lg text-slate-900">${formatNumber(fund.totalCurrent)}</div>
+                          </div>
+                          <div>
+                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Čistý výsledek</div>
+                              <div class="mt-2 font-semibold tabular text-lg ${fund.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatNumber(fund.pnl)}</div>
+                          </div>
+                          <div>
+                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Výkonnost (XIRR)</div>
+                              <div class="mt-2 font-semibold tabular text-lg ${isFinite(fund.irr) && fund.irr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(fund.irr) ? `${formatPercent(fund.irr)} p.a.` : '—'}</div>
+                          </div>
+                          <div>
+                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Váž. prům. doba</div>
+                              <div class="mt-2 font-semibold tabular text-lg text-slate-900">${isFinite(fund.weightedMonths) ? `${formatNumber(fund.weightedMonths, 1)} měs.` : '—'}</div>
+                          </div>
+                      </div>
+                      <div class="border-t border-slate-200/70 bg-slate-50/60">
+                          <table class="w-full text-left">
+                              <thead>
+                                  <tr class="text-xs uppercase tracking-[0.18em] text-slate-400">
+                                      <th class="py-3 pr-3">Transakce</th>
+                                      <th class="py-3 pr-3 text-right">Investice</th>
+                                      <th class="py-3 pr-3 text-right">Výnos</th>
+                                      <th class="py-3 pr-3 text-right">Kumulativně</th>
+                                      <th class="py-3 pr-3 text-right">Doba (měs.)</th>
+                                      <th class="py-3 pr-3 text-right">XIRR p.a.</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  ${transactionsRows}
+                              </tbody>
+                          </table>
+                      </div>
+                  </section>`;
+          }).join('\n')
+          : '<div class="rounded-2xl border border-slate-200/70 bg-white/80 py-12 text-center text-slate-500">Žádná data pro zobrazení fondů.</div>';
+
+      const pieTotal = presentation.pieData.reduce((sum, item) => sum + (isFinite(item.value) ? item.value : 0), 0);
+      const pieLegendMarkup = presentation.pieData.map(item => `
+          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200/60 bg-white/70 px-3 py-2">
+              <div class="flex items-center gap-3">
+                  <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${item.color}"></span>
+                  <span class="text-sm text-slate-600">${escapeHtml(item.name)}</span>
+              </div>
+              <span class="text-sm font-semibold tabular text-slate-900">${pieTotal > 0 ? formatPercent(item.value / pieTotal) : '—'}</span>
+          </div>`).join('\n');
+
+      const summaryDisclaimer = summary.minValuationDate && summary.maxValuationDate
+          ? (() => {
+              const minDate = formatDate(summary.minValuationDate instanceof Date ? summary.minValuationDate.toISOString() : summary.minValuationDate);
+              const maxDate = formatDate(summary.maxValuationDate instanceof Date ? summary.maxValuationDate.toISOString() : summary.maxValuationDate);
+              return minDate === maxDate
+                  ? `Hodnoty jsou platné k ${maxDate}.`
+                  : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minDate} – ${maxDate}.`;
+          })()
+          : '';
+
       const sanitized = JSON.stringify(payload)
           .replace(/</g, '\u003c')
           .replace(/>/g, '\u003e')
           .replace(/`/g, '\u0060')
           .replace(/\$\{/g, '\u0024{')
           .replace(/<\/script/gi, '<\\/script');
-      const dataScript = `<script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};<\\/script>`;
-      const inlineMarker = '<script>\ndocument.addEventListener';
-      if (html.includes(inlineMarker)) {
-          html = html.replace(inlineMarker, `${dataScript}\n${inlineMarker}`);
-      } else {
-          html = html.replace('</body>', `${dataScript}\n</body>`);
+
+      return `<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prezentace portfolia – ${escapeHtml(payload.meta?.clientName || 'Klient')}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
+      color: #0f172a;
+    }
+    .card {
+      border-radius: 1.25rem;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 45px -24px rgba(15, 23, 42, 0.45);
+    }
+    .tabular {
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-card {
+      border-radius: 1.25rem;
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 45px -24px rgba(15, 23, 42, 0.4);
+    }
+    .chart-wrapper svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
       }
-      return `<!doctype html>\n${html}`;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-500 text-white">
+    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
+      <div class="flex flex-wrap items-center justify-between gap-6">
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em] text-white/70">Prezentace portfolia</p>
+          <h1 class="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">${escapeHtml(payload.meta?.clientName || 'Klient')}</h1>
+        </div>
+        <div class="rounded-2xl bg-white/15 px-6 py-4 text-sm backdrop-blur">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300"></span>
+            <div>
+              <div class="text-xs uppercase tracking-[0.2em] text-white/80">Datum generování</div>
+              <div class="text-base font-medium">${formatDateTime(payload.meta?.generatedAt)}</div>
+            </div>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-white/80">
+            <div>
+              <span class="uppercase tracking-[0.2em] block">Měna</span>
+              <span class="text-base font-medium text-white">${escapeHtml(outCurr)}</span>
+            </div>
+            <div>
+              <span class="uppercase tracking-[0.2em] block">Kurz</span>
+              <span class="text-base font-medium text-white">${summary.hasData && isFinite(payload.fxRate) ? nf2.format(payload.fxRate) : '—'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="max-w-3xl text-sm text-white/80">
+        Tento report shrnuje výkonnost Vašeho investičního portfolia a přináší detailní pohled na jednotlivé fondy, dosažené výsledky a očekávaný vývoj.
+      </p>
+    </div>
+  </div>
+
+  <main class="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10">
+    <section class="card p-8">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-2xl font-semibold text-slate-900">Souhrn portfolia</h2>
+        <span class="rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-medium text-emerald-700">Částky v ${escapeHtml(outCurr)}</span>
+      </div>
+      <div class="mt-6 grid gap-6 md:grid-cols-2">
+        <div class="space-y-4">
+          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+            <p class="text-sm text-slate-500">Celkové vklady</p>
+            <p class="mt-1 text-2xl font-semibold tabular text-slate-900">${formatNumber(summary.totalInvestConverted)}</p>
+          </div>
+          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+            <p class="text-sm text-slate-500">Aktuální hodnota</p>
+            <p class="mt-1 text-2xl font-semibold tabular text-slate-900">${formatNumber(summary.totalCurrentConverted)}</p>
+          </div>
+          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+            <p class="text-sm text-slate-500">Čistý zisk / ztráta</p>
+            <p class="mt-1 text-2xl font-semibold tabular ${summary.totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatNumber(summary.totalPnl)}</p>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+            <p class="text-sm text-slate-500">Kumulativní zhodnocení</p>
+            <p class="mt-1 text-2xl font-semibold tabular ${summary.totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatPercent(summary.totalRet)}</p>
+          </div>
+          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+            <p class="text-sm text-slate-500">XIRR (časově vážený výnos)</p>
+            <p class="mt-1 text-2xl font-semibold tabular ${isFinite(summary.portfolioIrr) && summary.portfolioIrr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(summary.portfolioIrr) ? `${formatPercent(summary.portfolioIrr)} p.a.` : '—'}</p>
+          </div>
+          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
+            <p class="text-sm text-slate-500">Vážená prům. doba investice</p>
+            <p class="mt-1 text-2xl font-semibold tabular text-slate-900">${isFinite(summary.weightedAvgMonths) ? `${formatNumber(summary.weightedAvgMonths, 1)} měs.` : '—'}</p>
+          </div>
+        </div>
+      </div>
+      ${summaryDisclaimer ? `<p class="mt-6 text-xs text-slate-400">${summaryDisclaimer}</p>` : ''}
+    </section>
+
+    <section class="space-y-6">
+      <h2 class="text-2xl font-semibold text-slate-900">Výsledky po fondech</h2>
+      ${fundsMarkup}
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-2">
+      <div class="chart-card p-6">
+        <h3 class="text-lg font-semibold text-slate-900">Vývoj portfolia a predikce</h3>
+        <div id="client-line-chart" class="chart-wrapper mt-4"></div>
+      </div>
+      <div class="chart-card p-6">
+        <h3 class="text-lg font-semibold text-slate-900">Rozložení portfolia</h3>
+        <div id="client-pie-chart" class="chart-wrapper mt-4"></div>
+        <div class="mt-6 space-y-3">
+          ${pieLegendMarkup}
+        </div>
+      </div>
+    </section>
+
+    <section class="card p-8">
+      <h2 class="text-2xl font-semibold text-slate-900">Vysvětlivky a metriky</h2>
+      <div class="mt-6 space-y-6 text-sm text-slate-600">
+        <div>
+          <h3 class="font-semibold text-slate-800">XIRR – časově vážený výnos</h3>
+          <p class="mt-2">XIRR (Extended Internal Rate of Return) představuje nejpřesnější metodu pro výpočet průměrného ročního zhodnocení portfolia, protože zohledňuje načasování jednotlivých vkladů a výběrů.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800">Kumulativní zhodnocení</h3>
+          <p class="mt-2">Udává celkový čistý zisk či ztrátu jako procento z celkově vložených prostředků. Nezohledňuje však dobu investování jednotlivých částek.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800">Predikce vývoje</h3>
+          <p class="mt-2">Budoucí vývoj je odhad založený na dosavadní výkonnosti portfolia. Skutečná výkonnost se může lišit v závislosti na tržních podmínkách.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-slate-900/90 py-6 text-center text-xs text-slate-300">
+    © ${new Date().getFullYear()} FairLife. Report je určen výhradně pro potřeby klienta a obsahuje důvěrné informace o investicích.
+  </footer>
+
+  <script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};<\\/script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const data = window.__PRESENTATION_DATA__ || {};
+      const presentation = data.presentation || {};
+      const outCurr = data.outCurr || 'CZK';
+      const nf0 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const nf2 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formatNumber = (value) => isFinite(value) ? nf0.format(value) : '—';
+      const formatCurrency = (value) => isFinite(value) ? `${nf0.format(value)} ${outCurr}` : '—';
+      const formatPercent = (value) => isFinite(value) ? `${nf2.format(value * 100)} %` : '—';
+      const toDate = (iso) => iso ? new Date(iso) : null;
+
+      const renderPieChart = () => {
+        const container = document.getElementById('client-pie-chart');
+        if (!container) return;
+        const pieData = Array.isArray(presentation.pieData) ? presentation.pieData : [];
+        if (!pieData.length) {
+          container.innerHTML = '<div class="rounded-xl border border-slate-200/70 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">Graf není k dispozici.</div>';
+          return;
+        }
+        const total = pieData.reduce((sum, item) => sum + (isFinite(item.value) ? item.value : 0), 0);
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const outerRadius = 100;
+        const innerRadius = 55;
+        let startAngle = -Math.PI / 2;
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 220 220');
+        svg.setAttribute('aria-hidden', 'true');
+        pieData.forEach(item => {
+          const value = isFinite(item.value) ? item.value : 0;
+          if (value <= 0) return;
+          const angle = (value / total) * Math.PI * 2;
+          const endAngle = startAngle + angle;
+          const largeArc = angle > Math.PI ? 1 : 0;
+          const x1 = 110 + outerRadius * Math.cos(startAngle);
+          const y1 = 110 + outerRadius * Math.sin(startAngle);
+          const x2 = 110 + outerRadius * Math.cos(endAngle);
+          const y2 = 110 + outerRadius * Math.sin(endAngle);
+          const ix1 = 110 + innerRadius * Math.cos(endAngle);
+          const iy1 = 110 + innerRadius * Math.sin(endAngle);
+          const ix2 = 110 + innerRadius * Math.cos(startAngle);
+          const iy2 = 110 + innerRadius * Math.sin(startAngle);
+          const path = document.createElementNS(svgNS, 'path');
+          path.setAttribute('d', `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2} ${iy2} Z`);
+          path.setAttribute('fill', item.color || '#0f766e');
+          const title = document.createElementNS(svgNS, 'title');
+          const percent = total > 0 ? value / total : 0;
+          title.textContent = `${item.name} – ${formatCurrency(value)} (${formatPercent(percent)})`;
+          path.appendChild(title);
+          svg.appendChild(path);
+          startAngle = endAngle;
+        });
+        container.innerHTML = '';
+        container.appendChild(svg);
+      };
+
+      const renderLineChart = () => {
+        const container = document.getElementById('client-line-chart');
+        if (!container) return;
+        const lineData = presentation.lineChart;
+        if (!lineData || !Array.isArray(lineData.points) || !lineData.points.length) {
+          container.innerHTML = '<div class="rounded-xl border border-slate-200/70 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">Graf není k dispozici.</div>';
+          return;
+        }
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const width = container.clientWidth || 860;
+        const height = 360;
+        const margin = { top: 30, right: 28, bottom: 60, left: 80 };
+        const boundedWidth = width - margin.left - margin.right;
+        const boundedHeight = height - margin.top - margin.bottom;
+        const historical = lineData.points.map(p => ({ date: toDate(p.date), value: p.value, contributions: p.contributions })).filter(p => p.date instanceof Date && !isNaN(p.date));
+        const projection = Array.isArray(lineData.projectionPoints)
+          ? lineData.projectionPoints.map(p => ({ date: toDate(p.date), value: p.value })).filter(p => p.date instanceof Date && !isNaN(p.date))
+          : [];
+        const allDates = [...historical.map(p => p.date), ...projection.map(p => p.date)];
+        if (!allDates.length) {
+          container.innerHTML = '<div class="rounded-xl border border-slate-200/70 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">Graf není k dispozici.</div>';
+          return;
+        }
+        const firstDate = historical[0].date;
+        const lastDate = projection.length ? projection[projection.length - 1].date : historical[historical.length - 1].date;
+        const totalSpan = Math.max(1, lastDate - firstDate);
+        const allValues = [...historical.map(p => p.value), ...projection.map(p => p.value)];
+        const maxValue = Math.max(...allValues, 1);
+        const xScale = (date) => margin.left + ((date - firstDate) / totalSpan) * boundedWidth;
+        const yScale = (value) => margin.top + boundedHeight - (value / maxValue) * boundedHeight;
+
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+        const gridLines = 5;
+        for (let i = 0; i <= gridLines; i++) {
+          const value = (maxValue / gridLines) * i;
+          const y = yScale(value);
+          const line = document.createElementNS(svgNS, 'line');
+          line.setAttribute('x1', margin.left);
+          line.setAttribute('x2', width - margin.right);
+          line.setAttribute('y1', y);
+          line.setAttribute('y2', y);
+          line.setAttribute('stroke', '#e2e8f0');
+          line.setAttribute('stroke-dasharray', '2 3');
+          svg.appendChild(line);
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('x', margin.left - 10);
+          label.setAttribute('y', y + 4);
+          label.setAttribute('text-anchor', 'end');
+          label.setAttribute('font-size', '11');
+          label.setAttribute('fill', '#64748b');
+          label.textContent = formatNumber(value);
+          svg.appendChild(label);
+        }
+
+        const yearStart = firstDate.getFullYear();
+        const yearEnd = lastDate.getFullYear();
+        for (let year = yearStart; year <= yearEnd; year++) {
+          if (year % 2 !== 0 && year !== yearStart && year !== yearEnd) continue;
+          const tickDate = new Date(year, 0, 1);
+          if (tickDate < firstDate || tickDate > lastDate) continue;
+          const x = xScale(tickDate);
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('x', x);
+          label.setAttribute('y', height - 20);
+          label.setAttribute('text-anchor', 'middle');
+          label.setAttribute('font-size', '11');
+          label.setAttribute('fill', '#64748b');
+          label.textContent = year.toString();
+          svg.appendChild(label);
+        }
+
+        const pathD = historical.map((p, index) => `${index === 0 ? 'M' : 'L'}${xScale(p.date)},${yScale(p.value)}`).join(' ');
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#0f766e');
+        path.setAttribute('stroke-width', '2.5');
+        svg.appendChild(path);
+
+        if (projection.length) {
+          const projPath = `M${xScale(historical[historical.length - 1].date)},${yScale(historical[historical.length - 1].value)} ` +
+            projection.map(p => `L${xScale(p.date)},${yScale(p.value)}`).join(' ');
+          const proj = document.createElementNS(svgNS, 'path');
+          proj.setAttribute('d', projPath);
+          proj.setAttribute('fill', 'none');
+          proj.setAttribute('stroke', '#0f766e');
+          proj.setAttribute('stroke-width', '2');
+          proj.setAttribute('stroke-dasharray', '6 4');
+          svg.appendChild(proj);
+        }
+
+        const depositPoints = Array.isArray(lineData.depositPoints) ? lineData.depositPoints : [];
+        depositPoints.forEach(dep => {
+          const date = toDate(dep.date);
+          if (!date) return;
+          const circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', xScale(date));
+          circle.setAttribute('cy', yScale(dep.cumulativeValue));
+          circle.setAttribute('r', 5);
+          circle.setAttribute('fill', '#0ea5e9');
+          circle.setAttribute('stroke', '#fff');
+          circle.setAttribute('stroke-width', '2');
+          const title = document.createElementNS(svgNS, 'title');
+          const entries = Array.isArray(dep.entries) ? dep.entries : [];
+          const details = entries.map(entry => `${entry.fund}: ${formatCurrency(entry.amount)}`).join('\n');
+          title.textContent = `${date.toLocaleDateString('cs-CZ')}\nVklad: ${formatCurrency(dep.amount)}\nKumulativně: ${formatCurrency(dep.cumulativeValue)}${details ? `\n${details}` : ''}`;
+          circle.appendChild(title);
+          svg.appendChild(circle);
+        });
+
+        const markers = Array.isArray(lineData.futureMarkers) ? lineData.futureMarkers : [];
+        markers.forEach(marker => {
+          const date = toDate(marker.date);
+          if (!date) return;
+          const circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', xScale(date));
+          circle.setAttribute('cy', yScale(marker.value));
+          circle.setAttribute('r', 5);
+          circle.setAttribute('fill', '#0f766e');
+          circle.setAttribute('stroke', '#fff');
+          circle.setAttribute('stroke-width', '2');
+          const title = document.createElementNS(svgNS, 'title');
+          title.textContent = `${marker.label}: ${formatCurrency(marker.value)}`;
+          circle.appendChild(title);
+          svg.appendChild(circle);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(svg);
+      };
+
+      renderPieChart();
+      renderLineChart();
+      window.addEventListener('resize', () => {
+        renderLineChart();
+      });
+    });
+  </script>
+</body>
+</html>`;
   };
   const createProviderSection = (providerKey) => {
       const providerName = PROVIDERS[providerKey];
