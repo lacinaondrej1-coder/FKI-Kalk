@@ -267,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {}
   };
+  const elements = {};
   let rowSeq = 0;
   let rafId = 0;
 
@@ -303,9 +304,33 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
   
   const scheduleRecalc = () => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(recalculateAndRender); };
-  const showToast = (message, type = 'success') => { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.innerHTML = `<svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">${type === 'success' ? `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />` : `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`}</svg><span>${message}</span>`; container.appendChild(toast); requestAnimationFrame(() => { toast.classList.add('show'); }); setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000); };
+  const showToast = (message, type = 'success') => {
+      const container = elements.toastContainer || document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">${type === 'success' ? `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />` : `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`}</svg><span>${message}</span>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+          toast.classList.add('show');
+      });
+      setTimeout(() => {
+          toast.classList.remove('show');
+          toast.addEventListener('transitionend', () => toast.remove());
+      }, 3000);
+  };
 
-  const saveState = () => { try { localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows })); document.getElementById('last-saved-indicator').textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`; } catch (e) { console.error("Failed to save state:", e); showToast("Chyba při ukládání dat.", 'error'); } };
+  const saveState = () => {
+      try {
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows }));
+          if (elements.lastSavedIndicator) {
+              elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
+          }
+      } catch (e) {
+          console.error("Failed to save state:", e);
+          showToast("Chyba při ukládání dat.", 'error');
+      }
+  };
   const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); scheduleRecalc(); };
   const exportState = () => { const stateString = JSON.stringify({ rows: state.rows }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
   const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
@@ -469,8 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
           });
       });
       const { funds, hasMixedCurrencies: hasMixed } = { funds: processedFunds, hasMixedCurrencies: allCurrencies.size > 1 };
-      const outCurr = document.getElementById('out-curr').value;
-      const fxRate = utils.numCZ(document.getElementById('fx-rate').value);
+      const outCurr = elements.outCurrency?.value || 'CZK';
+      const fxRate = utils.numCZ(elements.fxRate?.value);
       const portfolioSummary = calculateSummary(funds, outCurr, fxRate);
       state.lastProcessedData = { funds, hasMixedCurrencies: hasMixed, portfolioSummary };
       return state.lastProcessedData;
@@ -478,13 +503,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const recalculateAndRender = () => {
     const { funds, hasMixedCurrencies, portfolioSummary } = processAllRows();
-    const outCurr = document.getElementById('out-curr').value;
-    const fxRate = utils.numCZ(document.getElementById('fx-rate').value);
-    const statusContainer = document.getElementById('status-container');
-    if (hasMixedCurrencies && !isFinite(fxRate)) {
-        statusContainer.innerHTML = `<div class="p-4 bg-sky-100 border border-sky-200 text-sky-800 rounded-xl text-sm"><strong>Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
-    } else {
-        statusContainer.innerHTML = '';
+    const outCurr = elements.outCurrency?.value || 'CZK';
+    const fxRate = utils.numCZ(elements.fxRate?.value);
+    const statusContainer = elements.statusContainer || document.getElementById('status-container');
+    if (statusContainer) {
+        if (hasMixedCurrencies && !isFinite(fxRate)) {
+            statusContainer.innerHTML = `<div class="p-4 bg-sky-100 border border-sky-200 text-sky-800 rounded-xl text-sm"><strong>Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
+        } else {
+            statusContainer.innerHTML = '';
+        }
     }
     renderResults(funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
     calculateAnnuity();
@@ -543,9 +570,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderFundsByCard = (groupedFunds, outCurr, fxRate) => {
-      const container = document.getElementById('funds-by-card-container');
+      const container = elements.fundsContainer || document.getElementById('funds-by-card-container');
+      if (!container) return;
       container.innerHTML = "";
-      document.getElementById('amount-note-funds').textContent = `Částky v ${outCurr}`;
+      if (elements.amountNoteFunds) {
+          elements.amountNoteFunds.textContent = `Částky v ${outCurr}`;
+      }
       const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
       if (Object.keys(groupedFunds).length === 0) {
           container.innerHTML = `<div class="text-center py-8 text-neutral-500">Nejsou k dispozici žádná data pro výpočet.</div>`;
@@ -601,12 +631,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   };
   const renderSummary = (summaryData, outCurr) => {
-    const summaryContainer = document.getElementById('portfolio-summary-content');
-    document.getElementById('amount-note-portfolio').textContent = `Částky v ${outCurr}`;
-    if (!summaryData.hasData) {
-        summaryContainer.innerHTML = `<div class="text-center py-8 text-neutral-500">Žádná data pro souhrn.</div>`;
-        return;
+    const summaryContainer = elements.portfolioSummary || document.getElementById('portfolio-summary-content'); 
+    if (elements.amountNotePortfolio) {
+        elements.amountNotePortfolio.textContent = `Částky v ${outCurr}`;
     }
+    if (!summaryContainer) return;
+    if (!summaryData.hasData) { 
+        summaryContainer.innerHTML = `<div class="text-center py-8 text-neutral-500">Žádná data pro souhrn.</div>`; 
+        return; 
+    } 
     const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
     const pnlClass = totalPnl >= 0 ? 'text-green-600' : 'text-red-600';
     let dateDisclaimer = '';
@@ -623,12 +656,15 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderCharts = (groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioIrr) => {
-    const chartsSection = document.getElementById('charts-section');
-    const lineCard = document.getElementById('line-chart-card');
-    const pieCard = document.getElementById('pie-chart-card');
+    const chartsSection = elements.chartsSection || document.getElementById('charts-section');
+    const lineCard = elements.lineChartCard || document.getElementById('line-chart-card');
+    const pieCard = elements.pieChartCard || document.getElementById('pie-chart-card');
     if (funds.length > 0) {
         lineCard.style.display = 'block';
-        renderLineChart(document.getElementById('line-chart-container'), funds, portfolioIrr, outCurr, fxRate);
+        const lineContainer = elements.lineChartContainer || document.getElementById('line-chart-container');
+        if (lineContainer) {
+            renderLineChart(lineContainer, funds, portfolioIrr, outCurr, fxRate);
+        }
     } else {
         lineCard.style.display = 'none';
     }
@@ -642,9 +678,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } else {
         pieCard.style.display = 'block';
-        document.getElementById('pie-chart-container').innerHTML = `<div class="text-center py-10 text-neutral-500">Pro zobrazení grafu doplňte směnný kurz.</div>`;
+        const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
+        if (pieContainer) {
+            pieContainer.innerHTML = `<div class="text-center py-10 text-neutral-500">Pro zobrazení grafu doplňte směnný kurz.</div>`;
+        }
     }
-    chartsSection.style.display = (pieCard.style.display === 'block' || lineCard.style.display === 'block') ? 'block' : 'none';
+    if (chartsSection) {
+        chartsSection.style.display = (pieCard.style.display === 'block' || lineCard.style.display === 'block') ? 'block' : 'none';
+    }
   };
 
   const renderLineChart = (container, funds, portfolioIrr, outCurr, fxRate, options = {}) => {
@@ -857,21 +898,25 @@ document.addEventListener('DOMContentLoaded', () => {
             guideCircle.setAttribute('cy', finalY);
             guideLine.style.opacity = 1;
             guideCircle.style.opacity = 1;
-            const tooltip = document.getElementById('chart-tooltip');
-            tooltip.innerHTML = tooltipText;
-            tooltip.classList.remove('hidden');
+            const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+            if (tooltip) {
+                tooltip.innerHTML = tooltipText;
+                tooltip.classList.remove('hidden');
+            }
         });
         interactionLayer.addEventListener('mouseout', () => {
             guideLine.style.opacity = 0;
             guideCircle.style.opacity = 0;
-            document.getElementById('chart-tooltip').classList.add('hidden');
+            const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+            tooltip?.classList.add('hidden');
         });
     }
     container.appendChild(svg);
   };
 
   const setupTimeSlider = (funds) => {
-    const slider = document.getElementById('pie-time-slider');
+    const slider = elements.pieSlider || document.getElementById('pie-time-slider');
+    if (!slider) return;
     const deposits = funds.map(f => f.dateIn).sort((a,b) => a - b);
     if(deposits.length === 0) return;
     const firstDate = deposits[0];
@@ -883,18 +928,25 @@ document.addEventListener('DOMContentLoaded', () => {
         slider.value = today.getTime();
         slider.dataset.initialized = 'true';
     }
-    document.getElementById('slider-start-date-label').textContent = firstDate.toLocaleDateString('cs-CZ');
-    document.getElementById('slider-end-date-label').textContent = endDate.toLocaleDateString('cs-CZ');
+    if (elements.sliderStartLabel) {
+        elements.sliderStartLabel.textContent = firstDate.toLocaleDateString('cs-CZ');
+    }
+    if (elements.sliderEndLabel) {
+        elements.sliderEndLabel.textContent = endDate.toLocaleDateString('cs-CZ');
+    }
     updatePieChartFromSlider();
   };
   const updatePieChartFromSlider = () => {
     const { funds } = state.lastProcessedData;
-    const outCurr = document.getElementById('out-curr').value;
-    const fxRate = utils.numCZ(document.getElementById('fx-rate').value);
-    const slider = document.getElementById('pie-time-slider');
+    const outCurr = elements.outCurrency?.value || 'CZK';
+    const fxRate = utils.numCZ(elements.fxRate?.value);
+    const slider = elements.pieSlider || document.getElementById('pie-time-slider');
+    if (!slider) return;
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     const currentDate = new Date(parseInt(slider.value));
-    document.getElementById('slider-current-date-label').textContent = currentDate.toLocaleDateString('cs-CZ');
+    if (elements.sliderCurrentLabel) {
+        elements.sliderCurrentLabel.textContent = currentDate.toLocaleDateString('cs-CZ');
+    }
     const dataForDate = Object.entries(funds.reduce((acc, f) => { if (!acc[f.fund]) acc[f.fund] = { investments: [], irr: null }; acc[f.fund].investments.push(f); if (isFinite(f.irr)) acc[f.fund].irr = f.irr; return acc; }, {})).map(([name, {investments, irr}]) => {
         let value = 0;
         const cfs = investments
@@ -919,7 +971,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return { name, totalCurrent: value };
     }).filter(d => d.totalCurrent > 0);
-    renderPieChart(document.getElementById('pie-chart-container'), dataForDate, outCurr);
+    const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
+    if (pieContainer) {
+        renderPieChart(pieContainer, dataForDate, outCurr);
+    }
   };
   const renderPieChart = (container, data, outCurr, options = {}) => {
     container.innerHTML = '';
@@ -970,10 +1025,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const calculateAnnuity = () => {
       const { portfolioSummary, funds } = state.lastProcessedData;
       const { portfolioIrr, totalCurrentConverted } = portfolioSummary;
-      const monthlyAnnuity = utils.numCZ(document.getElementById('annuity-input').value);
-      const resultDiv = document.getElementById('annuity-result');
-      const annualDiv = document.getElementById('annuity-annual-equivalent');
-      const disclaimer = document.getElementById('annuity-disclaimer');
+      const monthlyAnnuity = utils.numCZ(elements.annuityInput?.value);
+      const resultDiv = elements.annuityResult || document.getElementById('annuity-result');
+      const annualDiv = elements.annuityAnnual || document.getElementById('annuity-annual-equivalent');
+      const disclaimer = elements.annuityDisclaimer || document.getElementById('annuity-disclaimer');
+      if (!resultDiv || !annualDiv || !disclaimer) {
+          return;
+      }
       if (!isFinite(monthlyAnnuity) || monthlyAnnuity <= 0) {
           resultDiv.style.display = 'none';
           annualDiv.textContent = '';
@@ -1044,49 +1102,90 @@ document.addEventListener('DOMContentLoaded', () => {
              tr.querySelector('[data-key="totalCurrent"]').value = row.totalCurrent;
         }
     }
-    updateInputHighlights(tr);
+    updateInputHighlights(tr, row);
     scheduleRecalc();
     saveState();
   };
 
-  const updateInputHighlights = (tr) => {
-      const inputs = tr.querySelectorAll('[data-key]');
-      inputs.forEach(input => input.classList.remove('input-highlight'));
-      const rowData = {};
-      inputs.forEach(input => {
-          const key = input.dataset.key;
-          if (input.type === 'number' || input.type === 'text') {
-              rowData[key] = input.value;
-          } else {
-              rowData[key] = input.textContent;
-          }
+  const updateInputHighlights = (tr, row) => {
+      const parsed = parseRow(row || {});
+      const fields = ['invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'totalCurrent', 'currDate'];
+      fields.forEach(field => {
+          const input = tr.querySelector(`[data-key="${field}"]`);
+          if (input) input.classList.remove('input-highlight');
       });
-      const p = parseRow({ ...rowData, id: tr.dataset.id, curr: rowData.curr });
-      const hasAnyValue = Object.values(p).some(v => v || v === 0);
-      if (!hasAnyValue || !p.fund) return;
-      const highlight = (keys) => keys.forEach(key => {
-          const el = tr.querySelector(`[data-key="${key}"]`);
-          if (el && !el.value) el.classList.add('input-highlight');
-      });
-      if (!p.dateIn) highlight(['dateIn']);
-      if (!p.currDate) highlight(['currDate']);
-      const hasInvest = isFinite(p.invest) && p.invest > 0;
-      const hasQty = isFinite(p.qty) && p.qty > 0;
-      const hasIssueNav = isFinite(p.issueNav) && p.issueNav > 0;
-      if (!hasInvest && !hasQty) {
-          highlight(['invest']);
-      } else if (!hasInvest && hasQty && !hasIssueNav) {
-          highlight(['issueNav']);
+
+      if (!parsed || !parsed.fund) {
+          return;
       }
-      if (!isFinite(p.totalCurrent) && !isFinite(p.currNav)) {
-          highlight(['currNav', 'totalCurrent']);
+
+      const markMissing = (...keys) => {
+          keys.forEach(field => {
+              const input = tr.querySelector(`[data-key="${field}"]`);
+              if (!input) return;
+              const currentValue = row?.[field];
+              if (currentValue === undefined || String(currentValue).trim() === '') {
+                  input.classList.add('input-highlight');
+              }
+          });
+      };
+
+      if (!parsed.dateIn) markMissing('dateIn');
+      if (!parsed.currDate) markMissing('currDate');
+
+      const hasInvest = Number.isFinite(parsed.invest) && parsed.invest > 0;
+      const hasQty = Number.isFinite(parsed.qty) && parsed.qty > 0;
+      const hasIssueNav = Number.isFinite(parsed.issueNav) && parsed.issueNav > 0;
+      const hasCurrent = Number.isFinite(parsed.totalCurrent);
+      const hasNav = Number.isFinite(parsed.currNav) && parsed.currNav > 0;
+
+      if (!hasInvest && !hasQty) {
+          markMissing('invest');
+      } else if (!hasInvest && hasQty && !hasIssueNav) {
+          markMissing('issueNav');
+      }
+
+      if (!hasCurrent && !hasNav) {
+          markMissing('currNav', 'totalCurrent');
       }
   };
 
   const init = () => {
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-    const providerContainer = document.getElementById('provider-sections');
-    Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
+    elements.fxRate = document.getElementById('fx-rate');
+    elements.outCurrency = document.getElementById('out-curr');
+    elements.statusContainer = document.getElementById('status-container');
+    elements.toastContainer = document.getElementById('toast-container');
+    elements.lastSavedIndicator = document.getElementById('last-saved-indicator');
+    elements.providerSections = document.getElementById('provider-sections');
+    elements.fundsContainer = document.getElementById('funds-by-card-container');
+    elements.amountNoteFunds = document.getElementById('amount-note-funds');
+    elements.portfolioSummary = document.getElementById('portfolio-summary-content');
+    elements.amountNotePortfolio = document.getElementById('amount-note-portfolio');
+    elements.lineChartCard = document.getElementById('line-chart-card');
+    elements.pieChartCard = document.getElementById('pie-chart-card');
+    elements.chartsSection = document.getElementById('charts-section');
+    elements.lineChartContainer = document.getElementById('line-chart-container');
+    elements.pieChartContainer = document.getElementById('pie-chart-container');
+    elements.pieSlider = document.getElementById('pie-time-slider');
+    elements.sliderStartLabel = document.getElementById('slider-start-date-label');
+    elements.sliderCurrentLabel = document.getElementById('slider-current-date-label');
+    elements.sliderEndLabel = document.getElementById('slider-end-date-label');
+    elements.annuityInput = document.getElementById('annuity-input');
+    elements.annuityAnnual = document.getElementById('annuity-annual-equivalent');
+    elements.annuityResult = document.getElementById('annuity-result');
+    elements.annuityDisclaimer = document.getElementById('annuity-disclaimer');
+    elements.chartTooltip = document.getElementById('chart-tooltip');
+    elements.importFile = document.getElementById('import-file-input');
+
+    const currentYearEl = document.getElementById('current-year');
+    if (currentYearEl) {
+        currentYearEl.textContent = new Date().getFullYear();
+    }
+
+    const providerContainer = elements.providerSections;
+    if (providerContainer) {
+        Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
+    }
     document.addEventListener('click', (e) => {
         const button = e.target.closest('button[data-action]'); if (!button) return;
         const { action, provider, id } = button.dataset;
@@ -1094,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (action === 'delete-row') { const rowElement = button.closest('tr'); rowElement.className = 'fade-out'; rowElement.addEventListener('animationend', () => { state.rows[provider] = state.rows[provider].filter(r => r.id !== parseInt(id,10)); rowElement.remove(); scheduleRecalc(); saveState(); }); }
         if (action === 'delete-all') { if (confirm(`Opravdu chcete smazat všechny řádky pro ${PROVIDERS[provider]}?`)) { state.rows[provider] = []; renderProviderInputs(provider); scheduleRecalc(); saveState(); } }
         if (action === 'export-json') exportState();
-        if (action === 'import-json') document.getElementById('import-file-input').click();
+        if (action === 'import-json') elements.importFile?.click();
         if (action === 'add-sample') {
             const today = new Date().toISOString().split('T')[0];
             const SAMPLES = {
@@ -1108,41 +1207,44 @@ document.addEventListener('DOMContentLoaded', () => {
             renderProviderInputs(provider); scheduleRecalc(); showToast(`Ukázková data pro ${PROVIDERS[provider]} byla načtena.`); saveState();
         }
     });
-    document.getElementById('fx-rate').addEventListener('input', scheduleRecalc);
-    document.getElementById('out-curr').addEventListener('change', scheduleRecalc);
-    document.getElementById('annuity-input').addEventListener('input', calculateAnnuity);
-    const providerSections = document.getElementById('provider-sections');
-    providerSections.addEventListener('input', (e) => {
-        if (e.target.matches('input, select')) handleInputChange(e);
-    });
-    providerSections.addEventListener('focusout', (e) => {
-        if (e.target.isContentEditable) handleInputChange(e);
-        const key = e.target.dataset.key;
-        if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
-            const num = utils.numCZ(e.target.value);
-            if (isFinite(num)) {
-                e.target.value = fmt0.format(num);
-            } else {
-                e.target.value = '';
+    elements.fxRate?.addEventListener('input', scheduleRecalc);
+    elements.outCurrency?.addEventListener('change', scheduleRecalc);
+    elements.annuityInput?.addEventListener('input', calculateAnnuity);
+    const providerSections = elements.providerSections;
+    if (providerSections) {
+        providerSections.addEventListener('input', (e) => {
+            if (e.target.matches('input, select')) handleInputChange(e);
+        });
+        providerSections.addEventListener('focusout', (e) => {
+            if (e.target.isContentEditable) handleInputChange(e);
+            const key = e.target.dataset.key;
+            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+                const num = utils.numCZ(e.target.value);
+                if (isFinite(num)) {
+                    e.target.value = fmt0.format(num);
+                } else {
+                    e.target.value = '';
+                }
             }
-        }
-    });
-    providerSections.addEventListener('focusin', (e) => {
-        const key = e.target.dataset.key;
-        if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
-            const num = utils.numCZ(e.target.value);
-            if (isFinite(num)) {
-                e.target.value = num;
+        });
+        providerSections.addEventListener('focusin', (e) => {
+            const key = e.target.dataset.key;
+            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+                const num = utils.numCZ(e.target.value);
+                if (isFinite(num)) {
+                    e.target.value = num;
+                }
             }
-        }
-    });
-    document.getElementById('annuity-input').addEventListener('focusin', (e) => {
+        });
+        providerSections.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); } });
+    }
+    elements.annuityInput?.addEventListener('focusin', (e) => {
         const num = utils.numCZ(e.target.value);
         if (isFinite(num)) {
             e.target.value = num;
         }
     });
-    document.getElementById('annuity-input').addEventListener('focusout', (e) => {
+    elements.annuityInput?.addEventListener('focusout', (e) => {
         const num = utils.numCZ(e.target.value);
         if (isFinite(num)) {
             e.target.value = fmt0.format(num);
@@ -1150,10 +1252,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = '';
         }
     });
-    providerSections.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); } });
-    document.getElementById('import-file-input').addEventListener('change', (e) => { if (e.target.files.length > 0) { importState(e.target.files[0]); e.target.value = ''; } });
-    document.getElementById('pie-time-slider').addEventListener('input', updatePieChartFromSlider);
-    const tooltip = document.getElementById('chart-tooltip');
+    elements.importFile?.addEventListener('change', (e) => { if (e.target.files.length > 0) { importState(e.target.files[0]); e.target.value = ''; } });
+    elements.pieSlider?.addEventListener('input', updatePieChartFromSlider);
+    const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
     document.addEventListener('mousemove', e => {
         let newLeft = e.pageX + 15;
         let newTop = e.pageY + 15;
