@@ -799,7 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
 
-      const COLOR_PALETTE = ${JSON.stringify(CHART_COLORS)};
+      const COLOR_PALETTE = CHART_COLORS.slice();
       const colorMap = new Map();
       const colorFor = (name) => {
         if (!colorMap.has(name)) {
@@ -848,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const firstDate = deposits[0].date;
-        const futureEndDate = new Date('${CHART_END_YEAR}-12-31T00:00:00.000Z');
+        const futureEndDate = new Date(`${CHART_END_YEAR}-12-31T00:00:00.000Z`);
         const totalTimeSpan = futureEndDate - firstDate;
         if (!Number.isFinite(totalTimeSpan) || totalTimeSpan <= 0) return '';
 
@@ -880,7 +880,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
 
         const projectionPoints = [{ date: today, value: valueAtToday }];
-        for (let year = today.getFullYear() + 1; year <= ${CHART_END_YEAR}; year++) {
+        for (let year = today.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
           const date = new Date(year + '-12-31T00:00:00.000Z');
           const projectedValue = valueAtToday * Math.pow(1 + dailyRate, (date - today) / MS_PER_DAY);
           projectionPoints.push({ date, value: projectedValue });
@@ -899,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
           parts.push(`<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="rgba(148,163,184,0.25)" stroke-dasharray="2 3"></line>`);
           parts.push(`<text x="${margin.left - 10}" y="${y + 4}" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="end">${cellNum(value / 1000000, 1)} M</text>`);
         }
-        for (let year = firstDate.getFullYear(); year <= ${CHART_END_YEAR}; year += 2) {
+        for (let year = firstDate.getFullYear(); year <= CHART_END_YEAR; year += 2) {
           const date = new Date(year + '-01-01T00:00:00.000Z');
           const x = xScale(date);
           parts.push(`<text x="${x}" y="${height - 22}" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="middle">${year}</text>`);
@@ -1062,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const investDates = normalisedFunds.map((item) => item.dateIn).filter((d) => d instanceof Date && !Number.isNaN(d.valueOf()));
       const sliderStart = investDates.length ? investDates.reduce((earliest, date) => (date < earliest ? date : earliest)) : null;
       const sliderStartLabel = sliderStart ? sliderStart.toLocaleDateString('cs-CZ') : '—';
-      const sliderEndLabel = new Date('${CHART_END_YEAR}-12-31').toLocaleDateString('cs-CZ');
+      const sliderEndLabel = new Date(`${CHART_END_YEAR}-12-31`).toLocaleDateString('cs-CZ');
 
       const generatedAtLabel = (generatedAt instanceof Date && !Number.isNaN(generatedAt.valueOf())) ? generatedAt.toLocaleString('cs-CZ') : '—';
       const clientLabel = clientName || '—';
@@ -2109,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const firstDate = deposits[0].date;
-        const futureEndDate = new Date(`${CHART_END_YEAR}-12-31`);
+        const futureEndDate = new Date(CHART_END_YEAR + '-12-31');
         const totalTimeSpan = futureEndDate - firstDate;
         if (totalTimeSpan <= 0) {
           lineChartContainer.innerHTML = '<div class="disclosure">Projekci lze zobrazit pouze při delším časovém horizontu.</div>';
@@ -2143,7 +2143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const projectionPoints = [{ date: today, value: valueAtToday }];
         for (let year = today.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
-          const date = new Date(`${year}-12-31`);
+          const date = new Date(year + '-12-31');
           const projectedValue = valueAtToday * Math.pow(1 + dailyRate, (date - today) / MS_PER_DAY);
           projectionPoints.push({ date, value: projectedValue });
         }
@@ -2168,7 +2168,7 @@ document.addEventListener('DOMContentLoaded', () => {
           parts.push('<text x="' + (margin.left - 10) + '" y="' + (y + 4) + '" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="end">' + cellNum(value / 1000000, 1) + ' M</text>');
         }
         for (let year = firstDate.getFullYear(); year <= CHART_END_YEAR; year += 2) {
-          const date = new Date(`${year}-01-01`);
+          const date = new Date(year + '-01-01');
           const x = xScale(date);
           parts.push('<text x="' + x + '" y="' + (height - 22) + '" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="middle">' + year + '</text>');
         }
@@ -2299,7 +2299,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         const firstDate = sortedDates[0];
-        const endDate = new Date('${CHART_END_YEAR}-12-31');
+        const endDate = new Date(CHART_END_YEAR + '-12-31');
         pieSlider.min = firstDate.getTime();
         pieSlider.max = endDate.getTime();
         const sliderMax = Number(pieSlider.max);
@@ -2849,7 +2849,7 @@ document.addEventListener('DOMContentLoaded', () => {
     allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
     const projectionPoints = [{ date: today, value: valueAtToday }];
     for (let year = today.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
-      const nextDate = new Date(`${year}-12-31`);
+      const nextDate = new Date(year + '-12-31');
       const daysFromToday = (nextDate - today) / MS_PER_DAY;
       const projectedValue = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
       projectionPoints.push({ date: nextDate, value: projectedValue });
@@ -2878,7 +2878,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     for (let year = firstDate.getFullYear(); year <= CHART_END_YEAR; year+=2) {
       if(year < firstDate.getFullYear()) continue;
-      const date = new Date(`${year}-01-01`);
+      const date = new Date(year + '-01-01');
       const x = xScale(date);
       innerHTML += `<text class="line-chart-axis-text" x="${x}" y="${height - 25}" text-anchor="middle">${year}</text>`;
     }
@@ -2940,7 +2940,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (endOfYear > today) {
             fixedTooltipPoints.push({ date: endOfYear, label: endOfYear.getFullYear().toString() });
         }
-        for (let year = today.getFullYear() + 3; year <= ${CHART_END_YEAR}; year += 3) {
+        for (let year = today.getFullYear() + 3; year <= CHART_END_YEAR; year += 3) {
             const date = new Date(year, 11, 31);
             if (date <= futureEndDate) {
                 fixedTooltipPoints.push({ date, label: year.toString() });
