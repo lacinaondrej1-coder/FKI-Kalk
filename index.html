@@ -725,6 +725,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const fundsRaw = Array.isArray(payload?.funds) ? payload.funds : [];
       const clientName = typeof payload?.clientName === 'string' && payload.clientName.trim() ? payload.clientName.trim() : (payload?.meta && typeof payload.meta.clientName === 'string' ? payload.meta.clientName.trim() : '');
       const generatedAt = payload?.generatedAt ? new Date(payload.generatedAt) : null;
+      const PROVIDERS = [
+        ['avant', 'AVANT'],
+        ['codya', 'CODYA'],
+        ['atris', 'ATRIS'],
+        ['jt', 'J&T']
+      ];
 
       const nf = (d) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d });
       const fmt0 = nf(0);
@@ -743,6 +749,11 @@ document.addEventListener('DOMContentLoaded', () => {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      const escapeAttr = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
       const toDate = (value) => {
@@ -1044,6 +1055,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const fundsMarkup = fundGroups.length ? fundGroups.map(buildFundCard).join('') : '<div class="disclosure">Nejsou k dispozici žádná data pro výpočet.</div>';
 
+      const buildHiddenProviderRows = (rows) => {
+        if (!rows || typeof rows !== 'object') return '';
+        const sections = PROVIDERS.map(([key, label]) => {
+          const providerRows = Array.isArray(rows[key]) ? rows[key] : [];
+          if (!providerRows.length) return '';
+          const tableRows = providerRows.map((row, index) => {
+            const fields = ['fund', 'invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'totalCurrent', 'currDate', 'curr'];
+            const cells = fields.map((field) => {
+              const rawValue = row && Object.prototype.hasOwnProperty.call(row, field) ? row[field] : '';
+              const normalised = (rawValue === null || rawValue === undefined) ? '' : rawValue;
+              return `<td data-field="${field}" data-value="${escapeAttr(normalised)}">${escapeHtml(normalised)}</td>`;
+            }).join('');
+            return `<tr data-row-index="${index}">${cells}</tr>`;
+          }).join('');
+          return `<div data-provider-section="${key}"><h3>${escapeHtml(label)}</h3><table data-provider="${key}"><tbody>${tableRows}</tbody></table></div>`;
+        }).filter(Boolean).join('');
+        if (!sections) return '';
+        return `<section id="presentation-input-rows" aria-hidden="true" style="display:none;">${sections}</section>`;
+      };
+
       const pnlStyle = Number.isFinite(summary.totalPnl) ? ` style="color:${summary.totalPnl >= 0 ? '#34d399' : '#f87171'};"` : '';
       const retStyle = Number.isFinite(summary.totalRet) ? ` style="color:${summary.totalRet >= 0 ? '#34d399' : '#f87171'};"` : '';
       const irrStyle = Number.isFinite(summary.portfolioIrr) ? ` style="color:${summary.portfolioIrr >= 0 ? '#34d399' : '#f87171'};"` : '';
@@ -1084,6 +1115,8 @@ document.addEventListener('DOMContentLoaded', () => {
           .replace(/</g, '\u003c')
           .replace(/>/g, '\u003e')
           .replace(/<\/script/gi, '<\/script');
+      const hiddenRowsMarkup = buildHiddenProviderRows(payload?.rows);
+
       let html = String.raw`<!doctype html>
 <html lang="cs">
 <head>
@@ -1507,6 +1540,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </section>
     </main>
   </div>
+  ${hiddenRowsMarkup}
   <div id="chart-tooltip"></div>
   <script type="application/json" id="export-data">${serialized}<\/script>
   <script>
@@ -1534,7 +1568,37 @@ document.addEventListener('DOMContentLoaded', () => {
       const outCurr = data.outCurr || 'CZK';
       const fxRate = data.fxRate;
       let hasMixedCurrencies = typeof data.hasMixedCurrencies === 'boolean' ? data.hasMixedCurrencies : null;
-      const rawRows = data.rows || null;
+
+      const extractRowsFromDom = (root) => {
+        const result = {};
+        if (!root) return result;
+        root.querySelectorAll('[data-provider]').forEach((table) => {
+          const providerKey = table.getAttribute('data-provider');
+          if (!providerKey) return;
+          const rows = [];
+          table.querySelectorAll('tbody > tr').forEach((tr) => {
+            const row = {};
+            tr.querySelectorAll('[data-field]').forEach((cell) => {
+              const field = cell.getAttribute('data-field');
+              if (!field) return;
+              const value = cell.getAttribute('data-value');
+              row[field] = value != null ? value : cell.textContent || '';
+            });
+            rows.push(row);
+          });
+          result[providerKey] = rows;
+        });
+        return result;
+      };
+
+      const hiddenRowsRoot = document.getElementById('presentation-input-rows');
+      let rawRows = (data && typeof data.rows === 'object') ? data.rows : null;
+      if (!rawRows || !Object.keys(rawRows).length) {
+        const extracted = extractRowsFromDom(hiddenRowsRoot);
+        if (Object.keys(extracted).length) {
+          rawRows = extracted;
+        }
+      }
       const coerceSummaryNumbers = () => {
         if (!summary || typeof summary !== 'object') return;
         ['totalInvestConverted', 'totalCurrentConverted', 'totalPnl', 'totalRet', 'portfolioIrr', 'weightedAvgMonths'].forEach((key) => {
