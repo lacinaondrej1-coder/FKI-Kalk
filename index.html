@@ -10,20 +10,20 @@
 
     :root {
         color-scheme: light;
-        --surface: rgba(248, 250, 252, 0.88);
-        --surface-muted: rgba(241, 245, 249, 0.65);
-        --border: rgba(148, 163, 184, 0.32);
-        --border-strong: rgba(148, 163, 184, 0.55);
-        --accent: #3b82f6;
-        --accent-strong: #2563eb;
-        --accent-soft: rgba(59, 130, 246, 0.14);
+        --surface: #ffffff;
+        --surface-muted: #f1f5f9;
+        --border: rgba(15, 118, 110, 0.12);
+        --border-strong: rgba(15, 118, 110, 0.24);
+        --accent: #14b8a6;
+        --accent-strong: #0f766e;
+        --accent-soft: rgba(20, 184, 166, 0.16);
     }
 
     html,body{
         font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
         scroll-behavior: smooth;
         min-height: 100%;
-        background: radial-gradient(circle at top left, #1e3a8a 0%, #0f172a 55%, #111827 100%);
+        background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
     }
     .tabular{ font-variant-numeric: tabular-nums; }
     button:disabled{ opacity: .5; cursor: not-allowed; }
@@ -74,13 +74,13 @@
     .toast {
         display: flex;
         align-items: center;
-        padding: 1rem 1.25rem;
-        border-radius: 0.9rem;
-        box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.35);
-        backdrop-filter: blur(16px);
+        gap: 0.6rem;
+        padding: 0.875rem 1.2rem;
+        border-radius: 0.875rem;
+        box-shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.35);
         border: 1px solid var(--border);
-        background-color: rgba(15, 23, 42, 0.85);
-        color: #e2e8f0;
+        background-color: #ffffff;
+        color: #0f172a;
         opacity: 0;
         transform: translateX(100%);
         transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1);
@@ -89,8 +89,8 @@
         opacity: 1;
         transform: translateX(0);
     }
-    .toast-success { background-color: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.45); color: #bbf7d0; }
-    .toast-error { background-color: rgba(239, 68, 68, 0.12); border: 1px solid rgba(248, 113, 113, 0.5); color: #fecaca; }
+    .toast-success { background-color: rgba(20, 184, 166, 0.12); border-color: rgba(20, 184, 166, 0.3); color: #047857; }
+    .toast-error { background-color: rgba(248, 113, 113, 0.14); border-color: rgba(239, 68, 68, 0.35); color: #b91c1c; }
 
     /* Interactive Chart Styles */
     #chart-tooltip {
@@ -116,16 +116,15 @@
     .card {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 1.5rem;
-        box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.35);
-        backdrop-filter: blur(18px);
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        border-radius: 1.25rem;
+        box-shadow: 0 15px 40px -25px rgba(15, 23, 42, 0.5);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         color: #0f172a;
     }
 
     .card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 35px 65px -18px rgb(15 23 42 / 0.45);
+        transform: translateY(-2px);
+        box-shadow: 0 20px 45px -25px rgba(15, 23, 42, 0.5);
         border-color: var(--border-strong);
     }
 
@@ -142,53 +141,53 @@
         font-size: 0.8rem;
         background: var(--accent-soft);
         color: var(--accent-strong);
-        border: 1px solid rgba(59, 130, 246, 0.25);
+        border: 1px solid rgba(20, 184, 166, 0.3);
     }
 
     .glass-input {
-        background: rgba(255, 255, 255, 0.82);
+        background: rgba(255, 255, 255, 0.92);
         border-color: rgba(148, 163, 184, 0.35);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .glass-input:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+        box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.18);
     }
 
     .primary-btn {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
         color: #f8fafc;
         border: none;
-        box-shadow: 0 15px 30px -12px rgba(37, 99, 235, 0.45);
+        box-shadow: 0 18px 35px -20px rgba(15, 118, 110, 0.6);
     }
 
     .secondary-btn {
-        background: rgba(148, 163, 184, 0.15);
+        background: rgba(45, 212, 191, 0.12);
         color: #0f172a;
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        border: 1px solid rgba(45, 212, 191, 0.25);
     }
 
     .secondary-btn:hover {
-        border-color: rgba(148, 163, 184, 0.55);
-        background: rgba(148, 163, 184, 0.2);
+        border-color: rgba(45, 212, 191, 0.35);
+        background: rgba(45, 212, 191, 0.18);
     }
 
     .primary-btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 20px 35px -18px rgba(37, 99, 235, 0.55);
+        box-shadow: 0 22px 45px -20px rgba(15, 118, 110, 0.55);
     }
 
     .danger-btn {
-        background: rgba(248, 113, 113, 0.14);
+        background: rgba(248, 113, 113, 0.12);
         color: #b91c1c;
-        border: 1px solid rgba(248, 113, 113, 0.35);
+        border: 1px solid rgba(248, 113, 113, 0.3);
         transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
 
     .danger-btn:hover {
         background: rgba(248, 113, 113, 0.22);
-        border-color: rgba(239, 68, 68, 0.55);
+        border-color: rgba(239, 68, 68, 0.45);
         color: #991b1b;
     }
 
@@ -198,32 +197,27 @@
 
     .gradient-divider {
         height: 1px;
-        background: linear-gradient(90deg, rgba(59, 130, 246, 0), rgba(59, 130, 246, 0.45), rgba(59, 130, 246, 0));
+        background: linear-gradient(90deg, rgba(45, 212, 191, 0), rgba(45, 212, 191, 0.45), rgba(45, 212, 191, 0));
     }
 
   </style>
 </head>
-<body class="antialiased text-slate-100">
-  <header class="relative overflow-hidden">
-    <div class="absolute inset-0">
-      <div class="absolute inset-0 bg-gradient-to-br from-sky-500/25 via-blue-600/25 to-indigo-700/35"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(125,211,252,0.55)_0%,_rgba(15,23,42,0)_65%)]"></div>
-      <div class="absolute inset-0 opacity-60" style="background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); mix-blend-mode: soft-light;"></div>
-    </div>
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+<body class="antialiased text-slate-800">
+  <header class="bg-gradient-to-b from-teal-50 via-white to-white border-b border-teal-100/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
         <div class="flex items-start gap-6">
-          <div class="p-4 rounded-3xl border border-white/25 bg-white/10 backdrop-blur-lg shadow-lg shadow-sky-900/30">
-            <svg class="h-14 w-14 text-white" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div class="p-4 rounded-3xl bg-white border border-teal-100 shadow-md shadow-teal-100/70">
+            <svg class="h-14 w-14 text-teal-500" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 23.25C9 15.6487 15.1487 9.5 22.75 9.5C30.3513 9.5 36.5 15.6487 36.5 23.25C36.5 30.8513 30.3513 37 22.75 37H12.5C10.8431 37 9.5 35.6569 9.5 34V23.25Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M16 24.5L21.125 29L31 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <div class="space-y-5">
             <span class="pill">Report investičního portfolia</span>
-            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-white section-title">Moderní přehled vašeho finančního světa</h1>
-            <p class="text-slate-200/85 max-w-2xl text-base leading-relaxed">Sledujte výkonnost fondů, analyzujte cashflow a prezentujte výsledky klientům v jednom elegantním a interaktivním rozhraní.</p>
-            <div class="flex flex-wrap gap-3 text-xs sm:text-sm text-slate-200/70">
+            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 section-title">Moderní přehled vašeho finančního světa</h1>
+            <p class="text-slate-600 max-w-2xl text-base leading-relaxed">Sledujte výkonnost fondů, analyzujte cashflow a prezentujte výsledky klientům v jednom elegantním a interaktivním rozhraní.</p>
+            <div class="flex flex-wrap gap-3 text-xs sm:text-sm text-slate-500">
               <span>© <span id="current-year"></span> Ondřej Lacina.</span>
               <span>Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb.</span>
               <span>Šíření mimo strukturu Fair-life je zakázáno.</span>
@@ -231,13 +225,13 @@
           </div>
         </div>
         <div class="grid gap-4 w-full sm:grid-cols-2 lg:w-[360px]">
-          <div class="rounded-2xl border border-white/25 bg-white/10 backdrop-blur p-5 shadow-lg shadow-blue-900/25">
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-200/70">Interaktivní řízení</p>
-            <p class="text-lg font-semibold text-white mt-2">Import, export &amp; validace dat v reálném čase</p>
+          <div class="rounded-2xl border border-teal-100 bg-white p-5 shadow-sm shadow-teal-100/60">
+            <p class="text-xs uppercase tracking-[0.2em] text-teal-500/80">Interaktivní řízení</p>
+            <p class="text-lg font-semibold text-slate-900 mt-2">Import, export &amp; validace dat v reálném čase</p>
           </div>
-          <div class="rounded-2xl border border-white/25 bg-white/10 backdrop-blur p-5 shadow-lg shadow-blue-900/25">
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-200/70">Pokročilé analýzy</p>
-            <p class="text-lg font-semibold text-white mt-2">XIRR, projekce výnosů a vizualizace portfolia</p>
+          <div class="rounded-2xl border border-teal-100 bg-white p-5 shadow-sm shadow-teal-100/60">
+            <p class="text-xs uppercase tracking-[0.2em] text-teal-500/80">Pokročilé analýzy</p>
+            <p class="text-lg font-semibold text-slate-900 mt-2">XIRR, projekce výnosů a vizualizace portfolia</p>
           </div>
         </div>
       </div>
@@ -245,7 +239,7 @@
   </header>
 
   <!-- Tooltip for charts -->
-  <div id="chart-tooltip" class="absolute hidden z-20 px-3 py-2 text-sm font-medium text-slate-100 bg-slate-900/95 border border-white/10 rounded-xl shadow-2xl backdrop-blur"></div>
+  <div id="chart-tooltip" class="absolute hidden z-20 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-teal-100 rounded-xl shadow-lg"></div>
 
   <!-- Toast container for notifications -->
   <div id="toast-container"></div>
@@ -305,11 +299,11 @@
         <div class="space-y-3">
           <span class="pill">Vstupní data</span>
           <div class="space-y-2">
-            <h2 class="text-2xl font-semibold tracking-tight text-white">Správa poskytovatelů a transakcí</h2>
-            <p class="text-sm text-slate-200/80 max-w-3xl">Importujte nebo přepisujte data jednotlivých platforem, kontrolujte jejich konzistenci a sledujte výsledky okamžitě po zadání.</p>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Správa poskytovatelů a transakcí</h2>
+            <p class="text-sm text-slate-600 max-w-3xl">Importujte nebo přepisujte data jednotlivých platforem, kontrolujte jejich konzistenci a sledujte výsledky okamžitě po zadání.</p>
           </div>
         </div>
-        <div id="provider-sections" class="grid gap-6 xl:grid-cols-2"></div>
+        <div id="provider-sections" class="flex flex-col gap-6"></div>
       </section>
 
       <div class="gradient-divider"></div>
@@ -356,10 +350,10 @@
           </div>
           <div id="pie-chart-container" class="max-w-xl w-full mx-auto mt-6"></div>
            <div class="mt-6">
-               <input type="range" id="pie-time-slider" class="w-full accent-sky-500">
+               <input type="range" id="pie-time-slider" class="w-full accent-teal-500">
                <div class="flex justify-between text-xs text-slate-500 mt-2">
                    <span id="slider-start-date-label"></span>
-                   <span id="slider-current-date-label" class="font-semibold text-sky-600"></span>
+                   <span id="slider-current-date-label" class="font-semibold text-teal-600"></span>
                    <span id="slider-end-date-label"></span>
                </div>
           </div>
@@ -381,7 +375,7 @@
             </label>
             <div id="annuity-annual-equivalent" class="text-sm text-slate-500"></div>
         </div>
-        <div id="annuity-result" class="mt-5 text-sm text-slate-900 bg-sky-50/70 border border-sky-200/70 rounded-xl p-5" style="display: none;"></div>
+        <div id="annuity-result" class="mt-5 text-sm text-slate-900 bg-teal-50 border border-teal-100 rounded-xl p-5" style="display: none;"></div>
         <p id="annuity-disclaimer" class="mt-3 text-xs text-slate-500/90 italic" style="display: none;">
           *Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.
         </p>
@@ -439,8 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const PROVIDERS = { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' };
   const CHART_COLORS = [
-      '#38bdf8', '#34d399', '#f59e0b', '#f43f5e', '#a78bfa', '#14b8a6', '#ec4899',
-      '#84cc16', '#eab308', '#ef4444', '#8b5cf6', '#06b6d4', '#d946ef', '#f97316'
+      '#0f766e', '#14b8a6', '#f97316', '#fbbf24', '#ec4899', '#6366f1', '#0ea5e9',
+      '#10b981', '#22d3ee', '#fb7185', '#a855f7', '#84cc16', '#facc15', '#f472b6'
   ];
   const getColor = (fundName) => {
       if (!state.fundColorMap[fundName]) {
@@ -506,11 +500,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const isAtris = providerKey === 'atris';
       let specialTooltip = '';
       if(isAtris) {
-          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sky-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-slate-900/95 text-slate-100 text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-slate-700/70 shadow-xl">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
+          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-teal-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-white text-slate-600 text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-teal-100 shadow-lg">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
       }
       const section = document.createElement('section');
       section.className = 'card p-7 sm:p-8 space-y-6';
-      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-slate-900 flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-slate-500">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-slate-200/60 bg-white/70"><table class="w-full text-sm border-separate border-spacing-x-2 text-slate-600"><thead><tr class="text-xs uppercase tracking-[0.18em] text-slate-400"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-slate-200/70">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-slate-200/70">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-slate-900 flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-slate-500">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-teal-100/80 bg-white/80"><table class="w-full text-sm border-separate border-spacing-x-2 text-slate-600"><thead><tr class="text-xs uppercase tracking-[0.18em] text-slate-400"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-slate-200/70">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-slate-200/70">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
       return section;
   };
   const createInputRow = (providerKey, rowData) => {
@@ -523,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nameWrap.className = 'relative flex items-center';
       const nameDiv = document.createElement('div');
       nameDiv.contentEditable = true;
-      nameDiv.className = 'editable flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-slate-200/70 bg-white focus:border-sky-500 focus:ring-1 focus:ring-sky-400 shadow-sm';
+      nameDiv.className = 'editable flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-slate-200/70 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-400 shadow-sm';
       nameDiv.textContent = rowData.fund || '';
       nameDiv.dataset.ph = 'Název fondu...';
       nameDiv.dataset.key = 'fund';
@@ -533,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const createInput = (key, type, extraClass = '') => {
           const input = document.createElement('input');
           input.type = type;
-          input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full focus:border-sky-500 focus:ring-1 focus:ring-sky-400 transition-all text-slate-900 placeholder:text-slate-400 ${extraClass}`;
+          input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full focus:border-teal-500 focus:ring-1 focus:ring-teal-400 transition-all text-slate-900 placeholder:text-slate-400 ${extraClass}`;
           let displayValue = rowData[key] || '';
           if (['invest', 'totalCurrent'].includes(key)) {
               const num = utils.numCZ(displayValue);
@@ -548,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const createSelect = (key) => {
           const select = document.createElement('select');
-          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-slate-900 focus:border-sky-500 focus:ring-1 focus:ring-sky-400';
+          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-400';
           select.dataset.key = key;
           ['CZK', 'EUR'].forEach(c => {
               const option = document.createElement('option');
@@ -674,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusContainer = elements.statusContainer || document.getElementById('status-container');
     if (statusContainer) {
     if (hasMixedCurrencies && !isFinite(fxRate)) {
-        statusContainer.innerHTML = `<div class="card bg-sky-50/80 border border-sky-200/70 p-5 text-sm text-slate-800"><strong class="text-slate-900">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
+        statusContainer.innerHTML = `<div class="rounded-2xl border border-teal-100 bg-teal-50 p-5 text-sm text-teal-900/80 shadow-sm"><strong class="text-teal-900">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
     } else {
         statusContainer.innerHTML = '';
     }
@@ -972,14 +966,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = yScale(runningValueForDots);
             let tooltipText = '';
             if (dayData.dailyDeposits.length > 1) {
-            tooltipText = `<div class="font-bold text-slate-100">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
-                    dayData.dailyDeposits.map(d => `<div class="text-sm text-slate-200/80">${d.fund}: ${cellNum(d.amount, 0)} ${outCurr}</div>`).join('');
+            tooltipText = `<div class="font-bold text-slate-800">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
+                    dayData.dailyDeposits.map(d => `<div class="text-sm text-slate-600">${d.fund}: ${cellNum(d.amount, 0)} ${outCurr}</div>`).join('');
             } else {
                 const d = dayData.dailyDeposits[0];
-                tooltipText = `<div class="text-slate-100">Vklad (${d.fund}): ${cellNum(d.amount, 0)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
+                tooltipText = `<div class="text-slate-700">Vklad (${d.fund}): ${cellNum(d.amount, 0)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
             }
             const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
-            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#0ea5e9" data-tooltip-text='${escapedTooltipText}'></circle>`;
+            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#14b8a6" data-tooltip-text='${escapedTooltipText}'></circle>`;
             snapPoints.push({
                 x,
                 y,
@@ -991,8 +985,8 @@ document.addEventListener('DOMContentLoaded', () => {
             lastDateForDots = dayData.date;
         });
     }
-    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#3b82f6" stroke-width="1.5"></line>`;
-    innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#3b82f6" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
+    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0f766e" stroke-width="1.5"></line>`;
+    innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0f766e" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
     innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#10b981"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#10b981" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="#9ca3af" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
     if (options.isForPdf) {
         const fixedTooltipPoints = [ { date: today, label: 'Dnes' } ];
@@ -1012,7 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const x = xScale(point.date);
             const y = yScale(value);
             innerHTML += `<g transform="translate(${x}, ${y})">
-                <circle r="5" fill="#3b82f6" stroke="white" stroke-width="2"></circle>
+                <circle r="5" fill="#0f766e" stroke="white" stroke-width="2"></circle>
                 <rect x="-40" y="-35" width="80" height="20" rx="5" fill="rgba(255,255,255,0.8)"></rect>
                 <text text-anchor="middle" y="-20" font-size="10px" fill="#1f2937">
                     <tspan x="0" dy="0">${point.label}: ${cellNum(value, 0)}</tspan>
@@ -1058,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalDate = closestSnapPoint.date;
                 finalValue = closestSnapPoint.value;
                 if (closestSnapPoint.isToday) {
-                    tooltipText = `<div class="font-bold text-slate-100">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-200/80">Dopočítaná hodnota: ${cellNum(finalValue, 0)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-slate-800">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-600">Dopočítaná hodnota: ${cellNum(finalValue, 0)} ${outCurr}</div>`;
                 } else {
                     tooltipText = closestSnapPoint.tooltipText;
                 }
@@ -1074,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalValue = allPoints[allPoints.length-1].value;
                 }
                 finalY = yScale(finalValue);
-                tooltipText = `<div class="font-bold text-slate-100">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-200/80">${cellNum(finalValue, 0)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-slate-800">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-600">${cellNum(finalValue, 0)} ${outCurr}</div>`;
             }
             guideLine.setAttribute('x1', finalX);
             guideLine.setAttribute('y1', finalY);
@@ -1454,7 +1448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const segment = e.target.closest('.pie-segment');
         const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
         if (segment) {
-            tooltip.innerHTML = `<div class="font-bold text-slate-100">${segment.dataset.name}</div><div class="text-slate-200/80">${segment.dataset.value} (${segment.dataset.percent})</div>`;
+            tooltip.innerHTML = `<div class="font-bold text-slate-800">${segment.dataset.name}</div><div class="text-slate-600">${segment.dataset.value} (${segment.dataset.percent})</div>`;
             tooltip.classList.remove('hidden');
         } else if (dot && dot.dataset.tooltipText) {
             tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"');
