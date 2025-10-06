@@ -967,7 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const buildClientPresentationHTML = (payload) => {
-      const SCRIPT_END = '</scr' + 'ipt>';
+      const SCRIPT_PLACEHOLDER = '__SCRIPT_END__';
       const summary = payload.summary || {};
       const presentation = payload.presentation || { fundsView: [], pieData: [], lineChart: null };
       const outCurr = payload.outCurr || 'CZK';
@@ -1080,13 +1080,13 @@ document.addEventListener('DOMContentLoaded', () => {
           .replace(/\$\{/g, '\u0024{')
           .replace(/<\/script/gi, '<\\/script');
 
-      return `<!doctype html>
+      const html = `<!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Prezentace portfolia – ${escapeHtml(payload.meta?.clientName || 'Klient')}</title>
-  <script src="https://cdn.tailwindcss.com">${SCRIPT_END}
+  <script src="https://cdn.tailwindcss.com">${SCRIPT_PLACEHOLDER}
   <style>
     :root {
       color-scheme: light;
@@ -1238,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     © ${new Date().getFullYear()} FairLife. Report je určen výhradně pro potřeby klienta a obsahuje důvěrné informace o investicích.
   </footer>
 
-  <script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};${SCRIPT_END}
+  <script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};${SCRIPT_PLACEHOLDER}
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const data = window.__PRESENTATION_DATA__ || {};
@@ -1435,9 +1435,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLineChart();
       });
     });
-  ${SCRIPT_END}
+  ${SCRIPT_PLACEHOLDER}
 </body>
 </html>`;
+      return html.replaceAll(SCRIPT_PLACEHOLDER, '</scr' + 'ipt>');
   };
   const createProviderSection = (providerKey) => {
       const providerName = PROVIDERS[providerKey];
