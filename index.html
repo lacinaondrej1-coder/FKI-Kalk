@@ -589,13 +589,25 @@ document.addEventListener('DOMContentLoaded', () => {
           if (elements.clientNameInput) {
               elements.clientNameInput.value = exportedName;
           }
+          const exportedCurrency = typeof presentationData.outCurr === 'string' ? presentationData.outCurr : null;
+          if (elements.outCurrency && exportedCurrency) {
+              elements.outCurrency.value = exportedCurrency;
+          }
+          const exportedFx = presentationData.fxRate;
+          if (elements.fxRate) {
+              if (isFinite(exportedFx)) {
+                  elements.fxRate.value = fmt4.format(exportedFx);
+              } else {
+                  elements.fxRate.value = '';
+              }
+          }
           renderAllInputs();
-          scheduleRecalc();
+          performFullRecalc();
           return;
       }
       if (isClientMode) {
           renderAllInputs();
-          scheduleRecalc();
+          performFullRecalc();
           return;
       }
       let restored = false;
@@ -1394,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             guideCircle.setAttribute('cy', finalY);
             guideLine.style.opacity = 1;
             guideCircle.style.opacity = 1;
-            const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+            const tooltip = elements.chartTooltip;
             if (tooltip) {
                 tooltip.innerHTML = tooltipText;
                 tooltip.classList.remove('hidden');
@@ -1403,7 +1415,7 @@ document.addEventListener('DOMContentLoaded', () => {
         interactionLayer.addEventListener('mouseout', () => {
             guideLine.style.opacity = 0;
             guideCircle.style.opacity = 0;
-            const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+            const tooltip = elements.chartTooltip;
             tooltip?.classList.add('hidden');
         });
     }
@@ -1689,6 +1701,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const providerContainer = elements.providerSections;
     if (providerContainer) {
+        providerContainer.innerHTML = '';
         Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
     }
     document.addEventListener('click', (e) => {
@@ -1772,8 +1785,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     elements.importFile?.addEventListener('change', (e) => { if (e.target.files.length > 0) { importState(e.target.files[0]); e.target.value = ''; } });
     elements.pieSlider?.addEventListener('input', updatePieChartFromSlider);
-    const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+    let tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'chart-tooltip';
+        tooltip.className = 'absolute hidden z-20 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-teal-100 rounded-xl shadow-lg';
+        document.body.appendChild(tooltip);
+    }
+    elements.chartTooltip = tooltip;
     document.addEventListener('mousemove', e => {
+        if (!tooltip) return;
         let newLeft = e.pageX + 15;
         let newTop = e.pageY + 15;
         if (tooltip.offsetWidth && newLeft + tooltip.offsetWidth > window.innerWidth) {
@@ -1783,6 +1804,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tooltip.style.top = `${newTop}px`;
     });
     document.addEventListener('mouseover', e => {
+        if (!tooltip) return;
         const segment = e.target.closest('.pie-segment');
         const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
         if (segment) {
@@ -1793,7 +1815,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltip.classList.remove('hidden');
         }
     });
-    document.addEventListener('mouseout', e => { if(e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) { tooltip.classList.add('hidden'); } });
+    document.addEventListener('mouseout', e => {
+        if (!tooltip) return;
+        if (e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) {
+            tooltip.classList.add('hidden');
+        }
+    });
     window.addEventListener('beforeunload', () => saveState(true));
     loadState();
   };
