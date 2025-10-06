@@ -2152,6 +2152,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const yMax = Math.ceil((maxValue || 100000) / 100000) * 100000;
         const xScale = (date) => margin.left + ((date - firstDate) / totalTimeSpan) * boundedWidth;
         const yScale = (value) => margin.top + boundedHeight - (value / yMax) * boundedHeight;
+        const xToDate = (x) => {
+          const clamped = Math.min(Math.max(x, margin.left), margin.left + boundedWidth);
+          const ratio = (clamped - margin.left) / boundedWidth;
+          return new Date(firstDate.getTime() + ratio * totalTimeSpan);
+        };
 
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', width);
@@ -2186,7 +2191,14 @@ document.addEventListener('DOMContentLoaded', () => {
         parts.push('<line x1="' + xToday + '" y1="' + margin.top + '" x2="' + xToday + '" y2="' + (height - margin.bottom) + '" stroke="#38bdf8" stroke-width="1.5"></line>');
         parts.push('<circle cx="' + xToday + '" cy="' + yToday + '" r="5" fill="#38bdf8" stroke="#0f172a" stroke-width="2" data-tooltip-text="Dopočítaná hodnota: ' + cellNum(valueAtToday, 0) + ' ' + outCurr + '"></circle>');
 
-        const snapPoints = [{ x: xToday, y: yToday, date: today, value: valueAtToday, tooltip: '<div><strong>Dnes</strong></div><div>Hodnota: ' + cellNum(valueAtToday, 0) + ' ' + outCurr + '</div>' }];
+        const snapPoints = [{
+          x: xToday,
+          y: yToday,
+          date: today,
+          value: valueAtToday,
+          isToday: true,
+          tooltip: '<div><strong>Dnes</strong></div><div>Hodnota: ' + cellNum(valueAtToday, 0) + ' ' + outCurr + '</div>'
+        }];
         const depositsByDay = deposits.reduce((acc, deposit) => {
           const key = deposit.date.toISOString().split('T')[0];
           if (!acc[key]) acc[key] = { date: deposit.date, entries: [] };
@@ -2213,7 +2225,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltipText = '<div><strong>' + entry.fund + '</strong></div><div>Vklad: ' + cellNum(entry.amount, 0) + ' ' + outCurr + '</div><div>' + formatDate(day.date) + '</div>';
           }
           parts.push('<circle class="line-chart-dot" cx="' + x + '" cy="' + y + '" r="4" fill="#38bdf8" data-tooltip-text="' + tooltipText.replace(/"/g, '&quot;') + '"></circle>');
-          snapPoints.push({ x, y, tooltip: tooltipText });
+          snapPoints.push({
+            x,
+            y,
+            date: day.date,
+            value: runningValueForDots,
+            tooltip: tooltipText
+          });
           lastDateForDots = day.date;
         });
 
@@ -2240,11 +2258,14 @@ document.addEventListener('DOMContentLoaded', () => {
         svg.appendChild(guideCircle);
         svg.appendChild(interactionLayer);
 
+        const timelinePoints = [...historicalPoints, ...projectionPoints];
+
         interactionLayer.addEventListener('mousemove', (event) => {
           const rect = svg.getBoundingClientRect();
           const mouseX = event.clientX - rect.left;
+          const snapThreshold = 18;
           let closest = null;
-          let minDistance = 30;
+          let minDistance = snapThreshold;
           snapPoints.forEach((point) => {
             const distance = Math.abs(mouseX - point.x);
             if (distance < minDistance) {
@@ -2252,16 +2273,48 @@ document.addEventListener('DOMContentLoaded', () => {
               closest = point;
             }
           });
+
+          let finalX = mouseX;
+          let finalY = null;
+          let tooltipContent = '';
+
           if (closest) {
-            guideLine.setAttribute('x1', closest.x);
-            guideLine.setAttribute('x2', closest.x);
+            finalX = closest.x;
+            finalY = closest.y;
+            tooltipContent = closest.tooltip;
+          } else {
+            const targetDate = xToDate(mouseX);
+            let prevPoint = timelinePoints[0];
+            let nextPoint = timelinePoints[timelinePoints.length - 1];
+            for (let i = 1; i < timelinePoints.length; i += 1) {
+              if (timelinePoints[i].date >= targetDate) {
+                nextPoint = timelinePoints[i];
+                prevPoint = timelinePoints[i - 1] || timelinePoints[i];
+                break;
+              }
+            }
+            const totalSpan = nextPoint.date - prevPoint.date;
+            let interpolatedValue = nextPoint.value;
+            if (totalSpan > 0) {
+              const position = (targetDate - prevPoint.date) / totalSpan;
+              interpolatedValue = prevPoint.value + position * (nextPoint.value - prevPoint.value);
+            }
+            finalY = yScale(interpolatedValue);
+            finalX = xScale(targetDate);
+            tooltipContent = '<div><strong>' + formatDate(targetDate) + '</strong></div>' +
+              '<div>Hodnota: ' + cellNum(interpolatedValue, 0) + ' ' + outCurr + '</div>';
+          }
+
+          if (finalY !== null) {
+            guideLine.setAttribute('x1', finalX);
+            guideLine.setAttribute('x2', finalX);
             guideLine.setAttribute('y1', margin.top);
             guideLine.setAttribute('y2', height - margin.bottom);
-            guideCircle.setAttribute('cx', closest.x);
-            guideCircle.setAttribute('cy', closest.y);
+            guideCircle.setAttribute('cx', finalX);
+            guideCircle.setAttribute('cy', finalY);
             guideLine.style.opacity = 1;
             guideCircle.style.opacity = 1;
-            showTooltip(closest.tooltip);
+            showTooltip(tooltipContent);
           }
         });
         interactionLayer.addEventListener('mouseleave', () => {
@@ -2316,25 +2369,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentDate = new Date(parseInt(pieSlider.value, 10));
         if (pieCurrent) pieCurrent.textContent = formatDate(currentDate);
 
-        const grouped = {};
-        funds.forEach((item) => {
-          if (item.dateIn && item.dateIn <= currentDate) {
-            if (!grouped[item.fund]) {
-              grouped[item.fund] = [];
-            }
-            grouped[item.fund].push(item);
+        const grouped = funds.reduce((acc, item) => {
+          if (!item.fund || !(item.dateIn instanceof Date) || item.dateIn > currentDate) return acc;
+          if (!acc[item.fund]) {
+            acc[item.fund] = { investments: [], irr: null };
           }
-        });
-        const slices = Object.entries(grouped).map(([name, list]) => {
+          acc[item.fund].investments.push(item);
+          if (Number.isFinite(item.irr)) {
+            acc[item.fund].irr = item.irr;
+          }
+          return acc;
+        }, {});
+
+        const slices = Object.entries(grouped).map(([name, group]) => {
+          const investments = group.investments.slice().sort((a, b) => a.dateIn - b.dateIn);
+          if (!investments.length) return null;
+
+          const cashflows = investments.map((inv) => {
+            const convertedInvest = Number.isFinite(inv.investConverted) ? inv.investConverted : convert(inv.invest, inv.curr);
+            if (!Number.isFinite(convertedInvest)) return null;
+            return { date: inv.dateIn, amount: -convertedInvest };
+          }).filter(Boolean).sort((a, b) => a.date - b.date);
+
           let value = 0;
-          list.forEach((item) => {
-            const currentConverted = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
-            if (Number.isFinite(currentConverted)) {
-              value += currentConverted;
-            }
-          });
-          return { name, value };
-        }).filter((entry) => entry.value > 0);
+          const fundIrr = Number.isFinite(group.irr) ? group.irr : (Number.isFinite(investments[0]?.irr) ? investments[0].irr : NaN);
+
+          if (cashflows.length && Number.isFinite(fundIrr) && fundIrr > -1) {
+            const dailyRate = Math.pow(1 + fundIrr, 1 / 365.25) - 1;
+            let runningValue = 0;
+            let lastDate = cashflows[0].date;
+            cashflows.forEach((cf) => {
+              const days = (cf.date - lastDate) / MS_PER_DAY;
+              if (Number.isFinite(days) && days > 0) {
+                runningValue *= Math.pow(1 + dailyRate, days);
+              }
+              runningValue += -cf.amount;
+              lastDate = cf.date;
+            });
+            const daysFinal = (currentDate - lastDate) / MS_PER_DAY;
+            value = runningValue * Math.pow(1 + dailyRate, Math.max(0, daysFinal));
+          } else {
+            investments.forEach((inv) => {
+              const currentConverted = Number.isFinite(inv.currentConverted) ? inv.currentConverted : convert(inv.current, inv.curr);
+              if (Number.isFinite(currentConverted)) {
+                value += currentConverted;
+              }
+            });
+          }
+
+          return Number.isFinite(value) && value > 0 ? { name, value } : null;
+        }).filter(Boolean);
 
         renderPieChart(slices);
       };
