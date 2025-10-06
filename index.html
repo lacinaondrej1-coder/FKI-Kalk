@@ -1034,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
           .replace(/</g, '\u003c')
           .replace(/>/g, '\u003e')
           .replace(/<\/script/gi, '<\/script');
-      let html = `<!doctype html>
+      let html = String.raw`<!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
