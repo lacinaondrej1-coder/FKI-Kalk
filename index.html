@@ -1041,7 +1041,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const match = text.match(/^([0-3]?\d)\.?\s*([01]?\d)\.?\s*(\d{4})$/);
         if (match) {
-          const date = new Date(`${match[3]}-${match[2]}-${match[1]}`);
+          const isoLike = [match[3], match[2], match[1]].join('-');
+          const date = new Date(isoLike);
           return Number.isNaN(date.valueOf()) ? null : date;
         }
         const fallback = new Date(text);
