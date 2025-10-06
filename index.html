@@ -778,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
           .replace(/`/g, '\u0060')
           .replace(/\$\{/g, '\u0024{')
           .replace(/<\/script/gi, '<\\/script');
-      const dataScript = `<script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};</script>`;
+      const dataScript = `<script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};<\\/script>`;
       const inlineMarker = '<script>\ndocument.addEventListener';
       if (html.includes(inlineMarker)) {
           html = html.replace(inlineMarker, `${dataScript}\n${inlineMarker}`);
