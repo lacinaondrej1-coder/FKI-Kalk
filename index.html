@@ -26,6 +26,9 @@
         background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
     }
     .tabular{ font-variant-numeric: tabular-nums; }
+    body[data-mode="client"] .advisor-only { display: none !important; }
+    .client-only { display: none; }
+    body[data-mode="client"] .client-only { display: flex !important; }
     button:disabled{ opacity: .5; cursor: not-allowed; }
     .editable[contenteditable="true"]:empty:before{
         content: attr(data-ph);
@@ -202,7 +205,7 @@
 
   </style>
 </head>
-<body class="antialiased text-slate-800">
+<body data-mode="advisor" class="antialiased text-slate-800">
   <header class="bg-gradient-to-b from-teal-50 via-white to-white border-b border-teal-100/60">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
@@ -221,6 +224,13 @@
               <span>© <span id="current-year"></span> Ondřej Lacina.</span>
               <span>Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb.</span>
               <span>Šíření mimo strukturu Fair-life je zakázáno.</span>
+            </div>
+            <div class="client-only flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-500" id="client-meta-banner">
+              <span><strong>Klient:</strong> <span id="client-name-display">—</span></span>
+              <span class="hidden sm:inline">|</span>
+              <span><strong>Generováno:</strong> <span id="generated-at-display">—</span></span>
+              <span class="hidden sm:inline">|</span>
+              <span><strong>Měna výstupu:</strong> <span id="report-currency-display">—</span></span>
             </div>
           </div>
         </div>
@@ -296,7 +306,7 @@
         </section>
 
         <!-- === DATA MANAGEMENT === -->
-        <section class="card p-6 sm:p-7">
+        <section class="card p-6 sm:p-7 advisor-only">
           <div class="flex flex-col gap-5">
             <div class="space-y-2">
               <h3 class="text-xl font-semibold text-slate-900">Správa dat</h3>
@@ -325,7 +335,7 @@
       <div class="gradient-divider"></div>
 
       <!-- === INPUT SECTIONS (PROVIDERS) === -->
-      <section class="space-y-6">
+      <section class="space-y-6 advisor-only">
         <div class="space-y-3">
           <span class="pill">Vstupní data</span>
           <div class="space-y-2">
@@ -454,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const state = {
       rows: { avant: [], codya: [], atris: [], jt: [] },
-      meta: { clientName: '' },
+      meta: { clientName: '', generatedAt: '' },
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {}
   };
@@ -464,6 +474,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const SAVE_DEBOUNCE = 220;
   const MS_PER_DAY = 86400000;
   const CHART_END_YEAR = 2035;
+  const APP_MODE = document.body?.dataset?.mode || 'advisor';
+  const isClientMode = APP_MODE === 'client';
+  const presentationData = window.__PRESENTATION_DATA__ || null;
   let saveTimer = null;
   let rowSeq = 0;
   let rafId = 0;
@@ -542,6 +555,9 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const saveState = (immediate = false) => {
+      if (isClientMode) {
+          return;
+      }
       if (immediate) {
           if (saveTimer) {
               clearTimeout(saveTimer);
@@ -559,6 +575,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }, SAVE_DEBOUNCE);
   };
   const loadState = () => {
+      if (presentationData && typeof presentationData === 'object') {
+          Object.keys(PROVIDERS).forEach((key) => {
+              const providerRows = Array.isArray(presentationData.rows?.[key]) ? presentationData.rows[key] : [];
+              state.rows[key] = cloneDeep(providerRows);
+          });
+          const allIds = Object.values(state.rows).flat().map((row) => row.id).filter((id) => typeof id === 'number');
+          rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
+          const exportedName = typeof presentationData.meta?.clientName === 'string' ? presentationData.meta.clientName.trim() : '';
+          const exportedGenerated = presentationData.generatedAt || presentationData.meta?.generatedAt || '';
+          state.meta.clientName = exportedName;
+          state.meta.generatedAt = exportedGenerated;
+          if (elements.clientNameInput) {
+              elements.clientNameInput.value = exportedName;
+          }
+          renderAllInputs();
+          scheduleRecalc();
+          return;
+      }
+      if (isClientMode) {
+          renderAllInputs();
+          scheduleRecalc();
+          return;
+      }
       let restored = false;
       try {
           let savedStateJSON = localStorage.getItem(STORAGE_KEY);
@@ -665,8 +704,9 @@ document.addEventListener('DOMContentLoaded', () => {
       state.meta.clientName = clientName;
       saveState(true);
       const rowsSnapshot = cloneDeep(state.rows);
+      const generatedAtIso = new Date().toISOString();
       const exportPayload = {
-          generatedAt: new Date().toISOString(),
+          generatedAt: generatedAtIso,
           outCurr,
           fxRate: isFinite(fxRate) ? fxRate : null,
           hasMixedCurrencies,
@@ -702,9 +742,11 @@ document.addEventListener('DOMContentLoaded', () => {
               hasData: portfolioSummary.hasData
           },
           rows: rowsSnapshot,
-          meta: { clientName }
+          meta: { clientName, generatedAt: generatedAtIso }
       };
 
+      state.meta.generatedAt = exportPayload.generatedAt;
+      saveState(true);
       const htmlContent = buildClientPresentationHTML(exportPayload);
       const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -719,1871 +761,32 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const buildClientPresentationHTML = (payload) => {
-      const outCurr = payload?.outCurr || 'CZK';
-      const fxRate = Number.isFinite(payload?.fxRate) ? Number(payload.fxRate) : NaN;
-      const summary = payload?.summary && typeof payload.summary === 'object' ? payload.summary : {};
-      const fundsRaw = Array.isArray(payload?.funds) ? payload.funds : [];
-      const clientName = typeof payload?.clientName === 'string' && payload.clientName.trim() ? payload.clientName.trim() : (payload?.meta && typeof payload.meta.clientName === 'string' ? payload.meta.clientName.trim() : '');
-      const generatedAt = payload?.generatedAt ? new Date(payload.generatedAt) : null;
-      const PROVIDERS = [
-        ['avant', 'AVANT'],
-        ['codya', 'CODYA'],
-        ['atris', 'ATRIS'],
-        ['jt', 'J&T']
-      ];
-
-      const nf = (d) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d });
-      const fmt0 = nf(0);
-      const fmt1 = nf(1);
-      const fmt2 = nf(2);
-      const fmt4 = nf(4);
-      const cellNum = (value, digits = 2) => {
-        if (!Number.isFinite(value)) return '—';
-        if (digits === 0) return fmt0.format(value);
-        if (digits === 1) return fmt1.format(value);
-        if (digits === 4) return fmt4.format(value);
-        return fmt2.format(value);
-      };
-      const cellPct = (value) => Number.isFinite(value) ? fmt2.format(value * 100) + ' %' : '—';
-      const escapeHtml = (value) => String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-      const escapeAttr = (value) => String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-      const toDate = (value) => {
-        if (!value) return null;
-        if (value instanceof Date && !Number.isNaN(value.valueOf())) return value;
-        const parsed = new Date(value);
-        return Number.isNaN(parsed.valueOf()) ? null : parsed;
-      };
-      const formatDate = (value) => {
-        const d = toDate(value);
-        return d ? d.toLocaleDateString('cs-CZ') : 'N/A';
-      };
-      const convertAmount = (amount, from, to, rate) => {
-        if (!Number.isFinite(amount)) return NaN;
-        if (!from) return NaN;
-        if (from === to) return amount;
-        if (!Number.isFinite(rate) || rate <= 0) return NaN;
-        if (from === 'EUR' && to === 'CZK') return amount * rate;
-        if (from === 'CZK' && to === 'EUR') return amount / rate;
-        return NaN;
-      };
-      const convert = (amount, from) => convertAmount(amount, from, outCurr, fxRate);
-
-      const normalisedFunds = [];
-      fundsRaw.forEach((item) => {
-        const rawName = typeof item?.fund === 'string' ? item.fund.trim() : '';
-        if (!rawName) return;
-        const curr = item?.curr || 'CZK';
-        const invest = Number.isFinite(item?.invest) ? Number(item.invest) : NaN;
-        const current = Number.isFinite(item?.current) ? Number(item.current) : NaN;
-        const investConverted = Number.isFinite(item?.investConverted) ? Number(item.investConverted) : convert(invest, curr);
-        const currentConverted = Number.isFinite(item?.currentConverted) ? Number(item.currentConverted) : convert(current, curr);
-        const pnlConverted = Number.isFinite(item?.pnlConverted)
-          ? Number(item.pnlConverted)
-          : (Number.isFinite(investConverted) && Number.isFinite(currentConverted) ? currentConverted - investConverted : NaN);
-        normalisedFunds.push({
-          name: rawName,
-          curr,
-          invest,
-          current,
-          investConverted,
-          currentConverted,
-          pnlConverted,
-          pnl: Number.isFinite(item?.pnl) ? Number(item.pnl) : NaN,
-          ret: Number.isFinite(item?.ret) ? Number(item.ret) : NaN,
-          irr: Number.isFinite(item?.irr) ? Number(item.irr) : NaN,
-          months: Number.isFinite(item?.months) ? Number(item.months) : NaN,
-          qty: Number.isFinite(item?.qty) ? Number(item.qty) : NaN,
-          issueNav: Number.isFinite(item?.issueNav) ? Number(item.issueNav) : NaN,
-          currNav: Number.isFinite(item?.currNav) ? Number(item.currNav) : NaN,
-          dateIn: toDate(item?.dateIn),
-          originalDateIn: toDate(item?.originalDateIn),
-          currDate: toDate(item?.currDate)
-        });
-      });
-
-      const COLOR_PALETTE = CHART_COLORS.slice();
-      const colorMap = new Map();
-      const colorFor = (name) => {
-        if (!colorMap.has(name)) {
-          const idx = colorMap.size % COLOR_PALETTE.length;
-          colorMap.set(name, COLOR_PALETTE[idx]);
-        }
-        return colorMap.get(name);
-      };
-
-      const chartFunds = normalisedFunds.map((item) => ({
-        fund: item.name,
-        curr: item.curr,
-        invest: Number.isFinite(item.invest) ? item.invest : null,
-        current: Number.isFinite(item.current) ? item.current : null,
-        investConverted: Number.isFinite(item.investConverted) ? item.investConverted : null,
-        currentConverted: Number.isFinite(item.currentConverted) ? item.currentConverted : null,
-        pnlConverted: Number.isFinite(item.pnlConverted) ? item.pnlConverted : null,
-        pnl: Number.isFinite(item.pnl) ? item.pnl : null,
-        ret: Number.isFinite(item.ret) ? item.ret : null,
-        irr: Number.isFinite(item.irr) ? item.irr : null,
-        months: Number.isFinite(item.months) ? item.months : null,
-        qty: Number.isFinite(item.qty) ? item.qty : null,
-        issueNav: Number.isFinite(item.issueNav) ? item.issueNav : null,
-        currNav: Number.isFinite(item.currNav) ? item.currNav : null,
-        dateIn: item.dateIn instanceof Date && !Number.isNaN(item.dateIn.valueOf()) ? item.dateIn.toISOString() : (item.dateIn ? String(item.dateIn) : null),
-        originalDateIn: item.originalDateIn instanceof Date && !Number.isNaN(item.originalDateIn.valueOf()) ? item.originalDateIn.toISOString() : (item.originalDateIn ? String(item.originalDateIn) : null),
-        currDate: item.currDate instanceof Date && !Number.isNaN(item.currDate.valueOf()) ? item.currDate.toISOString() : (item.currDate ? String(item.currDate) : null)
-      }));
-
-      const generateLineChartMarkup = (items, summaryData, currency) => {
-        const deposits = (items || []).map((entry) => {
-          const date = entry?.dateIn ? new Date(entry.dateIn) : null;
-          const rawAmount = Number.isFinite(entry?.investConverted)
-            ? entry.investConverted
-            : (Number.isFinite(entry?.invest) ? convert(entry.invest, entry.curr || 'CZK') : NaN);
-          if (!(date instanceof Date) || Number.isNaN(date.valueOf()) || !Number.isFinite(rawAmount)) {
-            return null;
-          }
-          return { date, amount: rawAmount, fund: entry?.fund || '' };
-        }).filter(Boolean).sort((a, b) => a.date - b.date);
-
-        if (!deposits.length) return '';
-
-        const portfolioIrr = Number.isFinite(summaryData?.portfolioIrr) ? summaryData.portfolioIrr : 0;
-        const dailyRate = Math.pow(1 + portfolioIrr, 1 / 365.25) - 1;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const firstDate = deposits[0].date;
-        const futureEndDate = new Date(`${CHART_END_YEAR}-12-31T00:00:00.000Z`);
-        const totalTimeSpan = futureEndDate - firstDate;
-        if (!Number.isFinite(totalTimeSpan) || totalTimeSpan <= 0) return '';
-
-        const width = 860;
-        const height = 360;
-        const margin = { top: 24, right: 24, bottom: 56, left: 70 };
-        const boundedWidth = width - margin.left - margin.right;
-        const boundedHeight = height - margin.top - margin.bottom;
-
-        const allPoints = [];
-        let runningValue = 0;
-        let lastDate = firstDate;
-        let cumulativeContributions = 0;
-        allPoints.push({ date: firstDate, value: 0, contributions: 0 });
-
-        deposits.forEach((deposit) => {
-          const daysSinceLast = (deposit.date - lastDate) / MS_PER_DAY;
-          if (daysSinceLast > 0) {
-            runningValue *= Math.pow(1 + dailyRate, daysSinceLast);
-            allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
-          }
-          runningValue += deposit.amount;
-          cumulativeContributions += deposit.amount;
-          allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
-          lastDate = deposit.date;
-        });
-
-        const valueAtToday = runningValue * Math.pow(1 + dailyRate, (today - lastDate) / MS_PER_DAY);
-        allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
-
-        const projectionPoints = [{ date: today, value: valueAtToday }];
-        for (let year = today.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
-          const date = new Date(year + '-12-31T00:00:00.000Z');
-          const projectedValue = valueAtToday * Math.pow(1 + dailyRate, (date - today) / MS_PER_DAY);
-          projectionPoints.push({ date, value: projectedValue });
-        }
-
-        const maxValue = Math.max(...allPoints.map((p) => p.value), ...projectionPoints.map((p) => p.value));
-        const yMax = Math.ceil((maxValue || 100000) / 100000) * 100000;
-        const xScale = (date) => margin.left + ((date - firstDate) / totalTimeSpan) * boundedWidth;
-        const yScale = (value) => margin.top + boundedHeight - (value / yMax) * boundedHeight;
-
-        const yTicks = 5;
-        const parts = [];
-        for (let i = 0; i <= yTicks; i++) {
-          const value = (yMax / yTicks) * i;
-          const y = yScale(value);
-          parts.push(`<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="rgba(148,163,184,0.25)" stroke-dasharray="2 3"></line>`);
-          parts.push(`<text x="${margin.left - 10}" y="${y + 4}" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="end">${cellNum(value / 1000000, 1)} M</text>`);
-        }
-        for (let year = firstDate.getFullYear(); year <= CHART_END_YEAR; year += 2) {
-          const date = new Date(year + '-01-01T00:00:00.000Z');
-          const x = xScale(date);
-          parts.push(`<text x="${x}" y="${height - 22}" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="middle">${year}</text>`);
-        }
-
-        const historicalPoints = allPoints.filter((p) => p.date <= today);
-        const contributionPath = 'M' + historicalPoints.map((p) => `${xScale(p.date)},${yScale(p.contributions)}`).join(' L');
-        const valuePath = 'M' + historicalPoints.map((p) => `${xScale(p.date)},${yScale(p.value)}`).join(' L');
-        const projectionPath = 'M' + projectionPoints.map((p) => `${xScale(p.date)},${yScale(p.value)}`).join(' L');
-        parts.push(`<path d="${contributionPath}" fill="none" stroke="rgba(148,163,184,0.35)" stroke-width="2"></path>`);
-        parts.push(`<path d="${valuePath}" fill="none" stroke="#34d399" stroke-width="2.5"></path>`);
-        parts.push(`<path d="${projectionPath}" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="5 5"></path>`);
-
-        const xToday = xScale(today);
-        const yToday = yScale(valueAtToday);
-        parts.push(`<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 4"></line>`);
-        parts.push(`<circle cx="${xToday}" cy="${yToday}" r="5" fill="#38bdf8" stroke="#ffffff" stroke-width="2"></circle>`);
-
-        return `<svg width="100%" height="360" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${parts.join('')}</svg>`;
-      };
-
-      const generatePieChartMarkup = (items, currency) => {
-        const slices = (items || []).reduce((acc, entry) => {
-          const name = entry?.fund || '';
-          if (!name) return acc;
-          const value = Number.isFinite(entry?.currentConverted)
-            ? entry.currentConverted
-            : (Number.isFinite(entry?.current) ? convert(entry.current, entry.curr || 'CZK') : NaN);
-          if (!Number.isFinite(value) || value <= 0) return acc;
-          acc.push({ name, value });
-          return acc;
-        }, []);
-
-        if (!slices.length) return '';
-
-        const total = slices.reduce((sum, slice) => sum + slice.value, 0);
-        let angle = -90;
-        const outerR = 46;
-        const innerR = 24;
-        const segments = slices.map((slice) => {
-          const percent = slice.value / total;
-          const start = (angle * Math.PI) / 180;
-          angle += percent * 360;
-          const end = (angle * Math.PI) / 180;
-          const x1 = 50 + outerR * Math.cos(start);
-          const y1 = 50 + outerR * Math.sin(start);
-          const x2 = 50 + outerR * Math.cos(end);
-          const y2 = 50 + outerR * Math.sin(end);
-          const x3 = 50 + innerR * Math.cos(end);
-          const y3 = 50 + innerR * Math.sin(end);
-          const x4 = 50 + innerR * Math.cos(start);
-          const y4 = 50 + innerR * Math.sin(start);
-          const largeArc = percent > 0.5 ? 1 : 0;
-          const color = colorFor(slice.name);
-          return `<g class="pie-segment" data-name="${escapeHtml(slice.name)}" data-value="${cellNum(slice.value, 0)} ${currency}" data-percent="${cellPct(slice.value / total)}"><path d="M ${x1},${y1} A ${outerR},${outerR} 0 ${largeArc},1 ${x2},${y2} L ${x3},${y3} A ${innerR},${innerR} 0 ${largeArc},0 ${x4},${y4} Z" fill="${color}" stroke="#0f172a" stroke-width="1.5"></path></g>`;
-        }).join('');
-
-        const legend = slices.map((slice) => `<div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:999px;background:${colorFor(slice.name)};"></span><span style="flex:1;">${escapeHtml(slice.name)}</span><span style="font-weight:600;">${cellPct(slice.value / total)}</span></div>`).join('');
-
-        return `<div class="chart-fallback"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${segments}</svg><div class="chart-legend">${legend}</div></div>`;
-      };
-
-      const fundGroups = [];
-      const groupMap = new Map();
-      normalisedFunds.forEach((fund) => {
-        if (!groupMap.has(fund.name)) {
-          const bucket = [];
-          groupMap.set(fund.name, bucket);
-          fundGroups.push({ name: fund.name, items: bucket });
-        }
-        groupMap.get(fund.name).push(fund);
-      });
-
-      const buildFundCard = (group) => {
-        const items = group.items.slice().sort((a, b) => {
-          const aTime = a.dateIn ? a.dateIn.getTime() : 0;
-          const bTime = b.dateIn ? b.dateIn.getTime() : 0;
-          return aTime - bTime;
-        });
-        let totalInvest = 0;
-        let totalCurrent = 0;
-        let weightedDuration = 0;
-        let latestDate = null;
-        const cashflows = [];
-        items.forEach((item) => {
-          if (Number.isFinite(item.investConverted)) {
-            totalInvest += item.investConverted;
-            const cfDate = item.dateIn || item.originalDateIn;
-            if (cfDate) cashflows.push({ date: cfDate, amount: -item.investConverted });
-            if (Number.isFinite(item.months)) {
-              weightedDuration += item.investConverted * item.months;
-            }
-          }
-          if (Number.isFinite(item.currentConverted)) {
-            totalCurrent += item.currentConverted;
-          }
-          if (item.currDate && (!latestDate || item.currDate > latestDate)) {
-            latestDate = item.currDate;
-          }
-        });
-        if (Number.isFinite(totalCurrent) && latestDate) {
-          cashflows.push({ date: latestDate, amount: totalCurrent });
-        }
-        const pnl = totalCurrent - totalInvest;
-        const irr = finance.xirr(cashflows);
-        const weightedAvg = totalInvest > 0 ? weightedDuration / totalInvest : NaN;
-        const detailRows = items.map((item, index) => {
-          const investVal = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
-          const currentVal = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
-          const pnlVal = Number.isFinite(item.pnlConverted)
-            ? item.pnlConverted
-            : (Number.isFinite(investVal) && Number.isFinite(currentVal) ? currentVal - investVal : NaN);
-          const pnlColor = Number.isFinite(pnlVal) ? (pnlVal >= 0 ? '#34d399' : '#f87171') : 'inherit';
-          const label = index === 0 ? 'První vklad' : `Dokup #${index}`;
-          const dateLabel = formatDate(item.originalDateIn || item.dateIn);
-          return `<tr><td>${label} <span style="color: var(--text-muted);">(${dateLabel})</span></td>` +
-            `<td>${cellNum(investVal, 0)}</td>` +
-            `<td style="color:${pnlColor};">${cellNum(pnlVal, 0)}</td>` +
-            `<td>${cellPct(item.ret)}</td>` +
-            `<td>${Number.isFinite(item.months) ? `${cellNum(item.months, 1)} měs.` : '—'}</td>` +
-            `<td>${Number.isFinite(item.irr) ? `${cellPct(item.irr)} p.a.` : '—'}</td></tr>`;
-        }).join('');
-        const pnlColor = Number.isFinite(pnl) ? (pnl >= 0 ? '#34d399' : '#f87171') : 'inherit';
-        const irrColor = Number.isFinite(irr) ? (irr >= 0 ? '#34d399' : '#f87171') : 'inherit';
-        const latestLabel = latestDate ? formatDate(latestDate) : 'N/A';
-        return `<article class="fund-card">` +
-          `<div class="fund-header">` +
-          `<div class="fund-name"><span style="width:12px;height:12px;border-radius:999px;background:${colorFor(group.name)};"></span>${escapeHtml(group.name)}</div>` +
-          `<div class="disclosure">Aktualizováno k ${latestLabel}</div>` +
-          `</div>` +
-          `<div class="fund-metrics">` +
-          `<div><span class="fund-metric-label">Aktuální hodnota</span><div class="fund-metric-value">${cellNum(totalCurrent, 0)}</div></div>` +
-          `<div><span class="fund-metric-label">Celkový zisk / ztráta</span><div class="fund-metric-value" style="color:${pnlColor};">${cellNum(pnl, 0)}</div></div>` +
-          `<div><span class="fund-metric-label">Výkonnost (XIRR)</span><div class="fund-metric-value" style="color:${irrColor};">${Number.isFinite(irr) ? `${cellPct(irr)} p.a.` : '—'}</div></div>` +
-          `<div><span class="fund-metric-label">Váž. prům. doba</span><div class="fund-metric-value">${Number.isFinite(weightedAvg) ? `${cellNum(weightedAvg, 1)} měs.` : '—'}</div></div>` +
-          `</div>` +
-          `<div style="overflow-x: auto; margin-top: 12px;">` +
-          `<table class="fund-details"><thead><tr><th>Transakce</th><th>Investice</th><th>Výnos</th><th>Kumulativně</th><th>Doba</th><th>XIRR</th></tr></thead><tbody>${detailRows}</tbody></table>` +
-          `</div>` +
-          `</article>`;
-      };
-
-      const fundsMarkup = fundGroups.length ? fundGroups.map(buildFundCard).join('') : '<div class="disclosure">Nejsou k dispozici žádná data pro výpočet.</div>';
-
-      const buildHiddenProviderRows = (rows) => {
-        if (!rows || typeof rows !== 'object') return '';
-        const sections = PROVIDERS.map(([key, label]) => {
-          const providerRows = Array.isArray(rows[key]) ? rows[key] : [];
-          if (!providerRows.length) return '';
-          const tableRows = providerRows.map((row, index) => {
-            const fields = ['fund', 'invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'totalCurrent', 'currDate', 'curr'];
-            const cells = fields.map((field) => {
-              const rawValue = row && Object.prototype.hasOwnProperty.call(row, field) ? row[field] : '';
-              const normalised = (rawValue === null || rawValue === undefined) ? '' : rawValue;
-              return `<td data-field="${field}" data-value="${escapeAttr(normalised)}">${escapeHtml(normalised)}</td>`;
-            }).join('');
-            return `<tr data-row-index="${index}">${cells}</tr>`;
-          }).join('');
-          return `<div data-provider-section="${key}"><h3>${escapeHtml(label)}</h3><table data-provider="${key}"><tbody>${tableRows}</tbody></table></div>`;
-        }).filter(Boolean).join('');
-        if (!sections) return '';
-        return `<section id="presentation-input-rows" aria-hidden="true" style="display:none;">${sections}</section>`;
-      };
-
-      const pnlStyle = Number.isFinite(summary.totalPnl) ? ` style="color:${summary.totalPnl >= 0 ? '#34d399' : '#f87171'};"` : '';
-      const retStyle = Number.isFinite(summary.totalRet) ? ` style="color:${summary.totalRet >= 0 ? '#34d399' : '#f87171'};"` : '';
-      const irrStyle = Number.isFinite(summary.portfolioIrr) ? ` style="color:${summary.portfolioIrr >= 0 ? '#34d399' : '#f87171'};"` : '';
-
-      const minDate = summary?.minValuationDate ? toDate(summary.minValuationDate) : null;
-      const maxDate = summary?.maxValuationDate ? toDate(summary.maxValuationDate) : null;
-      let dateNote = '';
-      if (minDate && maxDate) {
-        const minLabel = minDate.toLocaleDateString('cs-CZ');
-        const maxLabel = maxDate.toLocaleDateString('cs-CZ');
-        dateNote = minLabel === maxLabel
-          ? `Hodnoty jsou platné k ${maxLabel}.`
-          : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minLabel} – ${maxLabel}.`;
+      const toastEl = elements.toastContainer || document.getElementById('toast-container');
+      if (toastEl) {
+          toastEl.innerHTML = '';
       }
-
-      const investDates = normalisedFunds.map((item) => item.dateIn).filter((d) => d instanceof Date && !Number.isNaN(d.valueOf()));
-      const sliderStart = investDates.length ? investDates.reduce((earliest, date) => (date < earliest ? date : earliest)) : null;
-      const sliderStartLabel = sliderStart ? sliderStart.toLocaleDateString('cs-CZ') : '—';
-      const sliderEndLabel = new Date(`${CHART_END_YEAR}-12-31`).toLocaleDateString('cs-CZ');
-
-      const generatedAtLabel = (generatedAt instanceof Date && !Number.isNaN(generatedAt.valueOf())) ? generatedAt.toLocaleString('cs-CZ') : '—';
-      const clientLabel = clientName || '—';
-      const currencyNote = `Částky v ${outCurr}`;
-      const lineChartMarkup = generateLineChartMarkup(chartFunds, summary, outCurr);
-      const pieChartMarkup = generatePieChartMarkup(chartFunds, outCurr);
-      const lineChartSafe = lineChartMarkup || '<div class="disclosure">Pro vykreslení grafu nejsou dostupná data.</div>';
-      const pieChartSafe = pieChartMarkup || '<div class="disclosure">Pro zobrazení alokace nejsou dostupná data.</div>';
-
-      const investDisplay = cellNum(summary.totalInvestConverted, 0);
-      const currentDisplay = cellNum(summary.totalCurrentConverted, 0);
-      const pnlDisplay = cellNum(summary.totalPnl, 0);
-      const retDisplay = cellPct(summary.totalRet);
-      const irrDisplay = Number.isFinite(summary.portfolioIrr) ? `${cellPct(summary.portfolioIrr)} p.a.` : '—';
-      const durationDisplay = Number.isFinite(summary.weightedAvgMonths) ? `${cellNum(summary.weightedAvgMonths, 1)} měs.` : '—';
-
-      const exportData = { ...payload, chartFunds };
-      const serialized = JSON.stringify(exportData)
+      const serializer = new XMLSerializer();
+      let html = serializer.serializeToString(document.documentElement);
+      if (html.includes('data-mode="advisor"')) {
+          html = html.replace('data-mode="advisor"', 'data-mode="client"');
+      } else {
+          html = html.replace('<body', '<body data-mode="client"');
+      }
+      const sanitized = JSON.stringify(payload)
           .replace(/</g, '\u003c')
           .replace(/>/g, '\u003e')
-          .replace(/<\/script/gi, '<\/script');
-      const hiddenRowsMarkup = buildHiddenProviderRows(payload?.rows);
-
-      let html = String.raw`<!doctype html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Report portfolia – FairLife</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      color-scheme: light;
-      --surface: #ffffff;
-      --surface-muted: #f1f5f9;
-      --border: rgba(15, 118, 110, 0.12);
-      --border-strong: rgba(15, 118, 110, 0.24);
-      --accent: #14b8a6;
-      --accent-strong: #0f766e;
-      --accent-soft: rgba(20, 184, 166, 0.16);
-      --text-primary: #0f172a;
-      --text-secondary: #334155;
-      --text-muted: #64748b;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
-      color: var(--text-primary);
-      min-height: 100vh;
-    }
-    a { color: inherit; }
-    .page-shell {
-      position: relative;
-      padding-bottom: 4rem;
-    }
-    .page-shell::before,
-    .page-shell::after {
-      content: '';
-      position: absolute;
-      border-radius: 9999px;
-      filter: blur(80px);
-      opacity: 0.55;
-      pointer-events: none;
-    }
-    .page-shell::before {
-      top: -160px;
-      left: -120px;
-      width: 360px;
-      height: 360px;
-      background: rgba(20, 184, 166, 0.3);
-    }
-    .page-shell::after {
-      top: -200px;
-      right: -160px;
-      width: 420px;
-      height: 420px;
-      background: rgba(56, 189, 248, 0.25);
-    }
-    .content-wrap {
-      position: relative;
-      z-index: 1;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 56px 28px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 56px;
-    }
-    .hero {
-      display: grid;
-      gap: 18px;
-      background: var(--surface);
-      border-radius: 28px;
-      padding: 32px 36px;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 60px -32px rgba(15, 23, 42, 0.35);
-    }
-    .hero h1 {
-      font-size: clamp(2.4rem, 4vw, 3rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin: 0;
-      color: var(--text-primary);
-    }
-    .hero p {
-      margin: 0;
-      color: var(--text-muted);
-      font-size: 1rem;
-      max-width: 640px;
-      line-height: 1.6;
-    }
-    .hero-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px 20px;
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      align-items: center;
-    }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 26px;
-      padding: 32px;
-      box-shadow: 0 18px 50px -28px rgba(15, 23, 42, 0.35);
-    }
-    .card h2 {
-      margin: 0 0 18px;
-      font-size: 1.45rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-    .summary-grid {
-      display: grid;
-      gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-    .metric {
-      padding: 20px 22px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(45, 212, 191, 0.08));
-      border: 1px solid rgba(15, 118, 110, 0.15);
-      transition: transform 0.3s ease, border-color 0.3s ease;
-    }
-    .metric:hover {
-      transform: translateY(-2px);
-      border-color: rgba(15, 118, 110, 0.32);
-    }
-    .metric-label {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-      display: block;
-    }
-    .metric-value {
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-    .metric-subtext {
-      margin-top: 6px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-    .fund-card {
-      border-radius: 22px;
-      padding: 28px;
-      display: grid;
-      gap: 20px;
-      background: var(--surface-muted);
-      border: 1px solid rgba(148, 163, 184, 0.24);
-      transition: transform 0.3s ease, border-color 0.3s ease;
-    }
-    .fund-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(15, 118, 110, 0.35);
-    }
-    .fund-header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px 18px;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .fund-name {
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .fund-metrics {
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    }
-    .fund-metric-label {
-      font-size: 0.8rem;
-      letter-spacing: 0.12em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      display: block;
-    }
-    .fund-metric-value {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-    .fund-details {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.92rem;
-      background: var(--surface);
-      border-radius: 16px;
-      overflow: hidden;
-    }
-    .fund-details thead {
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-size: 0.72rem;
-      letter-spacing: 0.18em;
-      background: rgba(148, 163, 184, 0.1);
-    }
-    .fund-details th,
-    .fund-details td {
-      padding: 10px 12px;
-      text-align: left;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-    }
-    .fund-details tbody tr:last-child td {
-      border-bottom: none;
-    }
-    .fund-details td:last-child,
-    .fund-details th:last-child {
-      text-align: right;
-    }
-    .fund-details td:nth-child(2),
-    .fund-details td:nth-child(3),
-    .fund-details td:nth-child(4),
-    .fund-details td:nth-child(5),
-    .fund-details td:nth-child(6) {
-      text-align: right;
-    }
-    .disclosure {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-    .chart-card {
-      display: grid;
-      gap: 32px;
-    }
-    .chart-fallback {
-      display: grid;
-      gap: 24px;
-      justify-items: center;
-    }
-    .chart-fallback svg {
-      max-width: 360px;
-    }
-    .chart-legend {
-      display: grid;
-      gap: 12px;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-    }
-    #chart-tooltip {
-      position: fixed;
-      top: 0;
-      left: 0;
-      transform: translate(-50%, -120%);
-      background: rgba(255, 255, 255, 0.95);
-      color: var(--text-primary);
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-size: 0.85rem;
-      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      border: 1px solid var(--border);
-      z-index: 50;
-    }
-    #chart-tooltip.show { opacity: 1; }
-    .line-chart-dot { cursor: pointer; transition: r 0.2s ease; }
-    .line-chart-dot:hover { r: 6; }
-    .pie-segment { cursor: pointer; transition: transform 0.22s ease; transform-origin: center; }
-    .pie-segment:hover { transform: scale(1.04); }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--accent-soft);
-      color: var(--accent-strong);
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    details summary {
-      cursor: pointer;
-      list-style: none;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      color: var(--text-secondary);
-    }
-    details summary::-webkit-details-marker { display: none; }
-    details[open] .summary-arrow { transform: rotate(90deg); }
-    .summary-arrow { transition: transform 0.2s ease; color: var(--accent-strong); }
-    input[type="range"] {
-      accent-color: var(--accent-strong);
-    }
-    @media (max-width: 720px) {
-      .card { padding: 24px; }
-      .fund-card { padding: 22px; }
-      .content-wrap { padding: 48px 20px 0; gap: 40px; }
-      .hero { padding: 28px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="page-shell">
-    <main class="content-wrap">
-      <header class="hero">
-        <span class="pill">Interaktivní prezentace portfolia</span>
-        <h1>Report investičního portfolia</h1>
-        <p>Souhrn výsledků, historického vývoje a očekávané projekce Vašeho portfolia. Všechny částky jsou uvedeny v cílové měně dle dohody s poradcem.</p>
-        <div class="hero-meta">
-          <div>Klientská prezentace FairLife</div>
-          <div class="meta-separator" id="client-separator">|</div>
-          <div class="client-meta" id="client-meta"><strong>Klient:</strong> <span id="report-client-name">—</span></div>
-          <div class="meta-separator">|</div>
-          <div><strong>Generováno:</strong> <span id="report-generated-at">—</span></div>
-          <div class="meta-separator">|</div>
-          <div><strong>Měna výstupu:</strong> <span id="report-currency">—</span></div>
-        </div>
-      </header>
-
-      <section class="card">
-        <div class="fund-header" style="margin-bottom: 18px;">
-          <div>
-            <h2>Souhrn portfolia</h2>
-            <p class="disclosure" id="summary-currency-note">Částky v CZK</p>
-          </div>
-          <div class="disclosure" id="portfolio-date-note"></div>
-        </div>
-        <div class="summary-grid">
-          <div class="metric">
-            <span class="metric-label">Celkové vklady</span>
-            <div class="metric-value" id="summary-total-invest">—</div>
-            <div class="metric-subtext">Součet všech historických vkladů</div>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Aktuální hodnota</span>
-            <div class="metric-value" id="summary-total-current">—</div>
-            <div class="metric-subtext">K poslednímu ocenění fondu</div>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Čistý zisk / ztráta</span>
-            <div class="metric-value" id="summary-total-pnl">—</div>
-            <div class="metric-subtext">Rozdíl mezi vklady a současnou hodnotou</div>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Kumulativní zhodnocení</span>
-            <div class="metric-value" id="summary-total-ret">—</div>
-            <div class="metric-subtext">Výnos od začátku investování</div>
-          </div>
-          <div class="metric">
-            <span class="metric-label">XIRR (časově vážený výnos)</span>
-            <div class="metric-value" id="summary-irr">—</div>
-            <div class="metric-subtext">Průměrné roční tempo zhodnocení</div>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Vážená průměrná doba investice</span>
-            <div class="metric-value" id="summary-duration">—</div>
-            <div class="metric-subtext">Zohledňuje načasování jednotlivých vkladů</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="fund-header" style="margin-bottom: 18px;">
-          <div>
-            <h2>Výsledky po fondech</h2>
-            <p class="disclosure">Přehled všech sledovaných fondů a jejich aktuální výkonnosti.</p>
-          </div>
-          <div class="disclosure">Částky v <span id="funds-currency">—</span></div>
-        </div>
-        <div id="client-funds-container" class="space-y-4"></div>
-      </section>
-
-      <section class="card chart-card">
-        <div>
-          <h2>Vývoj portfolia a projekce</h2>
-          <p class="disclosure">Historický vývoj hodnoty portfolia a projekce při zachování stávajícího tempa zhodnocení.</p>
-          <div id="client-line-chart" style="margin-top: 24px; min-height: 340px;"></div>
-        </div>
-        <div>
-          <h2>Alokace portfolia v čase</h2>
-          <p class="disclosure">Prozkoumejte rozložení portfolia k libovolnému datu pomocí časové osy.</p>
-          <div id="client-pie-chart" style="margin-top: 18px;"></div>
-          <div style="margin-top: 18px; display: grid; gap: 10px;">
-            <input type="range" id="client-pie-slider" min="0" max="100" value="0" />
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
-              <span id="client-pie-start">—</span>
-              <span id="client-pie-current" style="font-weight: 600; color: #38bdf8;">—</span>
-              <span id="client-pie-end">—</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <details open>
-          <summary>
-            <h2>Vysvětlivky</h2>
-            <svg class="summary-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
-          </summary>
-            <div style="margin-top: 18px; display: grid; gap: 18px; font-size: 0.95rem; color: var(--text-secondary);">
-              <div>
-                <h3 style="margin: 0 0 6px; font-size: 1.05rem; color: var(--text-primary);">Co je XIRR a jak funguje?</h3>
-              <p style="margin: 0 0 10px;">XIRR (z anglického <em>Extended Internal Rate of Return</em>) je nejpřesnější metoda pro výpočet průměrného ročního zhodnocení investice. Zohledňuje načasování jednotlivých vkladů a výběrů.</p>
-              <p style="margin: 0;">Díky tomu je vhodný pro portfolia, kde dochází k průběžným změnám investované částky. Výsledek vyjadřuje anualizované tempo výnosu.</p>
-            </div>
-              <div>
-                <h3 style="margin: 0 0 6px; font-size: 1.05rem; color: var(--text-primary);">Co znamená kumulativní zhodnocení?</h3>
-              <p style="margin: 0 0 10px;">Ukazuje celkový čistý zisk nebo ztrátu jako procento z celkové investované částky. Na rozdíl od XIRR nezohledňuje časové rozložení investic.</p>
-              <p style="margin: 0;">Tento ukazatel je vhodný pro rychlou orientaci, XIRR pak poskytne přesnější obraz při různých datech vkladů.</p>
-            </div>
-          </div>
-        </details>
-      </section>
-    </main>
-  </div>
-  ${hiddenRowsMarkup}
-  <div id="chart-tooltip"></div>
-  <script type="application/json" id="export-data">${serialized}<\/script>
-  <script>
-    (function () {
-      const MS_PER_DAY = ${MS_PER_DAY};
-      const CHART_END_YEAR = ${CHART_END_YEAR};
-      let data = {};
-      try {
-        const raw = document.getElementById('export-data');
-        if (raw) {
-          data = JSON.parse(raw.textContent || '{}');
-        }
-      } catch (err) {
-        console.error('Nepodařilo se načíst data prezentace:', err);
-        data = {};
+          .replace(/`/g, '\u0060')
+          .replace(/\$\{/g, '\u0024{')
+          .replace(/<\/script/gi, '<\\/script');
+      const dataScript = `<script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};</script>`;
+      const inlineMarker = '<script>\ndocument.addEventListener';
+      if (html.includes(inlineMarker)) {
+          html = html.replace(inlineMarker, `${dataScript}\n${inlineMarker}`);
+      } else {
+          html = html.replace('</body>', `${dataScript}\n</body>`);
       }
-      const parseDate = (value) => (value ? new Date(value) : null);
-      const fundsSource = Array.isArray(data.chartFunds) && data.chartFunds.length
-        ? data.chartFunds
-        : (Array.isArray(data.funds) ? data.funds : []);
-      let funds = [];
-      let summary = data.summary || {};
-      const meta = (data && typeof data.meta === 'object') ? data.meta : {};
-      const clientName = (data.clientName || meta.clientName || '').trim();
-      const outCurr = data.outCurr || 'CZK';
-      const fxRate = data.fxRate;
-      let hasMixedCurrencies = typeof data.hasMixedCurrencies === 'boolean' ? data.hasMixedCurrencies : null;
-
-      const extractRowsFromDom = (root) => {
-        const result = {};
-        if (!root) return result;
-        root.querySelectorAll('[data-provider]').forEach((table) => {
-          const providerKey = table.getAttribute('data-provider');
-          if (!providerKey) return;
-          const rows = [];
-          table.querySelectorAll('tbody > tr').forEach((tr) => {
-            const row = {};
-            tr.querySelectorAll('[data-field]').forEach((cell) => {
-              const field = cell.getAttribute('data-field');
-              if (!field) return;
-              const value = cell.getAttribute('data-value');
-              row[field] = value != null ? value : cell.textContent || '';
-            });
-            rows.push(row);
-          });
-          result[providerKey] = rows;
-        });
-        return result;
-      };
-
-      const hiddenRowsRoot = document.getElementById('presentation-input-rows');
-      let rawRows = (data && typeof data.rows === 'object') ? data.rows : null;
-      if (!rawRows || !Object.keys(rawRows).length) {
-        const extracted = extractRowsFromDom(hiddenRowsRoot);
-        if (Object.keys(extracted).length) {
-          rawRows = extracted;
-        }
-      }
-      const coerceSummaryNumbers = () => {
-        if (!summary || typeof summary !== 'object') return;
-        ['totalInvestConverted', 'totalCurrentConverted', 'totalPnl', 'totalRet', 'portfolioIrr', 'weightedAvgMonths'].forEach((key) => {
-          if (summary[key] === null || summary[key] === undefined) return;
-          if (typeof summary[key] === 'number') return;
-          const num = Number(summary[key]);
-          if (Number.isFinite(num)) {
-            summary[key] = num;
-          }
-        });
-      };
-      coerceSummaryNumbers();
-
-      const parseNumber = (value) => {
-        if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
-        if (value === null || value === undefined) return NaN;
-        let text = String(value).replace(/\u00A0/g, ' ').trim();
-        if (!text) return NaN;
-        text = text.replace(/\s*\b(Kč|CZK|€|EUR)\b\s*/gi, '');
-        text = text.replace(/[\u2212\u2013\u2014]/g, '-');
-        let isNegative = false;
-        if (text.startsWith('(') && text.endsWith(')')) {
-          isNegative = true;
-          text = text.slice(1, -1);
-        }
-        text = text.replace(/\s+/g, '');
-        const lastComma = text.lastIndexOf(',');
-        const lastDot = text.lastIndexOf('.');
-        if (lastComma > lastDot) {
-          text = text.replace(/\./g, '').replace(',', '.');
-        } else if (lastDot > -1 && text.length - lastDot - 1 > 2) {
-          text = text.replace(/,/g, '');
-        } else {
-          text = text.replace(/,/g, '');
-        }
-        const num = Number.parseFloat(text);
-        if (!Number.isFinite(num)) return NaN;
-        return isNegative ? -Math.abs(num) : num;
-      };
-
-      const normalizeName = (value) => String(value || '').replace(/[\u00A0\s]+/g, ' ').trim();
-      const parseLooseDate = (value) => {
-        if (!value) return null;
-        const text = String(value).trim();
-        if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-          const date = new Date(text);
-          return Number.isNaN(date.valueOf()) ? null : date;
-        }
-        const match = text.match(/^([0-3]?\d)\.?\s*([01]?\d)\.?\s*(\d{4})$/);
-        if (match) {
-          const isoLike = [match[3], match[2], match[1]].join('-');
-          const date = new Date(isoLike);
-          return Number.isNaN(date.valueOf()) ? null : date;
-        }
-        const fallback = new Date(text);
-        return Number.isNaN(fallback.valueOf()) ? null : fallback;
-      };
-      const monthsDiff = (start, end) => {
-        if (!(start instanceof Date) || !(end instanceof Date)) return NaN;
-        const diff = end.getTime() - start.getTime();
-        if (!Number.isFinite(diff)) return NaN;
-        const days = diff / MS_PER_DAY;
-        return Math.max(0, days / (365.2425 / 12));
-      };
-
-      const nf = (digits) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-      const fmt0 = nf(0);
-      const fmt1 = nf(1);
-      const fmt2 = nf(2);
-      const fmt4 = nf(4);
-      const cellNum = (value, digits = 2) => {
-        if (!Number.isFinite(value)) return '—';
-        if (digits === 0) return fmt0.format(value);
-        if (digits === 1) return fmt1.format(value);
-        if (digits === 4) return fmt4.format(value);
-        return fmt2.format(value);
-      };
-      const cellPct = (value) => Number.isFinite(value) ? fmt2.format(value * 100) + ' %' : '—';
-      const formatDate = (value) => (value instanceof Date && !Number.isNaN(value.valueOf())) ? value.toLocaleDateString('cs-CZ') : 'N/A';
-      const convertAmount = (amount, from, to, rate) => {
-        if (!Number.isFinite(amount)) return NaN;
-        if (from === to) return amount;
-        if (!Number.isFinite(rate) || rate <= 0) return NaN;
-        if (from === 'EUR' && to === 'CZK') return amount * rate;
-        if (from === 'CZK' && to === 'EUR') return amount / rate;
-        return NaN;
-      };
-      const convert = (amount, from) => convertAmount(amount, from, outCurr, fxRate);
-
-      const finance = (() => {
-        const xnpv = (rate, cashflows) => {
-          if (!Number.isFinite(rate) || !cashflows.length) return NaN;
-          const sorted = cashflows.slice().sort((a, b) => a.date - b.date);
-          const t0 = sorted[0]?.date;
-          if (!t0) return NaN;
-          return sorted.reduce((sum, cf) => {
-            const days = (cf.date - t0) / MS_PER_DAY;
-            return sum + cf.amount / Math.pow(1 + rate, days / 365.25);
-          }, 0);
-        };
-        const xirr = (cashflows, iterations = 100) => {
-          if (!Array.isArray(cashflows) || cashflows.length < 2) return NaN;
-          let hasPos = false;
-          let hasNeg = false;
-          cashflows.forEach((cf) => {
-            if (cf.amount > 0) hasPos = true;
-            if (cf.amount < 0) hasNeg = true;
-          });
-          if (!hasPos || !hasNeg) return NaN;
-          let low = -0.9999;
-          let high = 10;
-          let mid = 0;
-          for (let i = 0; i < iterations; i++) {
-            mid = (low + high) / 2;
-            const npv = xnpv(mid, cashflows);
-            if (Math.abs(npv) < 1e-6) break;
-            if (npv > 0) {
-              low = mid;
-            } else {
-              high = mid;
-            }
-          }
-          return Number.isFinite(mid) ? mid : NaN;
-        };
-        return { xirr };
-      })();
-
-      const toFiniteNumber = (value) => {
-        const num = parseNumber(value);
-        return Number.isFinite(num) ? num : NaN;
-      };
-
-      const hydrateSnapshot = (item) => {
-        if (!item) return null;
-        const fundName = typeof item.fund === 'string' && item.fund.trim()
-          ? item.fund.trim()
-          : (typeof item.name === 'string' && item.name.trim() ? item.name.trim() : '');
-        if (!fundName) return null;
-        const curr = item.curr || 'CZK';
-        const dateIn = parseDate(item.dateIn);
-        const originalDateIn = parseDate(item.originalDateIn);
-        const currDate = parseDate(item.currDate);
-        let invest = toFiniteNumber(item.invest);
-        let qty = toFiniteNumber(item.qty);
-        const issueNav = toFiniteNumber(item.issueNav);
-        const currNav = toFiniteNumber(item.currNav);
-        if (!Number.isFinite(qty) && Number.isFinite(invest) && Number.isFinite(issueNav) && issueNav > 0) {
-          qty = invest / issueNav;
-        }
-        if (!Number.isFinite(invest) && Number.isFinite(qty) && Number.isFinite(issueNav) && issueNav > 0) {
-          invest = qty * issueNav;
-        }
-        let current = toFiniteNumber(item.current);
-        if (!Number.isFinite(current) && Number.isFinite(qty) && Number.isFinite(currNav) && currNav > 0) {
-          current = qty * currNav;
-        }
-        let investConverted = toFiniteNumber(item.investConverted);
-        if (!Number.isFinite(investConverted) && Number.isFinite(invest)) {
-          investConverted = convert(invest, curr);
-        }
-        let currentConverted = toFiniteNumber(item.currentConverted);
-        if (!Number.isFinite(currentConverted) && Number.isFinite(current)) {
-          currentConverted = convert(current, curr);
-        }
-        let pnlConverted = toFiniteNumber(item.pnlConverted);
-        if (!Number.isFinite(pnlConverted) && Number.isFinite(investConverted) && Number.isFinite(currentConverted)) {
-          pnlConverted = currentConverted - investConverted;
-        }
-        const pnlRaw = toFiniteNumber(item.pnl);
-        const pnl = Number.isFinite(pnlRaw)
-          ? pnlRaw
-          : (Number.isFinite(invest) && Number.isFinite(current) ? current - invest : NaN);
-        const retRaw = toFiniteNumber(item.ret);
-        const ret = Number.isFinite(retRaw)
-          ? retRaw
-          : (Number.isFinite(invest) && invest !== 0 && Number.isFinite(current) ? current / invest - 1 : NaN);
-        let irr = toFiniteNumber(item.irr);
-        if (!Number.isFinite(irr) && dateIn instanceof Date && currDate instanceof Date && Number.isFinite(invest) && Number.isFinite(current)) {
-          irr = finance.xirr([{ date: dateIn, amount: -invest }, { date: currDate, amount: current }]);
-        }
-        let months = toFiniteNumber(item.months);
-        if (!Number.isFinite(months) && dateIn instanceof Date && currDate instanceof Date) {
-          months = monthsDiff(dateIn, currDate);
-        }
-        return {
-          fund: fundName,
-          curr,
-          invest,
-          current,
-          qty,
-          issueNav,
-          currNav,
-          investConverted,
-          currentConverted,
-          pnlConverted,
-          pnl,
-          ret,
-          irr,
-          months,
-          dateIn,
-          originalDateIn,
-          currDate
-        };
-      };
-
-      if (Array.isArray(fundsSource) && fundsSource.length) {
-        funds = fundsSource.map(hydrateSnapshot).filter(Boolean);
-      }
-
-      const rebuildFromRows = (rows) => {
-        const processed = [];
-        const currencies = new Set();
-        Object.entries(rows || {}).forEach(([providerKey, providerRows]) => {
-          (Array.isArray(providerRows) ? providerRows : []).forEach((row) => {
-            const fundName = normalizeName(row.fund);
-            if (!fundName) return;
-            const curr = row.curr || 'CZK';
-            currencies.add(curr);
-            const dateInRaw = parseLooseDate(row.dateIn);
-            const currDateRaw = parseLooseDate(row.currDate);
-            if (!(dateInRaw instanceof Date) || Number.isNaN(dateInRaw.valueOf())) return;
-            if (!(currDateRaw instanceof Date) || Number.isNaN(currDateRaw.valueOf())) return;
-            const issueNav = parseNumber(row.issueNav);
-            const currNav = parseNumber(row.currNav);
-            let invest = parseNumber(row.invest);
-            let qty = parseNumber(row.qty);
-            let current = parseNumber(row.totalCurrent);
-            if (!Number.isFinite(qty) && Number.isFinite(invest) && Number.isFinite(issueNav) && issueNav > 0) qty = invest / issueNav;
-            if (!Number.isFinite(invest) && Number.isFinite(qty) && Number.isFinite(issueNav) && issueNav > 0) invest = qty * issueNav;
-            if (!Number.isFinite(current) && Number.isFinite(qty) && Number.isFinite(currNav) && currNav > 0) current = qty * currNav;
-            if (!Number.isFinite(invest) || !Number.isFinite(current)) return;
-            const effectiveDateIn = providerKey === 'atris' ? new Date(dateInRaw.getFullYear(), dateInRaw.getMonth() + 1, 5) : dateInRaw;
-            const months = monthsDiff(effectiveDateIn, currDateRaw);
-            const pnl = Number.isFinite(invest) && Number.isFinite(current) ? current - invest : NaN;
-            const ret = invest > 0 ? current / invest - 1 : NaN;
-            const irr = finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: currDateRaw, amount: current }]);
-            const investConverted = convert(invest, curr);
-            const currentConverted = convert(current, curr);
-            const pnlConverted = (Number.isFinite(investConverted) && Number.isFinite(currentConverted)) ? currentConverted - investConverted : NaN;
-            processed.push({
-              fund: fundName,
-              invest,
-              qty: Number.isFinite(qty) ? qty : NaN,
-              current,
-              curr,
-              issueNav,
-              currNav,
-              pnl,
-              ret,
-              months,
-              irr,
-              investConverted,
-              currentConverted,
-              pnlConverted,
-              dateIn: effectiveDateIn,
-              originalDateIn: dateInRaw,
-              currDate: currDateRaw
-            });
-          });
-        });
-        const summaryCalc = (() => {
-          let totalInvest = 0;
-          let totalCurrent = 0;
-          let weightedDuration = 0;
-          const cashflows = [];
-          let latestDate = null;
-          let minValuationDate = null;
-          let maxValuationDate = null;
-          processed.forEach((item) => {
-            const convertedInvest = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
-            const convertedCurrent = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
-            if (Number.isFinite(convertedInvest)) {
-              totalInvest += convertedInvest;
-              cashflows.push({ date: item.dateIn, amount: -convertedInvest });
-              if (Number.isFinite(item.months)) {
-                weightedDuration += convertedInvest * item.months;
-              }
-            }
-            if (Number.isFinite(convertedCurrent)) {
-              totalCurrent += convertedCurrent;
-            }
-            if (item.currDate instanceof Date && !Number.isNaN(item.currDate.valueOf())) {
-              if (!minValuationDate || item.currDate < minValuationDate) minValuationDate = item.currDate;
-              if (!maxValuationDate || item.currDate > maxValuationDate) maxValuationDate = item.currDate;
-              if (!latestDate || item.currDate > latestDate) latestDate = item.currDate;
-            }
-          });
-          if (Number.isFinite(totalCurrent) && latestDate) {
-            cashflows.push({ date: latestDate, amount: totalCurrent });
-          }
-          const totalPnl = totalCurrent - totalInvest;
-          const totalRet = totalInvest > 0 ? totalPnl / totalInvest : NaN;
-          const portfolioIrr = finance.xirr(cashflows);
-          const weightedAvgMonths = totalInvest > 0 ? weightedDuration / totalInvest : NaN;
-          return {
-            totalInvestConverted: totalInvest,
-            totalCurrentConverted: totalCurrent,
-            totalPnl,
-            totalRet,
-            portfolioIrr,
-            weightedAvgMonths,
-            minValuationDate: minValuationDate ? minValuationDate.toISOString() : null,
-            maxValuationDate: maxValuationDate ? maxValuationDate.toISOString() : null,
-            hasData: totalInvest > 0 || totalCurrent > 0
-          };
-        })();
-        return { funds: processed, summary: summaryCalc, hasMixedCurrencies: currencies.size > 1 };
-      };
-
-      let rebuilt = null;
-      if (rawRows) {
-        rebuilt = rebuildFromRows(rawRows);
-        if (rebuilt && rebuilt.funds.length) {
-          funds = rebuilt.funds;
-          summary = rebuilt.summary || summary || {};
-          coerceSummaryNumbers();
-          if (typeof data.hasMixedCurrencies === 'boolean') {
-            hasMixedCurrencies = data.hasMixedCurrencies;
-          } else if (typeof rebuilt.hasMixedCurrencies === 'boolean') {
-            hasMixedCurrencies = rebuilt.hasMixedCurrencies;
-          }
-        }
-      }
-
-      if ((!funds.length || !summary || !summary.hasData) && rebuilt && rebuilt.funds.length) {
-        funds = rebuilt.funds;
-        summary = rebuilt.summary || summary;
-        coerceSummaryNumbers();
-        if (typeof rebuilt.hasMixedCurrencies === 'boolean' && typeof hasMixedCurrencies !== 'boolean') {
-          hasMixedCurrencies = rebuilt.hasMixedCurrencies;
-        }
-      }
-
-      if (!summary) {
-        summary = {
-          totalInvestConverted: NaN,
-          totalCurrentConverted: NaN,
-          totalPnl: NaN,
-          totalRet: NaN,
-          portfolioIrr: NaN,
-          weightedAvgMonths: NaN,
-          minValuationDate: null,
-          maxValuationDate: null,
-          hasData: false
-        };
-      }
-
-      if (typeof hasMixedCurrencies !== 'boolean' && funds.length) {
-        hasMixedCurrencies = new Set(funds.map((item) => item.curr)).size > 1;
-      }
-
-      const CHART_COLORS = ['#38bdf8', '#34d399', '#f97316', '#a855f7', '#22d3ee', '#f43f5e', '#4ade80', '#facc15', '#fb7185', '#6366f1'];
-      const colorMap = {};
-      const getColor = (name) => {
-        if (!colorMap[name]) {
-          const index = Object.keys(colorMap).length % CHART_COLORS.length;
-          colorMap[name] = CHART_COLORS[index];
-        }
-        return colorMap[name];
-      };
-
-      const generatedAt = data.generatedAt ? new Date(data.generatedAt) : null;
-      const generatedLabel = document.getElementById('report-generated-at');
-      if (generatedLabel && generatedAt instanceof Date && !Number.isNaN(generatedAt.valueOf())) {
-        generatedLabel.textContent = generatedAt.toLocaleString('cs-CZ');
-      }
-      const clientNameEl = document.getElementById('report-client-name');
-      const clientMetaEl = document.getElementById('client-meta');
-      const clientSeparatorEl = document.getElementById('client-separator');
-      if (clientNameEl) {
-        clientNameEl.textContent = clientName || '—';
-      }
-      if (clientMetaEl) {
-        if (clientName) {
-          clientMetaEl.style.display = '';
-          if (clientSeparatorEl) clientSeparatorEl.style.display = '';
-        } else {
-          clientMetaEl.style.display = 'none';
-          if (clientSeparatorEl) clientSeparatorEl.style.display = 'none';
-        }
-      }
-      const currencyLabel = document.getElementById('report-currency');
-      if (currencyLabel) {
-        currencyLabel.textContent = outCurr;
-      }
-      const summaryCurrency = document.getElementById('summary-currency-note');
-      if (summaryCurrency) {
-        summaryCurrency.textContent = 'Částky v ' + outCurr;
-      }
-      const fundsCurrency = document.getElementById('funds-currency');
-      if (fundsCurrency) {
-        fundsCurrency.textContent = outCurr;
-      }
-
-      const totalInvestEl = document.getElementById('summary-total-invest');
-      const totalCurrentEl = document.getElementById('summary-total-current');
-      const pnlEl = document.getElementById('summary-total-pnl');
-      const retEl = document.getElementById('summary-total-ret');
-      const irrEl = document.getElementById('summary-irr');
-      const durationEl = document.getElementById('summary-duration');
-      const dateNoteEl = document.getElementById('portfolio-date-note');
-
-      if (totalInvestEl) totalInvestEl.textContent = cellNum(summary.totalInvestConverted, 0);
-      if (totalCurrentEl) totalCurrentEl.textContent = cellNum(summary.totalCurrentConverted, 0);
-      if (pnlEl) {
-        pnlEl.textContent = cellNum(summary.totalPnl, 0);
-        if (Number.isFinite(summary.totalPnl)) {
-          pnlEl.style.color = summary.totalPnl >= 0 ? '#34d399' : '#f87171';
-        }
-      }
-      if (retEl) {
-        retEl.textContent = cellPct(summary.totalRet);
-        if (Number.isFinite(summary.totalRet)) {
-          retEl.style.color = summary.totalRet >= 0 ? '#34d399' : '#f87171';
-        }
-      }
-      if (irrEl) {
-        irrEl.textContent = Number.isFinite(summary.portfolioIrr) ? cellPct(summary.portfolioIrr) + ' p.a.' : '—';
-        if (Number.isFinite(summary.portfolioIrr)) {
-          irrEl.style.color = summary.portfolioIrr >= 0 ? '#34d399' : '#f87171';
-        }
-      }
-      if (durationEl) durationEl.textContent = Number.isFinite(summary.weightedAvgMonths) ? cellNum(summary.weightedAvgMonths, 1) + ' měs.' : '—';
-      if (dateNoteEl) {
-        const minDate = summary.minValuationDate ? new Date(summary.minValuationDate) : null;
-        const maxDate = summary.maxValuationDate ? new Date(summary.maxValuationDate) : null;
-        if (minDate && maxDate) {
-          const minText = formatDate(minDate);
-          const maxText = formatDate(maxDate);
-          dateNoteEl.textContent = minText === maxText ? 'Hodnoty platné k ' + maxText + '.' : 'Hodnoty platné k posledním známým datům v rozmezí ' + minText + ' – ' + maxText + '.';
-        } else {
-          dateNoteEl.textContent = '';
-        }
-      }
-
-      const groupedFunds = funds.reduce((acc, fund) => {
-        if (!fund.fund) return acc;
-        if (!acc[fund.fund]) acc[fund.fund] = [];
-        acc[fund.fund].push(fund);
-        return acc;
-      }, {});
-
-      const fundsContainer = document.getElementById('client-funds-container');
-      if (fundsContainer) {
-        const entries = Object.entries(groupedFunds);
-        if (!entries.length) {
-          fundsContainer.innerHTML = '<div class="disclosure">Pro klientskou prezentaci nejsou k dispozici žádná data.</div>';
-        } else {
-          const fragments = [];
-          entries.forEach(([name, list]) => {
-            const sorted = list.slice().sort((a, b) => a.dateIn - b.dateIn);
-            let totalInvest = 0;
-            let totalCurrent = 0;
-            let weightedDuration = 0;
-            const cashflows = [];
-            let latestDate = null;
-            sorted.forEach((item) => {
-              const investConverted = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
-              const currentConverted = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
-              if (Number.isFinite(investConverted)) {
-                totalInvest += investConverted;
-                cashflows.push({ date: item.dateIn, amount: -investConverted });
-                if (Number.isFinite(item.months)) {
-                  weightedDuration += investConverted * item.months;
-                }
-              }
-              if (Number.isFinite(currentConverted)) {
-                totalCurrent += currentConverted;
-              }
-              if (item.currDate && (!latestDate || item.currDate > latestDate)) {
-                latestDate = item.currDate;
-              }
-            });
-            if (Number.isFinite(totalCurrent) && latestDate) {
-              cashflows.push({ date: latestDate, amount: totalCurrent });
-            }
-            const fundIrr = finance.xirr(cashflows);
-            const pnl = totalCurrent - totalInvest;
-            const weightedAvg = totalInvest > 0 ? weightedDuration / totalInvest : NaN;
-            const color = getColor(name);
-
-            const detailRows = sorted.map((item, index) => {
-              const investConverted = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
-              const currentConverted = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
-              const pnlConverted = Number.isFinite(item.pnlConverted) ? item.pnlConverted : (Number.isFinite(investConverted) && Number.isFinite(currentConverted) ? (currentConverted - investConverted) : NaN);
-              const label = index === 0 ? 'První vklad' : 'Dokup #' + index;
-              const baseDate = item.originalDateIn instanceof Date && !Number.isNaN(item.originalDateIn.valueOf()) ? item.originalDateIn : item.dateIn;
-              const dateLabel = baseDate ? formatDate(baseDate) : 'N/A';
-              return '<tr><td>' + label + ' <span style="color: var(--text-muted);">(' + dateLabel + ')</span></td>' +
-                '<td>' + cellNum(investConverted, 0) + '</td>' +
-                '<td style="color:' + (pnlConverted >= 0 ? '#34d399' : '#f87171') + ';">' + cellNum(pnlConverted, 0) + '</td>' +
-                '<td>' + cellPct(item.ret) + '</td>' +
-                '<td>' + (Number.isFinite(item.months) ? cellNum(item.months, 1) + ' měs.' : '—') + '</td>' +
-                '<td>' + (Number.isFinite(item.irr) ? cellPct(item.irr) + ' p.a.' : '—') + '</td></tr>';
-            }).join('');
-
-            const latestLabel = latestDate ? formatDate(latestDate) : 'N/A';
-            const fundCard = '<article class="fund-card">' +
-              '<div class="fund-header">' +
-              '<div class="fund-name"><span style="width: 12px; height: 12px; border-radius: 999px; background:' + color + ';"></span>' + name + '</div>' +
-              '<div class="disclosure">Aktualizováno k ' + latestLabel + '</div>' +
-              '</div>' +
-              '<div class="fund-metrics">' +
-              '<div><span class="fund-metric-label">Aktuální hodnota</span><div class="fund-metric-value">' + cellNum(totalCurrent, 0) + '</div></div>' +
-              '<div><span class="fund-metric-label">Celkový zisk / ztráta</span><div class="fund-metric-value" style="color:' + (pnl >= 0 ? '#34d399' : '#f87171') + ';">' + cellNum(pnl, 0) + '</div></div>' +
-              '<div><span class="fund-metric-label">Výkonnost (XIRR)</span><div class="fund-metric-value" style="color:' + (Number.isFinite(fundIrr) && fundIrr >= 0 ? '#34d399' : '#f87171') + ';">' + (Number.isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—') + '</div></div>' +
-              '<div><span class="fund-metric-label">Váž. prům. doba</span><div class="fund-metric-value">' + (Number.isFinite(weightedAvg) ? cellNum(weightedAvg, 1) + ' měs.' : '—') + '</div></div>' +
-              '</div>' +
-              '<div style="overflow-x: auto; margin-top: 12px;">
-                <table class="fund-details">
-                  <thead><tr><th>Transakce</th><th>Investice</th><th>Výnos</th><th>Kumulativně</th><th>Doba</th><th>XIRR</th></tr></thead>
-                  <tbody>' + detailRows + '</tbody>
-                </table>
-              </div>' +
-              '</article>';
-            fragments.push(fundCard);
-          });
-          fundsContainer.innerHTML = fragments.join('');
-        }
-      }
-
-      const lineChartContainer = document.getElementById('client-line-chart');
-      const pieContainer = document.getElementById('client-pie-chart');
-      const pieSlider = document.getElementById('client-pie-slider');
-      const pieStart = document.getElementById('client-pie-start');
-      const pieCurrent = document.getElementById('client-pie-current');
-      const pieEnd = document.getElementById('client-pie-end');
-      const tooltip = document.getElementById('chart-tooltip');
-
-      const positionTooltip = (event) => {
-        if (!tooltip) return;
-        const padding = 18;
-        let left = event.clientX + padding;
-        let top = event.clientY - padding;
-        if (left + tooltip.offsetWidth > window.innerWidth) {
-          left = event.clientX - tooltip.offsetWidth - padding;
-        }
-        if (top < padding) {
-          top = event.clientY + padding;
-        }
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
-      };
-
-      document.addEventListener('mousemove', positionTooltip);
-
-      const showTooltip = (content) => {
-        if (!tooltip) return;
-        tooltip.innerHTML = content;
-        tooltip.classList.add('show');
-      };
-      const hideTooltip = () => {
-        if (!tooltip) return;
-        tooltip.classList.remove('show');
-      };
-
-      const renderLineChart = () => {
-        if (!lineChartContainer) return;
-        lineChartContainer.innerHTML = '';
-        const deposits = funds.map((item) => ({
-          date: item.dateIn,
-          amount: Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr),
-          fund: item.fund
-        })).filter((item) => item.date instanceof Date && !Number.isNaN(item.date.valueOf()) && Number.isFinite(item.amount)).sort((a, b) => a.date - b.date);
-        if (!deposits.length) {
-          lineChartContainer.innerHTML = '<div class="disclosure">Pro vykreslení grafu jsou potřeba platné transakce.</div>';
-          return;
-        }
-
-        const portfolioIrr = Number.isFinite(summary.portfolioIrr) ? summary.portfolioIrr : 0;
-        const dailyRate = Math.pow(1 + portfolioIrr, 1 / 365.25) - 1;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const firstDate = deposits[0].date;
-        const futureEndDate = new Date(CHART_END_YEAR + '-12-31');
-        const totalTimeSpan = futureEndDate - firstDate;
-        if (totalTimeSpan <= 0) {
-          lineChartContainer.innerHTML = '<div class="disclosure">Projekci lze zobrazit pouze při delším časovém horizontu.</div>';
-          return;
-        }
-
-        const width = lineChartContainer.clientWidth || 860;
-        const height = 360;
-        const margin = { top: 24, right: 24, bottom: 56, left: 70 };
-        const boundedWidth = width - margin.left - margin.right;
-        const boundedHeight = height - margin.top - margin.bottom;
-
-        const allPoints = [];
-        let runningValue = 0;
-        let lastDate = firstDate;
-        let cumulativeContributions = 0;
-        allPoints.push({ date: firstDate, value: 0, contributions: 0 });
-        deposits.forEach((deposit) => {
-          const daysSinceLast = (deposit.date - lastDate) / MS_PER_DAY;
-          if (daysSinceLast > 0) {
-            runningValue *= Math.pow(1 + dailyRate, daysSinceLast);
-            allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
-          }
-          runningValue += deposit.amount;
-          cumulativeContributions += deposit.amount;
-          allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
-          lastDate = deposit.date;
-        });
-        const valueAtToday = runningValue * Math.pow(1 + dailyRate, (today - lastDate) / MS_PER_DAY);
-        allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
-
-        const projectionPoints = [{ date: today, value: valueAtToday }];
-        for (let year = today.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
-          const date = new Date(year + '-12-31');
-          const projectedValue = valueAtToday * Math.pow(1 + dailyRate, (date - today) / MS_PER_DAY);
-          projectionPoints.push({ date, value: projectedValue });
-        }
-
-        const maxValue = Math.max(...allPoints.map((p) => p.value), ...projectionPoints.map((p) => p.value));
-        const yMax = Math.ceil((maxValue || 100000) / 100000) * 100000;
-        const xScale = (date) => margin.left + ((date - firstDate) / totalTimeSpan) * boundedWidth;
-        const yScale = (value) => margin.top + boundedHeight - (value / yMax) * boundedHeight;
-        const xToDate = (x) => {
-          const clamped = Math.min(Math.max(x, margin.left), margin.left + boundedWidth);
-          const ratio = (clamped - margin.left) / boundedWidth;
-          return new Date(firstDate.getTime() + ratio * totalTimeSpan);
-        };
-
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', width);
-        svg.setAttribute('height', height);
-        svg.style.width = '100%';
-        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-
-        const parts = [];
-        const yTicks = 5;
-        for (let i = 0; i <= yTicks; i++) {
-          const value = (yMax / yTicks) * i;
-          const y = yScale(value);
-          parts.push('<line x1="' + margin.left + '" y1="' + y + '" x2="' + (width - margin.right) + '" y2="' + y + '" stroke="rgba(148,163,184,0.25)" stroke-dasharray="2 3"></line>');
-          parts.push('<text x="' + (margin.left - 10) + '" y="' + (y + 4) + '" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="end">' + cellNum(value / 1000000, 1) + ' M</text>');
-        }
-        for (let year = firstDate.getFullYear(); year <= CHART_END_YEAR; year += 2) {
-          const date = new Date(year + '-01-01');
-          const x = xScale(date);
-          parts.push('<text x="' + x + '" y="' + (height - 22) + '" fill="rgba(148,163,184,0.75)" font-size="11" text-anchor="middle">' + year + '</text>');
-        }
-
-        const historicalPoints = allPoints.filter((p) => p.date <= today);
-        const contributionPath = 'M' + historicalPoints.map((p) => xScale(p.date) + ',' + yScale(p.contributions)).join(' L');
-        const valuePath = 'M' + historicalPoints.map((p) => xScale(p.date) + ',' + yScale(p.value)).join(' L');
-        const projectionPath = 'M' + projectionPoints.map((p) => xScale(p.date) + ',' + yScale(p.value)).join(' L');
-        parts.push('<path d="' + contributionPath + '" fill="none" stroke="rgba(148,163,184,0.35)" stroke-width="2"></path>');
-        parts.push('<path d="' + valuePath + '" fill="none" stroke="#34d399" stroke-width="2.5"></path>');
-        parts.push('<path d="' + projectionPath + '" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="5 5"></path>');
-
-        const xToday = xScale(today);
-        const yToday = yScale(valueAtToday);
-        parts.push('<line x1="' + xToday + '" y1="' + margin.top + '" x2="' + xToday + '" y2="' + (height - margin.bottom) + '" stroke="#38bdf8" stroke-width="1.5"></line>');
-        parts.push('<circle cx="' + xToday + '" cy="' + yToday + '" r="5" fill="#38bdf8" stroke="#0f172a" stroke-width="2" data-tooltip-text="Dopočítaná hodnota: ' + cellNum(valueAtToday, 0) + ' ' + outCurr + '"></circle>');
-
-        const snapPoints = [{
-          x: xToday,
-          y: yToday,
-          date: today,
-          value: valueAtToday,
-          isToday: true,
-          tooltip: '<div><strong>Dnes</strong></div><div>Hodnota: ' + cellNum(valueAtToday, 0) + ' ' + outCurr + '</div>'
-        }];
-        const depositsByDay = deposits.reduce((acc, deposit) => {
-          const key = deposit.date.toISOString().split('T')[0];
-          if (!acc[key]) acc[key] = { date: deposit.date, entries: [] };
-          acc[key].entries.push(deposit);
-          return acc;
-        }, {});
-        const sortedDays = Object.values(depositsByDay).sort((a, b) => a.date - b.date);
-        let runningValueForDots = 0;
-        let lastDateForDots = firstDate;
-        sortedDays.forEach((day) => {
-          const daysSinceLast = (day.date - lastDateForDots) / MS_PER_DAY;
-          if (daysSinceLast > 0) {
-            runningValueForDots *= Math.pow(1 + dailyRate, daysSinceLast);
-          }
-          const daySum = day.entries.reduce((sum, entry) => sum + entry.amount, 0);
-          runningValueForDots += daySum;
-          const x = xScale(day.date);
-          const y = yScale(runningValueForDots);
-          let tooltipText = '';
-          if (day.entries.length > 1) {
-            tooltipText = '<div><strong>Vklady (' + formatDate(day.date) + ')</strong></div>' + day.entries.map((entry) => '<div>' + entry.fund + ': ' + cellNum(entry.amount, 0) + ' ' + outCurr + '</div>').join('');
-          } else {
-            const entry = day.entries[0];
-            tooltipText = '<div><strong>' + entry.fund + '</strong></div><div>Vklad: ' + cellNum(entry.amount, 0) + ' ' + outCurr + '</div><div>' + formatDate(day.date) + '</div>';
-          }
-          parts.push('<circle class="line-chart-dot" cx="' + x + '" cy="' + y + '" r="4" fill="#38bdf8" data-tooltip-text="' + tooltipText.replace(/"/g, '&quot;') + '"></circle>');
-          snapPoints.push({
-            x,
-            y,
-            date: day.date,
-            value: runningValueForDots,
-            tooltip: tooltipText
-          });
-          lastDateForDots = day.date;
-        });
-
-        svg.innerHTML = parts.join('');
-
-        const interactionLayer = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        interactionLayer.setAttribute('x', margin.left);
-        interactionLayer.setAttribute('y', margin.top);
-        interactionLayer.setAttribute('width', boundedWidth);
-        interactionLayer.setAttribute('height', boundedHeight);
-        interactionLayer.setAttribute('fill', 'transparent');
-
-        const guideLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        guideLine.setAttribute('stroke', 'rgba(148,163,184,0.5)');
-        guideLine.setAttribute('stroke-width', '1');
-        guideLine.style.opacity = 0;
-
-        const guideCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        guideCircle.setAttribute('r', '4');
-        guideCircle.setAttribute('fill', '#38bdf8');
-        guideCircle.style.opacity = 0;
-
-        svg.appendChild(guideLine);
-        svg.appendChild(guideCircle);
-        svg.appendChild(interactionLayer);
-
-        const timelinePoints = [...historicalPoints, ...projectionPoints];
-
-        interactionLayer.addEventListener('mousemove', (event) => {
-          const rect = svg.getBoundingClientRect();
-          const mouseX = event.clientX - rect.left;
-          const snapThreshold = 18;
-          let closest = null;
-          let minDistance = snapThreshold;
-          snapPoints.forEach((point) => {
-            const distance = Math.abs(mouseX - point.x);
-            if (distance < minDistance) {
-              minDistance = distance;
-              closest = point;
-            }
-          });
-
-          let finalX = mouseX;
-          let finalY = null;
-          let tooltipContent = '';
-
-          if (closest) {
-            finalX = closest.x;
-            finalY = closest.y;
-            tooltipContent = closest.tooltip;
-          } else {
-            const targetDate = xToDate(mouseX);
-            let prevPoint = timelinePoints[0];
-            let nextPoint = timelinePoints[timelinePoints.length - 1];
-            for (let i = 1; i < timelinePoints.length; i += 1) {
-              if (timelinePoints[i].date >= targetDate) {
-                nextPoint = timelinePoints[i];
-                prevPoint = timelinePoints[i - 1] || timelinePoints[i];
-                break;
-              }
-            }
-            const totalSpan = nextPoint.date - prevPoint.date;
-            let interpolatedValue = nextPoint.value;
-            if (totalSpan > 0) {
-              const position = (targetDate - prevPoint.date) / totalSpan;
-              interpolatedValue = prevPoint.value + position * (nextPoint.value - prevPoint.value);
-            }
-            finalY = yScale(interpolatedValue);
-            finalX = xScale(targetDate);
-            tooltipContent = '<div><strong>' + formatDate(targetDate) + '</strong></div>' +
-              '<div>Hodnota: ' + cellNum(interpolatedValue, 0) + ' ' + outCurr + '</div>';
-          }
-
-          if (finalY !== null) {
-            guideLine.setAttribute('x1', finalX);
-            guideLine.setAttribute('x2', finalX);
-            guideLine.setAttribute('y1', margin.top);
-            guideLine.setAttribute('y2', height - margin.bottom);
-            guideCircle.setAttribute('cx', finalX);
-            guideCircle.setAttribute('cy', finalY);
-            guideLine.style.opacity = 1;
-            guideCircle.style.opacity = 1;
-            showTooltip(tooltipContent);
-          }
-        });
-        interactionLayer.addEventListener('mouseleave', () => {
-          guideLine.style.opacity = 0;
-          guideCircle.style.opacity = 0;
-          hideTooltip();
-        });
-
-        svg.addEventListener('mouseover', (event) => {
-          const target = event.target;
-          if (target && target.dataset && target.dataset.tooltipText) {
-            showTooltip(target.dataset.tooltipText.replace(/&quot;/g, '"'));
-          }
-        });
-        svg.addEventListener('mouseout', (event) => {
-          const target = event.target;
-          if (target && target.dataset && target.dataset.tooltipText) {
-            hideTooltip();
-          }
-        });
-
-        lineChartContainer.appendChild(svg);
-      };
-
-      const setupPieSlider = () => {
-        if (!pieSlider || !pieContainer || !funds.length) {
-          if (pieContainer) {
-            pieContainer.innerHTML = '<div class="disclosure">Pro zobrazení alokace nejsou k dispozici data.</div>';
-          }
-          return;
-        }
-        const sortedDates = funds.map((item) => item.dateIn).filter(Boolean).sort((a, b) => a - b);
-        if (!sortedDates.length) {
-          pieContainer.innerHTML = '<div class="disclosure">Chybí data o načasování investic.</div>';
-          return;
-        }
-        const firstDate = sortedDates[0];
-        const endDate = new Date(CHART_END_YEAR + '-12-31');
-        pieSlider.min = firstDate.getTime();
-        pieSlider.max = endDate.getTime();
-        const sliderMax = Number(pieSlider.max);
-        const defaultValue = Number.isFinite(sliderMax) ? Math.min(Date.now(), sliderMax) : Date.now();
-        pieSlider.value = defaultValue;
-        if (pieStart) pieStart.textContent = formatDate(firstDate);
-        if (pieEnd) pieEnd.textContent = formatDate(endDate);
-        updatePieChart();
-        pieSlider.addEventListener('input', updatePieChart);
-      };
-
-      const updatePieChart = () => {
-        if (!pieSlider || !pieContainer) return;
-        const currentDate = new Date(parseInt(pieSlider.value, 10));
-        if (pieCurrent) pieCurrent.textContent = formatDate(currentDate);
-
-        const grouped = funds.reduce((acc, item) => {
-          if (!item.fund || !(item.dateIn instanceof Date) || item.dateIn > currentDate) return acc;
-          if (!acc[item.fund]) {
-            acc[item.fund] = { investments: [], irr: null };
-          }
-          acc[item.fund].investments.push(item);
-          if (Number.isFinite(item.irr)) {
-            acc[item.fund].irr = item.irr;
-          }
-          return acc;
-        }, {});
-
-        const slices = Object.entries(grouped).map(([name, group]) => {
-          const investments = group.investments.slice().sort((a, b) => a.dateIn - b.dateIn);
-          if (!investments.length) return null;
-
-          const cashflows = investments.map((inv) => {
-            const convertedInvest = Number.isFinite(inv.investConverted) ? inv.investConverted : convert(inv.invest, inv.curr);
-            if (!Number.isFinite(convertedInvest)) return null;
-            return { date: inv.dateIn, amount: -convertedInvest };
-          }).filter(Boolean).sort((a, b) => a.date - b.date);
-
-          let value = 0;
-          const fundIrr = Number.isFinite(group.irr) ? group.irr : (Number.isFinite(investments[0]?.irr) ? investments[0].irr : NaN);
-
-          if (cashflows.length && Number.isFinite(fundIrr) && fundIrr > -1) {
-            const dailyRate = Math.pow(1 + fundIrr, 1 / 365.25) - 1;
-            let runningValue = 0;
-            let lastDate = cashflows[0].date;
-            cashflows.forEach((cf) => {
-              const days = (cf.date - lastDate) / MS_PER_DAY;
-              if (Number.isFinite(days) && days > 0) {
-                runningValue *= Math.pow(1 + dailyRate, days);
-              }
-              runningValue += -cf.amount;
-              lastDate = cf.date;
-            });
-            const daysFinal = (currentDate - lastDate) / MS_PER_DAY;
-            value = runningValue * Math.pow(1 + dailyRate, Math.max(0, daysFinal));
-          } else {
-            investments.forEach((inv) => {
-              const currentConverted = Number.isFinite(inv.currentConverted) ? inv.currentConverted : convert(inv.current, inv.curr);
-              if (Number.isFinite(currentConverted)) {
-                value += currentConverted;
-              }
-            });
-          }
-
-          return Number.isFinite(value) && value > 0 ? { name, value } : null;
-        }).filter(Boolean);
-
-        renderPieChart(slices);
-      };
-
-      const renderPieChart = (dataSet) => {
-        pieContainer.innerHTML = '';
-        if (!dataSet.length) {
-          pieContainer.innerHTML = '<div class="disclosure">V zadaný den nejsou k dispozici data.</div>';
-          return;
-        }
-        const total = dataSet.reduce((sum, slice) => sum + slice.value, 0);
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 100 100');
-        let angle = -90;
-        dataSet.forEach((slice) => {
-          const percent = slice.value / total;
-          const start = (angle * Math.PI) / 180;
-          angle += percent * 360;
-          const end = (angle * Math.PI) / 180;
-          const outerR = 46;
-          const innerR = 24;
-          const x1 = 50 + outerR * Math.cos(start);
-          const y1 = 50 + outerR * Math.sin(start);
-          const x2 = 50 + outerR * Math.cos(end);
-          const y2 = 50 + outerR * Math.sin(end);
-          const x3 = 50 + innerR * Math.cos(end);
-          const y3 = 50 + innerR * Math.sin(end);
-          const x4 = 50 + innerR * Math.cos(start);
-          const y4 = 50 + innerR * Math.sin(start);
-          const largeArc = percent > 0.5 ? 1 : 0;
-          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          path.setAttribute('d', 'M ' + x1 + ',' + y1 + ' A ' + outerR + ',' + outerR + ' 0 ' + largeArc + ',1 ' + x2 + ',' + y2 + ' L ' + x3 + ',' + y3 + ' A ' + innerR + ',' + innerR + ' 0 ' + largeArc + ',0 ' + x4 + ',' + y4 + ' Z');
-          const color = getColor(slice.name);
-          path.setAttribute('fill', color);
-          path.setAttribute('stroke', '#0f172a');
-          path.setAttribute('stroke-width', '1.5');
-          const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          group.classList.add('pie-segment');
-          group.dataset.name = slice.name;
-          group.dataset.value = cellNum(slice.value, 0) + ' ' + outCurr;
-          group.dataset.percent = cellPct(slice.value / total);
-          group.appendChild(path);
-          svg.appendChild(group);
-        });
-
-        const legend = document.createElement('div');
-        legend.style.display = 'grid';
-        legend.style.gap = '12px';
-        dataSet.forEach((slice) => {
-          const row = document.createElement('div');
-          row.style.display = 'flex';
-          row.style.alignItems = 'center';
-          row.style.gap = '10px';
-          row.innerHTML = '<span style="width:12px;height:12px;border-radius:999px;background:' + getColor(slice.name) + ';"></span>' +
-            '<span style="flex:1;">' + slice.name + '</span>' +
-            '<span style="font-weight:600;">' + cellPct(slice.value / total) + '</span>';
-          legend.appendChild(row);
-        });
-
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'grid';
-        wrapper.style.gap = '24px';
-        wrapper.appendChild(svg);
-        wrapper.appendChild(legend);
-        pieContainer.appendChild(wrapper);
-
-        pieContainer.querySelectorAll('.pie-segment').forEach((segment) => {
-          segment.addEventListener('mouseover', () => {
-            showTooltip('<div><strong>' + segment.dataset.name + '</strong></div><div>' + segment.dataset.value + '</div><div>' + segment.dataset.percent + '</div>');
-          });
-          segment.addEventListener('mouseout', hideTooltip);
-        });
-      };
-
-      renderLineChart();
-      setupPieSlider();
-    })();
-  <\/script>
-</body>
-</html>`;
-
-      html = html.replace('id="summary-total-invest">—', `id="summary-total-invest">${investDisplay}`);
-      html = html.replace('id="summary-total-current">—', `id="summary-total-current">${currentDisplay}`);
-      html = html.replace('id="summary-total-pnl">—', `id="summary-total-pnl"${pnlStyle}>${pnlDisplay}`);
-      html = html.replace('id="summary-total-ret">—', `id="summary-total-ret"${retStyle}>${retDisplay}`);
-      html = html.replace('id="summary-irr">—', `id="summary-irr"${irrStyle}>${irrDisplay}`);
-      html = html.replace('id="summary-duration">—', `id="summary-duration">${durationDisplay}`);
-      html = html.replace('id="summary-currency-note">Částky v CZK', `id="summary-currency-note">${currencyNote}`);
-      html = html.replace('id="funds-currency">—', `id="funds-currency">${outCurr}`);
-      html = html.replace('id="report-currency">—', `id="report-currency">${outCurr}`);
-      html = html.replace('id="report-client-name">—', `id="report-client-name">${escapeHtml(clientLabel)}`);
-      html = html.replace('id="report-generated-at">—', `id="report-generated-at">${escapeHtml(generatedAtLabel)}`);
-      html = html.replace('<div id="client-funds-container" class="space-y-4"></div>', `<div id="client-funds-container" class="space-y-4">${fundsMarkup}</div>`);
-      html = html.replace('<div id="client-line-chart" style="margin-top: 24px; min-height: 340px;"></div>', `<div id="client-line-chart" style="margin-top: 24px; min-height: 340px;">${lineChartSafe}</div>`);
-      html = html.replace('<div id="client-pie-chart" style="margin-top: 18px;"></div>', `<div id="client-pie-chart" style="margin-top: 18px;">${pieChartSafe}</div>`);
-      html = html.replace('id="portfolio-date-note"></div>', `id="portfolio-date-note">${escapeHtml(dateNote)}</div>`);
-      html = html.replace('id="client-pie-start">—', `id="client-pie-start">${sliderStartLabel}`);
-      html = html.replace('id="client-pie-end">—', `id="client-pie-end">${sliderEndLabel}`);
-      return html;
+      return `<!doctype html>\n${html}`;
   };
-
   const createProviderSection = (providerKey) => {
       const providerName = PROVIDERS[providerKey];
       const isAtris = providerKey === 'atris';
@@ -2770,6 +973,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const recalculateAndRender = () => {
     performFullRecalc();
   };
+  const updateClientBanner = (outCurr) => {
+    if (!isClientMode || !elements.clientMetaBanner) {
+        return;
+    }
+    const name = (state.meta.clientName || '').trim();
+    if (elements.clientNameDisplay) {
+        elements.clientNameDisplay.textContent = name || '—';
+    }
+    if (elements.currencyDisplay) {
+        elements.currencyDisplay.textContent = outCurr || '—';
+    }
+    const generated = state.meta.generatedAt ? new Date(state.meta.generatedAt) : null;
+    const formatted = generated && !Number.isNaN(generated.valueOf()) ? generated.toLocaleString('cs-CZ') : new Date().toLocaleString('cs-CZ');
+    if (elements.generatedAtDisplay) {
+        elements.generatedAtDisplay.textContent = formatted;
+    }
+  };
+
   const renderResults = (funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     const groupedFunds = funds.reduce((acc, f) => { if(!f.fund) return acc; const key = f.fund; if (!acc[key]) acc[key] = []; acc[key].push(f); return acc; }, {});
@@ -2778,6 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderFundsByCard(groupedFunds, outCurr, fxRate);
     renderSummary(portfolioSummary, outCurr);
     renderCharts(groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioSummary.portfolioIrr);
+    updateClientBanner(outCurr);
   };
 
   const calculateSummary = (funds, outCurr, fxRate) => {
@@ -3452,6 +1674,10 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.chartTooltip = document.getElementById('chart-tooltip');
     elements.importFile = document.getElementById('import-file-input');
     elements.clientNameInput = document.getElementById('client-name');
+    elements.clientMetaBanner = document.getElementById('client-meta-banner');
+    elements.clientNameDisplay = document.getElementById('client-name-display');
+    elements.generatedAtDisplay = document.getElementById('generated-at-display');
+    elements.currencyDisplay = document.getElementById('report-currency-display');
 
     const currentYearEl = document.getElementById('current-year');
     if (currentYearEl) {
@@ -3466,6 +1692,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
     }
     document.addEventListener('click', (e) => {
+        if (isClientMode) return;
         const button = e.target.closest('button[data-action]'); if (!button) return;
         const { action, provider, id } = button.dataset;
         if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: 'CZK' }); renderProviderInputs(provider, newId); }
