@@ -520,25 +520,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
   const exportClientPresentation = () => {
       cancelAnimationFrame(rafId);
-      recalculateAndRender();
-      const latestData = state.lastProcessedData || {};
-      const funds = Array.isArray(latestData.funds) ? latestData.funds : [];
-      const portfolioSummary = latestData.portfolioSummary || {};
-      const outCurr = elements.outCurrency?.value || 'CZK';
-      const fxRate = utils.numCZ(elements.fxRate?.value);
-      if (!funds.length || !portfolioSummary.hasData) {
+      const { funds, portfolioSummary, hasMixedCurrencies, outCurr, fxRate } = performFullRecalc();
+      if (!funds.length || !portfolioSummary?.hasData) {
           showToast('Pro export je potřeba mít vyplněné a přepočítané portfolio.', 'error');
           return;
       }
-      if (latestData.hasMixedCurrencies && !isFinite(fxRate)) {
+      if (hasMixedCurrencies && !isFinite(fxRate)) {
           showToast('Doplňte směnný kurz EUR/CZK, aby bylo možné vytvořit prezentaci.', 'error');
           return;
       }
 
+      const rowsSnapshot = JSON.parse(JSON.stringify(state.rows));
       const exportPayload = {
           generatedAt: new Date().toISOString(),
           outCurr,
           fxRate: isFinite(fxRate) ? fxRate : null,
+          hasMixedCurrencies,
           funds: funds.map(f => ({
               fund: f.fund,
               invest: f.invest,
@@ -564,7 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
               minValuationDate: portfolioSummary.minValuationDate ? portfolioSummary.minValuationDate.toISOString() : null,
               maxValuationDate: portfolioSummary.maxValuationDate ? portfolioSummary.maxValuationDate.toISOString() : null,
               hasData: portfolioSummary.hasData
-          }
+          },
+          rows: rowsSnapshot
       };
 
       const htmlContent = buildClientPresentationHTML(exportPayload);
@@ -994,15 +992,68 @@ document.addEventListener('DOMContentLoaded', () => {
   <script>
     (function () {
       const data = window.EXPORT_DATA || {};
-      const parseDate = (value) => value ? new Date(value) : null;
-      const funds = (data.funds || []).map((item) => ({
+      const parseDate = (value) => (value ? new Date(value) : null);
+      let funds = (Array.isArray(data.funds) ? data.funds : []).map((item) => ({
         ...item,
         dateIn: parseDate(item.dateIn),
         currDate: parseDate(item.currDate)
       })).filter((item) => item.fund);
-      const summary = data.summary || {};
+      let summary = data.summary || {};
       const outCurr = data.outCurr || 'CZK';
       const fxRate = data.fxRate;
+      let hasMixedCurrencies = typeof data.hasMixedCurrencies === 'boolean' ? data.hasMixedCurrencies : null;
+      const rawRows = data.rows || null;
+
+      const parseNumber = (value) => {
+        if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+        if (value === null || value === undefined) return NaN;
+        let text = String(value).replace(/\u00A0/g, ' ').trim();
+        if (!text) return NaN;
+        text = text.replace(/\s*\b(Kč|CZK|€|EUR)\b\s*/gi, '');
+        text = text.replace(/[\u2212\u2013\u2014]/g, '-');
+        let isNegative = false;
+        if (text.startsWith('(') && text.endsWith(')')) {
+          isNegative = true;
+          text = text.slice(1, -1);
+        }
+        text = text.replace(/\s+/g, '');
+        const lastComma = text.lastIndexOf(',');
+        const lastDot = text.lastIndexOf('.');
+        if (lastComma > lastDot) {
+          text = text.replace(/\./g, '').replace(',', '.');
+        } else if (lastDot > -1 && text.length - lastDot - 1 > 2) {
+          text = text.replace(/,/g, '');
+        } else {
+          text = text.replace(/,/g, '');
+        }
+        const num = Number.parseFloat(text);
+        if (!Number.isFinite(num)) return NaN;
+        return isNegative ? -Math.abs(num) : num;
+      };
+
+      const normalizeName = (value) => String(value || '').replace(/[\u00A0\s]+/g, ' ').trim();
+      const parseLooseDate = (value) => {
+        if (!value) return null;
+        const text = String(value).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+          const date = new Date(text);
+          return Number.isNaN(date.valueOf()) ? null : date;
+        }
+        const match = text.match(/^([0-3]?\d)\.?\s*([01]?\d)\.?\s*(\d{4})$/);
+        if (match) {
+          const date = new Date(`${match[3]}-${match[2]}-${match[1]}`);
+          return Number.isNaN(date.valueOf()) ? null : date;
+        }
+        const fallback = new Date(text);
+        return Number.isNaN(fallback.valueOf()) ? null : fallback;
+      };
+      const monthsDiff = (start, end) => {
+        if (!(start instanceof Date) || !(end instanceof Date)) return NaN;
+        const diff = end.getTime() - start.getTime();
+        if (!Number.isFinite(diff)) return NaN;
+        const days = diff / 86400000;
+        return Math.max(0, days / (365.2425 / 12));
+      };
 
       const nf = (digits) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: digits, maximumFractionDigits: digits });
       const fmt0 = nf(0);
@@ -1065,6 +1116,110 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         return { xirr };
       })();
+
+      const rebuildFromRows = (rows) => {
+        const processed = [];
+        const currencies = new Set();
+        Object.entries(rows || {}).forEach(([providerKey, providerRows]) => {
+          (Array.isArray(providerRows) ? providerRows : []).forEach((row) => {
+            const fundName = normalizeName(row.fund);
+            if (!fundName) return;
+            const curr = row.curr || 'CZK';
+            currencies.add(curr);
+            const dateInRaw = parseLooseDate(row.dateIn);
+            const currDateRaw = parseLooseDate(row.currDate);
+            if (!(dateInRaw instanceof Date) || Number.isNaN(dateInRaw.valueOf())) return;
+            if (!(currDateRaw instanceof Date) || Number.isNaN(currDateRaw.valueOf())) return;
+            const issueNav = parseNumber(row.issueNav);
+            const currNav = parseNumber(row.currNav);
+            let invest = parseNumber(row.invest);
+            let qty = parseNumber(row.qty);
+            let current = parseNumber(row.totalCurrent);
+            if (!Number.isFinite(qty) && Number.isFinite(invest) && Number.isFinite(issueNav) && issueNav > 0) qty = invest / issueNav;
+            if (!Number.isFinite(invest) && Number.isFinite(qty) && Number.isFinite(issueNav) && issueNav > 0) invest = qty * issueNav;
+            if (!Number.isFinite(current) && Number.isFinite(qty) && Number.isFinite(currNav) && currNav > 0) current = qty * currNav;
+            if (!Number.isFinite(invest) || !Number.isFinite(current)) return;
+            const effectiveDateIn = providerKey === 'atris' ? new Date(dateInRaw.getFullYear(), dateInRaw.getMonth() + 1, 5) : dateInRaw;
+            const months = monthsDiff(effectiveDateIn, currDateRaw);
+            const pnl = Number.isFinite(invest) && Number.isFinite(current) ? current - invest : NaN;
+            const ret = invest > 0 ? current / invest - 1 : NaN;
+            const irr = finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: currDateRaw, amount: current }]);
+            processed.push({
+              fund: fundName,
+              invest,
+              qty: Number.isFinite(qty) ? qty : NaN,
+              current,
+              curr,
+              issueNav,
+              currNav,
+              pnl,
+              ret,
+              months,
+              irr,
+              dateIn: effectiveDateIn,
+              currDate: currDateRaw
+            });
+          });
+        });
+        const summaryCalc = (() => {
+          let totalInvest = 0;
+          let totalCurrent = 0;
+          let weightedDuration = 0;
+          const cashflows = [];
+          let latestDate = null;
+          let minValuationDate = null;
+          let maxValuationDate = null;
+          processed.forEach((item) => {
+            const convertedInvest = convert(item.invest, item.curr);
+            const convertedCurrent = convert(item.current, item.curr);
+            if (Number.isFinite(convertedInvest)) {
+              totalInvest += convertedInvest;
+              cashflows.push({ date: item.dateIn, amount: -convertedInvest });
+              if (Number.isFinite(item.months)) {
+                weightedDuration += convertedInvest * item.months;
+              }
+            }
+            if (Number.isFinite(convertedCurrent)) {
+              totalCurrent += convertedCurrent;
+            }
+            if (item.currDate instanceof Date && !Number.isNaN(item.currDate.valueOf())) {
+              if (!minValuationDate || item.currDate < minValuationDate) minValuationDate = item.currDate;
+              if (!maxValuationDate || item.currDate > maxValuationDate) maxValuationDate = item.currDate;
+              if (!latestDate || item.currDate > latestDate) latestDate = item.currDate;
+            }
+          });
+          if (Number.isFinite(totalCurrent) && latestDate) {
+            cashflows.push({ date: latestDate, amount: totalCurrent });
+          }
+          const totalPnl = totalCurrent - totalInvest;
+          const totalRet = totalInvest > 0 ? totalPnl / totalInvest : NaN;
+          const portfolioIrr = finance.xirr(cashflows);
+          const weightedAvgMonths = totalInvest > 0 ? weightedDuration / totalInvest : NaN;
+          return {
+            totalInvestConverted: totalInvest,
+            totalCurrentConverted: totalCurrent,
+            totalPnl,
+            totalRet,
+            portfolioIrr,
+            weightedAvgMonths,
+            minValuationDate: minValuationDate ? minValuationDate.toISOString() : null,
+            maxValuationDate: maxValuationDate ? maxValuationDate.toISOString() : null,
+            hasData: totalInvest > 0 || totalCurrent > 0
+          };
+        })();
+        return { funds: processed, summary: summaryCalc, hasMixedCurrencies: currencies.size > 1 };
+      };
+
+      if ((!funds.length || !summary || !summary.hasData) && rawRows) {
+        const fallback = rebuildFromRows(rawRows);
+        if (fallback && fallback.funds.length) {
+          funds = fallback.funds;
+          summary = fallback.summary;
+          if (typeof fallback.hasMixedCurrencies === 'boolean') {
+            hasMixedCurrencies = fallback.hasMixedCurrencies;
+          }
+        }
+      }
 
       const CHART_COLORS = ['#38bdf8', '#34d399', '#f97316', '#a855f7', '#22d3ee', '#f43f5e', '#4ade80', '#facc15', '#fb7185', '#6366f1'];
       const colorMap = {};
@@ -1744,20 +1899,25 @@ document.addEventListener('DOMContentLoaded', () => {
       return state.lastProcessedData;
   };
 
-  const recalculateAndRender = () => {
+  const performFullRecalc = () => {
     const { funds, hasMixedCurrencies, portfolioSummary } = processAllRows();
     const outCurr = elements.outCurrency?.value || 'CZK';
     const fxRate = utils.numCZ(elements.fxRate?.value);
     const statusContainer = elements.statusContainer || document.getElementById('status-container');
     if (statusContainer) {
-    if (hasMixedCurrencies && !isFinite(fxRate)) {
+      if (hasMixedCurrencies && !isFinite(fxRate)) {
         statusContainer.innerHTML = `<div class="rounded-2xl border border-teal-100 bg-teal-50 p-5 text-sm text-teal-900/80 shadow-sm"><strong class="text-teal-900">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
-    } else {
+      } else {
         statusContainer.innerHTML = '';
-    }
+      }
     }
     renderResults(funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
     calculateAnnuity();
+    return { funds, hasMixedCurrencies, portfolioSummary, outCurr, fxRate };
+  };
+
+  const recalculateAndRender = () => {
+    performFullRecalc();
   };
   const renderResults = (funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
