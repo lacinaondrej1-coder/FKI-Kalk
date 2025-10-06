@@ -1475,13 +1475,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const fundsSource = Array.isArray(data.chartFunds) && data.chartFunds.length
         ? data.chartFunds
         : (Array.isArray(data.funds) ? data.funds : []);
-      let funds = fundsSource.map((item) => ({
-        ...item,
-        fund: typeof item.fund === 'string' && item.fund.trim() ? item.fund.trim() : (typeof item.name === 'string' ? item.name.trim() : ''),
-        dateIn: parseDate(item.dateIn),
-        originalDateIn: parseDate(item.originalDateIn),
-        currDate: parseDate(item.currDate)
-      })).filter((item) => item.fund);
+      let funds = [];
       let summary = data.summary || {};
       const meta = (data && typeof data.meta === 'object') ? data.meta : {};
       const clientName = (data.clientName || meta.clientName || '').trim();
@@ -1615,6 +1609,88 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         return { xirr };
       })();
+
+      const toFiniteNumber = (value) => {
+        const num = parseNumber(value);
+        return Number.isFinite(num) ? num : NaN;
+      };
+
+      const hydrateSnapshot = (item) => {
+        if (!item) return null;
+        const fundName = typeof item.fund === 'string' && item.fund.trim()
+          ? item.fund.trim()
+          : (typeof item.name === 'string' && item.name.trim() ? item.name.trim() : '');
+        if (!fundName) return null;
+        const curr = item.curr || 'CZK';
+        const dateIn = parseDate(item.dateIn);
+        const originalDateIn = parseDate(item.originalDateIn);
+        const currDate = parseDate(item.currDate);
+        let invest = toFiniteNumber(item.invest);
+        let qty = toFiniteNumber(item.qty);
+        const issueNav = toFiniteNumber(item.issueNav);
+        const currNav = toFiniteNumber(item.currNav);
+        if (!Number.isFinite(qty) && Number.isFinite(invest) && Number.isFinite(issueNav) && issueNav > 0) {
+          qty = invest / issueNav;
+        }
+        if (!Number.isFinite(invest) && Number.isFinite(qty) && Number.isFinite(issueNav) && issueNav > 0) {
+          invest = qty * issueNav;
+        }
+        let current = toFiniteNumber(item.current);
+        if (!Number.isFinite(current) && Number.isFinite(qty) && Number.isFinite(currNav) && currNav > 0) {
+          current = qty * currNav;
+        }
+        let investConverted = toFiniteNumber(item.investConverted);
+        if (!Number.isFinite(investConverted) && Number.isFinite(invest)) {
+          investConverted = convert(invest, curr);
+        }
+        let currentConverted = toFiniteNumber(item.currentConverted);
+        if (!Number.isFinite(currentConverted) && Number.isFinite(current)) {
+          currentConverted = convert(current, curr);
+        }
+        let pnlConverted = toFiniteNumber(item.pnlConverted);
+        if (!Number.isFinite(pnlConverted) && Number.isFinite(investConverted) && Number.isFinite(currentConverted)) {
+          pnlConverted = currentConverted - investConverted;
+        }
+        const pnlRaw = toFiniteNumber(item.pnl);
+        const pnl = Number.isFinite(pnlRaw)
+          ? pnlRaw
+          : (Number.isFinite(invest) && Number.isFinite(current) ? current - invest : NaN);
+        const retRaw = toFiniteNumber(item.ret);
+        const ret = Number.isFinite(retRaw)
+          ? retRaw
+          : (Number.isFinite(invest) && invest !== 0 && Number.isFinite(current) ? current / invest - 1 : NaN);
+        let irr = toFiniteNumber(item.irr);
+        if (!Number.isFinite(irr) && dateIn instanceof Date && currDate instanceof Date && Number.isFinite(invest) && Number.isFinite(current)) {
+          irr = finance.xirr([{ date: dateIn, amount: -invest }, { date: currDate, amount: current }]);
+        }
+        let months = toFiniteNumber(item.months);
+        if (!Number.isFinite(months) && dateIn instanceof Date && currDate instanceof Date) {
+          months = monthsDiff(dateIn, currDate);
+        }
+        return {
+          fund: fundName,
+          curr,
+          invest,
+          current,
+          qty,
+          issueNav,
+          currNav,
+          investConverted,
+          currentConverted,
+          pnlConverted,
+          pnl,
+          ret,
+          irr,
+          months,
+          dateIn,
+          originalDateIn,
+          currDate
+        };
+      };
+
+      if (Array.isArray(fundsSource) && fundsSource.length) {
+        funds = fundsSource.map(hydrateSnapshot).filter(Boolean);
+      }
 
       const rebuildFromRows = (rows) => {
         const processed = [];
@@ -1752,6 +1828,10 @@ document.addEventListener('DOMContentLoaded', () => {
           maxValuationDate: null,
           hasData: false
         };
+      }
+
+      if (typeof hasMixedCurrencies !== 'boolean' && funds.length) {
+        hasMixedCurrencies = new Set(funds.map((item) => item.curr)).size > 1;
       }
 
       const CHART_COLORS = ['#38bdf8', '#34d399', '#f97316', '#a855f7', '#22d3ee', '#f43f5e', '#4ade80', '#facc15', '#fb7185', '#6366f1'];
