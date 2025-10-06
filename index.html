@@ -1211,15 +1211,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return { funds: processed, summary: summaryCalc, hasMixedCurrencies: currencies.size > 1 };
       };
 
-      if ((!funds.length || !summary || !summary.hasData) && rawRows) {
-        const fallback = rebuildFromRows(rawRows);
-        if (fallback && fallback.funds.length) {
-          funds = fallback.funds;
-          summary = fallback.summary;
-          if (typeof fallback.hasMixedCurrencies === 'boolean') {
-            hasMixedCurrencies = fallback.hasMixedCurrencies;
+      let rebuilt = null;
+      if (rawRows) {
+        rebuilt = rebuildFromRows(rawRows);
+        if (rebuilt && rebuilt.funds.length) {
+          funds = rebuilt.funds;
+          summary = rebuilt.summary || summary || {};
+          if (typeof data.hasMixedCurrencies === 'boolean') {
+            hasMixedCurrencies = data.hasMixedCurrencies;
+          } else if (typeof rebuilt.hasMixedCurrencies === 'boolean') {
+            hasMixedCurrencies = rebuilt.hasMixedCurrencies;
           }
         }
+      }
+
+      if ((!funds.length || !summary || !summary.hasData) && rebuilt && rebuilt.funds.length) {
+        funds = rebuilt.funds;
+        summary = rebuilt.summary || summary;
+        if (typeof rebuilt.hasMixedCurrencies === 'boolean' && typeof hasMixedCurrencies !== 'boolean') {
+          hasMixedCurrencies = rebuilt.hasMixedCurrencies;
+        }
+      }
+
+      if (!summary) {
+        summary = {
+          totalInvestConverted: NaN,
+          totalCurrentConverted: NaN,
+          totalPnl: NaN,
+          totalRet: NaN,
+          portfolioIrr: NaN,
+          weightedAvgMonths: NaN,
+          minValuationDate: null,
+          maxValuationDate: null,
+          hasData: false
+        };
       }
 
       const CHART_COLORS = ['#38bdf8', '#34d399', '#f97316', '#a855f7', '#22d3ee', '#f43f5e', '#4ade80', '#facc15', '#fb7185', '#6366f1'];
