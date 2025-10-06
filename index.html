@@ -519,6 +519,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportState = () => { const stateString = JSON.stringify({ rows: state.rows }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
   const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
   const exportClientPresentation = () => {
+      cancelAnimationFrame(rafId);
+      recalculateAndRender();
       const latestData = state.lastProcessedData || {};
       const funds = Array.isArray(latestData.funds) ? latestData.funds : [];
       const portfolioSummary = latestData.portfolioSummary || {};
@@ -591,20 +593,29 @@ document.addEventListener('DOMContentLoaded', () => {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      color-scheme: light dark;
+      color-scheme: light;
+      --surface: #ffffff;
+      --surface-muted: #f1f5f9;
+      --border: rgba(15, 118, 110, 0.12);
+      --border-strong: rgba(15, 118, 110, 0.24);
+      --accent: #14b8a6;
+      --accent-strong: #0f766e;
+      --accent-soft: rgba(20, 184, 166, 0.16);
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: radial-gradient(circle at top, #0f172a 0%, #020617 45%, #01030b 100%);
-      color: #f8fafc;
+      background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
+      color: var(--text-primary);
       min-height: 100vh;
     }
     a { color: inherit; }
     .page-shell {
       position: relative;
-      overflow: hidden;
       padding-bottom: 4rem;
     }
     .page-shell::before,
@@ -613,23 +624,22 @@ document.addEventListener('DOMContentLoaded', () => {
       position: absolute;
       border-radius: 9999px;
       filter: blur(80px);
-      opacity: 0.65;
+      opacity: 0.55;
       pointer-events: none;
-      mix-blend-mode: screen;
     }
     .page-shell::before {
-      top: -180px;
+      top: -160px;
       left: -120px;
-      width: 380px;
-      height: 380px;
-      background: rgba(45, 212, 191, 0.45);
+      width: 360px;
+      height: 360px;
+      background: rgba(20, 184, 166, 0.3);
     }
     .page-shell::after {
-      top: -240px;
+      top: -200px;
       right: -160px;
       width: 420px;
       height: 420px;
-      background: rgba(59, 130, 246, 0.4);
+      background: rgba(56, 189, 248, 0.25);
     }
     .content-wrap {
       position: relative;
@@ -644,16 +654,22 @@ document.addEventListener('DOMContentLoaded', () => {
     .hero {
       display: grid;
       gap: 18px;
+      background: var(--surface);
+      border-radius: 28px;
+      padding: 32px 36px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px -32px rgba(15, 23, 42, 0.35);
     }
     .hero h1 {
       font-size: clamp(2.4rem, 4vw, 3rem);
       font-weight: 700;
       letter-spacing: -0.02em;
       margin: 0;
+      color: var(--text-primary);
     }
     .hero p {
       margin: 0;
-      color: rgba(226, 232, 240, 0.88);
+      color: var(--text-muted);
       font-size: 1rem;
       max-width: 640px;
       line-height: 1.6;
@@ -662,22 +678,22 @@ document.addEventListener('DOMContentLoaded', () => {
       display: flex;
       flex-wrap: wrap;
       gap: 12px 20px;
-      font-size: 0.9rem;
-      color: rgba(148, 163, 184, 0.9);
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      align-items: center;
     }
     .card {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-      border-radius: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 26px;
       padding: 32px;
-      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
-      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 50px -28px rgba(15, 23, 42, 0.35);
     }
     .card h2 {
       margin: 0 0 18px;
       font-size: 1.45rem;
       font-weight: 600;
-      color: #e2e8f0;
+      color: var(--text-primary);
     }
     .summary-grid {
       display: grid;
@@ -685,46 +701,46 @@ document.addEventListener('DOMContentLoaded', () => {
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
     .metric {
-      padding: 18px 20px;
-      border-radius: 18px;
-      background: linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(6, 182, 212, 0.08));
-      border: 1px solid rgba(148, 163, 184, 0.14);
+      padding: 20px 22px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(45, 212, 191, 0.08));
+      border: 1px solid rgba(15, 118, 110, 0.15);
       transition: transform 0.3s ease, border-color 0.3s ease;
     }
     .metric:hover {
       transform: translateY(-2px);
-      border-color: rgba(45, 212, 191, 0.45);
+      border-color: rgba(15, 118, 110, 0.32);
     }
     .metric-label {
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.16em;
-      color: rgba(148, 163, 184, 0.8);
+      color: var(--text-muted);
       margin-bottom: 8px;
       display: block;
     }
     .metric-value {
       font-size: 1.6rem;
       font-weight: 600;
-      color: #f8fafc;
+      color: var(--text-primary);
     }
     .metric-subtext {
       margin-top: 6px;
       font-size: 0.85rem;
-      color: rgba(148, 163, 184, 0.85);
+      color: var(--text-secondary);
     }
     .fund-card {
       border-radius: 22px;
       padding: 28px;
       display: grid;
       gap: 20px;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: var(--surface-muted);
+      border: 1px solid rgba(148, 163, 184, 0.24);
       transition: transform 0.3s ease, border-color 0.3s ease;
     }
     .fund-card:hover {
       transform: translateY(-4px);
-      border-color: rgba(94, 234, 212, 0.4);
+      border-color: rgba(15, 118, 110, 0.35);
     }
     .fund-header {
       display: flex;
@@ -736,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .fund-name {
       font-size: 1.35rem;
       font-weight: 600;
-      color: #f8fafc;
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -749,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .fund-metric-label {
       font-size: 0.8rem;
       letter-spacing: 0.12em;
-      color: rgba(148, 163, 184, 0.75);
+      color: var(--text-muted);
       text-transform: uppercase;
       margin-bottom: 6px;
       display: block;
@@ -757,24 +773,31 @@ document.addEventListener('DOMContentLoaded', () => {
     .fund-metric-value {
       font-size: 1.2rem;
       font-weight: 600;
-      color: #e2e8f0;
+      color: var(--text-primary);
     }
     .fund-details {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.92rem;
+      background: var(--surface);
+      border-radius: 16px;
+      overflow: hidden;
     }
     .fund-details thead {
-      color: rgba(148, 163, 184, 0.75);
+      color: var(--text-muted);
       text-transform: uppercase;
       font-size: 0.72rem;
       letter-spacing: 0.18em;
+      background: rgba(148, 163, 184, 0.1);
     }
     .fund-details th,
     .fund-details td {
       padding: 10px 12px;
       text-align: left;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .fund-details tbody tr:last-child td {
+      border-bottom: none;
     }
     .fund-details td:last-child,
     .fund-details th:last-child {
@@ -788,8 +811,8 @@ document.addEventListener('DOMContentLoaded', () => {
       text-align: right;
     }
     .disclosure {
-      font-size: 0.85rem;
-      color: rgba(148, 163, 184, 0.8);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
       line-height: 1.6;
     }
     .chart-card {
@@ -801,16 +824,16 @@ document.addEventListener('DOMContentLoaded', () => {
       top: 0;
       left: 0;
       transform: translate(-50%, -120%);
-      background: rgba(15, 23, 42, 0.92);
-      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--text-primary);
       padding: 12px 16px;
       border-radius: 14px;
       font-size: 0.85rem;
-      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.35);
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.15s ease;
-      border: 1px solid rgba(148, 163, 184, 0.14);
+      border: 1px solid var(--border);
       z-index: 50;
     }
     #chart-tooltip.show { opacity: 1; }
@@ -822,8 +845,8 @@ document.addEventListener('DOMContentLoaded', () => {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(45, 212, 191, 0.12);
-      color: rgba(94, 234, 212, 0.9);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
       padding: 8px 14px;
       border-radius: 999px;
       font-size: 0.82rem;
@@ -838,14 +861,19 @@ document.addEventListener('DOMContentLoaded', () => {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      color: var(--text-secondary);
     }
     details summary::-webkit-details-marker { display: none; }
     details[open] .summary-arrow { transform: rotate(90deg); }
-    .summary-arrow { transition: transform 0.2s ease; }
+    .summary-arrow { transition: transform 0.2s ease; color: var(--accent-strong); }
+    input[type="range"] {
+      accent-color: var(--accent-strong);
+    }
     @media (max-width: 720px) {
       .card { padding: 24px; }
       .fund-card { padding: 22px; }
       .content-wrap { padding: 48px 20px 0; gap: 40px; }
+      .hero { padding: 28px; }
     }
   </style>
 </head>
@@ -930,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div id="client-pie-chart" style="margin-top: 18px;"></div>
           <div style="margin-top: 18px; display: grid; gap: 10px;">
             <input type="range" id="client-pie-slider" min="0" max="100" value="0" />
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(148,163,184,0.85);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
               <span id="client-pie-start">—</span>
               <span id="client-pie-current" style="font-weight: 600; color: #38bdf8;">—</span>
               <span id="client-pie-end">—</span>
@@ -945,14 +973,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <h2>Vysvětlivky</h2>
             <svg class="summary-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
           </summary>
-          <div style="margin-top: 18px; display: grid; gap: 18px; font-size: 0.95rem; color: rgba(226,232,240,0.86);">
-            <div>
-              <h3 style="margin: 0 0 6px; font-size: 1.05rem; color: #f8fafc;">Co je XIRR a jak funguje?</h3>
+            <div style="margin-top: 18px; display: grid; gap: 18px; font-size: 0.95rem; color: var(--text-secondary);">
+              <div>
+                <h3 style="margin: 0 0 6px; font-size: 1.05rem; color: var(--text-primary);">Co je XIRR a jak funguje?</h3>
               <p style="margin: 0 0 10px;">XIRR (z anglického <em>Extended Internal Rate of Return</em>) je nejpřesnější metoda pro výpočet průměrného ročního zhodnocení investice. Zohledňuje načasování jednotlivých vkladů a výběrů.</p>
               <p style="margin: 0;">Díky tomu je vhodný pro portfolia, kde dochází k průběžným změnám investované částky. Výsledek vyjadřuje anualizované tempo výnosu.</p>
             </div>
-            <div>
-              <h3 style="margin: 0 0 6px; font-size: 1.05rem; color: #f8fafc;">Co znamená kumulativní zhodnocení?</h3>
+              <div>
+                <h3 style="margin: 0 0 6px; font-size: 1.05rem; color: var(--text-primary);">Co znamená kumulativní zhodnocení?</h3>
               <p style="margin: 0 0 10px;">Ukazuje celkový čistý zisk nebo ztrátu jako procento z celkové investované částky. Na rozdíl od XIRR nezohledňuje časové rozložení investic.</p>
               <p style="margin: 0;">Tento ukazatel je vhodný pro rychlou orientaci, XIRR pak poskytne přesnější obraz při různých datech vkladů.</p>
             </div>
@@ -1159,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const pnlConverted = (Number.isFinite(investConverted) && Number.isFinite(currentConverted)) ? (currentConverted - investConverted) : NaN;
               const label = index === 0 ? 'První vklad' : 'Dokup #' + index;
               const dateLabel = item.dateIn ? formatDate(item.dateIn) : 'N/A';
-              return '<tr><td>' + label + ' <span style="color: rgba(148,163,184,0.8);">(' + dateLabel + ')</span></td>' +
+              return '<tr><td>' + label + ' <span style="color: var(--text-muted);">(' + dateLabel + ')</span></td>' +
                 '<td>' + cellNum(investConverted, 0) + '</td>' +
                 '<td style="color:' + (pnlConverted >= 0 ? '#34d399' : '#f87171') + ';">' + cellNum(pnlConverted, 0) + '</td>' +
                 '<td>' + cellPct(item.ret) + '</td>' +
