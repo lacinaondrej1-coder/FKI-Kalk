@@ -669,11 +669,214 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const buildClientPresentationHTML = (payload) => {
+      const outCurr = payload?.outCurr || 'CZK';
+      const fxRate = Number.isFinite(payload?.fxRate) ? Number(payload.fxRate) : NaN;
+      const summary = payload?.summary && typeof payload.summary === 'object' ? payload.summary : {};
+      const fundsRaw = Array.isArray(payload?.funds) ? payload.funds : [];
+      const clientName = typeof payload?.clientName === 'string' && payload.clientName.trim() ? payload.clientName.trim() : (payload?.meta && typeof payload.meta.clientName === 'string' ? payload.meta.clientName.trim() : '');
+      const generatedAt = payload?.generatedAt ? new Date(payload.generatedAt) : null;
+
+      const nf = (d) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d });
+      const fmt0 = nf(0);
+      const fmt1 = nf(1);
+      const fmt2 = nf(2);
+      const fmt4 = nf(4);
+      const cellNum = (value, digits = 2) => {
+        if (!Number.isFinite(value)) return '—';
+        if (digits === 0) return fmt0.format(value);
+        if (digits === 1) return fmt1.format(value);
+        if (digits === 4) return fmt4.format(value);
+        return fmt2.format(value);
+      };
+      const cellPct = (value) => Number.isFinite(value) ? fmt2.format(value * 100) + ' %' : '—';
+      const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      const toDate = (value) => {
+        if (!value) return null;
+        if (value instanceof Date && !Number.isNaN(value.valueOf())) return value;
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.valueOf()) ? null : parsed;
+      };
+      const formatDate = (value) => {
+        const d = toDate(value);
+        return d ? d.toLocaleDateString('cs-CZ') : 'N/A';
+      };
+      const convertAmount = (amount, from, to, rate) => {
+        if (!Number.isFinite(amount)) return NaN;
+        if (!from) return NaN;
+        if (from === to) return amount;
+        if (!Number.isFinite(rate) || rate <= 0) return NaN;
+        if (from === 'EUR' && to === 'CZK') return amount * rate;
+        if (from === 'CZK' && to === 'EUR') return amount / rate;
+        return NaN;
+      };
+      const convert = (amount, from) => convertAmount(amount, from, outCurr, fxRate);
+
+      const normalisedFunds = [];
+      fundsRaw.forEach((item) => {
+        const rawName = typeof item?.fund === 'string' ? item.fund.trim() : '';
+        if (!rawName) return;
+        const curr = item?.curr || 'CZK';
+        const invest = Number.isFinite(item?.invest) ? Number(item.invest) : NaN;
+        const current = Number.isFinite(item?.current) ? Number(item.current) : NaN;
+        const investConverted = Number.isFinite(item?.investConverted) ? Number(item.investConverted) : convert(invest, curr);
+        const currentConverted = Number.isFinite(item?.currentConverted) ? Number(item.currentConverted) : convert(current, curr);
+        const pnlConverted = Number.isFinite(item?.pnlConverted)
+          ? Number(item.pnlConverted)
+          : (Number.isFinite(investConverted) && Number.isFinite(currentConverted) ? currentConverted - investConverted : NaN);
+        normalisedFunds.push({
+          name: rawName,
+          curr,
+          invest,
+          current,
+          investConverted,
+          currentConverted,
+          pnlConverted,
+          pnl: Number.isFinite(item?.pnl) ? Number(item.pnl) : NaN,
+          ret: Number.isFinite(item?.ret) ? Number(item.ret) : NaN,
+          irr: Number.isFinite(item?.irr) ? Number(item.irr) : NaN,
+          months: Number.isFinite(item?.months) ? Number(item.months) : NaN,
+          qty: Number.isFinite(item?.qty) ? Number(item.qty) : NaN,
+          issueNav: Number.isFinite(item?.issueNav) ? Number(item.issueNav) : NaN,
+          currNav: Number.isFinite(item?.currNav) ? Number(item.currNav) : NaN,
+          dateIn: toDate(item?.dateIn),
+          originalDateIn: toDate(item?.originalDateIn),
+          currDate: toDate(item?.currDate)
+        });
+      });
+
+      const COLOR_PALETTE = ['#38bdf8', '#34d399', '#f97316', '#a855f7', '#22d3ee', '#f43f5e', '#4ade80', '#facc15', '#fb7185', '#6366f1'];
+      const colorMap = new Map();
+      const colorFor = (name) => {
+        if (!colorMap.has(name)) {
+          const idx = colorMap.size % COLOR_PALETTE.length;
+          colorMap.set(name, COLOR_PALETTE[idx]);
+        }
+        return colorMap.get(name);
+      };
+
+      const fundGroups = [];
+      const groupMap = new Map();
+      normalisedFunds.forEach((fund) => {
+        if (!groupMap.has(fund.name)) {
+          const bucket = [];
+          groupMap.set(fund.name, bucket);
+          fundGroups.push({ name: fund.name, items: bucket });
+        }
+        groupMap.get(fund.name).push(fund);
+      });
+
+      const buildFundCard = (group) => {
+        const items = group.items.slice().sort((a, b) => {
+          const aTime = a.dateIn ? a.dateIn.getTime() : 0;
+          const bTime = b.dateIn ? b.dateIn.getTime() : 0;
+          return aTime - bTime;
+        });
+        let totalInvest = 0;
+        let totalCurrent = 0;
+        let weightedDuration = 0;
+        let latestDate = null;
+        const cashflows = [];
+        items.forEach((item) => {
+          if (Number.isFinite(item.investConverted)) {
+            totalInvest += item.investConverted;
+            const cfDate = item.dateIn || item.originalDateIn;
+            if (cfDate) cashflows.push({ date: cfDate, amount: -item.investConverted });
+            if (Number.isFinite(item.months)) {
+              weightedDuration += item.investConverted * item.months;
+            }
+          }
+          if (Number.isFinite(item.currentConverted)) {
+            totalCurrent += item.currentConverted;
+          }
+          if (item.currDate && (!latestDate || item.currDate > latestDate)) {
+            latestDate = item.currDate;
+          }
+        });
+        if (Number.isFinite(totalCurrent) && latestDate) {
+          cashflows.push({ date: latestDate, amount: totalCurrent });
+        }
+        const pnl = totalCurrent - totalInvest;
+        const irr = finance.xirr(cashflows);
+        const weightedAvg = totalInvest > 0 ? weightedDuration / totalInvest : NaN;
+        const detailRows = items.map((item, index) => {
+          const investVal = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
+          const currentVal = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
+          const pnlVal = Number.isFinite(item.pnlConverted)
+            ? item.pnlConverted
+            : (Number.isFinite(investVal) && Number.isFinite(currentVal) ? currentVal - investVal : NaN);
+          const pnlColor = Number.isFinite(pnlVal) ? (pnlVal >= 0 ? '#34d399' : '#f87171') : 'inherit';
+          const label = index === 0 ? 'První vklad' : `Dokup #${index}`;
+          const dateLabel = formatDate(item.originalDateIn || item.dateIn);
+          return `<tr><td>${label} <span style="color: var(--text-muted);">(${dateLabel})</span></td>` +
+            `<td>${cellNum(investVal, 0)}</td>` +
+            `<td style="color:${pnlColor};">${cellNum(pnlVal, 0)}</td>` +
+            `<td>${cellPct(item.ret)}</td>` +
+            `<td>${Number.isFinite(item.months) ? `${cellNum(item.months, 1)} měs.` : '—'}</td>` +
+            `<td>${Number.isFinite(item.irr) ? `${cellPct(item.irr)} p.a.` : '—'}</td></tr>`;
+        }).join('');
+        const pnlColor = Number.isFinite(pnl) ? (pnl >= 0 ? '#34d399' : '#f87171') : 'inherit';
+        const irrColor = Number.isFinite(irr) ? (irr >= 0 ? '#34d399' : '#f87171') : 'inherit';
+        const latestLabel = latestDate ? formatDate(latestDate) : 'N/A';
+        return `<article class="fund-card">` +
+          `<div class="fund-header">` +
+          `<div class="fund-name"><span style="width:12px;height:12px;border-radius:999px;background:${colorFor(group.name)};"></span>${escapeHtml(group.name)}</div>` +
+          `<div class="disclosure">Aktualizováno k ${latestLabel}</div>` +
+          `</div>` +
+          `<div class="fund-metrics">` +
+          `<div><span class="fund-metric-label">Aktuální hodnota</span><div class="fund-metric-value">${cellNum(totalCurrent, 0)}</div></div>` +
+          `<div><span class="fund-metric-label">Celkový zisk / ztráta</span><div class="fund-metric-value" style="color:${pnlColor};">${cellNum(pnl, 0)}</div></div>` +
+          `<div><span class="fund-metric-label">Výkonnost (XIRR)</span><div class="fund-metric-value" style="color:${irrColor};">${Number.isFinite(irr) ? `${cellPct(irr)} p.a.` : '—'}</div></div>` +
+          `<div><span class="fund-metric-label">Váž. prům. doba</span><div class="fund-metric-value">${Number.isFinite(weightedAvg) ? `${cellNum(weightedAvg, 1)} měs.` : '—'}</div></div>` +
+          `</div>` +
+          `<div style="overflow-x: auto; margin-top: 12px;">` +
+          `<table class="fund-details"><thead><tr><th>Transakce</th><th>Investice</th><th>Výnos</th><th>Kumulativně</th><th>Doba</th><th>XIRR</th></tr></thead><tbody>${detailRows}</tbody></table>` +
+          `</div>` +
+          `</article>`;
+      };
+
+      const fundsMarkup = fundGroups.length ? fundGroups.map(buildFundCard).join('') : '<div class="disclosure">Nejsou k dispozici žádná data pro výpočet.</div>';
+
+      const pnlStyle = Number.isFinite(summary.totalPnl) ? ` style="color:${summary.totalPnl >= 0 ? '#34d399' : '#f87171'};"` : '';
+      const retStyle = Number.isFinite(summary.totalRet) ? ` style="color:${summary.totalRet >= 0 ? '#34d399' : '#f87171'};"` : '';
+      const irrStyle = Number.isFinite(summary.portfolioIrr) ? ` style="color:${summary.portfolioIrr >= 0 ? '#34d399' : '#f87171'};"` : '';
+
+      const minDate = summary?.minValuationDate ? toDate(summary.minValuationDate) : null;
+      const maxDate = summary?.maxValuationDate ? toDate(summary.maxValuationDate) : null;
+      let dateNote = '';
+      if (minDate && maxDate) {
+        const minLabel = minDate.toLocaleDateString('cs-CZ');
+        const maxLabel = maxDate.toLocaleDateString('cs-CZ');
+        dateNote = minLabel === maxLabel
+          ? `Hodnoty jsou platné k ${maxLabel}.`
+          : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minLabel} – ${maxLabel}.`;
+      }
+
+      const investDates = normalisedFunds.map((item) => item.dateIn).filter((d) => d instanceof Date && !Number.isNaN(d.valueOf()));
+      const sliderStart = investDates.length ? investDates.reduce((earliest, date) => (date < earliest ? date : earliest)) : null;
+      const sliderStartLabel = sliderStart ? sliderStart.toLocaleDateString('cs-CZ') : '—';
+      const sliderEndLabel = new Date('2035-12-31').toLocaleDateString('cs-CZ');
+
+      const generatedAtLabel = (generatedAt instanceof Date && !Number.isNaN(generatedAt.valueOf())) ? generatedAt.toLocaleString('cs-CZ') : '—';
+      const clientLabel = clientName || '—';
+      const currencyNote = `Částky v ${outCurr}`;
+
+      const investDisplay = cellNum(summary.totalInvestConverted, 0);
+      const currentDisplay = cellNum(summary.totalCurrentConverted, 0);
+      const pnlDisplay = cellNum(summary.totalPnl, 0);
+      const retDisplay = cellPct(summary.totalRet);
+      const irrDisplay = Number.isFinite(summary.portfolioIrr) ? `${cellPct(summary.portfolioIrr)} p.a.` : '—';
+      const durationDisplay = Number.isFinite(summary.weightedAvgMonths) ? `${cellNum(summary.weightedAvgMonths, 1)} měs.` : '—';
+
       const serialized = JSON.stringify(payload)
-          .replace(/</g, '\\u003c')
-          .replace(/>/g, '\\u003e')
-          .replace(/<\/script/gi, '<\\/script');
-      return `<!doctype html>
+          .replace(/</g, '\u003c')
+          .replace(/>/g, '\u003e')
+          .replace(/<\/script/gi, '<\/script');
+      let html = `<!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
@@ -1901,6 +2104,23 @@ document.addEventListener('DOMContentLoaded', () => {
   <\/script>
 </body>
 </html>`;
+
+      html = html.replace('id="summary-total-invest">—', `id="summary-total-invest">${investDisplay}`);
+      html = html.replace('id="summary-total-current">—', `id="summary-total-current">${currentDisplay}`);
+      html = html.replace('id="summary-total-pnl">—', `id="summary-total-pnl"${pnlStyle}>${pnlDisplay}`);
+      html = html.replace('id="summary-total-ret">—', `id="summary-total-ret"${retStyle}>${retDisplay}`);
+      html = html.replace('id="summary-irr">—', `id="summary-irr"${irrStyle}>${irrDisplay}`);
+      html = html.replace('id="summary-duration">—', `id="summary-duration">${durationDisplay}`);
+      html = html.replace('id="summary-currency-note">Částky v CZK', `id="summary-currency-note">${currencyNote}`);
+      html = html.replace('id="funds-currency">—', `id="funds-currency">${outCurr}`);
+      html = html.replace('id="report-currency">—', `id="report-currency">${outCurr}`);
+      html = html.replace('id="report-client-name">—', `id="report-client-name">${escapeHtml(clientLabel)}`);
+      html = html.replace('id="report-generated-at">—', `id="report-generated-at">${escapeHtml(generatedAtLabel)}`);
+      html = html.replace('<div id="client-funds-container" class="space-y-4"></div>', `<div id="client-funds-container" class="space-y-4">${fundsMarkup}</div>`);
+      html = html.replace('id="portfolio-date-note"></div>', `id="portfolio-date-note">${escapeHtml(dateNote)}</div>`);
+      html = html.replace('id="client-pie-start">—', `id="client-pie-start">${sliderStartLabel}`);
+      html = html.replace('id="client-pie-end">—', `id="client-pie-end">${sliderEndLabel}`);
+      return html;
   };
 
   const createProviderSection = (providerKey) => {
