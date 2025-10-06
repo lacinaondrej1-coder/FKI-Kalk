@@ -302,9 +302,15 @@
               <h3 class="text-xl font-semibold text-slate-900">Správa dat</h3>
               <p class="text-sm text-slate-500">Synchronizujte portfolio jedním kliknutím.</p>
             </div>
-            <div class="flex items-center gap-2 text-sm flex-wrap">
-              <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
-              <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
+            <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 text-sm flex-wrap">
+              <label class="flex items-center gap-2 text-sm text-slate-600">
+                <span class="font-medium text-slate-700 whitespace-nowrap">Jméno klienta</span>
+                <input id="client-name" type="text" placeholder="např. Jana Nováková" class="glass-input px-3 py-2 rounded-xl border text-slate-900 placeholder:text-slate-400 w-[220px]" />
+              </label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
+                <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
+              </div>
               <button data-action="export-presentation" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v6.586L7.707 8.293a1 1 0 10-1.414 1.414l3.293 3.293a1 1 0 001.414 0l3.293-3.293a1 1 0 10-1.414-1.414L11 9.586V3z" /><path d="M3 13a2 2 0 012-2h2a1 1 0 010 2H5v2h10v-2h-2a1 1 0 110-2h2a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3z" /></svg>
                 <span>Export prezentace pro klienta</span>
@@ -446,8 +452,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-  const state = { 
+  const state = {
       rows: { avant: [], codya: [], atris: [], jt: [] },
+      meta: { clientName: '' },
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {}
   };
@@ -506,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveState = () => {
       try {
-          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows }));
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, meta: state.meta }));
           if (elements.lastSavedIndicator) {
               elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
           }
@@ -515,10 +522,81 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Chyba při ukládání dat.", 'error');
       }
   };
-  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); scheduleRecalc(); };
-  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
-  const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
+  const loadState = () => {
+      try {
+          const savedStateJSON = localStorage.getItem('investmentCalculatorState');
+          if (savedStateJSON) {
+              const savedState = JSON.parse(savedStateJSON);
+              if (savedState && typeof savedState.rows === 'object') {
+                  Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; });
+                  const allIds = Object.values(state.rows).flat().map(r => r.id);
+                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
+              }
+              if (savedState && typeof savedState.meta === 'object') {
+                  const savedName = typeof savedState.meta.clientName === 'string' ? savedState.meta.clientName.trim() : '';
+                  state.meta = { ...state.meta, ...savedState.meta, clientName: savedName };
+                  if (elements.clientNameInput) {
+                      elements.clientNameInput.value = state.meta.clientName || '';
+                  }
+              }
+              showToast("Data byla úspěšně načtena z prohlížeče.");
+          }
+      } catch (e) {
+          console.error("Failed to load state:", e);
+          showToast("Nepodařilo se načíst uložená data.", 'error');
+      }
+      renderAllInputs();
+      scheduleRecalc();
+  };
+  const exportState = () => {
+      const payload = { rows: state.rows, meta: state.meta };
+      const stateString = JSON.stringify(payload, null, 2);
+      const blob = new Blob([stateString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Data byla úspěšně exportována.");
+  };
+  const importState = (file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          try {
+              const importedState = JSON.parse(e.target.result);
+              if (importedState && typeof importedState.rows === 'object') {
+                  Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; });
+                  const allIds = Object.values(state.rows).flat().map(r => r.id);
+                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
+                  if (importedState.meta && typeof importedState.meta === 'object') {
+                      const importedName = typeof importedState.meta.clientName === 'string' ? importedState.meta.clientName.trim() : '';
+                      state.meta = { ...state.meta, ...importedState.meta, clientName: importedName };
+                      if (elements.clientNameInput) {
+                          elements.clientNameInput.value = state.meta.clientName || '';
+                      }
+                  }
+                  saveState();
+                  renderAllInputs();
+                  scheduleRecalc();
+                  showToast("Data byla úspěšně importována.");
+              } else {
+                  throw new Error("Invalid file structure.");
+              }
+          } catch (err) {
+              console.error("Failed to import state:", err);
+              showToast("Chyba při importu: neplatný formát souboru.", 'error');
+          }
+      };
+      reader.readAsText(file);
+  };
   const exportClientPresentation = () => {
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+      }
       cancelAnimationFrame(rafId);
       const { funds, portfolioSummary, hasMixedCurrencies, outCurr, fxRate } = performFullRecalc();
       if (!funds.length || !portfolioSummary?.hasData) {
@@ -529,13 +607,20 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast('Doplňte směnný kurz EUR/CZK, aby bylo možné vytvořit prezentaci.', 'error');
           return;
       }
-
+      const clientNameInput = elements.clientNameInput || document.getElementById('client-name');
+      if (clientNameInput) {
+          state.meta.clientName = clientNameInput.value || '';
+      }
+      const clientName = (state.meta.clientName || '').trim();
+      state.meta.clientName = clientName;
+      saveState();
       const rowsSnapshot = JSON.parse(JSON.stringify(state.rows));
       const exportPayload = {
           generatedAt: new Date().toISOString(),
           outCurr,
           fxRate: isFinite(fxRate) ? fxRate : null,
           hasMixedCurrencies,
+          clientName,
           funds: funds.map(f => ({
               fund: f.fund,
               invest: f.invest,
@@ -544,11 +629,15 @@ document.addEventListener('DOMContentLoaded', () => {
               qty: f.qty,
               issueNav: f.issueNav,
               currNav: f.currNav,
+              investConverted: utils.convertAmount(f.invest, f.curr, outCurr, fxRate),
+              currentConverted: utils.convertAmount(f.current, f.curr, outCurr, fxRate),
+              pnlConverted: utils.convertAmount(f.pnl, f.curr, outCurr, fxRate),
               pnl: f.pnl,
               ret: f.ret,
               irr: f.irr,
               months: f.months,
               dateIn: f.dateIn ? f.dateIn.toISOString() : null,
+              originalDateIn: f.originalDateIn ? f.originalDateIn.toISOString() : null,
               currDate: f.currDate ? f.currDate.toISOString() : null
           })),
           summary: {
@@ -562,7 +651,8 @@ document.addEventListener('DOMContentLoaded', () => {
               maxValuationDate: portfolioSummary.maxValuationDate ? portfolioSummary.maxValuationDate.toISOString() : null,
               hasData: portfolioSummary.hasData
           },
-          rows: rowsSnapshot
+          rows: rowsSnapshot,
+          meta: { clientName }
       };
 
       const htmlContent = buildClientPresentationHTML(exportPayload);
@@ -579,7 +669,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const buildClientPresentationHTML = (payload) => {
-      const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
+      const serialized = JSON.stringify(payload)
+          .replace(/</g, '\\u003c')
+          .replace(/>/g, '\\u003e')
+          .replace(/<\/script/gi, '<\\/script');
       return `<!doctype html>
 <html lang="cs">
 <head>
@@ -884,9 +977,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <p>Souhrn výsledků, historického vývoje a očekávané projekce Vašeho portfolia. Všechny částky jsou uvedeny v cílové měně dle dohody s poradcem.</p>
         <div class="hero-meta">
           <div>Klientská prezentace FairLife</div>
-          <div>|</div>
+          <div class="meta-separator" id="client-separator">|</div>
+          <div class="client-meta" id="client-meta"><strong>Klient:</strong> <span id="report-client-name">—</span></div>
+          <div class="meta-separator">|</div>
           <div><strong>Generováno:</strong> <span id="report-generated-at">—</span></div>
-          <div>|</div>
+          <div class="meta-separator">|</div>
           <div><strong>Měna výstupu:</strong> <span id="report-currency">—</span></div>
         </div>
       </header>
@@ -988,21 +1083,45 @@ document.addEventListener('DOMContentLoaded', () => {
     </main>
   </div>
   <div id="chart-tooltip"></div>
-  <script>window.EXPORT_DATA = ${serialized};<\/script>
+  <script type="application/json" id="export-data">${serialized}</script>
   <script>
     (function () {
-      const data = window.EXPORT_DATA || {};
+      let data = {};
+      try {
+        const raw = document.getElementById('export-data');
+        if (raw) {
+          data = JSON.parse(raw.textContent || '{}');
+        }
+      } catch (err) {
+        console.error('Nepodařilo se načíst data prezentace:', err);
+        data = {};
+      }
       const parseDate = (value) => (value ? new Date(value) : null);
       let funds = (Array.isArray(data.funds) ? data.funds : []).map((item) => ({
         ...item,
         dateIn: parseDate(item.dateIn),
+        originalDateIn: parseDate(item.originalDateIn),
         currDate: parseDate(item.currDate)
       })).filter((item) => item.fund);
       let summary = data.summary || {};
+      const meta = (data && typeof data.meta === 'object') ? data.meta : {};
+      const clientName = (data.clientName || meta.clientName || '').trim();
       const outCurr = data.outCurr || 'CZK';
       const fxRate = data.fxRate;
       let hasMixedCurrencies = typeof data.hasMixedCurrencies === 'boolean' ? data.hasMixedCurrencies : null;
       const rawRows = data.rows || null;
+      const coerceSummaryNumbers = () => {
+        if (!summary || typeof summary !== 'object') return;
+        ['totalInvestConverted', 'totalCurrentConverted', 'totalPnl', 'totalRet', 'portfolioIrr', 'weightedAvgMonths'].forEach((key) => {
+          if (summary[key] === null || summary[key] === undefined) return;
+          if (typeof summary[key] === 'number') return;
+          const num = Number(summary[key]);
+          if (Number.isFinite(num)) {
+            summary[key] = num;
+          }
+        });
+      };
+      coerceSummaryNumbers();
 
       const parseNumber = (value) => {
         if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
@@ -1145,6 +1264,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const pnl = Number.isFinite(invest) && Number.isFinite(current) ? current - invest : NaN;
             const ret = invest > 0 ? current / invest - 1 : NaN;
             const irr = finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: currDateRaw, amount: current }]);
+            const investConverted = convert(invest, curr);
+            const currentConverted = convert(current, curr);
+            const pnlConverted = (Number.isFinite(investConverted) && Number.isFinite(currentConverted)) ? currentConverted - investConverted : NaN;
             processed.push({
               fund: fundName,
               invest,
@@ -1157,7 +1279,11 @@ document.addEventListener('DOMContentLoaded', () => {
               ret,
               months,
               irr,
+              investConverted,
+              currentConverted,
+              pnlConverted,
               dateIn: effectiveDateIn,
+              originalDateIn: dateInRaw,
               currDate: currDateRaw
             });
           });
@@ -1171,8 +1297,8 @@ document.addEventListener('DOMContentLoaded', () => {
           let minValuationDate = null;
           let maxValuationDate = null;
           processed.forEach((item) => {
-            const convertedInvest = convert(item.invest, item.curr);
-            const convertedCurrent = convert(item.current, item.curr);
+            const convertedInvest = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
+            const convertedCurrent = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
             if (Number.isFinite(convertedInvest)) {
               totalInvest += convertedInvest;
               cashflows.push({ date: item.dateIn, amount: -convertedInvest });
@@ -1217,6 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rebuilt && rebuilt.funds.length) {
           funds = rebuilt.funds;
           summary = rebuilt.summary || summary || {};
+          coerceSummaryNumbers();
           if (typeof data.hasMixedCurrencies === 'boolean') {
             hasMixedCurrencies = data.hasMixedCurrencies;
           } else if (typeof rebuilt.hasMixedCurrencies === 'boolean') {
@@ -1228,6 +1355,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if ((!funds.length || !summary || !summary.hasData) && rebuilt && rebuilt.funds.length) {
         funds = rebuilt.funds;
         summary = rebuilt.summary || summary;
+        coerceSummaryNumbers();
         if (typeof rebuilt.hasMixedCurrencies === 'boolean' && typeof hasMixedCurrencies !== 'boolean') {
           hasMixedCurrencies = rebuilt.hasMixedCurrencies;
         }
@@ -1261,6 +1389,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const generatedLabel = document.getElementById('report-generated-at');
       if (generatedLabel && generatedAt instanceof Date && !Number.isNaN(generatedAt.valueOf())) {
         generatedLabel.textContent = generatedAt.toLocaleString('cs-CZ');
+      }
+      const clientNameEl = document.getElementById('report-client-name');
+      const clientMetaEl = document.getElementById('client-meta');
+      const clientSeparatorEl = document.getElementById('client-separator');
+      if (clientNameEl) {
+        clientNameEl.textContent = clientName || '—';
+      }
+      if (clientMetaEl) {
+        if (clientName) {
+          clientMetaEl.style.display = '';
+          if (clientSeparatorEl) clientSeparatorEl.style.display = '';
+        } else {
+          clientMetaEl.style.display = 'none';
+          if (clientSeparatorEl) clientSeparatorEl.style.display = 'none';
+        }
       }
       const currencyLabel = document.getElementById('report-currency');
       if (currencyLabel) {
@@ -1338,8 +1481,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cashflows = [];
             let latestDate = null;
             sorted.forEach((item) => {
-              const investConverted = convert(item.invest, item.curr);
-              const currentConverted = convert(item.current, item.curr);
+              const investConverted = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
+              const currentConverted = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
               if (Number.isFinite(investConverted)) {
                 totalInvest += investConverted;
                 cashflows.push({ date: item.dateIn, amount: -investConverted });
@@ -1363,11 +1506,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = getColor(name);
 
             const detailRows = sorted.map((item, index) => {
-              const investConverted = convert(item.invest, item.curr);
-              const currentConverted = convert(item.current, item.curr);
-              const pnlConverted = (Number.isFinite(investConverted) && Number.isFinite(currentConverted)) ? (currentConverted - investConverted) : NaN;
+              const investConverted = Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr);
+              const currentConverted = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
+              const pnlConverted = Number.isFinite(item.pnlConverted) ? item.pnlConverted : (Number.isFinite(investConverted) && Number.isFinite(currentConverted) ? (currentConverted - investConverted) : NaN);
               const label = index === 0 ? 'První vklad' : 'Dokup #' + index;
-              const dateLabel = item.dateIn ? formatDate(item.dateIn) : 'N/A';
+              const baseDate = item.originalDateIn instanceof Date && !Number.isNaN(item.originalDateIn.valueOf()) ? item.originalDateIn : item.dateIn;
+              const dateLabel = baseDate ? formatDate(baseDate) : 'N/A';
               return '<tr><td>' + label + ' <span style="color: var(--text-muted);">(' + dateLabel + ')</span></td>' +
                 '<td>' + cellNum(investConverted, 0) + '</td>' +
                 '<td style="color:' + (pnlConverted >= 0 ? '#34d399' : '#f87171') + ';">' + cellNum(pnlConverted, 0) + '</td>' +
@@ -1441,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lineChartContainer.innerHTML = '';
         const deposits = funds.map((item) => ({
           date: item.dateIn,
-          amount: convert(item.invest, item.curr),
+          amount: Number.isFinite(item.investConverted) ? item.investConverted : convert(item.invest, item.curr),
           fund: item.fund
         })).filter((item) => item.date instanceof Date && !Number.isNaN(item.date.valueOf()) && Number.isFinite(item.amount)).sort((a, b) => a.date - b.date);
         if (!deposits.length) {
@@ -1670,7 +1814,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const slices = Object.entries(grouped).map(([name, list]) => {
           let value = 0;
           list.forEach((item) => {
-            const currentConverted = convert(item.current, item.curr);
+            const currentConverted = Number.isFinite(item.currentConverted) ? item.currentConverted : convert(item.current, item.curr);
             if (Number.isFinite(currentConverted)) {
               value += currentConverted;
             }
@@ -2625,6 +2769,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.annuityDisclaimer = document.getElementById('annuity-disclaimer');
     elements.chartTooltip = document.getElementById('chart-tooltip');
     elements.importFile = document.getElementById('import-file-input');
+    elements.clientNameInput = document.getElementById('client-name');
 
     const currentYearEl = document.getElementById('current-year');
     if (currentYearEl) {
@@ -2660,6 +2805,17 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.fxRate?.addEventListener('input', scheduleRecalc);
     elements.outCurrency?.addEventListener('change', scheduleRecalc);
     elements.annuityInput?.addEventListener('input', calculateAnnuity);
+    elements.clientNameInput?.addEventListener('input', (e) => {
+        state.meta.clientName = e.target.value;
+    });
+    elements.clientNameInput?.addEventListener('blur', (e) => {
+        const trimmed = (e.target.value || '').trim();
+        if (trimmed !== e.target.value) {
+            e.target.value = trimmed;
+        }
+        state.meta.clientName = trimmed;
+        saveState();
+    });
     const providerSections = elements.providerSections;
     if (providerSections) {
         providerSections.addEventListener('input', (e) => {
