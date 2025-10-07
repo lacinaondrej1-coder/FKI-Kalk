@@ -200,6 +200,14 @@
         outline: none;
     }
 
+    .form-checkbox {
+        width: 1.05rem;
+        height: 1.05rem;
+        border-radius: 0.35rem;
+        border: 1px solid var(--color-border);
+        accent-color: var(--color-accent);
+    }
+
     h1.report-title {
         font-size: 3.333rem;
         font-weight: 700;
@@ -637,6 +645,10 @@
                 <input id="client-salutation" type="text" placeholder="např. Pepo" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[260px] text-primary placeholder:text-muted" />
                 <span class="text-xs text-muted">Tip: Pepo, Jano, paní Nováková…</span>
               </label>
+              <label class="flex items-center gap-2 text-sm text-body">
+                <input id="client-prefer-vykanie" type="checkbox" class="form-checkbox" />
+                <span>Preferovat vykání v reportu</span>
+              </label>
               <div class="flex flex-wrap gap-2">
                 <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
                 <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
@@ -781,7 +793,8 @@ document.addEventListener('DOMContentLoaded', () => {
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {},
       clientName: '',
-      clientSalutation: ''
+      clientSalutation: '',
+      clientPreferVykanie: false
   };
   const elements = {};
   let rowSeq = 0;
@@ -824,6 +837,119 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt2 = utils.nf(2); const fmt4 = utils.nf(4); const fmt1 = utils.nf(1); const fmt0 = utils.nf(0);
   const cellNum = (v, d = 2) => { if(!isFinite(v)) return '—'; if(d === 4) return fmt4.format(v); if(d === 1) return fmt1.format(v); if(d === 0) return fmt0.format(v); return fmt2.format(v); };
   const cellPct = v => isFinite(v) ? fmt2.format(v * 100) + ' %' : '—';
+  const formatCurrency = (value, decimals = 2) => {
+      if (!isFinite(value)) return '—';
+      if (decimals === 0) return cellNum(value, 0);
+      if (decimals === 1) return cellNum(value, 1);
+      if (decimals === 4) return cellNum(value, 4);
+      return cellNum(value, 2);
+  };
+  const formatPercent = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)} %` : '—';
+  const formatPercentPa = (value, decimals = 2) => isFinite(value) ? `${formatPercent(value, decimals)} p.a.` : '—';
+  const parseClientName = (fullName = '') => {
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) {
+          return { firstName: '', lastName: '' };
+      }
+      if (parts.length === 1) {
+          return { firstName: parts[0], lastName: '' };
+      }
+      return { firstName: parts[0], lastName: parts[parts.length - 1] };
+  };
+  const toVocative = (name = '') => {
+      const trimmed = name.trim();
+      if (!trimmed) return '';
+      const lower = trimmed.toLocaleLowerCase('cs-CZ');
+      const overrides = {
+          'pepa': 'pepo',
+          'jan': 'jane',
+          'honza': 'honzo',
+          'pavel': 'pavle',
+          'ondřej': 'ondřeji',
+          'lukáš': 'lukáši',
+          'tomáš': 'tomáši',
+          'jiří': 'jiří',
+          'karel': 'karle',
+          'martin': 'martine',
+          'michal': 'michale',
+          'radek': 'radku',
+          'marek': 'marku',
+          'adam': 'adame',
+          'alena': 'aleno',
+          'jana': 'jano',
+          'eva': 'evo',
+          'lenka': 'lenko',
+          'petra': 'petro',
+          'veronika': 'veroniko'
+      };
+      const override = overrides[lower];
+      if (override) {
+          return override.charAt(0).toLocaleUpperCase('cs-CZ') + override.slice(1);
+      }
+      const applyCasing = (base) => {
+          if (!base) return '';
+          const first = trimmed.charAt(0);
+          const rest = base.slice(1);
+          const firstConverted = base.charAt(0).toLocaleUpperCase('cs-CZ');
+          return first === first.toLocaleUpperCase('cs-CZ')
+              ? firstConverted + rest
+              : base.toLocaleLowerCase('cs-CZ');
+      };
+      const replaceEnding = (replacement) => applyCasing(replacement);
+      if (lower.endsWith('a')) {
+          return replaceEnding(lower.slice(0, -1) + 'o');
+      }
+      if (lower.endsWith('ek')) {
+          return replaceEnding(lower.slice(0, -2) + 'ku');
+      }
+      if (lower.endsWith('el')) {
+          return replaceEnding(lower.slice(0, -2) + 'le');
+      }
+      if (lower.endsWith('er')) {
+          return replaceEnding(lower.slice(0, -2) + 'ře');
+      }
+      if (lower.endsWith('as')) {
+          return replaceEnding(lower + 'i');
+      }
+      if (lower.endsWith('áš')) {
+          return replaceEnding(lower + 'i');
+      }
+      if (lower.endsWith('us')) {
+          return replaceEnding(lower.slice(0, -2) + 'e');
+      }
+      if (lower.endsWith('k')) {
+          return replaceEnding(lower + 'u');
+      }
+      if (lower.endsWith('o')) {
+          return replaceEnding(lower + 'u');
+      }
+      return replaceEnding(lower + 'e');
+  };
+  const formatSalutation = ({ firstName = '', lastName = '', preferVykanie = false, manualSalutation = '' }) => {
+      const manual = manualSalutation.trim();
+      if (manual) return manual;
+      const first = firstName.trim();
+      const last = lastName.trim();
+      if (preferVykanie) {
+          if (last) {
+              if (/ová$/i.test(last)) {
+                  return `paní ${last}`;
+              }
+              return `pane ${toVocative(last) || last}`;
+          }
+          if (first) {
+              return `pane ${toVocative(first) || first}`;
+          }
+          return 'Vážený kliente';
+      }
+      if (first) {
+          return toVocative(first) || first;
+      }
+      if (last) {
+          return toVocative(last) || last;
+      }
+      return 'milý kliente';
+  };
   
   const finance = (() => {
     function xnpv(rate, cfs) { if (!isFinite(rate)) return NaN; const sortedCfs = cfs.slice().sort((a, b) => a.date - b.date); const t0 = sortedCfs[0]?.date; if (!t0) return NaN; return sortedCfs.reduce((sum, cf) => { const days = (cf.date - t0) / 86400000; return sum + cf.amount / Math.pow(1 + rate, days / 365.25); }, 0); }
@@ -850,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveState = () => {
       try {
-          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation }));
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientPreferVykanie: state.clientPreferVykanie }));
           if (elements.lastSavedIndicator) {
               elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
           }
@@ -859,10 +985,46 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Chyba při ukládání dat.", 'error');
       }
   };
-  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } scheduleRecalc(); };
-  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
-  const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); state.clientName = typeof importedState.clientName === 'string' ? importedState.clientName : ''; state.clientSalutation = typeof importedState.clientSalutation === 'string' ? importedState.clientSalutation : ''; const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; }
-            saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
+  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; state.clientPreferVykanie = Boolean(savedState.clientPreferVykanie); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } if (elements.clientPreferVykanieInput) { elements.clientPreferVykanieInput.checked = state.clientPreferVykanie; } scheduleRecalc(); };
+  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientPreferVykanie: state.clientPreferVykanie }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
+  const importState = (file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          try {
+              const importedState = JSON.parse(e.target.result);
+              if (importedState && typeof importedState.rows === 'object') {
+                  Object.keys(PROVIDERS).forEach(key => {
+                      state.rows[key] = importedState.rows[key] || [];
+                  });
+                  state.clientName = typeof importedState.clientName === 'string' ? importedState.clientName : '';
+                  state.clientSalutation = typeof importedState.clientSalutation === 'string' ? importedState.clientSalutation : '';
+                  state.clientPreferVykanie = Boolean(importedState.clientPreferVykanie);
+                  const allIds = Object.values(state.rows).flat().map(r => r.id);
+                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
+                  if (elements.clientNameInput) {
+                      elements.clientNameInput.value = state.clientName;
+                  }
+                  if (elements.clientSalutationInput) {
+                      elements.clientSalutationInput.value = state.clientSalutation;
+                  }
+                  if (elements.clientPreferVykanieInput) {
+                      elements.clientPreferVykanieInput.checked = state.clientPreferVykanie;
+                  }
+                  saveState();
+                  renderAllInputs();
+                  scheduleRecalc();
+                  showToast("Data byla úspěšně importována.");
+              } else {
+                  throw new Error("Invalid file structure.");
+              }
+          } catch (err) {
+              console.error("Failed to import state:", err);
+              showToast("Chyba při importu: neplatný formát souboru.", 'error');
+          }
+      };
+      reader.readAsText(file);
+  };
 
   const createProviderSection = (providerKey) => {
       const providerName = PROVIDERS[providerKey];
@@ -1162,10 +1324,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const safeName = htmlEscape(name);
 
           const metrics = [
-              { label: 'Investováno', value: cellNum(totalInvest) },
-              { label: 'Aktuální hodnota', value: cellNum(totalCurrent) },
-              { label: 'Čistý výnos', value: cellNum(pnl), extraClass: pnlClass },
-              { label: 'Průměrný roční výnos (XIRR)', value: isFinite(fundIrr) ? `${cellPct(fundIrr)} p.a.` : '—', extraClass: irrClass },
+              { label: 'Investováno', value: formatCurrency(totalInvest) },
+              { label: 'Aktuální hodnota', value: formatCurrency(totalCurrent) },
+              { label: 'Čistý výnos', value: formatCurrency(pnl), extraClass: pnlClass },
+              { label: 'Průměrný roční výnos (XIRR)', value: formatPercentPa(fundIrr), extraClass: irrClass },
               { label: 'Průměrná doba investice', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
           ];
 
@@ -1176,11 +1338,11 @@ document.addEventListener('DOMContentLoaded', () => {
               const displayDate = inv.originalDateIn || inv.dateIn;
               return `<tr>
                 <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
-                <td class="text-right">${cellNum(convertedInvest)}</td>
-                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${cellNum(convertedPnl)}</td>
-                <td class="text-right">${cellNum(convertedCurrent)}</td>
+                <td class="text-right">${formatCurrency(convertedInvest)}</td>
+                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency(convertedPnl)}</td>
+                <td class="text-right">${formatCurrency(convertedCurrent)}</td>
                 <td class="text-right">${isFinite(inv.months) ? cellNum(inv.months, 1) + ' měs.' : '—'}</td>
-                <td class="text-right">${isFinite(inv.irr) ? cellPct(inv.irr) + ' p.a.' : '—'}</td>
+                <td class="text-right">${formatPercentPa(inv.irr)}</td>
               </tr>`;
           }).join('');
 
@@ -1303,13 +1465,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isStaticExport) {
+        const formatted = {
+            totalInvest: formatCurrency(totalInvestConverted),
+            totalCurrent: formatCurrency(totalCurrentConverted),
+            totalPnl: formatCurrency(totalPnl),
+            totalRet: formatPercent(totalRet),
+            irr: formatPercentPa(portfolioIrr),
+            weightedMonths: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'
+        };
         const summaryMetrics = [
-            { label: 'VAŠE CELKOVÉ VKLADY', value: cellNum(totalInvestConverted) },
-            { label: 'AKTUÁLNÍ HODNOTA', value: cellNum(totalCurrentConverted) },
-            { label: 'ČISTÝ VÝNOS', value: cellNum(totalPnl), toneClass: pnlClassExport },
-            { label: 'CELKOVÉ ZHODNOCENÍ', value: cellPct(totalRet), toneClass: pnlClassExport },
-            { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassExport },
-            { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+            { label: 'VAŠE CELKOVÉ VKLADY', value: formatted.totalInvest },
+            { label: 'AKTUÁLNÍ HODNOTA', value: formatted.totalCurrent },
+            { label: 'ČISTÝ VÝNOS', value: formatted.totalPnl, toneClass: pnlClassExport },
+            { label: 'CELKOVÉ ZHODNOCENÍ', value: formatted.totalRet, toneClass: pnlClassExport },
+            { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: formatted.irr, toneClass: irrClassExport },
+            { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: formatted.weightedMonths }
         ];
 
         const cards = summaryMetrics.map(({ label, value, toneClass }) => `
@@ -1326,13 +1496,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return exportContent;
     }
 
+    const formattedInteractive = {
+        totalInvest: formatCurrency(totalInvestConverted),
+        totalCurrent: formatCurrency(totalCurrentConverted),
+        totalPnl: formatCurrency(totalPnl),
+        totalRet: formatPercent(totalRet),
+        irr: formatPercentPa(portfolioIrr),
+        weightedMonths: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'
+    };
     const interactiveMetrics = [
-      { label: 'VAŠE CELKOVÉ VKLADY', value: cellNum(totalInvestConverted) },
-      { label: 'AKTUÁLNÍ HODNOTA', value: cellNum(totalCurrentConverted) },
-      { label: 'ČISTÝ VÝNOS', value: cellNum(totalPnl), toneClass: pnlClassInteractive },
-      { label: 'CELKOVÉ ZHODNOCENÍ', value: cellPct(totalRet), toneClass: pnlClassInteractive },
-      { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassInteractive },
-      { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+      { label: 'VAŠE CELKOVÉ VKLADY', value: formattedInteractive.totalInvest },
+      { label: 'AKTUÁLNÍ HODNOTA', value: formattedInteractive.totalCurrent },
+      { label: 'ČISTÝ VÝNOS', value: formattedInteractive.totalPnl, toneClass: pnlClassInteractive },
+      { label: 'CELKOVÉ ZHODNOCENÍ', value: formattedInteractive.totalRet, toneClass: pnlClassInteractive },
+      { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: formattedInteractive.irr, toneClass: irrClassInteractive },
+      { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: formattedInteractive.weightedMonths }
     ];
     const interactiveCards = interactiveMetrics.map(({ label, value, toneClass }) => `
       <div class="summary-card">
@@ -1398,7 +1576,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span><span class="legend-pill legend-pill--value">Odhad hodnoty</span>${exportChart.irrPositive ? '<span class="legend-pill legend-pill--projection">Projekce</span>' : ''}</div>`
             : `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span></div>`;
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
-        return `<div class="line-export">${legend}<div class="line-canvas">${exportChart.svg}</div>${footnote}</div>`;
+        const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
+        return `<div class="line-export">${legend}<div class="line-canvas" role="img" aria-label="${ariaAttr}">${exportChart.svg}</div>${footnote}</div>`;
     }
 
     if (!container) return;
@@ -1542,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <circle r="5" fill="#0d2c54" stroke="white" stroke-width="2"></circle>
                 <rect x="-40" y="-35" width="80" height="20" rx="5" fill="rgba(255,255,255,0.8)"></rect>
                 <text text-anchor="middle" y="-20" font-size="10px" fill="#1f2937">
-                    <tspan x="0" dy="0">${point.label}: ${cellNum(value, 0)}</tspan>
+                    <tspan x="0" dy="0">${point.label}: ${formatCurrency(value, 0)}</tspan>
                 </text>
             </g>`;
         });
@@ -1703,7 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
         const svg = buildStaticPieChartSvg(slices, pieTotal);
-        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${cellPct(d.value / pieTotal)}</span></div>`).join('');
+        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent(d.value / pieTotal)}</span></div>`).join('');
         return `<div class="pie-export"><div class="pie-canvas">${svg}</div><div class="pie-legend">${legend}</div></div>`;
     }
 
@@ -1721,8 +1900,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.classList.add('pie-segment');
         g.dataset.name = d.name;
-        g.dataset.value = `${cellNum(d.totalCurrent)} ${outCurr}`;
-        g.dataset.percent = cellPct(d.totalCurrent / pieTotal);
+        g.dataset.value = `${formatCurrency(d.totalCurrent)} ${outCurr}`;
+        g.dataset.percent = formatPercent(d.totalCurrent / pieTotal);
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute('cx', 50);
         circle.setAttribute('cy', 50);
@@ -1736,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach((d) => {
             const percent = d.totalCurrent / pieTotal; if (percent === 0) return;
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            g.classList.add('pie-segment'); g.dataset.name = d.name; g.dataset.value = `${cellNum(d.totalCurrent)} ${outCurr}`; g.dataset.percent = cellPct(d.totalCurrent / pieTotal);
+            g.classList.add('pie-segment'); g.dataset.name = d.name; g.dataset.value = `${formatCurrency(d.totalCurrent)} ${outCurr}`; g.dataset.percent = formatPercent(d.totalCurrent / pieTotal);
             const startAngleRad = (angle * Math.PI) / 180; angle += percent * 360; const endAngleRad = (angle * Math.PI) / 180;
             const x1_outer = 50 + outerRadius * Math.cos(startAngleRad); const y1_outer = 50 + outerRadius * Math.sin(startAngleRad);
             const x2_outer = 50 + outerRadius * Math.cos(endAngleRad); const y2_outer = 50 + outerRadius * Math.sin(endAngleRad);
@@ -1758,7 +1937,7 @@ document.addEventListener('DOMContentLoaded', () => {
     centerCircle.setAttribute('stroke-width', '2');
     centerCircle.setAttribute('pointer-events', 'none');
     svg.appendChild(centerCircle);
-    const legend = data.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${getColor(d.name)}"></span><span class="legend-name">${d.name}</span><span class="legend-value">${cellPct(d.totalCurrent / pieTotal)}</span></div>`).join('');
+    const legend = data.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${getColor(d.name)}"></span><span class="legend-name">${d.name}</span><span class="legend-value">${formatPercent(d.totalCurrent / pieTotal)}</span></div>`).join('');
     container.innerHTML = `<div class="pie-export"><div class="pie-canvas"></div><div class="pie-legend">${legend}</div></div>`;
     container.querySelector('.pie-canvas').appendChild(svg);
   };
@@ -1784,7 +1963,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const y1Inner = 50 + innerRadius * Math.sin(startRad);
           const x2Inner = 50 + innerRadius * Math.cos(endRad);
           const y2Inner = 50 + innerRadius * Math.sin(endRad);
-          const tooltip = `${name} • ${cellNum(value)} (${cellPct(percent)})`;
+          const tooltip = `${name} • ${formatCurrency(value)} (${formatPercent(percent)})`;
           return `<g class="pie-slice" data-tooltip-text="${htmlEscape(tooltip)}">
             <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
             <title>${htmlEscape(tooltip)}</title>
@@ -1961,28 +2140,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const depositMarkers = depositPoints.map(point => {
           const dateLabel = formatDate(point.date);
-          const amountLabel = cellNum(point.amount);
-          const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${cellNum(item.amount)})`).join(' • ');
+          const amountLabel = formatCurrency(point.amount);
+          const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${formatCurrency(item.amount)})`).join(' • ');
           const tooltip = `${dateLabel} • ${amountLabel} ${outCurr}${breakdownText ? `\n${breakdownText}` : ''}`;
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDate(point.date);
-          const tooltip = `Odhad ${dateLabel}: ${cellNum(point.value)} ${outCurr}`;
+          const tooltip = `Odhad ${dateLabel}: ${formatCurrency(point.value)} ${outCurr}`;
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
-      const todayTooltip = `Dnes (${formatDate(today)}): ${cellNum(valueAtToday)} ${outCurr}`;
+      const todayTooltip = `Dnes (${formatDate(today)}): ${formatCurrency(valueAtToday)} ${outCurr}`;
       const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
       const startLabel = formatDate(firstDate);
       const endLabel = formatDate(timelineEnd);
+      const formattedTodayValue = formatCurrency(valueAtToday);
       const ariaLabel = hasIrr
-          ? `Vývoj portfolia od ${startLabel} do ${endLabel}. Aktuální hodnota ${cellNum(valueAtToday)} ${outCurr}. Průměrný roční výnos ${cellPct(irr)}.`
-          : `Vývoj portfolia od ${startLabel} do ${endLabel}. Graf zobrazuje pouze kumulované vklady bez dostupného XIRR.`;
+          ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatPercent(irr)} p.a.`
+          : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
       const svg = `
-        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${htmlEscape(ariaLabel)}">
+        <svg viewBox="0 0 ${width} ${height}">
           <title>${htmlEscape(ariaLabel)}</title>
           ${defs}
           <rect x="0" y="0" width="${width}" height="${height}" fill="url(#chartBackdrop)" rx="26" />
@@ -1990,7 +2170,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${yTicks.map(tick => {
               const y = formatCoord(yScale(tick));
               return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="4 4" />
-              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${cellNum(tick, 0)}</text>`;
+              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${formatCurrency(tick, 0)}</text>`;
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
           ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
@@ -2018,7 +2198,8 @@ document.addEventListener('DOMContentLoaded', () => {
           svg,
           hasIrr,
           irrPositive,
-          footnote
+          footnote,
+          ariaLabel
       };
   };
 
@@ -2030,8 +2211,15 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
       }
 
-      const clientSalutation = (state.clientSalutation || '').trim();
-      if (!clientSalutation) {
+      const manualSalutation = (state.clientSalutation || '').trim();
+      const nameParts = parseClientName(clientName);
+      const salutation = formatSalutation({
+          firstName: nameParts.firstName,
+          lastName: nameParts.lastName,
+          preferVykanie: !!state.clientPreferVykanie,
+          manualSalutation
+      });
+      if (!salutation) {
           showToast('Před exportem vyplňte oslovení klienta.', 'error');
           elements.clientSalutationInput?.focus();
           return;
@@ -2089,7 +2277,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
 
       const rawStyle = document.querySelector('style')?.textContent || '';
-      const styleContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${rawStyle.replace(/@import[^;]+;\s*/g, '')}`;
+      const styleContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${rawStyle.replace(/@import[^;]+;\s*/g, '').replace(/500;600;700&display=swap'\);?/g, '')}`;
       const generatedAt = new Date();
       const generatedLabel = generatedAt.toLocaleString('cs-CZ');
       const fundCount = Object.keys(groupedFunds).length;
@@ -2168,11 +2356,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const footerSection = `<footer class="export-footer">© ${generatedAt.getFullYear()} Ondřej Lacina • Šíření mimo strukturu Fair-life je zakázáno.</footer>`;
 
       const fxMeta = Number.isFinite(fxRate)
-          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${cellNum(fxRate, 4)}</span></div>`
+          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatCurrency(fxRate, 4)}</span></div>`
           : '';
 
       const leadTemplate = 'Dobrý den, [Oslovení klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
-      const leadCopy = leadTemplate.replace('[Oslovení klienta]', htmlEscape(clientSalutation));
+      const leadCopy = leadTemplate.replace('[Oslovení klienta]', htmlEscape(salutation));
 
       const heroSection = `<header class="export-hero">
         <div class="export-hero__layout">
@@ -2408,11 +2596,15 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.importFile = document.getElementById('import-file-input');
     elements.clientNameInput = document.getElementById('client-name');
     elements.clientSalutationInput = document.getElementById('client-salutation');
+    elements.clientPreferVykanieInput = document.getElementById('client-prefer-vykanie');
     if (elements.clientNameInput) {
         elements.clientNameInput.value = state.clientName;
     }
     if (elements.clientSalutationInput) {
         elements.clientSalutationInput.value = state.clientSalutation;
+    }
+    if (elements.clientPreferVykanieInput) {
+        elements.clientPreferVykanieInput.checked = state.clientPreferVykanie;
     }
     const currentYearEl = document.getElementById('current-year');
     if (currentYearEl) {
@@ -2469,6 +2661,10 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = trimmed;
         }
         state.clientSalutation = trimmed;
+        saveState();
+    });
+    elements.clientPreferVykanieInput?.addEventListener('change', (e) => {
+        state.clientPreferVykanie = e.target.checked;
         saveState();
     });
     const providerSections = elements.providerSections;
