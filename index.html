@@ -518,6 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
       '#0f766e', '#14b8a6', '#f97316', '#fbbf24', '#ec4899', '#6366f1', '#0ea5e9',
       '#10b981', '#22d3ee', '#fb7185', '#a855f7', '#84cc16', '#facc15', '#f472b6'
   ];
+  const SCRIPT_CLOSE_TAG = '<' + '/script>';
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const PROJECTION_END_YEAR = 2035;
   const getColor = (fundName) => {
@@ -1795,7 +1796,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ${lineSection}
     ${explanationsSection}
   </div>
-  <script>${tooltipScript}</script>
+  <script>${tooltipScript}${SCRIPT_CLOSE_TAG}
 </body>
 </html>`;
 
