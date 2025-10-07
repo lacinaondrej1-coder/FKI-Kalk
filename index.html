@@ -922,20 +922,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt2 = utils.nf(2); const fmt4 = utils.nf(4); const fmt1 = utils.nf(1); const fmt0 = utils.nf(0);
   const cellNum = (v, d = 2) => { if(!isFinite(v)) return '—'; if(d === 4) return fmt4.format(v); if(d === 1) return fmt1.format(v); if(d === 0) return fmt0.format(v); return fmt2.format(v); };
   const cellPct = v => isFinite(v) ? fmt2.format(v * 100) + '\u202F%' : '—';
-  /* PATCH */
-  const formatCurrency = (value, decimals = 2) => {
+  /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
+  const fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
+  /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
+  const fmt1Decimal = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
+  const formatCurrency0 = (value, currency = 'CZK') => {
       if (!isFinite(value)) return '—';
-      if (decimals === 0) return cellNum(value, 0);
-      if (decimals === 1) return cellNum(value, 1);
-      if (decimals === 4) return cellNum(value, 4);
-      return cellNum(value, 2);
+      return fmtInt.format(Math.round(value)) + '\u00A0' + currency;
   };
-  /* PATCH */
-  const formatPercent = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)}\u202F%` : '—';
-  /* PATCH */
-  const formatXirr = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)}\u202F%\u00A0p.a.` : '—';
-  /* PATCH */
-  const formatMonths = (value, decimals = 1) => isFinite(value) ? `${utils.nf(decimals).format(value)}\u00A0měs.` : '—';
+  /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
+  const formatPercent1 = (value) => {
+      if (!isFinite(value)) return '—';
+      const perc = Math.round(value * 1000) / 10;
+      return fmt1Decimal.format(perc) + '\u202F%';
+  };
+  /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
+  const formatXirr1 = (value) => {
+      const base = formatPercent1(value);
+      return base === '—' ? base : base + '\u00A0p.a.';
+  };
+  /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
+  const formatMonths0 = (value) => {
+      if (!isFinite(value)) return '—';
+      return fmtInt.format(Math.round(value)) + '\u00A0měs.';
+  };
+  /* PATCH: pomocná funkce pro zobrazení kurzu */
+  const formatFxRate = (value) => {
+      if (!isFinite(value)) return '—';
+      return new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(value);
+  };
   const parseClientName = (fullName = '') => {
       const parts = fullName.trim().split(/\s+/).filter(Boolean);
       if (!parts.length) {
@@ -1417,11 +1433,11 @@ document.addEventListener('DOMContentLoaded', () => {
           const safeName = htmlEscape(name);
 
           const metrics = [
-              { label: 'Investováno', value: formatCurrency(totalInvest) },
-              { label: 'Aktuální hodnota', value: formatCurrency(totalCurrent) },
-              { label: 'Čistý výnos', value: formatCurrency(pnl), extraClass: pnlClass },
-              { label: 'Průměrný roční výnos (XIRR)', value: formatXirr(fundIrr), extraClass: irrClass },
-              { label: 'Průměrná doba investice', value: formatMonths(weightedAvgMonths) }
+              { label: 'Investováno', value: formatCurrency0(totalInvest, outCurr) },
+              { label: 'Aktuální hodnota', value: formatCurrency0(totalCurrent, outCurr) },
+              { label: 'Čistý výnos', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
+              { label: 'Průměrný roční výnos (XIRR)', value: formatXirr1(fundIrr), extraClass: irrClass },
+              { label: 'Průměrná doba investice', value: formatMonths0(weightedAvgMonths) }
           ];
 
           const transactionRows = investments.map((inv, index) => {
@@ -1431,11 +1447,11 @@ document.addEventListener('DOMContentLoaded', () => {
               const displayDate = inv.originalDateIn || inv.dateIn;
               return `<tr>
                 <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
-                <td class="text-right">${formatCurrency(convertedInvest)}</td>
-                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency(convertedPnl)}</td>
-                <td class="text-right">${formatCurrency(convertedCurrent)}</td>
-                <td class="text-right">${formatMonths(inv.months)}</td>
-                <td class="text-right">${formatXirr(inv.irr)}</td>
+                <td class="text-right">${formatCurrency0(convertedInvest, outCurr)}</td>
+                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency0(convertedPnl, outCurr)}</td>
+                <td class="text-right">${formatCurrency0(convertedCurrent, outCurr)}</td>
+                <td class="text-right">${formatMonths0(inv.months)}</td>
+                <td class="text-right">${formatXirr1(inv.irr)}</td>
               </tr>`;
           }).join('');
 
@@ -1560,12 +1576,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isStaticExport) {
         /* PATCH */
         const formatted = {
-            totalInvest: formatCurrency(totalInvestConverted),
-            totalCurrent: formatCurrency(totalCurrentConverted),
-            totalPnl: formatCurrency(totalPnl),
-            totalRet: formatPercent(totalRet),
-            irr: formatXirr(portfolioIrr),
-            weightedMonths: formatMonths(weightedAvgMonths)
+            totalInvest: formatCurrency0(totalInvestConverted, outCurr),
+            totalCurrent: formatCurrency0(totalCurrentConverted, outCurr),
+            totalPnl: formatCurrency0(totalPnl, outCurr),
+            totalRet: formatPercent1(totalRet),
+            irr: formatXirr1(portfolioIrr),
+            weightedMonths: formatMonths0(weightedAvgMonths)
         };
         /* PATCH */
         if (options.formattedTotals) {
@@ -1604,12 +1620,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const formattedInteractive = {
-        totalInvest: formatCurrency(totalInvestConverted),
-        totalCurrent: formatCurrency(totalCurrentConverted),
-        totalPnl: formatCurrency(totalPnl),
-        totalRet: formatPercent(totalRet),
-        irr: formatXirr(portfolioIrr),
-        weightedMonths: formatMonths(weightedAvgMonths)
+        totalInvest: formatCurrency0(totalInvestConverted, outCurr),
+        totalCurrent: formatCurrency0(totalCurrentConverted, outCurr),
+        totalPnl: formatCurrency0(totalPnl, outCurr),
+        totalRet: formatPercent1(totalRet),
+        irr: formatXirr1(portfolioIrr),
+        weightedMonths: formatMonths0(weightedAvgMonths)
     };
     const showMixWarning = !isStaticExport && hasMixedCurrencies && !hasFx;
     const mixWarningHtml = showMixWarning
@@ -1770,7 +1786,7 @@ document.addEventListener('DOMContentLoaded', () => {
     innerHTML += `<path d="${projectionPath}" fill="none" stroke="#0d2c54" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
     const xToday = xScale(today);
     /* PATCH */
-    const formattedTodayValue = formattedTodayValueOverride ?? formatCurrency(valueAtToday);
+    const formattedTodayValue = formattedTodayValueOverride ?? formatCurrency0(valueAtToday, outCurr);
     const snapPoints = [{x: xToday, y: yScale(valueAtToday), date: today, value: valueAtToday, isToday: true}];
     if (!options.isForPdf) {
         const depositsByDay = deposits.reduce((acc, deposit) => {
@@ -1794,15 +1810,15 @@ document.addEventListener('DOMContentLoaded', () => {
             let tooltipText = '';
             if (dayData.dailyDeposits.length > 1) {
             tooltipText = `<div class="font-bold text-primary">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
-                    dayData.dailyDeposits.map(d => `<div class="text-sm text-body">${d.fund}: ${formatCurrency(d.amount)} ${outCurr}</div>`).join('');
+                    dayData.dailyDeposits.map(d => `<div class="text-sm text-body">${d.fund}: ${formatCurrency0(d.amount, outCurr)}</div>`).join('');
             } else {
                 const d = dayData.dailyDeposits[0];
-                tooltipText = `<div class="text-primary">Vklad (${d.fund}): ${formatCurrency(d.amount)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
+                tooltipText = `<div class="text-primary">Vklad (${d.fund}): ${formatCurrency0(d.amount, outCurr)} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
             }
             const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
             const ariaLabel = dayData.dailyDeposits.length > 1
-                ? `Vklady ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits.map(d => `${d.fund} ${formatCurrency(d.amount)} ${outCurr}`).join(', ')}`
-                : `Vklad ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits[0].fund} ${formatCurrency(dayData.dailyDeposits[0].amount)} ${outCurr}`;
+                ? `Vklady ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits.map(d => `${d.fund} ${formatCurrency0(d.amount, outCurr)}`).join(', ')}`
+                : `Vklad ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits[0].fund} ${formatCurrency0(dayData.dailyDeposits[0].amount, outCurr)}`;
             const escapedAriaLabel = htmlEscape(ariaLabel);
             innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#4DB1C8" tabindex="0" aria-label="${escapedAriaLabel}" data-tooltip-text='${escapedTooltipText}'></circle>`;
             snapPoints.push({
@@ -1817,7 +1833,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0d2c54" stroke-width="1.5"></line>`;
-    const todayLabel = `Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${formattedTodayValue} ${outCurr}`;
+    const todayLabel = `Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${formattedTodayValue}`;
     innerHTML += `<circle class="line-chart-dot line-chart-dot--today" cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0d2c54" stroke="white" stroke-width="2" tabindex="0" aria-label="${htmlEscape(todayLabel)}" data-tooltip-text="${htmlEscape(todayLabel)}"></circle>`;
     innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="rgba(51,55,61,0.55)" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
     if (options.isForPdf) {
@@ -1841,7 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <circle r="5" fill="#0d2c54" stroke="white" stroke-width="2"></circle>
                 <rect x="-40" y="-35" width="80" height="20" rx="5" fill="rgba(255,255,255,0.8)"></rect>
                 <text text-anchor="middle" y="-20" font-size="10px" fill="#1f2937">
-                    <tspan x="0" dy="0">${point.label}: ${formatCurrency(value, 0)}</tspan>
+                    <tspan x="0" dy="0">${point.label}: ${formatCurrency0(value, outCurr)}</tspan>
                 </text>
             </g>`;
         });
@@ -1850,8 +1866,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const startLabel = formatDate(firstDate);
     const endLabel = formatDate(today);
     const ariaSummary = isFinite(portfolioIrr)
-        ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatXirr(portfolioIrr)}`
-        : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
+        ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(portfolioIrr)}`
+        : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`;
     svg.setAttribute('role', 'img');
     let svgTitle = svg.querySelector('title');
     if (!svgTitle) {
@@ -1900,7 +1916,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalDate = closestSnapPoint.date;
                 finalValue = closestSnapPoint.value;
                 if (closestSnapPoint.isToday) {
-                tooltipText = `<div class="font-bold text-primary">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">Dopočítaná hodnota: ${formatCurrency(finalValue)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-primary">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">Dopočítaná hodnota: ${formatCurrency0(finalValue, outCurr)}</div>`;
                 } else {
                     tooltipText = closestSnapPoint.tooltipText;
                 }
@@ -1916,7 +1932,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalValue = allPoints[allPoints.length-1].value;
                 }
                 finalY = yScale(finalValue);
-                tooltipText = `<div class="font-bold text-primary">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">${formatCurrency(finalValue)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-primary">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">${formatCurrency0(finalValue, outCurr)}</div>`;
             }
             guideLine.setAttribute('x1', finalX);
             guideLine.setAttribute('y1', finalY);
@@ -2017,8 +2033,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Nejsou k dispozici data pro koláčový graf.</div>`;
         }
         const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
-        const svg = buildStaticPieChartSvg(slices, pieTotal);
-        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent(d.value / pieTotal)}</span></div>`).join('');
+        const svg = buildStaticPieChartSvg(slices, pieTotal, outCurr);
+        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent1(d.value / pieTotal)}</span></div>`).join('');
         return `<div class="pie-export"><div class="pie-canvas">${svg}</div><div class="pie-legend">${legend}</div></div>`;
     }
 
@@ -2036,10 +2052,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.classList.add('pie-segment');
         g.setAttribute('tabindex', '0');
-        g.setAttribute('aria-label', `${d.name}: ${formatCurrency(d.totalCurrent)} ${outCurr} (${formatPercent(d.totalCurrent / pieTotal)})`);
+        g.setAttribute('aria-label', `${d.name}: ${formatCurrency0(d.totalCurrent, outCurr)} (${formatPercent1(d.totalCurrent / pieTotal)})`);
         g.dataset.name = d.name;
-        g.dataset.value = `${formatCurrency(d.totalCurrent)} ${outCurr}`;
-        g.dataset.percent = formatPercent(d.totalCurrent / pieTotal);
+        g.dataset.value = formatCurrency0(d.totalCurrent, outCurr);
+        g.dataset.percent = formatPercent1(d.totalCurrent / pieTotal);
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute('cx', 50);
         circle.setAttribute('cy', 50);
@@ -2055,8 +2071,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
             g.classList.add('pie-segment');
             g.setAttribute('tabindex', '0');
-            g.setAttribute('aria-label', `${d.name}: ${formatCurrency(d.totalCurrent)} ${outCurr} (${formatPercent(d.totalCurrent / pieTotal)})`);
-            g.dataset.name = d.name; g.dataset.value = `${formatCurrency(d.totalCurrent)} ${outCurr}`; g.dataset.percent = formatPercent(d.totalCurrent / pieTotal);
+            g.setAttribute('aria-label', `${d.name}: ${formatCurrency0(d.totalCurrent, outCurr)} (${formatPercent1(d.totalCurrent / pieTotal)})`);
+            g.dataset.name = d.name; g.dataset.value = formatCurrency0(d.totalCurrent, outCurr); g.dataset.percent = formatPercent1(d.totalCurrent / pieTotal);
             const startAngleRad = (angle * Math.PI) / 180; angle += percent * 360; const endAngleRad = (angle * Math.PI) / 180;
             const x1_outer = 50 + outerRadius * Math.cos(startAngleRad); const y1_outer = 50 + outerRadius * Math.sin(startAngleRad);
             const x2_outer = 50 + outerRadius * Math.cos(endAngleRad); const y2_outer = 50 + outerRadius * Math.sin(endAngleRad);
@@ -2078,12 +2094,12 @@ document.addEventListener('DOMContentLoaded', () => {
     centerCircle.setAttribute('stroke-width', '2');
     centerCircle.setAttribute('pointer-events', 'none');
     svg.appendChild(centerCircle);
-    const legend = data.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${getColor(d.name)}"></span><span class="legend-name">${d.name}</span><span class="legend-value">${formatPercent(d.totalCurrent / pieTotal)}</span></div>`).join('');
+    const legend = data.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${getColor(d.name)}"></span><span class="legend-name">${d.name}</span><span class="legend-value">${formatPercent1(d.totalCurrent / pieTotal)}</span></div>`).join('');
     container.innerHTML = `<div class="pie-export"><div class="pie-canvas"></div><div class="pie-legend">${legend}</div></div>`;
     container.querySelector('.pie-canvas').appendChild(svg);
   };
 
-  const buildStaticPieChartSvg = (slices, total) => {
+  const buildStaticPieChartSvg = (slices, total, currency = 'CZK') => {
       if (!slices.length || !(total > 0)) return '';
       const outerRadius = 48;
       const innerRadius = 24;
@@ -2104,7 +2120,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const y1Inner = 50 + innerRadius * Math.sin(startRad);
           const x2Inner = 50 + innerRadius * Math.cos(endRad);
           const y2Inner = 50 + innerRadius * Math.sin(endRad);
-          const tooltip = `${name} • ${formatCurrency(value)} (${formatPercent(percent)})`;
+          const tooltip = `${name} • ${formatCurrency0(value, currency)} (${formatPercent1(percent)})`;
           return `<g class="pie-slice" tabindex="0" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}">
             <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
             <title>${htmlEscape(tooltip)}</title>
@@ -2281,28 +2297,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const depositMarkers = depositPoints.map(point => {
           const dateLabel = formatDate(point.date);
-          const amountLabel = formatCurrency(point.amount);
-          const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${formatCurrency(item.amount)})`).join(' • ');
-          const tooltip = `${dateLabel} • ${amountLabel} ${outCurr}${breakdownText ? `\n${breakdownText}` : ''}`;
+          const amountLabel = formatCurrency0(point.amount, outCurr);
+          const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${formatCurrency0(item.amount, outCurr)})`).join(' • ');
+          const tooltip = `${dateLabel} • ${amountLabel}${breakdownText ? `\n${breakdownText}` : ''}`;
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDate(point.date);
-          const tooltip = `Odhad ${dateLabel}: ${formatCurrency(point.value)} ${outCurr}`;
+          const tooltip = `Odhad ${dateLabel}: ${formatCurrency0(point.value, outCurr)}`;
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       /* PATCH */
-      const formattedTodayValue = formattedTodayValueOverride || formatCurrency(valueAtToday);
-      const todayTooltip = `Dnes (${formatDate(today)}): ${formattedTodayValue} ${outCurr}`;
+      const formattedTodayValue = formattedTodayValueOverride || formatCurrency0(valueAtToday, outCurr);
+      const todayTooltip = `Dnes (${formatDate(today)}): ${formattedTodayValue}`;
       const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
       const startLabel = formatDate(firstDate);
       const endLabel = formatDate(timelineEnd);
       const ariaLabel = hasIrr
-          ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatXirr(irr)}`
-          : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
+          ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(irr)}`
+          : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`;
       const svg = `
         <svg viewBox="0 0 ${width} ${height}">
           <title>${htmlEscape(ariaLabel)}</title>
@@ -2312,7 +2328,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${yTicks.map(tick => {
               const y = formatCoord(yScale(tick));
               return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="4 4" />
-              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${formatCurrency(tick, 0)}</text>`;
+              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${formatCurrency0(tick, outCurr)}</text>`;
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
           ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
@@ -2384,7 +2400,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       /* PATCH */
       const formattedOverrides = {
-          totalCurrent: formatCurrency(snapshot.portfolioSummary.totalCurrentConverted)
+          totalCurrent: formatCurrency0(snapshot.portfolioSummary.totalCurrentConverted, outCurr)
       };
       /* PATCH */
       const formattedCapture = {};
@@ -2516,7 +2532,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const footerSection = `<footer class="export-footer"><p class="footer-note">© <span id="year"></span> Ondřej Lacina</p></footer>`;
 
       const fxMeta = Number.isFinite(fxRate) && fxRate > 0
-          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatCurrency(fxRate, 4)}</span></div>`
+          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatFxRate(fxRate)}</span></div>`
           : '';
 
       const leadTemplate = 'Dobrý den, [Oslovení klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
@@ -2630,7 +2646,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       disclaimer.style.display = 'block';
       const annualAnnuity = monthlyAnnuity * 12;
-      annualDiv.textContent = `(což odpovídá ${cellNum(annualAnnuity, 0)} Kč ročně)`;
+      annualDiv.textContent = `(což odpovídá ${formatCurrency0(annualAnnuity, 'CZK')} ročně)`;
       if (!isFinite(portfolioIrr) || portfolioIrr <= 0 || funds.length === 0) {
           resultDiv.innerHTML = 'Pro výpočet renty je potřeba mít v portfoliu data s kladným zhodnocením (XIRR).';
           resultDiv.style.display = 'block';
@@ -2638,7 +2654,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const targetCapital = annualAnnuity / portfolioIrr;
       if (totalCurrentConverted >= targetCapital) {
-          resultDiv.innerHTML = `<strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>${cellNum(totalCurrentConverted, 0)} Kč</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.`;
+          resultDiv.innerHTML = `<strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>${formatCurrency0(totalCurrentConverted, 'CZK')}</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.`;
           resultDiv.style.display = 'block';
           return;
       }
@@ -2659,7 +2675,7 @@ document.addEventListener('DOMContentLoaded', () => {
       targetDate.setDate(targetDate.getDate() + days);
       const monthNames = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
       const formattedDate = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
-      resultDiv.innerHTML = `Pro měsíční rentu <strong>${cellNum(monthlyAnnuity, 0)} Kč</strong> potřebujete kapitál o velikosti přibližně <strong>${cellNum(targetCapital, 0)} Kč</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>${formattedDate}</strong>.`;
+      resultDiv.innerHTML = `Pro měsíční rentu <strong>${formatCurrency0(monthlyAnnuity, 'CZK')}</strong> potřebujete kapitál o velikosti přibližně <strong>${formatCurrency0(targetCapital, 'CZK')}</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>${formattedDate}</strong>.`;
       resultDiv.style.display = 'block';
   };
 
