@@ -201,53 +201,80 @@
     }
 
     /* Static export helpers */
-    .summary-export { display: grid; gap: 1.5rem; }
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-    .summary-item { background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 1rem; padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
-    .summary-label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
-    .summary-value { font-size: 1.1rem; font-weight: 600; color: #0f172a; }
-    .summary-note { font-size: 0.8rem; color: #64748b; font-style: italic; }
     .text-positive { color: #0f766e; }
     .text-negative { color: #b91c1c; }
     .muted { color: #94a3b8; }
 
-    .fund-export { border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem; background: rgba(255,255,255,0.92); display: flex; flex-direction: column; gap: 1rem; }
-    .fund-export-grid { display: flex; flex-direction: column; gap: 1rem; }
+    .export-shell { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem; padding: 3rem 1.75rem 4rem; }
+    .export-hero { background: linear-gradient(140deg, rgba(20,184,166,0.16) 0%, rgba(14,165,233,0.18) 100%); border-radius: 1.75rem; padding: 2.5rem; box-shadow: 0 30px 70px -45px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 1.75rem; }
+    .export-hero__badge { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; background: rgba(15,118,110,0.15); color: #0f766e; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .export-hero__title { font-size: 2rem; font-weight: 600; color: #0f172a; margin: 0; }
+    .export-hero__lead { color: #0f172a; max-width: 44rem; line-height: 1.6; font-size: 1rem; margin: 0; }
+    .export-hero__meta { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .export-hero__meta-item { background: rgba(255,255,255,0.75); border: 1px solid rgba(15,118,110,0.12); border-radius: 1rem; padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.35rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45); }
+    .meta-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
+    .meta-value { font-size: 1rem; font-weight: 600; color: #0f172a; }
+
+    .section-heading { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
+    .section-heading h2 { margin: 0; font-size: 1.45rem; font-weight: 600; color: #0f172a; }
+    .section-heading p { margin: 0; font-size: 0.95rem; color: #64748b; }
+
+    .summary-export { display: flex; flex-direction: column; gap: 1.5rem; }
+    .summary-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .summary-card { padding: 1.2rem 1.35rem; border-radius: 1.25rem; border: 1px solid rgba(15,118,110,0.12); background: linear-gradient(180deg, rgba(240,253,250,0.6) 0%, rgba(255,255,255,0.95) 100%); box-shadow: 0 20px 45px -35px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 0.6rem; }
+    .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem; color: #0f766e; font-weight: 600; }
+    .summary-value { font-size: 1.55rem; font-weight: 600; color: #0f172a; }
+    .summary-note { font-size: 0.85rem; color: #64748b; margin: 0; }
+
+    .fund-export-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+    .fund-export { background: rgba(255,255,255,0.95); border-radius: 1.5rem; border: 1px solid rgba(15,118,110,0.14); padding: 1.75rem; display: flex; flex-direction: column; gap: 1.35rem; box-shadow: 0 26px 60px -45px rgba(15, 23, 42, 0.55); }
     .fund-export__header { display: flex; flex-direction: column; gap: 1rem; }
-    .fund-export__title { display: flex; align-items: center; gap: 0.75rem; font-size: 1.15rem; font-weight: 600; color: #0f172a; }
-    .fund-export__dot { width: 0.7rem; height: 0.7rem; border-radius: 999px; display: inline-block; }
-    .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
-    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; display: block; }
-    .metric-value { font-size: 1rem; font-weight: 600; color: #0f172a; display: block; }
-    .metric-sub { font-size: 0.7rem; color: #94a3b8; display: block; }
-    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1rem; border: 1px solid var(--border); background: #ffffff; }
+    .fund-export__title { display: flex; flex-direction: column; gap: 0.75rem; }
+    .fund-export__name-row { display: flex; align-items: center; gap: 0.75rem; font-size: 1.15rem; font-weight: 600; color: #0f172a; }
+    .fund-export__dot { width: 0.75rem; height: 0.75rem; border-radius: 999px; display: inline-block; box-shadow: 0 0 0 3px rgba(20,184,166,0.2); }
+    .fund-export__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: #64748b; }
+    .fund-export__meta span { padding: 0.35rem 0.65rem; border-radius: 999px; background: rgba(15,118,110,0.08); color: #0f766e; font-weight: 500; }
+    .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.9rem; }
+    .fund-export__metric { background: rgba(240,253,250,0.7); border: 1px solid rgba(15,118,110,0.12); border-radius: 1.1rem; padding: 0.9rem 1rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); display: flex; flex-direction: column; gap: 0.45rem; }
+    .metric-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #0f766e; font-weight: 600; }
+    .metric-value { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
+    .metric-sub { font-size: 0.75rem; color: #94a3b8; }
+
+    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1.1rem; border: 1px solid rgba(148,163,184,0.25); background: rgba(248,250,252,0.9); }
     .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .fund-export__table th,
-    .fund-export__table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(148,163,184,0.3); }
-    .fund-export__table th { text-align: left; font-weight: 600; color: #475569; background: rgba(15,118,110,0.05); }
+    .fund-export__table td { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(148,163,184,0.25); }
+    .fund-export__table th { text-align: left; font-weight: 600; color: #475569; background: rgba(15,118,110,0.08); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
     .fund-export__table th.text-right,
     .fund-export__table td.text-right { text-align: right; }
 
-    .line-export { display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem; background: #ffffff; }
-    .line-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .legend-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; border: 1px solid rgba(15,118,110,0.25); background: rgba(15,118,110,0.05); color: #0f172a; }
-    .legend-pill--base { border-color: rgba(148,163,184,0.45); background: rgba(148,163,184,0.12); }
-    .legend-pill--value { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.12); }
-    .legend-pill--projection { border-color: rgba(14,165,233,0.4); background: rgba(14,165,233,0.12); }
-    .line-canvas svg { width: 100%; height: auto; }
+    .line-export { display: flex; flex-direction: column; gap: 1.25rem; border-radius: 1.5rem; padding: 1.75rem; background: linear-gradient(180deg, rgba(237,252,247,0.9) 0%, rgba(255,255,255,0.95) 100%); border: 1px solid rgba(15,118,110,0.12); box-shadow: 0 26px 60px -45px rgba(15, 23, 42, 0.55); }
+    .line-legend { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .legend-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; color: #0f172a; background: rgba(255,255,255,0.85); border: 1px solid rgba(15,118,110,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+    .legend-pill::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 999px; background: currentColor; display: inline-flex; }
+    .legend-pill--base { color: #0f172a; }
+    .legend-pill--value { color: #0f766e; }
+    .legend-pill--projection { color: #0ea5e9; }
+    .legend-pill--projection::before { background: linear-gradient(90deg, #14b8a6 0%, #0ea5e9 100%); }
+    .legend-pill--value::before { background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
+    .legend-pill--base::before { background: #1f2937; }
+    .line-canvas { border-radius: 1.2rem; overflow: hidden; background: #ffffff; border: 1px solid rgba(148,163,184,0.2); }
+    .line-canvas svg { width: 100%; height: auto; display: block; }
 
-    .pie-export { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: center; }
+    .pie-export { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: center; }
     .pie-canvas { display: flex; justify-content: center; }
-    .pie-canvas svg { max-width: 260px; width: 100%; height: auto; }
-    .pie-legend { display: flex; flex-direction: column; gap: 0.75rem; }
-    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem; color: #0f172a; }
-    .legend-dot { width: 0.75rem; height: 0.75rem; border-radius: 999px; flex-shrink: 0; }
-    .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .legend-value { font-weight: 600; color: #0f172a; }
-    .export-explanations { display: flex; flex-direction: column; gap: 1rem; font-size: 0.9rem; color: #475569; }
-    .export-explanations h3 { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; }
-    .export-shell { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; padding: 2.5rem 1.5rem 3rem; }
-    .alert { padding: 1rem 1.25rem; border-radius: 1rem; border: 1px solid rgba(244,114,182,0.35); background: rgba(254,226,226,0.65); color: #b91c1c; font-weight: 500; }
+    .pie-canvas svg { max-width: 280px; width: 100%; height: auto; filter: drop-shadow(0 18px 35px rgba(15,23,42,0.2)); }
+    .pie-legend { display: flex; flex-direction: column; gap: 0.8rem; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; font-size: 0.88rem; color: #0f172a; padding: 0.55rem 0.75rem; border-radius: 0.85rem; background: rgba(255,255,255,0.85); border: 1px solid rgba(148,163,184,0.22); }
+    .legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 999px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(15,118,110,0.08); }
+    .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .legend-value { font-weight: 600; color: #0f766e; }
+
+    .export-explanations { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); font-size: 0.95rem; color: #475569; }
+    .export-explanations article { background: rgba(255,255,255,0.92); border-radius: 1.25rem; border: 1px solid rgba(148,163,184,0.25); padding: 1.35rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); display: flex; flex-direction: column; gap: 0.75rem; }
+    .export-explanations h3 { margin: 0; font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+
+    .alert { padding: 1.1rem 1.4rem; border-radius: 1.1rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(254,226,226,0.7); color: #b91c1c; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
   </style>
 </head>
 <body class="antialiased text-slate-800">
@@ -949,16 +976,26 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>`;
 
           if (isStaticExport) {
-              const exportHeader = `<div class="fund-export__header">
+          const firstInvestment = investments[0];
+          const firstDate = firstInvestment ? (firstInvestment.originalDateIn || firstInvestment.dateIn) : null;
+          const latestDateLabel = latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : null;
+          const exportHeader = `<div class="fund-export__header">
                 <div class="fund-export__title">
-                  <span class="fund-export__dot" style="background:${fundColor}"></span>
-                  <span class="fund-export__name">${htmlEscape(name)}</span>
+                  <div class="fund-export__name-row">
+                    <span class="fund-export__dot" style="background:${fundColor}"></span>
+                    <span class="fund-export__name">${htmlEscape(name)}</span>
+                  </div>
+                  <div class="fund-export__meta">
+                    ${firstDate ? `<span>První vklad: ${firstDate.toLocaleDateString('cs-CZ')}</span>` : ''}
+                    ${latestDateLabel ? `<span>Aktualizováno: ${latestDateLabel}</span>` : ''}
+                    <span>Transakcí: ${investments.length}</span>
+                  </div>
                 </div>
                 <div class="fund-export__metrics">
-                  <div><span class="metric-label">Aktuální hodnota</span><span class="metric-value">${cellNum(totalCurrent)}</span><span class="metric-sub">${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</span></div>
-                  <div><span class="metric-label">Čistý výsledek</span><span class="metric-value ${pnlClassExport}">${cellNum(pnl)}</span></div>
-                  <div><span class="metric-label">Výkonnost (XIRR)</span><span class="metric-value ${irrClassExport}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</span></div>
-                  <div><span class="metric-label">Váž. prům. doba</span><span class="metric-value">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</span></div>
+                  <div class="fund-export__metric"><span class="metric-label">Aktuální hodnota</span><span class="metric-value">${cellNum(totalCurrent)}</span>${latestDateLabel ? `<span class="metric-sub">k ${latestDateLabel}</span>` : ''}</div>
+                  <div class="fund-export__metric"><span class="metric-label">Čistý výsledek</span><span class="metric-value ${pnlClassExport}">${cellNum(pnl)}</span></div>
+                  <div class="fund-export__metric"><span class="metric-label">Výkonnost (XIRR)</span><span class="metric-value ${irrClassExport}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</span></div>
+                  <div class="fund-export__metric"><span class="metric-label">Váž. prům. doba</span><span class="metric-value">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</span></div>
                 </div>
               </div>`;
               const exportTable = `<div class="fund-export__table-wrapper">
@@ -1025,33 +1062,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isStaticExport) {
+        const summaryMetrics = [
+            { label: 'Celkové vklady', value: cellNum(totalInvestConverted) },
+            { label: 'Aktuální hodnota', value: cellNum(totalCurrentConverted) },
+            { label: 'Čistý výsledek', value: cellNum(totalPnl), toneClass: pnlClassExport },
+            { label: 'Kumulativní zhodnocení', value: cellPct(totalRet), toneClass: pnlClassExport },
+            { label: 'XIRR', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassExport },
+            { label: 'Váž. prům. doba', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+        ];
+
+        const cards = summaryMetrics.map(({ label, value, toneClass }) => `
+            <div class="summary-card">
+              <span class="summary-label">${label}</span>
+              <span class="summary-value ${toneClass ? toneClass : ''}">${value}</span>
+            </div>
+        `).join('');
+
         const exportContent = `<div class="summary-export">
-          <div class="summary-grid">
-            <div class="summary-item">
-              <span class="summary-label">Celkové vklady</span>
-              <span class="summary-value">${cellNum(totalInvestConverted)}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Aktuální hodnota</span>
-              <span class="summary-value">${cellNum(totalCurrentConverted)}</span>
-            </div>
-          <div class="summary-item">
-            <span class="summary-label">Čistý výsledek</span>
-            <span class="summary-value ${pnlClassExport}">${cellNum(totalPnl)}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Kumulativní zhodnocení</span>
-            <span class="summary-value ${pnlClassExport}">${cellPct(totalRet)}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">XIRR</span>
-            <span class="summary-value ${irrClassExport}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span>
-          </div>
-            <div class="summary-item">
-              <span class="summary-label">Váž. prům. doba</span>
-              <span class="summary-value">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span>
-            </div>
-          </div>
+          <div class="summary-grid">${cards}</div>
           ${dateDisclaimer ? `<p class="summary-note">${htmlEscape(dateDisclaimer)}</p>` : ''}
         </div>`;
         return exportContent;
@@ -1499,7 +1527,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <title>${htmlEscape(tooltip)}</title>
           </path>`;
       }).join('');
-      return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${parts}</svg>`;
+      const backdrop = `<circle cx="50" cy="50" r="${outerRadius}" fill="rgba(240,253,250,0.65)" />`;
+      const inner = `<circle cx="50" cy="50" r="${innerRadius - 6}" fill="#ffffff" stroke="rgba(148,163,184,0.35)" stroke-width="1.5" />`;
+      return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${backdrop}${parts}${inner}</svg>`;
   };
 
   const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady) => {
@@ -1541,15 +1571,23 @@ document.addEventListener('DOMContentLoaded', () => {
       groups.forEach(group => {
           const amount = group.entries.reduce((sum, entry) => sum + entry.amount, 0);
           const days = Math.max(0, (group.date - lastDate) / MS_PER_DAY);
+
           if (hasIrr && days > 0) {
               runningValue *= Math.pow(1 + dailyRate, days);
+              valuePoints.push({ date: group.date, value: runningValue });
           }
+
+          contributionPoints.push({ date: group.date, value: cumulative });
+
           runningValue += amount;
           cumulative += amount;
+
           contributionPoints.push({ date: group.date, value: cumulative });
+
           if (hasIrr) {
               valuePoints.push({ date: group.date, value: runningValue });
           }
+
           depositPoints.push({
               date: group.date,
               amount,
@@ -1564,7 +1602,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const valueAtToday = hasIrr ? runningValue * Math.pow(1 + dailyRate, daysToToday) : cumulative;
       contributionPoints.push({ date: today, value: cumulative });
       if (hasIrr) {
-          valuePoints.push({ date: today, value: valueAtToday });
+          if (daysToToday > 0) {
+              valuePoints.push({ date: today, value: valueAtToday });
+          } else {
+              valuePoints.push({ date: today, value: runningValue });
+          }
       }
 
       const projectionPoints = [];
@@ -1602,6 +1644,35 @@ document.addEventListener('DOMContentLoaded', () => {
       const contributionsPath = pathFromPoints(contributionPoints);
       const valuePath = hasIrr ? pathFromPoints(valuePoints) : '';
       const projectionPath = projectionPoints.length ? pathFromPoints([{ date: today, value: valueAtToday }, ...projectionPoints]) : '';
+      const baselineY = formatCoord(yScale(0));
+      const areaPath = hasIrr && valuePoints.length > 1
+          ? (() => {
+              const coords = valuePoints.map(p => `${formatCoord(xScale(p.date))},${formatCoord(yScale(p.value))}`).join(' L ');
+              const last = valuePoints[valuePoints.length - 1];
+              const firstVal = valuePoints[0];
+              return `M${coords} L${formatCoord(xScale(last.date))},${baselineY} L${formatCoord(xScale(firstVal.date))},${baselineY} Z`;
+          })()
+          : '';
+      const defs = `
+        <defs>
+          <linearGradient id="chartBackdrop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f0fdfa" />
+            <stop offset="100%" stop-color="#ffffff" />
+          </linearGradient>
+          <linearGradient id="chartValueStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0f766e" />
+            <stop offset="100%" stop-color="#14b8a6" />
+          </linearGradient>
+          <linearGradient id="chartProjectionStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#14b8a6" />
+            <stop offset="100%" stop-color="#0ea5e9" />
+          </linearGradient>
+          <linearGradient id="chartAreaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0f766e" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="#0f766e" stop-opacity="0" />
+          </linearGradient>
+        </defs>`;
+      const todayLine = hasIrr ? `<line x1="${formatCoord(xScale(today))}" y1="${margin.top}" x2="${formatCoord(xScale(today))}" y2="${margin.top + chartHeight}" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="6 6" stroke-opacity="0.7" />` : '';
 
       const yTicks = [];
       const tickCount = 5;
@@ -1627,44 +1698,48 @@ document.addEventListener('DOMContentLoaded', () => {
           const amountLabel = cellNum(point.amount);
           const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${cellNum(item.amount)})`).join(' • ');
           const tooltip = `${dateLabel} • ${amountLabel} ${outCurr}${breakdownText ? `\n${breakdownText}` : ''}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0f766e" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0f766e" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDate(point.date);
           const tooltip = `Odhad ${dateLabel}: ${cellNum(point.value)} ${outCurr}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#14b8a6" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#0ea5e9" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const todayTooltip = `Dnes (${formatDate(today)}): ${cellNum(valueAtToday)} ${outCurr}`;
-      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="5" fill="#0f766e" stroke="#fff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
+      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#0ea5e9" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
       const svg = `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Vývoj portfolia">
-          <rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff" rx="18" />
+          ${defs}
+          <rect x="0" y="0" width="${width}" height="${height}" fill="url(#chartBackdrop)" rx="26" />
+          <rect x="${margin.left - 8}" y="${margin.top - 12}" width="${chartWidth + 16}" height="${chartHeight + 24}" rx="22" fill="rgba(255,255,255,0.78)" stroke="rgba(148,163,184,0.25)" />
           ${yTicks.map(tick => {
               const y = formatCoord(yScale(tick));
               return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="4 4" />
               <text x="${margin.left - 12}" y="${y + 4}" text-anchor="end" font-size="11" fill="#64748b">${cellNum(tick, 0)}</text>`;
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
-          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#94a3b8" stroke-width="2" />` : ''}
-          ${hasIrr && valuePath ? `<path d="${valuePath}" fill="none" stroke="#0f766e" stroke-width="2.5" />` : ''}
-          ${irrPositive && projectionPath ? `<path d="${projectionPath}" fill="none" stroke="#14b8a6" stroke-width="2.5" stroke-dasharray="6 6" />` : ''}
+          ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
+          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${hasIrr && valuePath ? `<path d="${valuePath}" fill="none" stroke="url(#chartValueStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${irrPositive && projectionPath ? `<path d="${projectionPath}" fill="none" stroke="url(#chartProjectionStroke)" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />` : ''}
+          ${todayLine}
           ${depositMarkers}
           ${todayMarker}
           ${projectionMarkers}
           <g transform="translate(${margin.left}, ${height - 12})" font-size="12" fill="#0f172a">
             <g transform="translate(0,0)">
-              <line x1="0" y1="-6" x2="24" y2="-6" stroke="#94a3b8" stroke-width="3" />
+              <line x1="0" y1="-6" x2="24" y2="-6" stroke="#1f2937" stroke-width="3" />
               <text x="32" y="-4">Kumulované vklady</text>
             </g>
-            ${hasIrr ? `<g transform="translate(200,0)">
-              <line x1="0" y1="-6" x2="24" y2="-6" stroke="#0f766e" stroke-width="3" />
+            ${hasIrr ? `<g transform="translate(220,0)">
+              <line x1="0" y1="-6" x2="24" y2="-6" stroke="url(#chartValueStroke)" stroke-width="3" />
               <text x="32" y="-4">Odhad hodnoty</text>
             </g>` : ''}
-            ${irrPositive ? `<g transform="translate(420,0)">
-              <line x1="0" y1="-6" x2="24" y2="-6" stroke="#14b8a6" stroke-width="3" stroke-dasharray="6 6" />
+            ${irrPositive ? `<g transform="translate(430,0)">
+              <line x1="0" y1="-6" x2="24" y2="-6" stroke="url(#chartProjectionStroke)" stroke-width="3" stroke-dasharray="8 6" />
               <text x="32" y="-4">Projekce</text>
             </g>` : ''}
           </g>
@@ -1741,34 +1816,67 @@ document.addEventListener('DOMContentLoaded', () => {
       const styleContent = (document.querySelector('style')?.textContent || '').replace(/@import[^;]+;/g, '');
       const generatedAt = new Date();
       const generatedLabel = generatedAt.toLocaleString('cs-CZ');
+      const fundCount = Object.keys(groupedFunds).length;
       const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
           ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
           : '';
 
       const summarySection = `<section class="card">
-        <h2>Souhrn portfolia</h2>
+        <div class="section-heading">
+          <h2>Souhrn portfolia</h2>
+          <p>Hlavní metriky znázorňující aktuální stav a dynamiku vašeho investičního portfolia.</p>
+        </div>
         ${summaryBlock}
       </section>`;
 
       const fundsSection = `<section class="card">
-        <h2>Výsledky po fondech</h2>
+        <div class="section-heading">
+          <h2>Výsledky po fondech</h2>
+          <p>Přehled všech sledovaných fondů včetně výkonu, ziskovosti a časové rozlohy investic.</p>
+        </div>
         <div class="fund-export-grid">${fundsBlock}</div>
       </section>`;
 
       const pieSection = `<section class="card">
-        <h2>Alokace portfolia</h2>
+        <div class="section-heading">
+          <h2>Alokace portfolia</h2>
+          <p>Rozložení kapitálu mezi jednotlivé fondy k datu exportu.</p>
+        </div>
         ${pieBlock}
       </section>`;
 
       const lineSection = `<section class="card">
-        <h2>Vývoj hodnoty portfolia</h2>
+        <div class="section-heading">
+          <h2>Vývoj hodnoty portfolia</h2>
+          <p>Historický vývoj a projekce při zachování aktuální míry zhodnocení portfolia.</p>
+        </div>
         ${lineBlock}
       </section>`;
 
       const explanationsSection = `<section class="card">
-        <h2>Vysvětlivky a použité metriky</h2>
+        <div class="section-heading">
+          <h2>Vysvětlivky a použité metriky</h2>
+          <p>Stručná rekapitulace klíčových pojmů pro rychlou orientaci nad výsledky.</p>
+        </div>
         ${explanationsBlock}
       </section>`;
+
+      const fxMeta = Number.isFinite(fxRate)
+          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${cellNum(fxRate, 4)}</span></div>`
+          : '';
+
+      const heroSection = `<header class="export-hero">
+        <span class="export-hero__badge">Interaktivní prezentace portfolia</span>
+        <h1 class="export-hero__title">Report investičního portfolia</h1>
+        <p class="export-hero__lead">Komplexní přehled aktuální výkonnosti, rozložení aktiv a očekávaného vývoje, připravený na míru klientovi.</p>
+        <div class="export-hero__meta">
+          <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
+          <div class="export-hero__meta-item"><span class="meta-label">Generováno</span><span class="meta-value">${htmlEscape(generatedLabel)}</span></div>
+          <div class="export-hero__meta-item"><span class="meta-label">Měna výstupu</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
+          <div class="export-hero__meta-item"><span class="meta-label">Počet fondů</span><span class="meta-value">${fundCount}</span></div>
+          ${fxMeta}
+        </div>
+      </header>`;
 
       const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});});`;
 
@@ -1782,13 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </head>
 <body>
   <div class="export-shell">
-    <header>
-      <h1>${htmlEscape(clientName)}</h1>
-      <div class="meta">
-        <span>Generováno: ${htmlEscape(generatedLabel)}</span>
-        <span>Cílová měna: ${htmlEscape(outCurr)}</span>
-      </div>
-    </header>
+    ${heroSection}
     ${currencyWarning}
     ${summarySection}
     ${fundsSection}
