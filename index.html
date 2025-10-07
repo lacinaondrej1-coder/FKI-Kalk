@@ -335,13 +335,20 @@
     .bg-card-muted { background: rgba(255, 255, 255, 0.7); }
     .bg-divider { background: rgba(13, 44, 84, 0.12); }
 
-    .image-organic-mask {
+    .fund-avatar {
         width: 100px;
         height: 100px;
-        object-fit: cover;
-        clip-path: path('M12,10 C20,-6 44,-2 58,10 C72,22 84,46 70,68 C56,90 28,98 10,82 C-8,66 4,26 12,10 Z');
-        border: 2px solid rgba(13,44,84,0.1);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-transform: uppercase;
         box-shadow: var(--color-shadow);
+        background: var(--color-primary);
+        flex-shrink: 0;
     }
     .fund-card__header { display: grid; gap: 1.4rem; grid-template-columns: auto 1fr; align-items: center; }
     .fund-card__name { font-size: 1.35rem; font-weight: 600; color: var(--color-primary); }
@@ -428,9 +435,10 @@
     .narrative p { margin: 0; font-size: 1rem; color: var(--color-text); }
 
     .summary-grid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; gap: 0.65rem; }
+    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; gap: 0.65rem; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: none; }
+    .summary-card:hover { transform: translateY(-3px); border-color: var(--color-border-strong); box-shadow: var(--color-shadow); }
     .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
-    .summary-value { font-size: 1.6rem; font-weight: 600; color: var(--color-primary); }
+    .summary-value { font-size: 2.4rem; font-weight: 700; color: var(--color-accent); line-height: 1.1; }
     .summary-note { font-size: 0.9rem; color: var(--color-muted); margin: 0; }
 
     .fund-export-grid { display: flex; flex-direction: column; gap: 1.65rem; }
@@ -630,8 +638,8 @@
       <section class="card p-7 sm:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 class="section-title">Souhrn portfolia</h2>
-            <p class="text-sm text-muted">Celkový výkon, vývoj hodnoty a časově vážené výnosy.</p>
+            <h2 class="section-title">Souhrn Vašeho portfolia</h2>
+            <p class="text-sm text-muted">Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.</p>
           </div>
           <div id="amount-note-portfolio" class="text-xs font-medium uppercase tracking-[0.2em] text-muted">Částky v CZK</div>
         </div>
@@ -699,22 +707,13 @@
             <div>
               <h4 class="font-semibold text-primary">Co je to XIRR a jak funguje?</h4>
                <p class="mt-2 leading-relaxed">
-                XIRR (z anglického <em>eXtended Internal Rate of Return</em>) je nejpřesnější metoda pro výpočet <strong>průměrného ročního zhodnocení</strong> vaší investice.
-              </p>
-              <p class="mt-2 leading-relaxed">
-                <strong>Proč je lepší než jednoduché procento?</strong> Protože bere v potaz čas. Koruna, kterou jste investoval před třemi lety, měla mnohem více času pracovat než koruna, kterou jste vložil minulý měsíc. XIRR toto spravedlivě zohledňuje, a proto je tento ukazatel klíčový pro správné vyhodnocení investic s více vklady (nebo výběry) v čase.
-              </p>
-              <p class="mt-2 leading-relaxed">
-                <strong>Je to dopočet na 12 měsíců, i když data mám jen za kratší dobu?</strong> Ano. Pokud známe zhodnocení například za 8 měsíců, XIRR dopočítá, jakému <strong>průměrnému ročnímu zhodnocení</strong> by to odpovídalo, kdyby investice pokračovala stejným tempem.
+                Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.
               </p>
             </div>
              <div class="pt-4 border-t border-subtle">
               <h4 class="font-semibold text-primary">Co je kumulativní zhodnocení?</h4>
                <p class="mt-2 leading-relaxed">
-                Tento údaj ukazuje celkový čistý zisk nebo ztrátu jako procento z celkově zainvestované částky. Je to přímočarý indikátor celkové výkonnosti.
-              </p>
-              <p class="mt-2 leading-relaxed">
-                <strong>Příklad:</strong> Pokud jste do portfolia celkem vložil 100&nbsp;000&nbsp;Kč a jeho aktuální hodnota je 120&nbsp;000&nbsp;Kč, kumulativní zhodnocení činí +20&nbsp;%. Na rozdíl od XIRR ale nezohledňuje čas, po který byly jednotlivé vklady investovány.
+                Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.
               </p>
             </div>
           </div>
@@ -751,16 +750,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return state.fundColorMap[fundName];
   };
-  const createFundImageDataURI = (name, color) => {
-      const initials = name
+  const getFundInitials = (name) => {
+      return name
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
         .map(part => part.charAt(0).toUpperCase())
         .join('') || 'FL';
-      const secondary = '#ffffff';
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${color}" stop-opacity="0.9"/><stop offset="100%" stop-color="${color}" stop-opacity="0.6"/></linearGradient></defs><rect width="120" height="120" rx="32" fill="url(#grad)"/><circle cx="96" cy="24" r="18" fill="${secondary}" fill-opacity="0.25"/><text x="60" y="72" text-anchor="middle" font-family="Montserrat" font-size="36" font-weight="600" fill="#ffffff">${initials}</text></svg>`;
-      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   };
   
   const htmlEscape = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -1139,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (isStaticExport) {
               const metricsHtml = buildMetrics(metrics, 'static');
-              const imageSrc = createFundImageDataURI(name, fundColor);
+              const initials = getFundInitials(name);
               const metaChips = [
                   `Transakcí ${investments.length}`,
                   latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
@@ -1148,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
               return `<article class="fund-export">
   <div class="fund-export__header">
-    <img src="${imageSrc}" alt="Vizualizace fondu ${safeName}" class="image-organic-mask" />
+    <div class="fund-avatar" style="background:${fundColor}">${initials}</div>
     <div class="fund-export__title">
       <div class="fund-card__name">${safeName}</div>
       <div class="fund-export__meta">${metaChips}</div>
@@ -1162,9 +1158,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <th>Transakce</th>
           <th class="text-right">Investice</th>
           <th class="text-right">Výnos</th>
-          <th class="text-right">Kumulativně</th>
-          <th class="text-right">Doba (měs.)</th>
-          <th class="text-right">XIRR p.a.</th>
+          <th class="text-right">Aktuální hodnota</th>
+          <th class="text-right">Doba držení</th>
+          <th class="text-right">Prům. roční výnos</th>
         </tr>
       </thead>
       <tbody>${transactionRows}</tbody>
@@ -1174,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           const metricsHtml = buildMetrics(metrics);
-          const imageSrc = createFundImageDataURI(name, fundColor);
+          const initials = getFundInitials(name);
           const metaChips = [
               `Transakcí ${investments.length}`,
               latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
@@ -1184,7 +1180,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return `<div class="card p-6 sm:p-7">
   <div class="flex flex-col gap-5">
     <div class="fund-card__header">
-      <img src="${imageSrc}" alt="Vizualizace fondu ${safeName}" class="image-organic-mask" />
+      <div class="fund-avatar" style="background:${fundColor}">${initials}</div>
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-3">
           <span class="fund-card__dot" style="background-color: ${fundColor}"></span>
@@ -1203,9 +1199,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <th>Transakce</th>
               <th class="text-right">Investice</th>
               <th class="text-right">Výnos</th>
-              <th class="text-right">Kumulativně</th>
-              <th class="text-right">Doba (měs.)</th>
-              <th class="text-right">XIRR p.a.</th>
+              <th class="text-right">Aktuální hodnota</th>
+              <th class="text-right">Doba držení</th>
+              <th class="text-right">Prům. roční výnos</th>
             </tr>
           </thead>
           <tbody>${transactionRows}</tbody>
@@ -1257,12 +1253,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isStaticExport) {
         const summaryMetrics = [
-            { label: 'Celkové vklady', value: cellNum(totalInvestConverted) },
-            { label: 'Aktuální hodnota', value: cellNum(totalCurrentConverted) },
-            { label: 'Čistý výsledek', value: cellNum(totalPnl), toneClass: pnlClassExport },
-            { label: 'Kumulativní zhodnocení', value: cellPct(totalRet), toneClass: pnlClassExport },
-            { label: 'XIRR', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassExport },
-            { label: 'Váž. prům. doba', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+            { label: 'VAŠE CELKOVÉ VKLADY', value: cellNum(totalInvestConverted) },
+            { label: 'AKTUÁLNÍ HODNOTA', value: cellNum(totalCurrentConverted) },
+            { label: 'ČISTÝ VÝNOS', value: cellNum(totalPnl), toneClass: pnlClassExport },
+            { label: 'CELKOVÉ ZHODNOCENÍ', value: cellPct(totalRet), toneClass: pnlClassExport },
+            { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassExport },
+            { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
         ];
 
         const cards = summaryMetrics.map(({ label, value, toneClass }) => `
@@ -1280,12 +1276,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const interactiveMetrics = [
-      { label: 'Celkové vklady', value: cellNum(totalInvestConverted) },
-      { label: 'Aktuální hodnota', value: cellNum(totalCurrentConverted) },
-      { label: 'Čistý zisk / ztráta', value: cellNum(totalPnl), toneClass: pnlClassInteractive },
-      { label: 'Kumulativní zhodnocení', value: cellPct(totalRet), toneClass: pnlClassInteractive },
-      { label: 'XIRR', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassInteractive },
-      { label: 'Váž. prům. doba', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+      { label: 'VAŠE CELKOVÉ VKLADY', value: cellNum(totalInvestConverted) },
+      { label: 'AKTUÁLNÍ HODNOTA', value: cellNum(totalCurrentConverted) },
+      { label: 'ČISTÝ VÝNOS', value: cellNum(totalPnl), toneClass: pnlClassInteractive },
+      { label: 'CELKOVÉ ZHODNOCENÍ', value: cellPct(totalRet), toneClass: pnlClassInteractive },
+      { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassInteractive },
+      { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
     ];
     const interactiveCards = interactiveMetrics.map(({ label, value, toneClass }) => `
       <div class="summary-card">
@@ -2020,11 +2016,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const explanationsBlock = `<div class="export-explanations">
         <article>
           <h3>Co je XIRR a jak funguje?</h3>
-          <p>XIRR představuje průměrné roční zhodnocení investice a zohledňuje načasování jednotlivých vkladů i výběrů. Díky tomu dává spravedlivý pohled na výkon portfolia s nepravidelnými cashflow.</p>
+          <p>Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.</p>
         </article>
         <article>
           <h3>Co znamená kumulativní zhodnocení?</h3>
-          <p>Kumulativní zhodnocení ukazuje celkový čistý zisk nebo ztrátu jako procento ze všech vložených prostředků. Nezohledňuje však délku investice jednotlivých vkladů.</p>
+          <p>Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.</p>
         </article>
       </div>`;
 
@@ -2037,16 +2033,14 @@ document.addEventListener('DOMContentLoaded', () => {
           : '';
 
       const narrativeSection = `<section class="narrative">
-        <h2>Jak číst tento report</h2>
-        <p>Tato prezentace shrnuje aktuální stav Vašeho investičního portfolia a převádí všechny dostupné údaje do cílové měny ${htmlEscape(outCurr)}.</p>
-        <p>Na úvod najdete klíčové souhrny, na které navazují detailní karty jednotlivých fondů, vývoj hodnoty a rozložení portfolia. Všechny uvedené částky vycházejí z dat, která jsem pro Vás naposledy aktualizoval při tomto exportu.</p>
-        <p>Pokud budete mít k výsledkům jakékoli otázky nebo budete chtít probrat další kroky, dejte mi prosím vědět – rád vše s Vámi projdu osobně.</p>
+        <h2>Vítejte ve Vašem reportu</h2>
+        <p>Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou 'mapu' naší společné cesty za Vašimi finančními cíli.</p>
       </section>`;
 
       const summarySection = `<section class="card">
         <div class="section-heading">
-          <h2>Souhrn portfolia</h2>
-          <p>Hlavní metriky znázorňující aktuální stav a dynamiku vašeho investičního portfolia.</p>
+          <h2>Souhrn Vašeho portfolia</h2>
+          <p>Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.</p>
         </div>
         ${summaryBlock}
       </section>`;
@@ -2102,11 +2096,14 @@ document.addEventListener('DOMContentLoaded', () => {
           ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${cellNum(fxRate, 4)}</span></div>`
           : '';
 
+      const leadTemplate = 'Dobrý den, [Jméno klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
+      const leadCopy = leadTemplate.replace('[Jméno klienta]', htmlEscape(clientName));
+
       const heroSection = `<header class="export-hero">
         <div class="brand-logo">Fair<span>Life</span></div>
         <span class="export-hero__badge">Klientský report</span>
         <h1 class="export-hero__title">Report investičního portfolia</h1>
-        <p class="export-hero__lead">Tato prezentace shrnuje aktuální stav Vašeho investičního portfolia a převádí všechny dostupné údaje do cílové měny ${htmlEscape(outCurr)}.</p>
+        <p class="export-hero__lead">${leadCopy}</p>
         <div class="export-hero__meta">
           <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
           <div class="export-hero__meta-item"><span class="meta-label">Generováno</span><span class="meta-value">${htmlEscape(generatedLabel)}</span></div>
