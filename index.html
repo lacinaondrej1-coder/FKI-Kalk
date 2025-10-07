@@ -943,9 +943,10 @@ document.addEventListener('DOMContentLoaded', () => {
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
   const fmt1Decimal = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
-  const formatCurrency0 = (value, currency = 'CZK') => {
-      if (!isFinite(value)) return '—';
-      return fmtInt.format(Math.round(value)) + '\u00A0' + currency;
+  const formatCurrency0 = (value, currency = 'CZK', { withUnit = false } = {}) => {
+    if (!isFinite(value)) return '—';
+    const base = fmtInt.format(Math.round(value));
+    return withUnit ? `${base}\u00A0${currency}` : base;
   };
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
   const formatPercent1 = (value) => {
@@ -2662,7 +2663,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       disclaimer.style.display = 'block';
       const annualAnnuity = monthlyAnnuity * 12;
-      annualDiv.textContent = `(což odpovídá ${formatCurrency0(annualAnnuity, 'CZK')} ročně)`;
+      annualDiv.textContent = `(což odpovídá ${formatCurrency0(annualAnnuity, 'CZK', { withUnit: true })} ročně)`;
       if (!isFinite(portfolioIrr) || portfolioIrr <= 0 || funds.length === 0) {
           resultDiv.innerHTML = 'Pro výpočet renty je potřeba mít v portfoliu data s kladným zhodnocením (XIRR).';
           resultDiv.style.display = 'block';
@@ -2670,7 +2671,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const targetCapital = annualAnnuity / portfolioIrr;
       if (totalCurrentConverted >= targetCapital) {
-          resultDiv.innerHTML = `<strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>${formatCurrency0(totalCurrentConverted, 'CZK')}</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.`;
+          resultDiv.innerHTML = `<strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>${formatCurrency0(totalCurrentConverted, 'CZK', { withUnit: true })}</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.`;
           resultDiv.style.display = 'block';
           return;
       }
@@ -2691,7 +2692,7 @@ document.addEventListener('DOMContentLoaded', () => {
       targetDate.setDate(targetDate.getDate() + days);
       const monthNames = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
       const formattedDate = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
-      resultDiv.innerHTML = `Pro měsíční rentu <strong>${formatCurrency0(monthlyAnnuity, 'CZK')}</strong> potřebujete kapitál o velikosti přibližně <strong>${formatCurrency0(targetCapital, 'CZK')}</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>${formattedDate}</strong>.`;
+      resultDiv.innerHTML = `Pro měsíční rentu <strong>${formatCurrency0(monthlyAnnuity, 'CZK', { withUnit: true })}</strong> potřebujete kapitál o velikosti přibližně <strong>${formatCurrency0(targetCapital, 'CZK', { withUnit: true })}</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>${formattedDate}</strong>.`;
       resultDiv.style.display = 'block';
   };
 
