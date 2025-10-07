@@ -200,6 +200,54 @@
         background: linear-gradient(90deg, rgba(45, 212, 191, 0), rgba(45, 212, 191, 0.45), rgba(45, 212, 191, 0));
     }
 
+    /* Static export helpers */
+    .summary-export { display: grid; gap: 1.5rem; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .summary-item { background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 1rem; padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .summary-label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+    .summary-value { font-size: 1.1rem; font-weight: 600; color: #0f172a; }
+    .summary-note { font-size: 0.8rem; color: #64748b; font-style: italic; }
+    .text-positive { color: #0f766e; }
+    .text-negative { color: #b91c1c; }
+    .muted { color: #94a3b8; }
+
+    .fund-export { border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem; background: rgba(255,255,255,0.92); display: flex; flex-direction: column; gap: 1rem; }
+    .fund-export-grid { display: flex; flex-direction: column; gap: 1rem; }
+    .fund-export__header { display: flex; flex-direction: column; gap: 1rem; }
+    .fund-export__title { display: flex; align-items: center; gap: 0.75rem; font-size: 1.15rem; font-weight: 600; color: #0f172a; }
+    .fund-export__dot { width: 0.7rem; height: 0.7rem; border-radius: 999px; display: inline-block; }
+    .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
+    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; display: block; }
+    .metric-value { font-size: 1rem; font-weight: 600; color: #0f172a; display: block; }
+    .metric-sub { font-size: 0.7rem; color: #94a3b8; display: block; }
+    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1rem; border: 1px solid var(--border); background: #ffffff; }
+    .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .fund-export__table th,
+    .fund-export__table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(148,163,184,0.3); }
+    .fund-export__table th { text-align: left; font-weight: 600; color: #475569; background: rgba(15,118,110,0.05); }
+    .fund-export__table th.text-right,
+    .fund-export__table td.text-right { text-align: right; }
+
+    .line-export { display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem; background: #ffffff; }
+    .line-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .legend-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; border: 1px solid rgba(15,118,110,0.25); background: rgba(15,118,110,0.05); color: #0f172a; }
+    .legend-pill--base { border-color: rgba(148,163,184,0.45); background: rgba(148,163,184,0.12); }
+    .legend-pill--value { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.12); }
+    .legend-pill--projection { border-color: rgba(14,165,233,0.4); background: rgba(14,165,233,0.12); }
+    .line-canvas svg { width: 100%; height: auto; }
+
+    .pie-export { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: center; }
+    .pie-canvas { display: flex; justify-content: center; }
+    .pie-canvas svg { max-width: 260px; width: 100%; height: auto; }
+    .pie-legend { display: flex; flex-direction: column; gap: 0.75rem; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem; color: #0f172a; }
+    .legend-dot { width: 0.75rem; height: 0.75rem; border-radius: 999px; flex-shrink: 0; }
+    .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .legend-value { font-weight: 600; color: #0f172a; }
+    .export-explanations { display: flex; flex-direction: column; gap: 1rem; font-size: 0.9rem; color: #475569; }
+    .export-explanations h3 { margin: 0; font-size: 1rem; font-weight: 600; color: #0f172a; }
+    .export-shell { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; padding: 2.5rem 1.5rem 3rem; }
+    .alert { padding: 1rem 1.25rem; border-radius: 1rem; border: 1px solid rgba(244,114,182,0.35); background: rgba(254,226,226,0.65); color: #b91c1c; font-weight: 500; }
   </style>
 </head>
 <body class="antialiased text-slate-800">
@@ -309,12 +357,12 @@
               </label>
               <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
               <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
-              <button data-action="export-client-report" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+              <button data-action="export-html" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
                 <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M4 10.5l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M10 3.5v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Export prezentace
+                Exportovat report pro klienta (.html)
               </button>
               <input type="file" id="import-file-input" class="hidden" accept=".json">
               <div id="last-saved-indicator" class="ml-auto text-xs text-slate-500/80"></div>
@@ -766,110 +814,263 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
-  const renderFundsByCard = (groupedFunds, outCurr, fxRate) => {
-      const container = elements.fundsContainer || document.getElementById('funds-by-card-container');
-      if (!container) return;
-      container.innerHTML = "";
-      if (elements.amountNoteFunds) {
+  const renderFundsByCard = (groupedFunds, outCurr, fxRate, options = {}) => {
+      const { isStaticExport = false } = options;
+      const container = options.container || elements.fundsContainer || document.getElementById('funds-by-card-container');
+      if (!isStaticExport && !container) return '';
+
+      const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+      const fundEntries = Object.entries(groupedFunds);
+
+      if (!isStaticExport && elements.amountNoteFunds) {
           elements.amountNoteFunds.textContent = `Částky v ${outCurr}`;
       }
-      const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
-      if (Object.keys(groupedFunds).length === 0) {
-          container.innerHTML = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Nejsou k dispozici žádná data pro výpočet.</div>`;
+
+      if (fundEntries.length === 0) {
+          const empty = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Nejsou k dispozici žádná data pro výpočet.</div>`;
+          if (isStaticExport) {
+              return empty;
+          }
+          container.innerHTML = empty;
           return;
       }
-      Object.entries(groupedFunds).forEach(([name, investments]) => {
-          let totalInvest = 0, totalCurrent = 0, weightedDurationSum = 0;
+
+      const cardsHtml = fundEntries.map(([name, investments]) => {
+          investments.sort((a, b) => a.dateIn - b.dateIn);
+          let totalInvest = 0;
+          let totalCurrent = 0;
+          let weightedDurationSum = 0;
           const cfs = [];
+
           investments.forEach(inv => {
               const invConverted = convert(inv.invest, inv.curr);
               const currConverted = convert(inv.current, inv.curr);
-              if(isFinite(invConverted)) {
+              if (isFinite(invConverted)) {
                   totalInvest += invConverted;
-                  cfs.push({date: inv.dateIn, amount: -invConverted});
-                  if(isFinite(inv.months)) {
+                  cfs.push({ date: inv.dateIn, amount: -invConverted });
+                  if (isFinite(inv.months)) {
                       weightedDurationSum += invConverted * inv.months;
                   }
               }
-              if(isFinite(currConverted)) {
+              if (isFinite(currConverted)) {
                   totalCurrent += currConverted;
               }
           });
-          const latestDate = investments.reduce((max, i) => i.currDate && i.currDate > max ? i.currDate : max, new Date(0));
+
+          const latestDate = investments.reduce((max, entry) => (entry.currDate && entry.currDate > max ? entry.currDate : max), new Date(0));
           if (isFinite(totalCurrent) && investments.length > 0 && latestDate.getTime() > 0) {
-              cfs.push({date: latestDate, amount: totalCurrent});
+              cfs.push({ date: latestDate, amount: totalCurrent });
           }
+
           const fundIrr = finance.xirr(cfs);
           const pnl = totalCurrent - totalInvest;
           const weightedAvgMonths = totalInvest > 0 ? weightedDurationSum / totalInvest : NaN;
-          const pnlClass = pnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
+          const pnlClassInteractive = pnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
+          const pnlClassExport = pnl >= 0 ? 'text-positive' : 'text-negative';
+          const irrClassInteractive = isFinite(fundIrr) && fundIrr >= 0 ? 'text-emerald-600' : 'text-rose-600';
+          const irrClassExport = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
           const fundColor = getColor(name);
-          const detailsRows = investments.map((r, i) => {
-              const convertedCurrent = convert(r.current, r.curr);
-              const convertedInvest = convert(r.invest, r.curr);
+
+          const detailsRowsInteractive = investments.map((inv, index) => {
+              const convertedCurrent = convert(inv.current, inv.curr);
+              const convertedInvest = convert(inv.invest, inv.curr);
               const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
-              const displayDate = r.originalDateIn || r.dateIn;
-              return `<tr class="border-t border-slate-100"><td class="py-2 pr-3 text-slate-600">${i === 0 ? 'První vklad' : `Dokup #${i}`} <span class="text-slate-400">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td><td class="py-2 pr-3 text-right tabular text-slate-700">${cellNum(convertedInvest)}</td><td class="py-2 pr-3 text-right tabular ${convertedPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${cellNum(convertedPnl)}</td><td class="py-2 pr-3 text-right tabular text-slate-700">${cellPct(r.ret)}</td><td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(r.months) ? cellNum(r.months, 1) + ' měs.' : '—'}</td><td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(r.irr) ? cellPct(r.irr) + ' p.a.' : '—'}</td></tr>`;
+              const displayDate = inv.originalDateIn || inv.dateIn;
+              return `<tr class="border-t border-slate-100">
+                <td class="py-2 pr-3 text-slate-600">${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="text-slate-400">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
+                <td class="py-2 pr-3 text-right tabular text-slate-700">${cellNum(convertedInvest)}</td>
+                <td class="py-2 pr-3 text-right tabular ${convertedPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${cellNum(convertedPnl)}</td>
+                <td class="py-2 pr-3 text-right tabular text-slate-700">${cellPct(inv.ret)}</td>
+                <td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(inv.months) ? cellNum(inv.months, 1) + ' měs.' : '—'}</td>
+                <td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(inv.irr) ? cellPct(inv.irr) + ' p.a.' : '—'}</td>
+              </tr>`;
           }).join('');
-          const card = document.createElement('div');
-          card.className = "card overflow-hidden";
-          card.innerHTML = `
-              <div class="grid grid-cols-2 md:grid-cols-6 gap-x-6 gap-y-4 p-5 sm:p-6 items-start">
-                  <div class="col-span-2">
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Fond</div>
-                    <div class="mt-2 font-semibold text-lg text-slate-900 flex items-center gap-3">
-                      <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${fundColor}"></span>
-                      <span class="truncate" title="${name}">${name}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Aktuální hodnota</div>
-                    <div class="mt-2 font-semibold tabular text-base text-slate-900">${cellNum(totalCurrent)}</div>
-                    <div class="text-xs text-slate-400">k ${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Čistý výsledek</div>
-                    <div class="mt-2 font-semibold tabular text-base ${pnlClass}">${cellNum(pnl)}</div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Výkonnost (XIRR)</div>
-                    <div class="mt-2 font-semibold tabular text-base ${isFinite(fundIrr) && fundIrr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Váž. prům. doba</div>
-                    <div class="mt-2 font-semibold tabular text-base text-slate-900">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</div>
-                  </div>
+
+          const detailsRowsStatic = investments.map((inv, index) => {
+              const convertedCurrent = convert(inv.current, inv.curr);
+              const convertedInvest = convert(inv.invest, inv.curr);
+              const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
+              const displayDate = inv.originalDateIn || inv.dateIn;
+              return `<tr>
+                <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
+                <td class="text-right">${cellNum(convertedInvest)}</td>
+                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${cellNum(convertedPnl)}</td>
+                <td class="text-right">${cellPct(inv.ret)}</td>
+                <td class="text-right">${isFinite(inv.months) ? cellNum(inv.months, 1) + ' měs.' : '—'}</td>
+                <td class="text-right">${isFinite(inv.irr) ? cellPct(inv.irr) + ' p.a.' : '—'}</td>
+              </tr>`;
+          }).join('');
+
+          const headerBlock = `
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-x-6 gap-y-4 p-5 sm:p-6 items-start">
+              <div class="col-span-2">
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Fond</div>
+                <div class="mt-2 font-semibold text-lg text-slate-900 flex items-center gap-3">
+                  <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${fundColor}"></span>
+                  <span class="truncate" title="${name}">${name}</span>
+                </div>
               </div>
-              <details>
-                <summary class="text-xs text-slate-500 hover:text-slate-700 cursor-pointer px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2">Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
-                <div class="px-5 pb-5"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500"><th class="py-2 pr-3 font-semibold">Transakce</th><th class="py-2 pr-3 font-semibold text-right">Investice</th><th class="py-2 pr-3 font-semibold text-right">Výnos</th><th class="py-2 pr-3 font-semibold text-right">Kumulativně</th><th class="py-2 pr-3 font-semibold text-right">Doba (měs.)</th><th class="py-2 pr-3 font-semibold text-right">XIRR p.a.</th></tr></thead><tbody>${detailsRows}</tbody></table></div>
-              </details>`;
-          container.appendChild(card);
-      });
+              <div>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Aktuální hodnota</div>
+                <div class="mt-2 font-semibold tabular text-base text-slate-900">${cellNum(totalCurrent)}</div>
+                <div class="text-xs text-slate-400">k ${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Čistý výsledek</div>
+                <div class="mt-2 font-semibold tabular text-base ${pnlClassInteractive}">${cellNum(pnl)}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Výkonnost (XIRR)</div>
+                <div class="mt-2 font-semibold tabular text-base ${irrClassInteractive}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Váž. prům. doba</div>
+                <div class="mt-2 font-semibold tabular text-base text-slate-900">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</div>
+              </div>
+            </div>`;
+
+          const tableBlock = `<div class="px-5 pb-5">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-slate-500">
+                  <th class="py-2 pr-3 font-semibold">Transakce</th>
+                  <th class="py-2 pr-3 font-semibold text-right">Investice</th>
+                  <th class="py-2 pr-3 font-semibold text-right">Výnos</th>
+                  <th class="py-2 pr-3 font-semibold text-right">Kumulativně</th>
+                  <th class="py-2 pr-3 font-semibold text-right">Doba (měs.)</th>
+                  <th class="py-2 pr-3 font-semibold text-right">XIRR p.a.</th>
+                </tr>
+              </thead>
+              <tbody>${detailsRowsInteractive}</tbody>
+            </table>
+          </div>`;
+
+          if (isStaticExport) {
+              const exportHeader = `<div class="fund-export__header">
+                <div class="fund-export__title">
+                  <span class="fund-export__dot" style="background:${fundColor}"></span>
+                  <span class="fund-export__name">${htmlEscape(name)}</span>
+                </div>
+                <div class="fund-export__metrics">
+                  <div><span class="metric-label">Aktuální hodnota</span><span class="metric-value">${cellNum(totalCurrent)}</span><span class="metric-sub">${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</span></div>
+                  <div><span class="metric-label">Čistý výsledek</span><span class="metric-value ${pnlClassExport}">${cellNum(pnl)}</span></div>
+                  <div><span class="metric-label">Výkonnost (XIRR)</span><span class="metric-value ${irrClassExport}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</span></div>
+                  <div><span class="metric-label">Váž. prům. doba</span><span class="metric-value">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</span></div>
+                </div>
+              </div>`;
+              const exportTable = `<div class="fund-export__table-wrapper">
+                <table class="fund-export__table">
+                  <thead>
+                    <tr>
+                      <th>Transakce</th>
+                      <th class="text-right">Investice</th>
+                      <th class="text-right">Výnos</th>
+                      <th class="text-right">Kumulativně</th>
+                      <th class="text-right">Doba (měs.)</th>
+                      <th class="text-right">XIRR p.a.</th>
+                    </tr>
+                  </thead>
+                  <tbody>${detailsRowsStatic}</tbody>
+                </table>
+              </div>`;
+              return `<section class="fund-export">${exportHeader}${exportTable}</section>`;
+          }
+
+          return `<div class="card overflow-hidden">${headerBlock}<details>
+            <summary class="text-xs text-slate-500 hover:text-slate-700 cursor-pointer px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2">Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
+            ${tableBlock}
+          </details></div>`;
+      }).join('');
+
+      if (isStaticExport) {
+          return cardsHtml;
+      }
+
+      container.innerHTML = cardsHtml;
   };
-  const renderSummary = (summaryData, outCurr) => {
-    const summaryContainer = elements.portfolioSummary || document.getElementById('portfolio-summary-content'); 
-    if (elements.amountNotePortfolio) {
+  const renderSummary = (summaryData, outCurr, options = {}) => {
+    const { isStaticExport = false } = options;
+    const summaryContainer = options.container || elements.portfolioSummary || document.getElementById('portfolio-summary-content');
+
+    if (!isStaticExport && elements.amountNotePortfolio) {
         elements.amountNotePortfolio.textContent = `Částky v ${outCurr}`;
     }
-    if (!summaryContainer) return;
+
     if (!summaryData.hasData) {
-        summaryContainer.innerHTML = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Žádná data pro souhrn.</div>`;
+        const empty = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Žádná data pro souhrn.</div>`;
+        if (isStaticExport) {
+            return empty;
+        }
+        if (summaryContainer) {
+            summaryContainer.innerHTML = empty;
+        }
         return;
     }
+
     const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
-    const pnlClass = totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const pnlClassInteractive = totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const pnlClassExport = totalPnl >= 0 ? 'text-positive' : 'text-negative';
+    const irrClassInteractive = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const irrClassExport = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
     let dateDisclaimer = '';
     if (minValuationDate && maxValuationDate) {
         const minStr = minValuationDate.toLocaleDateString('cs-CZ');
         const maxStr = maxValuationDate.toLocaleDateString('cs-CZ');
-        if (minStr === maxStr) {
-            dateDisclaimer = `Hodnoty jsou platné k ${maxStr}.`;
-        } else {
-            dateDisclaimer = `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`;
-        }
+        dateDisclaimer = minStr === maxStr
+            ? `Hodnoty jsou platné k ${maxStr}.`
+            : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`;
     }
-    summaryContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="space-y-4"><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Celkové vklady</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalInvestConverted)}</span></div><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Aktuální hodnota</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalCurrentConverted)}</span></div><div class="flex justify-between items-baseline"><span class="text-slate-500">Čistý zisk / ztráta</span><span class="font-semibold tabular text-lg ${pnlClass}">${cellNum(totalPnl)}</span></div></div><div class="space-y-4"><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Kumulativní zhodnocení</span><span class="font-semibold tabular text-lg ${pnlClass}">${cellPct(totalRet)}</span></div><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">XIRR (časově vážený výnos)</span><span class="font-bold tabular text-lg ${isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span></div><div class="flex justify-between items-baseline"><span class="text-slate-500">Vážená prům. doba investice</span><span class="font-medium tabular text-lg text-slate-900">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span></div></div></div><div class="text-xs text-slate-400 mt-4 italic">${dateDisclaimer}</div>`;
+
+    if (isStaticExport) {
+        const exportContent = `<div class="summary-export">
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">Celkové vklady</span>
+              <span class="summary-value">${cellNum(totalInvestConverted)}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Aktuální hodnota</span>
+              <span class="summary-value">${cellNum(totalCurrentConverted)}</span>
+            </div>
+          <div class="summary-item">
+            <span class="summary-label">Čistý výsledek</span>
+            <span class="summary-value ${pnlClassExport}">${cellNum(totalPnl)}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Kumulativní zhodnocení</span>
+            <span class="summary-value ${pnlClassExport}">${cellPct(totalRet)}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">XIRR</span>
+            <span class="summary-value ${irrClassExport}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span>
+          </div>
+            <div class="summary-item">
+              <span class="summary-label">Váž. prům. doba</span>
+              <span class="summary-value">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span>
+            </div>
+          </div>
+          ${dateDisclaimer ? `<p class="summary-note">${htmlEscape(dateDisclaimer)}</p>` : ''}
+        </div>`;
+        return exportContent;
+    }
+
+    const content = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Celkové vklady</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalInvestConverted)}</span></div>
+        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Aktuální hodnota</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalCurrentConverted)}</span></div>
+        <div class="flex justify-between items-baseline"><span class="text-slate-500">Čistý zisk / ztráta</span><span class="font-semibold tabular text-lg ${pnlClassInteractive}">${cellNum(totalPnl)}</span></div>
+      </div>
+      <div class="space-y-4">
+        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Kumulativní zhodnocení</span><span class="font-semibold tabular text-lg ${pnlClassInteractive}">${cellPct(totalRet)}</span></div>
+        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">XIRR (časově vážený výnos)</span><span class="font-bold tabular text-lg ${irrClassInteractive}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span></div>
+        <div class="flex justify-between items-baseline"><span class="text-slate-500">Vážená prům. doba investice</span><span class="font-medium tabular text-lg text-slate-900">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span></div>
+      </div>
+    </div>
+    <div class="text-xs text-slate-400 mt-4 italic">${dateDisclaimer}</div>`;
+
+    if (summaryContainer) {
+        summaryContainer.innerHTML = content;
+    }
   };
 
   const renderCharts = (groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioIrr) => {
@@ -906,6 +1107,23 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderLineChart = (container, funds, portfolioIrr, outCurr, fxRate, options = {}) => {
+    const { isStaticExport = false, conversionReady = true } = options;
+
+    if (isStaticExport) {
+        const exportChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioIrr, conversionReady);
+        if (!exportChart.available) {
+            if (exportChart.reason === 'conversion') {
+                return `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Liniový graf nelze vytvořit bez platného převodu měn.</div>`;
+            }
+            return `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Pro liniový graf nejsou k dispozici údaje.</div>`;
+        }
+        const legend = exportChart.hasIrr
+            ? `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span><span class="legend-pill legend-pill--value">Odhad hodnoty</span>${exportChart.irrPositive ? '<span class="legend-pill legend-pill--projection">Projekce</span>' : ''}</div>`
+            : `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span></div>`;
+        return `<div class="line-export">${legend}<div class="line-canvas">${exportChart.svg}</div></div>`;
+    }
+
+    if (!container) return;
     container.innerHTML = "";
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     const deposits = funds.map(f => ({ date: f.dateIn, amount: convert(f.invest, f.curr), fund: f.fund })).filter(d => isFinite(d.amount)).sort((a,b) => a.date - b.date);
@@ -1194,12 +1412,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   const renderPieChart = (container, data, outCurr, options = {}) => {
+    const { isStaticExport = false } = options;
+    const pieTotal = data.reduce((sum, d) => sum + d.totalCurrent, 0);
+
+    if (isStaticExport) {
+        if (!data.length || !(pieTotal > 0)) {
+            return `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Nejsou k dispozici data pro koláčový graf.</div>`;
+        }
+        const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
+        const svg = buildStaticPieChartSvg(slices, pieTotal);
+        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${cellPct(d.value / pieTotal)}</span></div>`).join('');
+        return `<div class="pie-export"><div class="pie-canvas">${svg}</div><div class="pie-legend">${legend}</div></div>`;
+    }
+
+    if (!container) return;
     container.innerHTML = '';
     if(data.length === 0) {
         container.innerHTML = `<div class="text-center py-10 text-slate-500">Pro zvolené datum nejsou data.</div>`;
         return;
     }
-    const pieTotal = data.reduce((sum, d) => sum + d.totalCurrent, 0);
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute('viewBox', '0 0 100 100');
     let angle = -90; const outerRadius = 48; const innerRadius = 25;
@@ -1260,8 +1491,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const y1Inner = 50 + innerRadius * Math.sin(startRad);
           const x2Inner = 50 + innerRadius * Math.cos(endRad);
           const y2Inner = 50 + innerRadius * Math.sin(endRad);
-          return `<path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2">
-            <title>${htmlEscape(name)} • ${cellNum(value)} (${cellPct(percent)})</title>
+          const tooltip = `${name} • ${cellNum(value)} (${cellPct(percent)})`;
+          return `<path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" data-tooltip-text="${htmlEscape(tooltip)}">
+            <title>${htmlEscape(tooltip)}</title>
           </path>`;
       }).join('');
       return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${parts}</svg>`;
@@ -1392,17 +1624,17 @@ document.addEventListener('DOMContentLoaded', () => {
           const amountLabel = cellNum(point.amount);
           const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${cellNum(item.amount)})`).join(' • ');
           const tooltip = `${dateLabel} • ${amountLabel} ${outCurr}${breakdownText ? `\n${breakdownText}` : ''}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0f766e"><title>${htmlEscape(tooltip)}</title></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0f766e" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDate(point.date);
           const tooltip = `Odhad ${dateLabel}: ${cellNum(point.value)} ${outCurr}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#14b8a6"><title>${htmlEscape(tooltip)}</title></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#14b8a6" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const todayTooltip = `Dnes (${formatDate(today)}): ${cellNum(valueAtToday)} ${outCurr}`;
-      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="5" fill="#0f766e" stroke="#fff" stroke-width="2"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
+      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="5" fill="#0f766e" stroke="#fff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
       const svg = `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Vývoj portfolia">
@@ -1444,376 +1676,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
   };
 
-  const preparePresentationData = ({ funds, portfolioSummary, hasMixedCurrencies, outCurr, fxRate }) => {
-      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
-      const groupedFunds = funds.reduce((acc, fund) => {
-          if (!fund.fund) return acc;
-          if (!acc[fund.fund]) acc[fund.fund] = [];
-          acc[fund.fund].push(fund);
-          return acc;
-      }, {});
-
-      const fundCards = [];
-      const allocationSlices = [];
-      let allocationTotal = 0;
-      let conversionReady = true;
-
-      Object.entries(groupedFunds).forEach(([name, entries]) => {
-          entries.sort((a, b) => a.dateIn - b.dateIn);
-          let totalInvest = 0;
-          let totalCurrent = 0;
-          let weightedDuration = 0;
-          let latestDate = null;
-          let conversionsOk = true;
-          const cfs = [];
-          const transactions = entries.map((entry, index) => {
-              const convertedInvest = convert(entry.invest, entry.curr);
-              const convertedCurrent = convert(entry.current, entry.curr);
-              const pnlValue = (Number.isFinite(convertedCurrent) && Number.isFinite(convertedInvest)) ? convertedCurrent - convertedInvest : NaN;
-              if (Number.isFinite(convertedInvest)) {
-                  totalInvest += convertedInvest;
-                  cfs.push({ date: entry.dateIn, amount: -convertedInvest });
-                  if (Number.isFinite(entry.months)) {
-                      weightedDuration += convertedInvest * entry.months;
-                  }
-              } else {
-                  conversionsOk = false;
-              }
-              if (Number.isFinite(convertedCurrent)) {
-                  totalCurrent += convertedCurrent;
-              } else {
-                  conversionsOk = false;
-              }
-              if (entry.currDate && (!latestDate || entry.currDate > latestDate)) {
-                  latestDate = entry.currDate;
-              }
-              return {
-                  label: index === 0 ? 'První vklad' : `Dokup #${index}`,
-                  date: entry.originalDateIn || entry.dateIn,
-                  invest: convertedInvest,
-                  pnl: pnlValue,
-                  ret: entry.ret,
-                  months: entry.months,
-                  irr: entry.irr
-              };
-          });
-
-          let fundIrr = NaN;
-          if (conversionsOk && cfs.length > 0 && Number.isFinite(totalCurrent) && latestDate) {
-              const irrCashflows = cfs.slice();
-              irrCashflows.push({ date: latestDate, amount: totalCurrent });
-              fundIrr = finance.xirr(irrCashflows);
-          }
-
-          const weightedAvgMonths = conversionsOk && totalInvest > 0 ? weightedDuration / totalInvest : NaN;
-          const pnl = conversionsOk ? totalCurrent - totalInvest : NaN;
-          if (!conversionsOk) {
-              conversionReady = false;
-          } else if (Number.isFinite(totalCurrent) && totalCurrent > 0) {
-              allocationSlices.push({ name, value: totalCurrent, color: getColor(name) });
-              allocationTotal += totalCurrent;
-          }
-
-          fundCards.push({
-              name,
-              totalInvest,
-              totalCurrent,
-              pnl,
-              irr: Number.isFinite(fundIrr) ? fundIrr : NaN,
-              weightedAvgMonths,
-              latestDate,
-              transactions,
-              conversionsOk
-          });
-      });
-
-      const summaryInvest = portfolioSummary.totalInvestConverted;
-      const summaryCurrent = portfolioSummary.totalCurrentConverted;
-      const summaryPnl = portfolioSummary.totalPnl;
-      if (!Number.isFinite(summaryInvest) || !Number.isFinite(summaryCurrent)) {
-          conversionReady = false;
-      }
-
-      const summary = {
-          investDisplay: Number.isFinite(summaryInvest) ? cellNum(summaryInvest) : '—',
-          currentDisplay: Number.isFinite(summaryCurrent) ? cellNum(summaryCurrent) : '—',
-          pnlDisplay: Number.isFinite(summaryPnl) ? cellNum(summaryPnl) : '—',
-          retDisplay: Number.isFinite(portfolioSummary.totalRet) ? cellPct(portfolioSummary.totalRet) : '—',
-          irrDisplay: Number.isFinite(portfolioSummary.portfolioIrr) ? `${cellPct(portfolioSummary.portfolioIrr)} p.a.` : '—',
-          durationDisplay: Number.isFinite(portfolioSummary.weightedAvgMonths) ? `${cellNum(portfolioSummary.weightedAvgMonths, 1)} měs.` : '—',
-          dateNote: (() => {
-              const { minValuationDate, maxValuationDate } = portfolioSummary;
-              if (minValuationDate && maxValuationDate) {
-                  const minStr = formatDate(minValuationDate);
-                  const maxStr = formatDate(maxValuationDate);
-                  return minStr === maxStr ? `Hodnoty jsou platné k ${maxStr}.` : `Hodnoty vycházejí z ocenění v období ${minStr} – ${maxStr}.`;
-              }
-              return '';
-          })()
-      };
-
-      const allocation = (allocationSlices.length > 0 && allocationTotal > 0)
-          ? {
-              svg: buildStaticPieChartSvg(allocationSlices, allocationTotal),
-              legend: allocationSlices.map(slice => ({
-                  name: slice.name,
-                  color: slice.color,
-                  percent: slice.value / allocationTotal,
-                  value: slice.value
-              }))
-          }
-          : null;
-
-      const lineChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioSummary.portfolioIrr, conversionReady);
-
-      return {
-          summary,
-          fundCards,
-          allocation,
-          lineChart,
-          conversionReady,
-          currencyWarning: hasMixedCurrencies && !Number.isFinite(fxRate)
-      };
-  };
-
-  const buildClientPresentationHTML = ({ clientName, generatedAt, outCurr, presentation }) => {
-      const { summary, fundCards, allocation, lineChart, conversionReady, currencyWarning } = presentation;
-      const generatedAtLabel = generatedAt.toLocaleString('cs-CZ');
-      const pieLegendHtml = allocation ? allocation.legend.map(item => `
-            <div class="legend-item">
-              <span class="legend-swatch" style="background:${item.color}"></span>
-              <span class="legend-name">${htmlEscape(item.name)}</span>
-              <span class="legend-value">${cellPct(item.percent)} · ${cellNum(item.value)}</span>
-            </div>
-          `).join('') : '';
-
-      const fundCardsHtml = fundCards.length ? fundCards.map(card => {
-          const totalInvest = Number.isFinite(card.totalInvest) ? cellNum(card.totalInvest) : '—';
-          const totalCurrent = Number.isFinite(card.totalCurrent) ? cellNum(card.totalCurrent) : '—';
-          const pnl = Number.isFinite(card.pnl) ? cellNum(card.pnl) : '—';
-          const pnlClass = (Number.isFinite(card.pnl) && card.pnl < 0) ? 'text-loss' : 'text-profit';
-          const irr = Number.isFinite(card.irr) ? `${cellPct(card.irr)} p.a.` : '—';
-          const weighted = Number.isFinite(card.weightedAvgMonths) ? `${cellNum(card.weightedAvgMonths, 1)} měs.` : '—';
-          const latestDateLabel = formatDate(card.latestDate);
-          const rows = card.transactions.map(tx => `
-                <tr>
-                  <td>${htmlEscape(tx.label)}</td>
-                  <td>${formatDate(tx.date)}</td>
-                  <td class="text-right">${Number.isFinite(tx.invest) ? cellNum(tx.invest) : '—'}</td>
-                  <td class="text-right ${Number.isFinite(tx.pnl) && tx.pnl < 0 ? 'text-loss' : 'text-profit'}">${Number.isFinite(tx.pnl) ? cellNum(tx.pnl) : '—'}</td>
-                  <td class="text-right">${Number.isFinite(tx.ret) ? cellPct(tx.ret) : '—'}</td>
-                  <td class="text-right">${Number.isFinite(tx.months) ? `${cellNum(tx.months, 1)} měs.` : '—'}</td>
-                  <td class="text-right">${Number.isFinite(tx.irr) ? `${cellPct(tx.irr)} p.a.` : '—'}</td>
-                </tr>
-              `).join('');
-          return `
-            <section class="card">
-              <header class="card-header">
-                <div class="card-title">
-                  <span class="swatch" style="background:${getColor(card.name)}"></span>
-                  <h3>${htmlEscape(card.name)}</h3>
-                </div>
-                <div class="card-meta">k ${latestDateLabel}</div>
-              </header>
-              <div class="card-stats">
-                <div>
-                  <span class="stat-label">Aktuální hodnota</span>
-                  <span class="stat-value">${totalCurrent}</span>
-                </div>
-                <div>
-                  <span class="stat-label">Celkové vklady</span>
-                  <span class="stat-value">${totalInvest}</span>
-                </div>
-                <div>
-                  <span class="stat-label">Zisk / ztráta</span>
-                  <span class="stat-value ${pnlClass}">${pnl}</span>
-                </div>
-                <div>
-                  <span class="stat-label">XIRR</span>
-                  <span class="stat-value">${irr}</span>
-                </div>
-                <div>
-                  <span class="stat-label">Váž. prům. doba</span>
-                  <span class="stat-value">${weighted}</span>
-                </div>
-              </div>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Transakce</th>
-                      <th>Datum</th>
-                      <th class="text-right">Investice</th>
-                      <th class="text-right">Výnos</th>
-                      <th class="text-right">Kumulativně</th>
-                      <th class="text-right">Doba</th>
-                      <th class="text-right">XIRR</th>
-                    </tr>
-                  </thead>
-                  <tbody>${rows}</tbody>
-                </table>
-              </div>
-            </section>
-          `;
-      }).join('') : '<div class="card"><p>Nejsou k dispozici žádná data o fondech.</p></div>';
-
-      const summaryNote = summary.dateNote ? `<p class="summary-note">${htmlEscape(summary.dateNote)}</p>` : '';
-      const allocationBlock = allocation ? `
-          <section class="card">
-            <h2>Alokace portfolia</h2>
-            <div class="allocation">
-              <div class="allocation-chart">${allocation.svg}</div>
-              <div class="allocation-legend">${pieLegendHtml}</div>
-            </div>
-          </section>
-        ` : '';
-
-      const lineChartBlock = lineChart.available ? `
-          <section class="card">
-            <h2>Vývoj hodnoty portfolia</h2>
-            <div class="line-chart">${lineChart.svg}</div>
-            ${!lineChart.irrPositive && lineChart.hasIrr ? '<p class="summary-note">Projekce jsou zobrazeny pouze při kladném zhodnocení portfolia.</p>' : ''}
-            ${!lineChart.hasIrr ? '<p class="summary-note">Není dostupná spolehlivá míra výnosu, graf zobrazuje pouze kumulované vklady.</p>' : ''}
-          </section>
-        ` : `
-          <section class="card">
-            <h2>Vývoj hodnoty portfolia</h2>
-            <p>Graf nelze zobrazit kvůli chybějícím údajům.</p>
-          </section>
-        `;
-
-      const currencyWarningBlock = currencyWarning ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>` : '';
-      const conversionNote = !conversionReady ? '<div class="alert">Některé hodnoty nebylo možné převést do cílové měny. Částky označené „—“ jsou pouze informativní.</div>' : '';
-
-      const explanations = `
-        <section class="card">
-          <h2>Vysvětlivky</h2>
-          <ul class="explanations">
-            <li><strong>XIRR</strong> představuje průměrné roční zhodnocení zohledňující načasování vkladů.</li>
-            <li><strong>Kumulativní zhodnocení</strong> ukazuje celkový procentuální rozdíl mezi vloženými prostředky a aktuální hodnotou.</li>
-            <li><strong>Váž. prům. doba investice</strong> váží délku držení jednotlivých vkladů podle jejich velikosti.</li>
-          </ul>
-        </section>
-      `;
-
-      return `<!doctype html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Prezentace portfolia – ${htmlEscape(clientName)}</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --accent: #0f766e;
-      --accent-soft: rgba(15, 118, 110, 0.12);
-      --border: rgba(15, 118, 110, 0.15);
-      --surface: #ffffff;
-      --text: #0f172a;
-      --muted: #64748b;
-      --muted-soft: #94a3b8;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; padding: 40px 20px; background: linear-gradient(180deg,#ecfeff 0%,#f8fafc 55%,#eef2f6 100%); color: var(--text); }
-    .container { max-width: 960px; margin: 0 auto; }
-    header.report-header { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 32px 36px; box-shadow: 0 24px 60px -35px rgba(15,118,110,0.45); margin-bottom: 28px; }
-    header.report-header h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.01em; }
-    header.report-header .meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: var(--muted); font-size: 14px; }
-    .badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 32px 36px; box-shadow: 0 20px 45px -30px rgba(15,23,42,0.35); margin-bottom: 28px; }
-    .card h2 { margin: 0 0 20px; font-size: 22px; }
-    .summary-grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 12px; }
-    .summary-item { display: flex; flex-direction: column; gap: 4px; }
-    .summary-label { text-transform: uppercase; font-size: 12px; letter-spacing: 0.12em; color: var(--muted); }
-    .summary-value { font-size: 22px; font-weight: 600; }
-    .summary-note { margin-top: 12px; font-size: 13px; color: var(--muted); }
-    .alert { border-radius: 18px; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(254, 226, 226, 0.6); padding: 16px 20px; color: #b91c1c; margin-bottom: 24px; }
-    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-    .card-title { display: flex; align-items: center; gap: 12px; }
-    .card-title h3 { margin: 0; font-size: 20px; }
-    .card-meta { font-size: 13px; color: var(--muted); }
-    .swatch { width: 12px; height: 12px; border-radius: 999px; box-shadow: 0 0 0 2px rgba(255,255,255,0.9); }
-    .card-stats { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 20px; }
-    .stat-label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 6px; }
-    .stat-value { font-size: 18px; font-weight: 600; }
-    .text-profit { color: #047857; }
-    .text-loss { color: #b91c1c; }
-    .table-wrapper { overflow-x: auto; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.35); }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 12px 16px; text-align: left; }
-    thead { background: rgba(226, 232, 240, 0.45); color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.12em; }
-    tbody tr:nth-child(odd) { background: rgba(241, 245, 249, 0.35); }
-    td.text-right, th.text-right { text-align: right; }
-    .allocation { display: flex; flex-wrap: wrap; gap: 32px; align-items: center; }
-    .allocation-chart { flex: 1 1 240px; min-width: 240px; display: flex; justify-content: center; }
-    .allocation-chart svg { width: 100%; max-width: 240px; height: auto; }
-    .allocation-legend { flex: 1 1 240px; min-width: 240px; display: flex; flex-direction: column; gap: 12px; }
-    .legend-item { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
-    .legend-swatch { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8); }
-    .legend-name { flex: 1; color: var(--muted); }
-    .legend-value { font-weight: 600; }
-    .line-chart svg { width: 100%; height: auto; }
-    .explanations { list-style: disc; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; color: var(--muted); }
-    @media (max-width: 640px) {
-      header.report-header, .card { padding: 24px 20px; }
-      .card-header { flex-direction: column; align-items: flex-start; }
-      .allocation { flex-direction: column; align-items: flex-start; }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header class="report-header">
-      <span class="badge">Klientská prezentace</span>
-      <h1>${htmlEscape(clientName)}</h1>
-      <div class="meta">
-        <span>Generováno: ${htmlEscape(generatedAtLabel)}</span>
-        <span>Cílová měna: ${htmlEscape(outCurr)}</span>
-      </div>
-    </header>
-    ${currencyWarningBlock}
-    ${conversionNote}
-    <section class="card">
-      <h2>Souhrn portfolia</h2>
-      <div class="summary-grid">
-        <div class="summary-item">
-          <span class="summary-label">Celkové vklady</span>
-          <span class="summary-value">${summary.investDisplay}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Aktuální hodnota</span>
-          <span class="summary-value">${summary.currentDisplay}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Čistý výsledek</span>
-          <span class="summary-value">${summary.pnlDisplay}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Kumulativní zhodnocení</span>
-          <span class="summary-value">${summary.retDisplay}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">XIRR</span>
-          <span class="summary-value">${summary.irrDisplay}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Váž. prům. doba</span>
-          <span class="summary-value">${summary.durationDisplay}</span>
-        </div>
-      </div>
-      ${summaryNote}
-    </section>
-    ${allocationBlock}
-    ${lineChartBlock}
-    ${fundCardsHtml}
-    ${explanations}
-  </div>
-</body>
-</html>`;
-  };
-
-  const exportClientReport = () => {
+  const exportToStaticHTML = () => {
       const clientName = (state.clientName || '').trim();
       if (!clientName) {
           showToast('Před exportem vyplňte jméno klienta.', 'error');
@@ -1828,46 +1691,125 @@ document.addEventListener('DOMContentLoaded', () => {
       const snapshot = processAllRows();
       const outCurr = elements.outCurrency?.value || 'CZK';
       const fxRate = utils.numCZ(elements.fxRate?.value);
-      renderResults(snapshot.funds, outCurr, fxRate, snapshot.hasMixedCurrencies, snapshot.portfolioSummary);
-      calculateAnnuity();
+      const conversionReady = !(snapshot.hasMixedCurrencies && !isFinite(fxRate));
 
       if (!snapshot.funds.length) {
           showToast('Pro export je potřeba zadat alespoň jeden platný fond.', 'error');
           return;
       }
 
-      const presentation = preparePresentationData({
-          funds: snapshot.funds,
-          portfolioSummary: snapshot.portfolioSummary,
-          hasMixedCurrencies: snapshot.hasMixedCurrencies,
-          outCurr,
-          fxRate
-      });
+      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true });
 
+      const groupedFunds = snapshot.funds.reduce((acc, fund) => {
+          if (!fund.fund) return acc;
+          if (!acc[fund.fund]) acc[fund.fund] = [];
+          acc[fund.fund].push(fund);
+          return acc;
+      }, {});
+
+      const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true });
+
+      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
+      const allocationData = Object.entries(groupedFunds).map(([name, entries]) => {
+          const totalCurrent = entries.reduce((sum, entry) => {
+              const converted = convert(entry.current, entry.curr);
+              return Number.isFinite(converted) ? sum + converted : sum;
+          }, 0);
+          return { name, totalCurrent };
+      }).filter(item => item.totalCurrent > 0);
+
+      const pieBlock = allocationData.length
+          ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true })
+          : `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-6 text-center text-slate-500">Pro koláčový graf nejsou dostupná data.</div>`;
+
+      const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady });
+
+      const explanationsBlock = `<div class="export-explanations">
+        <article>
+          <h3>Co je XIRR a jak funguje?</h3>
+          <p>XIRR představuje průměrné roční zhodnocení investice a zohledňuje načasování jednotlivých vkladů i výběrů. Díky tomu dává spravedlivý pohled na výkon portfolia s nepravidelnými cashflow.</p>
+        </article>
+        <article>
+          <h3>Co znamená kumulativní zhodnocení?</h3>
+          <p>Kumulativní zhodnocení ukazuje celkový čistý zisk nebo ztrátu jako procento ze všech vložených prostředků. Nezohledňuje však délku investice jednotlivých vkladů.</p>
+        </article>
+      </div>`;
+
+      const styleContent = (document.querySelector('style')?.textContent || '').replace(/@import[^;]+;/g, '');
       const generatedAt = new Date();
-      const html = buildClientPresentationHTML({
-          clientName,
-          generatedAt,
-          outCurr,
-          presentation
-      });
+      const generatedLabel = generatedAt.toLocaleString('cs-CZ');
+      const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
+          ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
+          : '';
+
+      const summarySection = `<section class="card">
+        <h2>Souhrn portfolia</h2>
+        ${summaryBlock}
+      </section>`;
+
+      const fundsSection = `<section class="card">
+        <h2>Výsledky po fondech</h2>
+        <div class="fund-export-grid">${fundsBlock}</div>
+      </section>`;
+
+      const pieSection = `<section class="card">
+        <h2>Alokace portfolia</h2>
+        ${pieBlock}
+      </section>`;
+
+      const lineSection = `<section class="card">
+        <h2>Vývoj hodnoty portfolia</h2>
+        ${lineBlock}
+      </section>`;
+
+      const explanationsSection = `<section class="card">
+        <h2>Vysvětlivky a použité metriky</h2>
+        ${explanationsBlock}
+      </section>`;
+
+      const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});});`;
+
+      const html = `<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report portfolia – ${htmlEscape(clientName)}</title>
+  <style>${styleContent}</style>
+</head>
+<body>
+  <div class="export-shell">
+    <header>
+      <h1>${htmlEscape(clientName)}</h1>
+      <div class="meta">
+        <span>Generováno: ${htmlEscape(generatedLabel)}</span>
+        <span>Cílová měna: ${htmlEscape(outCurr)}</span>
+      </div>
+    </header>
+    ${currencyWarning}
+    ${summarySection}
+    ${fundsSection}
+    ${pieSection}
+    ${lineSection}
+    ${explanationsSection}
+  </div>
+  <script>${tooltipScript}</script>
+</body>
+</html>`;
 
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
-      const safeName = clientName
-          .toLowerCase()
-          .replace(/[^\p{L}\p{N}\s-]+/gu, '')
-          .trim()
-          .replace(/\s+/g, '-');
+      const safeName = clientName.toLowerCase().replace(/[^\p{L}\p{N}\s-]+/gu, '').trim().replace(/\s+/g, '-');
       anchor.href = url;
-      anchor.download = `prezentace-${safeName || 'klient'}-${generatedAt.toISOString().split('T')[0]}.html`;
+      anchor.download = `report-${safeName || 'klient'}-${generatedAt.toISOString().split('T')[0]}.html`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
-      showToast('Prezentace byla exportována.');
+      showToast('Report byl exportován.');
   };
+
   const calculateAnnuity = () => {
       const { portfolioSummary, funds } = state.lastProcessedData;
       const { portfolioIrr, totalCurrentConverted } = portfolioSummary;
@@ -2036,7 +1978,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (action === 'delete-all') { if (confirm(`Opravdu chcete smazat všechny řádky pro ${PROVIDERS[provider]}?`)) { state.rows[provider] = []; renderProviderInputs(provider); scheduleRecalc(); saveState(); } }
         if (action === 'export-json') exportState();
         if (action === 'import-json') elements.importFile?.click();
-        if (action === 'export-client-report') exportClientReport();
+        if (action === 'export-html') exportToStaticHTML();
         if (action === 'add-sample') {
             const today = new Date().toISOString().split('T')[0];
             const SAMPLES = {
