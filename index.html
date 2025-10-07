@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investiční Kalkulačka</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary .summary-arrow { transition: transform 0.2s; }
+        details[open] > summary .summary-arrow { transform: rotate(90deg); }
+        #toast-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { display: flex; align-items: center; padding: 1rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); opacity: 0; transform: translateX(100%); transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1); }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast-success { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .toast-error { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .line-chart-grid-line { stroke: #e5e7eb; stroke-dasharray: 2 3; }
+        .line-chart-axis-text { font-size: 11px; fill: #6b7280; user-select: none; }
+        .pie-segment { cursor: pointer; transition: transform 0.2s cubic-bezier(0.21, 1.02, 0.73, 1); transform-origin: center center; }
+        .pie-segment:hover { transform: scale(1.04); }
+        .chart-path { transition: d 0.3s ease-out; }
+    </style>
+</head>
+<body className="bg-neutral-100">
+    <div id="root"></div>
+    <div id="toast-container"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, useRef, Fragment } = React;
+
+        const Y = 15; // Projection years
+        const czk = new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 0 });
+        const pct = new Intl.NumberFormat("cs-CZ", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        const parse = (v) => (typeof v === "string" ? Number(v.replace(/[^\d.,-]/g, "").replace(",", ".")) : Number(v)) || 0;
+        const createFund = (name, r) => ({ id: crypto.randomUUID(), name, returnStr: String(r), amountStr: "0", amountStrY1: "0", failureYear: 0 });
+        
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000);
+        };
+
+        const MoneyInput = ({ value, onChange }) => {
+            const [currentValue, setCurrentValue] = useState(value);
+            const ref = useRef(null);
+
+            useEffect(() => {
+                if (document.activeElement !== ref.current) {
+                    const numValue = parse(value);
+                    setCurrentValue(numValue > 0 ? czk.format(numValue) : '');
+                }
+            }, [value]);
+            
+            const handleFocus = (e) => {
+                const numericValue = parse(e.target.value);
+                setCurrentValue(numericValue === 0 ? '' : numericValue);
+            };
+
+            const handleBlur = (e) => {
+                const numericValue = parse(e.target.value);
+                onChange(String(numericValue));
+                setCurrentValue(numericValue > 0 ? czk.format(numericValue) : '');
+            };
+
+            const handleChange = (e) => {
+                setCurrentValue(e.target.value);
+            };
+
+            return <input ref={ref} type="text" inputMode="numeric" className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-right outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 tabular-nums transition" value={currentValue} onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} autoComplete="off" />;
+        };
+
+        const InfoCard = ({ title, value, subValue }) => (
+            <div className="bg-white rounded-2xl p-4 border border-neutral-200">
+              <div className="text-neutral-600 text-sm">{title}</div>
+              <div className="text-2xl font-semibold mt-1 tabular-nums">{value}</div>
+              {subValue && <div className="text-xs text-neutral-500 mt-1">{subValue}</div>}
+            </div>
+        );
+
+        function App() {
+            const [lastSaved, setLastSaved] = useState(null);
+
+            const [codya, setCodya] = useState([
+                createFund("PFFL", 7.5), createFund("Fond reverzních hypoték", 6.65), createFund("Silverline R.E.", 10), createFund("Vigo Direct", 8),
+                createFund("Adax", 12), createFund("Julius Meinl fond", 14.5), createFund("Penta R.E.", 14), createFund("Penta Equity", 14),
+                createFund("Artefin - Henry IF", 8.5), createFund("FČKD", 7.5)
+            ]);
+            const [avant, setAvant] = useState([
+                createFund("r2p invest", 8.5), createFund("Gartal", 7), createFund("Realia", 6), createFund("EBM", 8), createFund("Wero", 8),
+                createFund("Vihorev", 8.5), createFund("Real Luxembourg", 8), createFund("Aguila", 7.5), createFund("Spilberk", 7), createFund("Semper", 11)
+            ]);
+            
+            const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+            useEffect(() => { 
+                try { 
+                    const s = localStorage.getItem('investmentCalculatorState'); 
+                    if (s) { 
+                        const d = JSON.parse(s); 
+                        if (d.codya) setCodya(d.codya); 
+                        if (d.avant) setAvant(d.avant); 
+                        showToast("Data byla úspěšně načtena."); 
+                    } 
+                    setLastSaved(getTimeString());
+                } catch (e) { 
+                    showToast("Nepodařilo se načíst uložená data.", 'error'); 
+                } 
+            }, []);
+            
+            useEffect(() => { 
+                try { 
+                    const stateToSave = { codya, avant };
+                    localStorage.setItem('investmentCalculatorState', JSON.stringify(stateToSave));
+                    setLastSaved(getTimeString());
+                } catch (e) {
+                    console.error("Failed to save state:", e);
+                } 
+            }, [codya, avant]);
+
+            const exportState = () => {
+                try {
+                    const stateToSave = { codya, avant };
+                    const blob = new Blob([JSON.stringify(stateToSave, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `portfolio-${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast("Portfolio bylo úspěšně exportováno.");
+                } catch (e) {
+                    showToast("Chyba při exportu portfolia.", "error");
+                    console.error("Export failed:", e);
+                }
+            };
+            
+            const importState = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedState = JSON.parse(e.target.result);
+                        if (importedState.codya && importedState.avant) {
+                            setCodya(importedState.codya);
+                            setAvant(importedState.avant);
+                            showToast("Portfolio bylo úspěšně importováno.");
+                        } else {
+                            throw new Error("Invalid file structure");
+                        }
+                    } catch (err) {
+                        showToast("Chyba při importu souboru.", "error");
+                        console.error("Import failed:", err);
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = null;
+            };
+            
+            const resetAll = () => {
+                const resetAmounts = (funds) => funds.map(f => ({ ...f, amountStr: '0', amountStrY1: '0', failureYear: 0 }));
+                setCodya(resetAmounts);
+                setAvant(resetAmounts);
+                showToast("Celé portfolio bylo vynulováno.");
+            };
+            
+            const portfolioAnalysis = useMemo(() => {
+                const allFunds = [...codya, ...avant].map(f => ({ 
+                    ...f, 
+                    amount: parse(f.amountStr), 
+                    amountY1: parse(f.amountStrY1),
+                    r: parse(f.returnStr) / 100,
+                    failureYear: parseInt(f.failureYear, 10) || 0
+                }));
+
+                const initialFunds = allFunds.filter(f => f.amount > 0 || f.amountY1 > 0);
+                if (initialFunds.length === 0) return { hasData: false };
+
+                const totalInvestedInitial = allFunds.reduce((sum, f) => sum + f.amount, 0);
+                const totalInvestedY1 = allFunds.reduce((sum, f) => sum + f.amountY1, 0);
+                const totalInvestedWithFollowUp = totalInvestedInitial + totalInvestedY1;
+
+                const initiallyInvestedFunds = allFunds.filter(f => f.amount > 0);
+                const weightedSumInitial = initiallyInvestedFunds.reduce((sum, f) => sum + f.amount * f.r, 0);
+                const weightedReturnInitial = totalInvestedInitial > 0 ? weightedSumInitial / totalInvestedInitial : 0;
+
+                const hasFollowUpInvestment = totalInvestedY1 > 0;
+                const hasFailure = allFunds.some(f => f.failureYear > 0);
+                
+                const projection = [];
+                let totalLoss = 0;
+                let failureEvents = [];
+                let recoveryTime = null;
+
+                let baselineValue = totalInvestedInitial;
+                let followUp = { value: totalInvestedInitial, activeFunds: allFunds.filter(f=>f.amount > 0).map(f => ({...f, currentValue: f.amount})) };
+                let failure = { value: totalInvestedInitial, activeFunds: allFunds.filter(f=>f.amount > 0).map(f => ({...f, currentValue: f.amount})) };
+
+                for (let year = 1; year <= Y; year++) {
+                    const yearData = { year };
+
+                    const baselineStart = baselineValue;
+                    const baselineInterest = baselineStart * weightedReturnInitial;
+                    baselineValue += baselineInterest;
+                    yearData.baseline = { start: baselineStart, interest: baselineInterest, end: baselineValue };
+
+                    ['followUp', 'failure'].forEach(type => {
+                        const scenario = type === 'followUp' ? followUp : failure;
+                        const start = scenario.value;
+
+                        const currentRate = start > 0 ? scenario.activeFunds.reduce((s,f) => s + (f.currentValue/start) * f.r, 0) : 0;
+                        const interest = start * currentRate;
+                        scenario.activeFunds.forEach(f => { f.currentValue *= (1 + f.r); });
+                        
+                        if (year === 1 && totalInvestedY1 > 0) {
+                             allFunds.forEach(origF => {
+                                if(origF.amountY1 > 0){
+                                    const existing = scenario.activeFunds.find(af => af.id === origF.id);
+                                    if(existing) {
+                                        existing.currentValue += origF.amountY1;
+                                    } else {
+                                        scenario.activeFunds.push({...origF, currentValue: origF.amountY1});
+                                    }
+                                }
+                           });
+                        }
+                        const valueAfterDeposit = scenario.activeFunds.reduce((s,f) => s+f.currentValue, 0);
+
+                        let loss = 0;
+                        let valueBeforeCrash = valueAfterDeposit;
+                        if (type === 'failure' && hasFailure) {
+                            const failingThisYear = scenario.activeFunds.filter(f => f.failureYear === year);
+                            if (failingThisYear.length > 0) {
+                                loss = failingThisYear.reduce((s,f) => s + f.currentValue, 0);
+                                totalLoss += loss;
+                                failureEvents.push({ year, loss });
+                                scenario.activeFunds = scenario.activeFunds.filter(f => f.failureYear !== year);
+                            }
+                        }
+                        
+                        scenario.value = scenario.activeFunds.reduce((s,f) => s+f.currentValue, 0);
+                        yearData[type] = { start, interest, end: scenario.value, loss, valueBeforeCrash };
+                    });
+
+                    projection.push(yearData);
+                }
+
+                if (hasFailure) {
+                    let lastYearBelowInvestment = -1;
+                    let lastCrashYearBeforeRecovery = -1;
+                    projection.forEach(p => {
+                        if (p.failure.end < totalInvestedWithFollowUp) {
+                            lastYearBelowInvestment = p.year;
+                            const relevantCrashes = failureEvents.filter(e => e.year <= p.year);
+                            if(relevantCrashes.length > 0) {
+                                lastCrashYearBeforeRecovery = Math.max(...relevantCrashes.map(e => e.year));
+                            }
+                        }
+                    });
+                    if (lastYearBelowInvestment !== -1 && lastCrashYearBeforeRecovery !== -1) {
+                         for (let i = lastYearBelowInvestment - 1; i < projection.length; i++) {
+                            const pCurrent = projection[i];
+                            const pPrev = projection[i-1] || { failure: { end: totalInvestedInitial }};
+                            if(pPrev.failure.end < totalInvestedWithFollowUp && pCurrent.failure.end >= totalInvestedWithFollowUp){
+                                const needed = totalInvestedWithFollowUp - pPrev.failure.end;
+                                const gain = pCurrent.failure.end - pPrev.failure.end;
+                                const partial = gain > 0 ? needed / gain : 0;
+                                recoveryTime = (pCurrent.year - lastCrashYearBeforeRecovery) + partial;
+                                break;
+                            }
+                         }
+                    } else if(totalInvestedInitial > 0 && projection[0] && projection[0].failure.end >= totalInvestedWithFollowUp){
+                       recoveryTime = 0;
+                    }
+                }
+                
+                const investedFundsInitial = allFunds.filter(f => f.amount > 0).map(f => ({ name: f.name, amount: f.amount }));
+                const fundsAfterY1 = allFunds.map(f => {
+                    let amountAfterY1 = (f.amount * (1 + (projection[0]?.baseline.interest / projection[0]?.baseline.start || 0) )) + f.amountY1;
+                    return { name: f.name, amount: amountAfterY1 };
+                }).filter(f => f.amount > 0);
+
+                const weightedReturnAfterY1 = projection[1] ? projection[1].followUp.interest / projection[1].followUp.start : weightedReturnInitial;
+
+                return {
+                    hasData: true, totalInvestedInitial, weightedReturnInitial,
+                    hasFollowUpInvestment, totalInvestedWithFollowUp, weightedReturnAfterY1,
+                    hasFailure, totalLoss, recoveryTime, failureEvents,
+                    projection, 
+                    investedFundsInitial, fundsAfterY1
+                };
+            }, [codya, avant]);
+            
+            return (
+                <Fragment>
+                    <header className="bg-white border-b border-neutral-200 sticky top-0 z-10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-6">
+                            <div className="flex-shrink-0">
+                                <span className="text-2xl font-bold tracking-tighter text-sky-600">Fair<span className="text-sky-400">Life</span></span>
+                            </div>
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-neutral-800">Investiční kalkulačka</h1>
+                                <p className="text-xs text-neutral-500 mt-1">
+                                    © {new Date().getFullYear()} Ondřej Lacina. Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb. Jakékoliv šíření bez povolení nebo mimo strukturu Fair-life je přísně zakázáno.
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+                    <main className="px-4 sm:px-6 lg:px-8 py-8">
+                        <div className="max-w-7xl mx-auto space-y-8">
+                            <DataManagement 
+                                onExport={exportState} 
+                                onImport={importState} 
+                                onReset={resetAll}
+                                lastSaved={lastSaved}
+                            />
+                            <Group title="CODYA" list={codya} setList={setCodya} portfolioTotal={portfolioAnalysis.totalInvestedInitial} />
+                            <Group title="AVANT" list={avant} setList={setAvant} portfolioTotal={portfolioAnalysis.totalInvestedInitial} />
+                            
+                            <Summary analysis={portfolioAnalysis} />
+                            <LineChart analysis={portfolioAnalysis} />
+                            <PieChart analysis={portfolioAnalysis} />
+                            <ProjectionTable analysis={portfolioAnalysis} />
+                            <AnnuityCalculator analysis={portfolioAnalysis} />
+
+                            <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
+                                <details>
+                                    <summary className="text-lg font-semibold cursor-pointer flex items-center justify-between">
+                                        <span>Vysvětlivky a použité metriky</span>
+                                        <svg className="summary-arrow w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.21 14.77a.75.75
+ 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+                                    </summary>
+                                    <div className="mt-4 pt-4 border-t text-sm text-neutral-700 space-y-4">
+                                        <h4 className="font-semibold text-neutral-800">Co je to vážené průměrné zhodnocení?</h4>
+                                        <p>Jedná se o průměrné očekávané zhodnocení celého portfolia. Výpočet zohledňuje, jak velká část portfolia je v jednotlivých fondech. Fond, do kterého jste investovali více peněz, má na výsledný průměr větší vliv (váhu).</p>
+                                    </div>
+                                </details>
+                            </section>
+                        </div>
+                    </main>
+                    <footer className="bg-white border-t border-neutral-200 mt-8">
+                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-neutral-500">
+                           Nástroj slouží pouze pro ilustrativní účely.
+                        </div>
+                    </footer>
+                </Fragment>
+            );
+        }
+
+        const DataManagement = ({ onExport, onImport, onReset, lastSaved }) => {
+            const fileInputRef = useRef(null);
+            return (
+                <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4">
+                    <input type="file" ref={fileInputRef} onChange={onImport} accept=".json" style={{ display: 'none' }} />
+                    <div className="flex flex-wrap justify-between items-center gap-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-md font-semibold text-neutral-800 mr-2">Správa dat</h2>
+                            <button onClick={onExport} className="px-3 py-2 text-sm font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-lg transition border border-neutral-200">Exportovat do .json</button>
+                            <button onClick={() => fileInputRef.current.click()} className="px-3 py-2 text-sm font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-lg transition border border-neutral-200">Importovat z .json</button>
+                            <button onClick={onReset} className="px-3 py-2 text-sm font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition border border-rose-200">Resetovat portfolio</button>
+                        </div>
+                        {lastSaved && <span className="text-xs text-neutral-500">Uloženo v {lastSaved}</span>}
+                    </div>
+                </section>
+            );
+        };
+        
+        const SegmentSummary = ({ analysis, title }) => {
+            if (!analysis || !analysis.hasData) return null;
+            const { totalInvested, weightedReturn } = analysis;
+            const returnClass = weightedReturn >= 0 ? 'text-green-600' : 'text-red-600';
+            return (
+                <div className="mt-4 pt-4 border-t border-neutral-200">
+                    <h3 className="text-sm font-medium text-neutral-600 mb-2">Souhrn pro {title}</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <InfoCard title={`Investováno v ${title}`} value={czk.format(totalInvested)} />
+                        <InfoCard title="Očekávaný roční výnos" value={<span className={returnClass}>{pct.format(weightedReturn)}</span>} />
+                    </div>
+                </div>
+            );
+        };
+
+        const Group = ({ title, list, setList, portfolioTotal }) => {
+            const add = () => setList(p => [...p, createFund("Nový fond", 5)]);
+            const remove = (id) => setList(p => p.filter(f => f.id !== id));
+            const reset = () => setList(p => p.map(f => ({...f, amountStr: '0', amountStrY1: '0', failureYear: 0})));
+            const patchFund = (id, patch) => setList(p => p.map(f => f.id === id ? { ...f, ...patch } : f));
+
+            const handleDemo = () => {
+                 let demoData;
+                const codyaDemoFunds = ["PFFL", "Silverline R.E.", "Adax", "Penta R.E."];
+                const avantDemoFunds = ["r2p invest", "Vihorev", "Real Luxembourg", "Semper"];
+                if (title === 'CODYA') demoData = list.map(f => codyaDemoFunds.includes(f.name) ? { ...f, amountStr: '250000' } : { ...f, amountStr: '0' });
+                else if (title === 'AVANT') demoData = list.map(f => avantDemoFunds.includes(f.name) ? { ...f, amountStr: '250000' } : { ...f, amountStr: '0' });
+                if (demoData) setList(demoData);
+            };
+            
+            const segmentAnalysis = useMemo(() => {
+                const fundsInSegment = list.map(f => ({ ...f, amount: parse(f.amountStr), r: parse(f.returnStr) / 100 }));
+                const investedFunds = fundsInSegment.filter(f => f.amount > 0);
+                if (investedFunds.length === 0) return { hasData: false, totalInvested: 0, weightedReturn: 0 };
+                const totalInvested = investedFunds.reduce((sum, f) => sum + f.amount, 0);
+                const weightedSum = investedFunds.reduce((sum, f) => sum + f.amount * f.r, 0);
+                const weightedReturn = totalInvested > 0 ? weightedSum / totalInvested : 0;
+                return { hasData: true, totalInvested, weightedReturn };
+            }, [list]);
+
+            const groupTotal = segmentAnalysis.totalInvested;
+
+            return (
+                <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                             <button onClick={handleDemo} className="px-3 py-2 text-sm font-medium bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-lg transition border border-sky-200">Ukázka</button>
+                            <button onClick={reset} className="px-3 py-2 text-sm font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition border border-rose-200">Vynulovat</button>
+                            <button onClick={add} className="px-3 py-2 text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 flex items-center gap-1.5">
+                                <span className="text-lg leading-none -mt-px">+</span>
+                                <span>Přidat fond</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-left text-neutral-600 border-b">
+                                    <th className="py-2 pr-3 font-medium">Fond</th>
+                                    <th className="py-2 pr-3 font-medium w-[150px]">Oček. zhodnocení</th>
+                                    <th className="py-2 pr-3 font-medium w-[160px]">Počáteční vklad</th>
+                                    <th className="py-2 pr-3 font-medium w-[160px]">Vklad po 1. roce</th>
+                                    <th className="py-2 pl-3 font-medium w-[140px]">Krach po roce</th>
+                                    <th className="py-2 pr-3 font-medium w-[130px]">Podíl ve skupině</th>
+                                    <th className="py-2 pr-3 font-medium w-[130px]">Podíl v portfoliu</th>
+                                    <th className="py-2 pr-3 font-medium w-[60px]"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {list.map(f => {
+                                    const amount = parse(f.amountStr);
+                                    const segmentShare = groupTotal > 0 ? amount / groupTotal : 0;
+                                    const portfolioShare = portfolioTotal > 0 ? amount / portfolioTotal : 0;
+                                    return (
+                                    <tr key={f.id} className="border-b last:border-b-0">
+                                        <td className="py-2 pr-3"><input className="w-full rounded-xl border-neutral-300 px-3 py-2 outline-none focus:border-sky-500" defaultValue={f.name} onBlur={e => patchFund(f.id, { name: e.target.value })} /></td>
+                                        <td className="py-2 pr-3"><div className="relative"><input type="text" inputMode="decimal" className="w-full rounded-xl border-neutral-300 px-3 py-2 pr-10 text-right outline-none focus:border-sky-500" defaultValue={f.returnStr} onBlur={e => patchFund(f.id, { returnStr: e.target.value })} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500">%</span></div></td>
+                                        <td className="py-2 pr-3"><MoneyInput value={f.amountStr} onChange={v => patchFund(f.id, { amountStr: v })} /></td>
+                                        <td className="py-2 pr-3"><MoneyInput value={f.amountStrY1} onChange={v => patchFund(f.id, { amountStrY1: v })} /></td>
+                                        <td className="py-2 pl-3">
+                                            <select 
+                                                className="w-full rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500" 
+                                                value={f.failureYear} 
+                                                onChange={e => patchFund(f.id, { failureYear: parseInt(e.target.value, 10) })}>
+                                                <option value="0">Nikdy</option>
+                                                {Array.from({length: Y}, (_, i) => i + 1).map(year => (
+                                                    <option key={year} value={year}>Po {year}. roce</option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="py-2 pr-3 tabular-nums">{pct.format(segmentShare)}</td>
+                                        <td className="py-2 pr-3 tabular-nums">{pct.format(portfolioShare)}</td>
+                                        <td className="py-2 pr-3 text-center"><button onClick={() => remove(f.id)} className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button></td>
+                                    </tr>
+                                )})}
+                            </tbody>
+                        </table>
+                    </div>
+                    <SegmentSummary analysis={segmentAnalysis} title={title} />
+                </section>
+            );
+        };
+        
+        const Summary = ({ analysis }) => {
+            if (!analysis.hasData) return <div className="text-center py-8 text-neutral-500">Zadejte alespoň jednu investici pro zobrazení souhrnu.</div>;
+            
+            const returnClassInitial = analysis.weightedReturnInitial >= 0 ? 'text-green-600' : 'text-red-600';
+            const returnClassAfterY1 = analysis.weightedReturnAfterY1 >= 0 ? 'text-green-600' : 'text-red-600';
+
+            const baseScenario = (
+                <div className="space-y-4">
+                    <h3 className="text-md font-semibold text-neutral-700">Základní scénář</h3>
+                    <InfoCard title="Počáteční investice" value={czk.format(analysis.totalInvestedInitial)} />
+                    <InfoCard title="Očekávaný roční výnos" value={<span className={returnClassInitial}>{pct.format(analysis.weightedReturnInitial)}</span>} />
+                </div>
+            );
+
+            const formatRecoveryTime = (years) => {
+                if (years === null) return "nedojde k zotavení";
+                if (years < 0) return "ihned";
+                if (years <= 0.08) return "< 1 měsíc";
+                const y = Math.floor(years);
+                const m = Math.round((years % 1) * 12);
+                let result = [];
+                if (y > 0) result.push(`${y} ${y === 1 ? "rok" : y < 5 ? "roky" : "let"}`);
+                if (m > 0) result.push(`${m} ${m === 1 ? "měsíc" : m < 5 ? "měsíce" : "měsíců"}`);
+                return result.length > 0 ? result.join(" a ") : "okamžitě";
+            }
+
+            return (
+                <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
+                    <h2 className="text-lg md:text-xl font-semibold mb-4">Srovnání scénářů</h2>
+                    <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                        {baseScenario}
+                        {analysis.hasFollowUpInvestment && (
+                            <div className="space-y-4">
+                                <h3 className="text-md font-semibold text-neutral-700">Scénář s dalším vkladem</h3>
+                                <InfoCard title="Celkem investováno" value={czk.format(analysis.totalInvestedWithFollowUp)} />
+                                <InfoCard title="Očekávaný roční výnos" value={<span className={returnClassAfterY1}>{pct.format(analysis.weightedReturnAfterY1)}</span>} />
+                            </div>
+                        )}
+                    </div>
+                    {analysis.hasFailure && (
+                        <div className="mt-6 pt-6 border-t">
+                             <h3 className="text-md font-semibold text-neutral-700">Analýza dopadu krachu</h3>
+                             <div className="grid md:grid-cols-2 gap-4 mt-4">
+                                <InfoCard title={`Celková kumulativní ztráta`} value={<span className="text-red-600">-{czk.format(analysis.totalLoss)}</span>} />
+                                <InfoCard title="Doba zotavení na celkový vklad" value={formatRecoveryTime(analysis.recoveryTime)} subValue="od posledního relevantního krachu" />
+                             </div>
+                        </div>
+                    )}
+                </section>
+            );
+        };
+        
+        const useResizeObserver = (ref) => {
+            const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+            useEffect(() => {
+                const observeTarget = ref.current;
+                if (!observeTarget) return;
+                const observer = new ResizeObserver(entries => { if (entries[0]) setDimensions(entries[0].contentRect); });
+                observer.observe(observeTarget);
+                return () => observer.unobserve(observeTarget);
+            }, [ref]);
+            return dimensions;
+        };
+        
+        const useChartLogic = (analysis, width, height) => {
+            return useMemo(() => {
+                if (!analysis.hasData || width === 0) return { hasData: false };
+                
+                const { projection, totalInvestedInitial, totalInvestedWithFollowUp, hasFollowUpInvestment, hasFailure } = analysis;
+                const margin = { top: 20, right: 20, bottom: 40, left: 70 };
+                
+                const allValues = projection.flatMap(p => [p.baseline.end, p.followUp.end, p.failure ? p.failure.end : 0]);
+
+                const yMax = Math.max(...allValues, totalInvestedWithFollowUp) * 1.05;
+                const xMax = Y;
+
+                const xScale = (year) => margin.left + (year / xMax) * (width - margin.left - margin.right);
+                const yScale = (value) => height - margin.bottom - (value / yMax) * (height - margin.top - margin.bottom);
+                
+                const scaledBaseline = [{x: xScale(0), y: yScale(totalInvestedInitial)}, ...projection.map(p => ({ x: xScale(p.year), y: yScale(p.baseline.end) }))];
+                
+                let scaledFollowUp = [];
+                if (hasFollowUpInvestment) {
+                    scaledFollowUp.push({x: xScale(0), y: yScale(totalInvestedInitial)});
+                    scaledFollowUp.push({ x: xScale(1), y: yScale(projection[0].baseline.end) });
+                    scaledFollowUp.push({ x: xScale(1), y: yScale(projection[0].followUp.end) });
+                    projection.slice(1).forEach(p => {
+                        scaledFollowUp.push({ x: xScale(p.year), y: yScale(p.followUp.end) });
+                    });
+                }
+
+                let scaledFailure = [];
+                if(hasFailure) {
+                    scaledFailure.push({ x: xScale(0), y: yScale(totalInvestedInitial) });
+                    projection.forEach(p => {
+                        if (p.year === 1 && hasFollowUpInvestment) {
+                            scaledFailure.push({ x: xScale(1), y: yScale(projection[0].baseline.end) });
+                            scaledFailure.push({ x: xScale(1), y: yScale(p.failure.valueBeforeCrash) });
+                        }
+                        if (p.failure.loss > 0) {
+                             scaledFailure.push({ x: xScale(p.year), y: yScale(p.failure.valueBeforeCrash) });
+                             scaledFailure.push({ x: xScale(p.year), y: yScale(p.failure.end) });
+                        } else {
+                             const lastPoint = scaledFailure[scaledFailure.length-1];
+                             if(!lastPoint || lastPoint.x !== xScale(p.year)){
+                                scaledFailure.push({ x: xScale(p.year), y: yScale(p.failure.end) });
+                             } else {
+                                 lastPoint.y = yScale(p.failure.end);
+                             }
+                        }
+                    });
+                }
+
+                const scaledDepositsPoints = [];
+                scaledDepositsPoints.push({ x: xScale(0), y: yScale(totalInvestedInitial) });
+                if (hasFollowUpInvestment) {
+                    scaledDepositsPoints.push({ x: xScale(1), y: yScale(totalInvestedInitial) });
+                    scaledDepositsPoints.push({ x: xScale(1), y: yScale(totalInvestedWithFollowUp) });
+                    scaledDepositsPoints.push({ x: xScale(Y), y: yScale(totalInvestedWithFollowUp) });
+                } else { scaledDepositsPoints.push({ x: xScale(Y), y: yScale(totalInvestedInitial) }); }
+
+                const yAxisTicks = Array.from({ length: 6 }).map((_, i) => ({ value: (yMax / 5) * i, y: yScale((yMax / 5) * i) }));
+                const xAxisTicks = Array.from({ length: Math.floor(Y / 5) + 1 }).map((_, i) => ({ year: i * 5, x: xScale(i * 5) }));
+
+                return { hasData: true, margin, width, height, scaledBaseline, scaledFollowUp, yAxisTicks, xAxisTicks, yScale, xMax, scaledDepositsPoints, scaledFailure, analysis };
+            }, [analysis, width, height]);
+        };
+
+        const createPath = (points) => {
+             if (points.length < 2) return ""; return "M " + points.map(p => `${p.x},${p.y}`).join(" L ");
+        };
+
+        const LineChart = ({ analysis }) => {
+            const containerRef = useRef(null);
+            const svgRef = useRef(null); 
+            const dimensions = useResizeObserver(containerRef);
+            const [tooltip, setTooltip] = useState(null);
+            const chartData = useChartLogic(analysis, dimensions.width, dimensions.height);
+            const animationFrameId = useRef();
+
+            const handleMouseMove = (e) => {
+                if (!chartData.hasData || !svgRef.current) return;
+                const clientX = e.clientX; const clientY = e.clientY;
+                cancelAnimationFrame(animationFrameId.current);
+                animationFrameId.current = requestAnimationFrame(() => {
+                    if (!svgRef.current) return;
+                    const { margin, width, yScale, xMax, analysis } = chartData;
+                    const svg = svgRef.current;
+                    const rect = svg.getBoundingClientRect();
+                    const mouseX = Math.max(margin.left, Math.min(clientX - rect.left, width - margin.right));
+                    const yearFractional = (mouseX - margin.left) / (width - margin.left - margin.right) * xMax;
+                    
+                    const interpolate = (projection, key = 'end') => {
+                         if(!projection || projection.length === 0) return 0;
+                         const yearFloor = Math.floor(yearFractional);
+                         const yearCeil = Math.ceil(yearFractional);
+                         if (yearFloor < 1) {
+                            const startValue = analysis.totalInvestedInitial;
+                            const firstYear = projection[0];
+                            if (!firstYear) return startValue;
+                             // Interpolate between start and end of year 1, considering deposits/crashes
+                             if(key === 'end'){ // Normal interpolation
+                                return startValue + (firstYear[key] - startValue) * yearFractional;
+                             }
+                         }
+                         const p1 = projection[yearFloor - 1];
+                         const p2 = projection[yearCeil - 1] || projection[projection.length - 1];
+                         if(!p1 || !p2) return 0;
+                         const t = yearFractional - yearFloor;
+                         return p1[key] + (p2[key] - p1[key]) * t;
+                    };
+
+                    const valBaseline = interpolate(analysis.projection.map(p => p.baseline));
+                    const valFollowUp = analysis.hasFollowUpInvestment ? interpolate(analysis.projection.map(p => p.followUp)) : null;
+                    const valFailure = analysis.hasFailure ? interpolate(analysis.projection.map(p => p.failure)) : null;
+
+                    const date = new Date();
+                    date.setDate(date.getDate() + yearFractional * 365.25);
+                    setTooltip({ x: mouseX, yBaseline: yScale(valBaseline), yFollowUp: valFollowUp ? yScale(valFollowUp) : null, yFailure: valFailure ? yScale(valFailure) : null, mouseX: clientX - rect.left, mouseY: clientY - rect.top, date: date.toLocaleDateString('cs-CZ'), valBaseline, valFollowUp, valFailure });
+                });
+            };
+
+            const handleMouseLeave = () => { cancelAnimationFrame(animationFrameId.current); setTooltip(null); };
+            
+            return (
+                <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6 space-y-4">
+                    <h2 className="text-lg md:text-xl font-semibold">Projekce vývoje portfolia na {Y} let</h2>
+                    <div className="relative h-96" ref={containerRef}>
+                        {!chartData.hasData ? (
+                            <div className="h-full flex items-center justify-center text-neutral-500">Zadejte investici pro zobrazení grafu.</div>
+                        ) : (
+                            <svg ref={svgRef} width="100%" height="100%" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+                                <g>
+                                    {chartData.yAxisTicks.map(({ value, y }) => (
+                                        <g key={y}>
+                                            <line className="line-chart-grid-line" x1={chartData.margin.left} y1={y} x2={chartData.width - chartData.margin.right} y2={y}></line>
+                                            <text className="line-chart-axis-text" x={chartData.margin.left - 8} y={y + 4} textAnchor="end">{(value/1000000).toFixed(1)} M</text>
+                                        </g>
+                                    ))}
+                                    {chartData.xAxisTicks.map(({ year, x }) => <text key={year} className="line-chart-axis-text" x={x} y={chartData.height - chartData.margin.bottom + 16} textAnchor="middle">{year === 0 ? "Dnes" : new Date().getFullYear() + year}</text>)}
+                                </g>
+                                <path d={createPath(chartData.scaledDepositsPoints)} fill="none" stroke="#9ca3af" strokeWidth="2" strokeDasharray="5 5"/>
+                                <path d={createPath(chartData.scaledBaseline)} fill="none" stroke="#10b981" strokeWidth="2.5" className="chart-path"/>
+                                {analysis.hasFollowUpInvestment && <path d={createPath(chartData.scaledFollowUp)} fill="none" stroke="#3b82f6" strokeWidth="2.5" className="chart-path"/>}
+                                {analysis.hasFailure && <path d={createPath(chartData.scaledFailure)} fill="none" stroke="#ef4444" strokeWidth="2.5" className="chart-path"/>}
+                                <circle cx={chartData.scaledBaseline[0]?.x} cy={chartData.scaledBaseline[0]?.y} r="5" fill="#4b5563" stroke="white" strokeWidth="2" />
+                                
+                                <g transform={`translate(${chartData.margin.left}, ${chartData.height - 10})`} className="flex items-center gap-x-4">
+                                    <g><circle cx="0" cy="-4" r="4" fill="#10b981"></circle><text className="line-chart-axis-text" x="8" y="0">Základní</text></g>
+                                    {analysis.hasFollowUpInvestment && <g transform="translate(80, 0)"><circle cx="0" cy="-4" r="4" fill="#3b82f6"></circle><text className="line-chart-axis-text" x="8" y="0">S vkladem</text></g>}
+                                    {analysis.hasFailure && <g transform={`translate(${analysis.hasFollowUpInvestment ? 160 : 80}, 0)`}><circle cx="0" cy="-4" r="4" fill="#ef4444"></circle><text className="line-chart-axis-text" x="8" y="0">Při krachu</text></g>}
+                                    <g transform={`translate(${analysis.hasFailure ? (analysis.hasFollowUpInvestment ? 240: 160) : (analysis.hasFollowUpInvestment ? 160 : 80)}, 0)`}><line x1="0" y1="-4" x2="15" y2="-4" stroke="#9ca3af" strokeDasharray="3 3" strokeWidth="2"></line><text className="line-chart-axis-text" x="20" y="0">Vklady</text></g>
+                                </g>
+
+                                {tooltip && (
+                                    <g className="pointer-events-none">
+                                        <line stroke="#4b5563" strokeWidth="1" y1={chartData.margin.top} y2={chartData.height - chartData.margin.bottom} x1={tooltip.x} x2={tooltip.x}></line>
+                                        <circle r="5" fill="#10b981" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yBaseline}></circle>
+                                        {tooltip.yFollowUp && <circle r="5" fill="#3b82f6" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yFollowUp}></circle>}
+                                        {tooltip.yFailure && <circle r="5" fill="#ef4444" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yFailure}></circle>}
+                                    </g>
+                                )}
+                            </svg>
+                        )}
+                        {tooltip && (
+                             <div className="absolute z-20 p-2 text-sm bg-white rounded-lg shadow-xl border border-neutral-200 pointer-events-none" style={{ left: tooltip.mouseX + 15, top: tooltip.mouseY + 15 }}>
+                                <div className="font-bold text-neutral-800 mb-1">{tooltip.date}</div>
+                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-neutral-600">{czk.format(tooltip.valBaseline)}</span></div>
+                                {tooltip.valFollowUp && <div className="flex items-center gap-2 mt-1"><div className="w-2 h-2 rounded-full bg-sky-500"></div><span className="text-neutral-600">{czk.format(tooltip.valFollowUp)}</span></div>}
+                                {tooltip.valFailure && <div className="flex items-center gap-2 mt-1"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-neutral-600">{czk.format(tooltip.valFailure)}</span></div>}
+                            </div>
+                        )}
+                    </div>
+                </section>
+            );
+        };
+        
+        const PieChart = ({ analysis }) => {
+            const [view, setView] = useState('initial');
+            const tooltipRef = useRef(null);
+            if (!analysis.hasData) return null;
+            const { investedFundsInitial, fundsAfterY1, hasFollowUpInvestment } = analysis;
+            const dataToShow = view === 'initial' || !hasFollowUpInvestment ? investedFundsInitial : fundsAfterY1;
+            const title = view === 'initial' || !hasFollowUpInvestment ? 'Počáteční alokace portfolia' : 'Alokace po 1. roce';
+            const pieTotal = dataToShow.reduce((sum, d) => sum + d.amount, 0);
+            const CHART_COLORS = [ '#38bdf8', '#4ade80', '#fbbf24', '#f87171', '#a78bfa', '#2dd4bf', '#f472b6', '#a3e635', '#fde047', '#ef4444', '#c084fc', '#67e8f9', '#fda4af', '#d9f99d', '#f59e0b', '#7dd3fc', '#6ee7b7', '#fca5a5', '#d8b4fe', '#99f6e4' ];
+            let angle = -90;
+            const segments = dataToShow.map((d, i) => {
+                const percent = pieTotal > 0 ? d.amount / pieTotal : 0;
+                const pathData = `M ${50 + 48*Math.cos(angle*Math.PI/180)},${50 + 48*Math.sin(angle*Math.PI/180)} A 48,48 0 ${percent > 0.5 ? 1:0},1 ${50 + 48*Math.cos((angle+percent*360)*Math.PI/180)},${50 + 48*Math.sin((angle+percent*360)*Math.PI/180)} L ${50 + 30*Math.cos((angle+percent*360)*Math.PI/180)},${50 + 30*Math.sin((angle+percent*360)*Math.PI/180)} A 30,30 0 ${percent > 0.5 ? 1:0},0 ${50 + 30*Math.cos(angle*Math.PI/180)},${50 + 30*Math.sin(angle*Math.PI/180)} Z`;
+                angle += percent * 360;
+                return { ...d, path: pathData, color: CHART_COLORS[i % CHART_COLORS.length] };
+            });
+            const handleSegmentMouseMove = (e, segment) => {
+                const tooltip = tooltipRef.current; if (!tooltip) return;
+                tooltip.innerHTML = `<div class="font-bold text-neutral-800">${segment.name}</div><div class="text-neutral-600">${czk.format(segment.amount)} (${pct.format(pieTotal > 0 ? segment.amount / pieTotal : 0)})</div>`;
+                tooltip.style.display = 'block'; tooltip.style.left = `${e.pageX + 15}px`; tooltip.style.top = `${e.pageY + 15}px`;
+            };
+            const handleSegmentMouseOut = () => { const tooltip = tooltipRef.current; if (tooltip) tooltip.style.display = 'none'; };
+            return (
+                 <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
+                    <div ref={tooltipRef} className="absolute z-20 p-2 text-sm bg-white rounded-lg shadow-xl border border-neutral-200 pointer-events-none" style={{ display: 'none' }}></div>
+                    <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+                        <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
+                        {hasFollowUpInvestment && <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-lg"><button onClick={() => setView('initial')} className={`px-3 py-1 text-sm rounded-md transition ${view === 'initial' ? 'bg-white shadow' : 'hover:bg-neutral-200'}`}>Start</button><button onClick={() => setView('afterY1')} className={`px-3 py-1 text-sm rounded-md transition ${view === 'afterY1' ? 'bg-white shadow' : 'hover:bg-neutral-200'}`}>Po 1. roce</button></div>}
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-6 items-center max-w-4xl mx-auto">
+                        <div className="w-full max-w-xs mx-auto"><svg viewBox="0 0 100 100">{segments.map((seg, i) => (<path key={i} d={seg.path} fill={seg.color} stroke="#fff" strokeWidth="1" className="pie-segment" onMouseMove={(e) => handleSegmentMouseMove(e, seg)} onMouseOut={handleSegmentMouseOut} />))}</svg></div>
+                        <div className="space-y-2 text-sm max-h-80 overflow-y-auto">{segments.map((seg, i) => (<div key={i} className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: seg.color }}></div><div className="flex-1 truncate" title={seg.name}>{seg.name}</div><div className="font-medium tabular-nums">{pct.format(pieTotal > 0 ? seg.amount / pieTotal : 0)}</div></div>))}</div>
+                    </div>
+                 </section>
+            );
+        };
+        
+        const ProjectionTable = ({ analysis }) => {
+            if (!analysis.hasData) return null;
+
+            const { projection, totalInvestedInitial, totalInvestedY1, hasFollowUpInvestment, hasFailure, failureEvents } = analysis;
+            const today = new Date();
+            const formatDate = (date) => date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' });
+
+            return (
+                <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6">
+                    <h2 className="text-lg md:text-xl font-semibold mb-4">Detailní srovnání projekcí</h2>
+                    <div className="overflow-x-auto max-h-[450px]">
+                        <table className="w-full text-sm text-left">
+                            <thead className="sticky top-0 bg-white shadow-sm">
+                                <tr className="border-b">
+                                    <th className="py-2 px-3 font-medium">Datum</th>
+                                    <th className="py-2 px-3 font-medium">Událost</th>
+                                    <th className="py-2 px-3 font-medium text-right">Hodnota (bez další inv.)</th>
+                                    {hasFollowUpInvestment && <th className="py-2 px-3 font-medium text-right">Hodnota (s další inv.)</th>}
+                                    {hasFailure && <th className="py-2 px-3 font-medium text-right">Hodnota (při krachu)</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="border-b bg-neutral-50 font-semibold">
+                                    <td className="py-2 px-3 tabular-nums">{formatDate(today)}</td>
+                                    <td className="py-2 px-3">Počáteční vklad</td>
+                                    <td className="py-2 px-3 tabular-nums text-right">{czk.format(totalInvestedInitial)}</td>
+                                    {hasFollowUpInvestment && <td className="py-2 px-3 tabular-nums text-right">{czk.format(totalInvestedInitial)}</td>}
+                                    {hasFailure && <td className="py-2 px-3 tabular-nums text-right">{czk.format(totalInvestedInitial)}</td>}
+                                </tr>
+                                {projection.map((p, index) => {
+                                    const futureDate = new Date(); futureDate.setFullYear(futureDate.getFullYear() + p.year);
+                                    const isY1 = p.year === 1;
+                                    const failureThisYear = hasFailure ? failureEvents.find(e => e.year === p.year) : null;
+                                    return (
+                                        <Fragment key={p.year}>
+                                            <tr className="border-b last:border-0 hover:bg-neutral-50">
+                                                <td className="py-2 px-3 tabular-nums align-top">{formatDate(futureDate)}</td>
+                                                <td className="py-2 px-3 align-top">Po {p.year}. roce</td>
+                                                <td className="py-2 px-3 tabular-nums text-right"><div className="font-semibold">{czk.format(p.baseline.end)}</div><div className="text-xs text-green-600">+{czk.format(p.baseline.interest)}</div></td>
+                                                {hasFollowUpInvestment && <td className="py-2 px-3 tabular-nums text-right"><div className="font-semibold">{czk.format(p.followUp.end)}</div><div className="text-xs text-green-600">+{czk.format(p.followUp.interest)}</div></td>}
+                                                {hasFailure && <td className="py-2 px-3 tabular-nums text-right"><div className="font-semibold">{czk.format(p.failure.end)}</div><div className="text-xs text-green-600">+{czk.format(p.failure.interest)}</div></td>}
+                                            </tr>
+                                            {isY1 && hasFollowUpInvestment && (<tr className="border-b bg-sky-50 font-medium"><td className="py-2 px-3 tabular-nums">{formatDate(futureDate)}</td><td className="py-2 px-3">Dodatečná investice</td><td className="py-2 px-3 text-center">-</td><td className="py-2 px-3 tabular-nums text-right text-sky-700">+{czk.format(totalInvestedY1)}</td>{hasFailure && <td className="py-2 px-3 text-center">-</td>}</tr>)}
+                                            {failureThisYear && (<tr className="border-b bg-red-50 font-medium"><td className="py-2 px-3 tabular-nums">{formatDate(futureDate)}</td><td className="py-2 px-3">Krach fondu / Ztráta</td><td className="py-2 px-3 text-center">-</td>{hasFollowUpInvestment && <td className="py-2 px-3 text-center">-</td>}<td className="py-2 px-3 tabular-nums text-right text-red-700">-{czk.format(failureThisYear.loss)}</td></tr>)}
+                                        </Fragment>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            );
+        };
+
+        const AnnuityCalculator = ({ analysis }) => {
+            const [monthlyAnnuityStr, setMonthlyAnnuityStr] = useState('');
+            const monthlyAnnuity = useMemo(() => parse(monthlyAnnuityStr), [monthlyAnnuityStr]);
+            const annualAnnuity = useMemo(() => monthlyAnnuity * 12, [monthlyAnnuity]);
+            const annuityResult = useMemo(() => {
+                if (!analysis.hasData || analysis.projection.length === 0) return null;
+                const hasFollowUp = analysis.hasFollowUpInvestment;
+                
+                const relevantProjection = hasFollowUp ? analysis.projection.map(p => p.followUp) : analysis.projection.map(p => p.baseline);
+                const lastYear = relevantProjection[relevantProjection.length-1];
+                const relevantReturn = lastYear.interest / lastYear.start;
+
+                if (relevantReturn <= 0 || monthlyAnnuity <= 0) return null;
+                
+                const targetCapital = annualAnnuity / relevantReturn;
+                const startingCapital = hasFollowUp ? (analysis.projection[0].baseline.end + analysis.totalInvestedY1) : analysis.totalInvestedInitial;
+                
+                if (startingCapital >= targetCapital) return { type: 'sufficient', totalInvested: analysis.totalInvestedInitial };
+                
+                const yearsNeeded = Math.log(targetCapital / startingCapital) / Math.log(1 + relevantReturn);
+                const targetDate = new Date();
+                const startYearOffset = hasFollowUp ? 1 : 0;
+                targetDate.setFullYear(targetDate.getFullYear() + Math.floor(yearsNeeded + startYearOffset), targetDate.getMonth() + ((yearsNeeded+startYearOffset) % 1) * 12);
+                return { type: 'future', monthlyAnnuity, targetCapital, targetDate: targetDate.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' }) };
+            }, [monthlyAnnuity, annualAnnuity, analysis]);
+            if (!analysis.hasData) return null;
+            return (
+                 <section className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 md:p-6 space-y-4">
+                    <h2 className="text-lg md:text-xl font-semibold">Kalkulačka nekonečné renty</h2>
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <label className="flex-shrink-0 text-neutral-700 font-medium">Požadovaná měsíční renta</label>
+                        <div className="flex-grow max-w-xs"><MoneyInput value={monthlyAnnuityStr} onChange={setMonthlyAnnuityStr} /></div>
+                        {annualAnnuity > 0 && <span className="text-neutral-600 text-sm">(což odpovídá {czk.format(annualAnnuity)} ročně)</span>}
+                    </div>
+                    {annuityResult && <div className="mt-4 text-sm text-neutral-800 bg-sky-50 border border-sky-200 rounded-xl p-4">{annuityResult.type === 'sufficient' && <span><strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>{czk.format(annuityResult.totalInvested)}</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.</span>}{annuityResult.type === 'future' && <span>Pro měsíční rentu <strong>{czk.format(annuityResult.monthlyAnnuity)}</strong> potřebujete kapitál o velikosti přibližně <strong>{czk.format(annuityResult.targetCapital)}</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>{annuityResult.targetDate}</strong>.</span>}</div>}
+                    <p className="text-xs text-neutral-500 pt-2">*Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.</p>
+                </section>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
