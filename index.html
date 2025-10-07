@@ -326,6 +326,24 @@
         place-items: center;
         flex-shrink: 0;
     }
+    /* PATCH */
+    .benefit-icon {
+        width: 28px;
+        height: 28px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    /* PATCH */
+    .benefit-icon > svg {
+        width: 18px;
+        height: 18px;
+        color: var(--color-primary);
+        stroke-width: 2;
+    }
     .feature-text { display: flex; flex-direction: column; gap: 0.35rem; }
     .feature-title { font-weight: 600; color: var(--color-primary); font-size: 1rem; }
     .feature-desc { font-size: 0.95rem; color: var(--color-text); line-height: 1.5; }
@@ -349,6 +367,7 @@
     .bg-card-muted { background: rgba(255, 255, 255, 0.7); }
     .bg-divider { background: rgba(13, 44, 84, 0.12); }
 
+    /* PATCH */
     .fund-avatar {
         width: 100px;
         height: 100px;
@@ -377,6 +396,7 @@
     .fund-card__transactions summary { padding: 0.75rem 1.1rem; display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; font-weight: 600; color: var(--color-primary); cursor: pointer; background: rgba(77,177,200,0.08); }
     .fund-card__transactions summary:hover { background: rgba(77,177,200,0.14); }
 
+    /* PATCH */
     .pie-segment,
     .pie-slice {
         cursor: pointer;
@@ -547,6 +567,8 @@
     .chart-footnote { margin: 0; font-size: 0.9rem; color: var(--color-muted); line-height: 1.6; }
 
     .export-footer { margin-top: 2rem; text-align: center; font-size: 0.85rem; color: var(--color-muted); }
+    /* PATCH */
+    .footer-note { margin: 0; font-size: 0.85rem; color: var(--color-muted); }
 
     @media (prefers-reduced-motion: reduce) {
         * { transition: none !important; animation: none !important; }
@@ -606,25 +628,21 @@
           </div>
         </div>
         <div class="feature-stack">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4.75 5.75h14.5M4.75 12h6.5m-6.5 6.25h10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M15.5 16.75l2.25 2.25L20 16.75m-4.5-9.5l2.25-2.25L20 7.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+            <div class="feature-card">
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-diverzifikace" /></svg>
+              </div>
             <div class="feature-text">
               <span class="feature-title">Interaktivní řízení</span>
               <span class="feature-desc">Import, export i validace dat v reálném čase na jednom místě.</span>
             </div>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4.75 18.25l4-4 3 3 7.5-7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M4.75 6.75h14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+            <div class="feature-card">
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-rust" /></svg>
+              </div>
             <div class="feature-text">
               <span class="feature-title">Pokročilé analýzy</span>
               <span class="feature-desc">XIRR, projekce výnosů i vizualizace portfolia bez nutnosti dalších nástrojů.</span>
@@ -829,6 +847,29 @@
     </div>
   </main>
 
+  <!-- /* PATCH */ -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <symbol id="ico-diverzifikace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M12 3a9 9 0 0 1 7 3" />
+        <path d="M21 12a9 9 0 0 1-3 7" />
+        <path d="M12 21a9 9 0 0 1-7-3" />
+        <path d="M3 12a9 9 0 0 1 3-7" />
+        <path d="M12 3v5.5" />
+        <path d="M21 12h-5.5" />
+        <path d="M12 21v-5.5" />
+        <path d="M3 12h5.5" />
+      </symbol>
+      <symbol id="ico-rust" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M12 21v-7" />
+        <path d="M12 14c-2.6 0-4.6-2-5.4-4.8 2.8-.5 4.7.7 5.4 2.9" />
+        <path d="M12 14c2.6 0 4.6-2 5.4-4.8-2.8-.5-4.7.7-5.4 2.9" />
+        <path d="M9 11l4-4 3 3 3-3" />
+        <path d="M16 7h3v3" />
+      </symbol>
+    </defs>
+  </svg>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -881,6 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmt2 = utils.nf(2); const fmt4 = utils.nf(4); const fmt1 = utils.nf(1); const fmt0 = utils.nf(0);
   const cellNum = (v, d = 2) => { if(!isFinite(v)) return '—'; if(d === 4) return fmt4.format(v); if(d === 1) return fmt1.format(v); if(d === 0) return fmt0.format(v); return fmt2.format(v); };
   const cellPct = v => isFinite(v) ? fmt2.format(v * 100) + '\u202F%' : '—';
+  /* PATCH */
   const formatCurrency = (value, decimals = 2) => {
       if (!isFinite(value)) return '—';
       if (decimals === 0) return cellNum(value, 0);
@@ -888,8 +930,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (decimals === 4) return cellNum(value, 4);
       return cellNum(value, 2);
   };
+  /* PATCH */
   const formatPercent = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)}\u202F%` : '—';
+  /* PATCH */
   const formatXirr = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)}\u202F%\u00A0p.a.` : '—';
+  /* PATCH */
   const formatMonths = (value, decimals = 1) => isFinite(value) ? `${utils.nf(decimals).format(value)}\u00A0měs.` : '—';
   const parseClientName = (fullName = '') => {
       const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -970,6 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return replaceEnding(lower + 'e');
   };
+  /* PATCH */
   const formatSalutation = ({ firstName = '', lastName = '', preferVykanie = false, manualSalutation = '' }) => {
       const manual = manualSalutation.trim();
       if (manual) return manual;
@@ -1512,6 +1558,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isStaticExport) {
+        /* PATCH */
         const formatted = {
             totalInvest: formatCurrency(totalInvestConverted),
             totalCurrent: formatCurrency(totalCurrentConverted),
@@ -1520,6 +1567,19 @@ document.addEventListener('DOMContentLoaded', () => {
             irr: formatXirr(portfolioIrr),
             weightedMonths: formatMonths(weightedAvgMonths)
         };
+        /* PATCH */
+        if (options.formattedTotals) {
+            if (options.formattedTotals.totalInvest) formatted.totalInvest = options.formattedTotals.totalInvest;
+            if (options.formattedTotals.totalCurrent) formatted.totalCurrent = options.formattedTotals.totalCurrent;
+            if (options.formattedTotals.totalPnl) formatted.totalPnl = options.formattedTotals.totalPnl;
+            if (options.formattedTotals.totalRet) formatted.totalRet = options.formattedTotals.totalRet;
+            if (options.formattedTotals.irr) formatted.irr = options.formattedTotals.irr;
+            if (options.formattedTotals.weightedMonths) formatted.weightedMonths = options.formattedTotals.weightedMonths;
+        }
+        /* PATCH */
+        if (options.captureFormatted && typeof options.captureFormatted === 'object') {
+            Object.assign(options.captureFormatted, formatted);
+        }
         const summaryMetrics = [
             { label: 'VAŠE CELKOVÉ VKLADY', value: formatted.totalInvest },
             { label: 'AKTUÁLNÍ HODNOTA', value: formatted.totalCurrent },
@@ -1615,10 +1675,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderLineChart = (container, funds, portfolioIrr, outCurr, fxRate, options = {}) => {
-    const { isStaticExport = false, conversionReady = true } = options;
+    const { isStaticExport = false, conversionReady = true, formattedTodayValue: formattedTodayValueOverride = null } = options;
 
     if (isStaticExport) {
-        const exportChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioIrr, conversionReady);
+        const exportChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioIrr, conversionReady, formattedTodayValueOverride);
         if (!exportChart.available) {
             if (exportChart.reason === 'conversion') {
                 return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Liniový graf nelze vytvořit bez platného převodu měn.</div>`;
@@ -1709,6 +1769,8 @@ document.addEventListener('DOMContentLoaded', () => {
     innerHTML += `<path d="${valuePath}" fill="none" stroke="#4DB1C8" stroke-width="2.5"></path>`;
     innerHTML += `<path d="${projectionPath}" fill="none" stroke="#0d2c54" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
     const xToday = xScale(today);
+    /* PATCH */
+    const formattedTodayValue = formattedTodayValueOverride ?? formatCurrency(valueAtToday);
     const snapPoints = [{x: xToday, y: yScale(valueAtToday), date: today, value: valueAtToday, isToday: true}];
     if (!options.isForPdf) {
         const depositsByDay = deposits.reduce((acc, deposit) => {
@@ -1755,7 +1817,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0d2c54" stroke-width="1.5"></line>`;
-    const todayLabel = `Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${formatCurrency(valueAtToday)} ${outCurr}`;
+    const todayLabel = `Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${formattedTodayValue} ${outCurr}`;
     innerHTML += `<circle class="line-chart-dot line-chart-dot--today" cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0d2c54" stroke="white" stroke-width="2" tabindex="0" aria-label="${htmlEscape(todayLabel)}" data-tooltip-text="${htmlEscape(todayLabel)}"></circle>`;
     innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="rgba(51,55,61,0.55)" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
     if (options.isForPdf) {
@@ -1787,7 +1849,6 @@ document.addEventListener('DOMContentLoaded', () => {
     svg.innerHTML = innerHTML;
     const startLabel = formatDate(firstDate);
     const endLabel = formatDate(today);
-    const formattedTodayValue = formatCurrency(valueAtToday);
     const ariaSummary = isFinite(portfolioIrr)
         ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatXirr(portfolioIrr)}`
         : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
@@ -2054,7 +2115,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${backdrop}${parts}${inner}</svg>`;
   };
 
-  const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady) => {
+  const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady, formattedTodayValueOverride = null) => {
       if (!conversionReady) {
           return { available: false, reason: 'conversion' };
       }
@@ -2232,12 +2293,13 @@ document.addEventListener('DOMContentLoaded', () => {
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
-      const todayTooltip = `Dnes (${formatDate(today)}): ${formatCurrency(valueAtToday)} ${outCurr}`;
+      /* PATCH */
+      const formattedTodayValue = formattedTodayValueOverride || formatCurrency(valueAtToday);
+      const todayTooltip = `Dnes (${formatDate(today)}): ${formattedTodayValue} ${outCurr}`;
       const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
       const startLabel = formatDate(firstDate);
       const endLabel = formatDate(timelineEnd);
-      const formattedTodayValue = formatCurrency(valueAtToday);
       const ariaLabel = hasIrr
           ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatXirr(irr)}`
           : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
@@ -2320,7 +2382,19 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
       }
 
-      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true });
+      /* PATCH */
+      const formattedOverrides = {
+          totalCurrent: formatCurrency(snapshot.portfolioSummary.totalCurrentConverted)
+      };
+      /* PATCH */
+      const formattedCapture = {};
+      /* PATCH */
+      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true, formattedTotals: formattedOverrides, captureFormatted: formattedCapture });
+
+      /* PATCH */
+      const sharedFormattedTotals = {
+          totalCurrent: formattedCapture.totalCurrent || formattedOverrides.totalCurrent
+      };
 
       const groupedFunds = snapshot.funds.reduce((acc, fund) => {
           if (!fund.fund) return acc;
@@ -2344,7 +2418,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true })
           : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">Pro koláčový graf nejsou dostupná data.</div>`;
 
-      const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady });
+      const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady, formattedTodayValue: sharedFormattedTotals.totalCurrent });
 
       const explanationsBlock = `<div class="export-explanations">
         <article>
@@ -2359,8 +2433,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const rawStyle = document.querySelector('style')?.textContent || '';
       const styleContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${rawStyle.replace(/@import[^;]+;\s*/g, '')}`;
+      /* PATCH */
       const generatedAt = new Date();
-      const generatedLabel = generatedAt.toLocaleString('cs-CZ');
+      /* PATCH */
+      const generatedTimestamp = generatedAt.getTime();
+      /* PATCH */
+      const generatedDateLabel = generatedAt.toLocaleDateString('cs-CZ');
       const fundCount = Object.keys(groupedFunds).length;
       const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
           ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
@@ -2434,7 +2512,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ${explanationsBlock}
       </section>`;
 
-      const footerSection = `<footer class="export-footer">© ${generatedAt.getFullYear()} Ondřej Lacina • Šíření mimo strukturu Fair-life je zakázáno.</footer>`;
+      /* PATCH */
+      const footerSection = `<footer class="export-footer"><p class="footer-note">© <span id="year"></span> Ondřej Lacina</p></footer>`;
 
       const fxMeta = Number.isFinite(fxRate) && fxRate > 0
           ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatCurrency(fxRate, 4)}</span></div>`
@@ -2452,7 +2531,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="export-hero__lead">${leadCopy}</p>
             <div class="export-hero__meta">
               <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
-              <div class="export-hero__meta-item"><span class="meta-label">Generováno</span><span class="meta-value">${htmlEscape(generatedLabel)}</span></div>
+              <!-- /* PATCH */ -->
+              <div class="export-hero__meta-item"><span class="meta-label">DATUM REPORTU</span><span class="meta-value"><span id="report-date" data-ts="${generatedTimestamp}">${htmlEscape(generatedDateLabel)}</span></span></div>
               <div class="export-hero__meta-item"><span class="meta-label">Měna výstupu</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
               <div class="export-hero__meta-item"><span class="meta-label">Počet fondů</span><span class="meta-value">${fundCount}</span></div>
               ${fxMeta}
@@ -2460,11 +2540,9 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div class="export-hero__features">
             <div class="feature-card">
-              <div class="feature-icon">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 3a9 9 0 019 9h-9V3z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M12 12H5a7 7 0 007 7v-7z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-diverzifikace" /></svg>
               </div>
               <div class="feature-text">
                 <span class="feature-title">Diverzifikované portfolio</span>
@@ -2472,11 +2550,9 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
             <div class="feature-card">
-              <div class="feature-icon">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 16l5-5 4 4 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M20 9V4h-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-rust" /></svg>
               </div>
               <div class="feature-text">
                 <span class="feature-title">Dlouhodobý růst</span>
@@ -2487,7 +2563,15 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </header>`;
 
+      /* PATCH */
+      const iconSprite = `<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="ico-diverzifikace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3a9 9 0 0 1 7 3"/><path d="M21 12a9 9 0 0 1-3 7"/><path d="M12 21a9 9 0 0 1-7-3"/><path d="M3 12a9 9 0 0 1 3-7"/><path d="M12 3v5.5"/><path d="M21 12h-5.5"/><path d="M12 21v-5.5"/><path d="M3 12h5.5"/></symbol><symbol id="ico-rust" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 21v-7"/><path d="M12 14c-2.6 0-4.6-2-5.4-4.8 2.8-.5 4.7.7 5.4 2.9"/><path d="M12 14c2.6 0 4.6-2 5.4-4.8-2.8-.5-4.7.7-5.4 2.9"/><path d="M9 11l4-4 3 3 3-3"/><path d="M16 7h3v3"/></symbol></defs></svg>`;
+      /* PATCH */
+      const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString('cs-CZ');})();";
+      /* PATCH */
+      const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
       const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});});`;
+      /* PATCH */
+      const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 
       const html = `<!doctype html>
 <html lang="cs">
@@ -2509,8 +2593,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ${disclaimerSection}
     ${explanationsSection}
     ${footerSection}
+    ${iconSprite}
   </div>
-  <script>${tooltipScript}${SCRIPT_CLOSE_TAG}
+  <script>${scriptBundle}${SCRIPT_CLOSE_TAG}
 </body>
 </html>`;
 
