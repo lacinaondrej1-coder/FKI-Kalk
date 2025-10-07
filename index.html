@@ -377,7 +377,7 @@
     .line-chart-dot { cursor: pointer; transition: r 0.2s; }
     .line-chart-dot:hover { r: 7; }
 
-    .text-positive { color: #1B7F5F; }
+    .text-positive { color: var(--color-accent); }
     .text-negative { color: #B2403D; }
     .muted { color: var(--color-muted); }
 
@@ -396,10 +396,24 @@
         border-radius: 1.9rem;
         border: 2px solid var(--color-primary);
         padding: 3rem;
+        box-shadow: none;
+    }
+    .export-hero__layout {
+        display: grid;
+        gap: 2.5rem;
+    }
+    .export-hero__content {
         display: flex;
         flex-direction: column;
         gap: 1.8rem;
-        box-shadow: none;
+    }
+    .export-hero__features {
+        display: grid;
+        gap: 1rem;
+    }
+    .export-hero__features .feature-card { height: 100%; }
+    @media (min-width: 960px) {
+        .export-hero__layout { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); align-items: start; }
     }
     .export-hero__badge {
         display: inline-flex;
@@ -434,11 +448,16 @@
     .narrative h2 { margin: 0; font-size: 1.35rem; font-weight: 600; color: var(--color-primary); }
     .narrative p { margin: 0; font-size: 1rem; color: var(--color-text); }
 
+    .section-heading { display: flex; flex-direction: column; gap: 0.65rem; }
+    .section-heading .pill { align-self: flex-start; }
+    .section-heading h2 { margin: 0; font-size: 2rem; font-weight: 700; color: var(--color-primary); }
+    .section-heading p { margin: 0; font-size: 1rem; color: var(--color-text); }
+
     .summary-grid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; gap: 0.65rem; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: none; }
+    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; justify-content: space-between; gap: 0.65rem; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: none; }
     .summary-card:hover { transform: translateY(-3px); border-color: var(--color-border-strong); box-shadow: var(--color-shadow); }
     .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
-    .summary-value { font-size: 2.4rem; font-weight: 700; color: var(--color-accent); line-height: 1.1; }
+    .summary-value { font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 700; color: var(--color-primary); line-height: 1.1; }
     .summary-note { font-size: 0.9rem; color: var(--color-muted); margin: 0; }
 
     .fund-export-grid { display: flex; flex-direction: column; gap: 1.65rem; }
@@ -463,6 +482,11 @@
     .line-export { display: flex; flex-direction: column; gap: 1.35rem; border-radius: 1.55rem; padding: 2rem; background: var(--color-card); border: 1px solid var(--color-border); }
     .line-canvas { border-radius: 1.25rem; overflow: hidden; background: #ffffff; border: 1px solid var(--color-border); }
     .line-canvas svg { width: 100%; height: auto; display: block; }
+    .line-legend { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+    .legend-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid transparent; }
+    .legend-pill--base { background: rgba(51,55,61,0.1); color: var(--color-text); border-color: rgba(51,55,61,0.2); }
+    .legend-pill--value { background: rgba(77,177,200,0.18); color: var(--color-primary); border-color: rgba(77,177,200,0.35); }
+    .legend-pill--projection { background: rgba(13,44,84,0.1); color: var(--color-primary); border-color: rgba(13,44,84,0.25); }
     .chart-footnote { margin: 0; font-size: 0.9rem; color: var(--color-muted); line-height: 1.6; }
 
     .pie-export { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: center; }
@@ -584,8 +608,13 @@
             </div>
             <div class="flex flex-col gap-3 text-sm">
               <label class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span class="font-medium text-primary whitespace-nowrap">Jméno klienta</span>
-                <input id="client-name" type="text" placeholder="např. Jan Novák" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[220px] text-primary placeholder:text-muted" />
+                <span class="font-medium text-primary whitespace-nowrap">Jméno a příjmení klienta (1. pád)</span>
+                <input id="client-name" type="text" placeholder="např. Jan Novák" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[260px] text-primary placeholder:text-muted" />
+              </label>
+              <label class="flex flex-col gap-1">
+                <span class="font-medium text-primary">Oslovení klienta (5. pád)</span>
+                <input id="client-salutation" type="text" placeholder="např. Pepo" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[260px] text-primary placeholder:text-muted" />
+                <span class="text-xs text-muted">Tip: Pepo, Jano, paní Nováková…</span>
               </label>
               <div class="flex flex-wrap gap-2">
                 <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
@@ -730,7 +759,8 @@ document.addEventListener('DOMContentLoaded', () => {
       rows: { avant: [], codya: [], atris: [], jt: [] },
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {},
-      clientName: ''
+      clientName: '',
+      clientSalutation: ''
   };
   const elements = {};
   let rowSeq = 0;
@@ -738,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const PROVIDERS = { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' };
   const CHART_COLORS = [
-      '#0d2c54', '#4DB1C8', '#8CC0A0', '#B5C7D3', '#E8B89B', '#6E7DA2', '#A4C4BC', '#F2D7B6'
+      '#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'
   ];
   const SCRIPT_CLOSE_TAG = '<' + '/script>';
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -799,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveState = () => {
       try {
-          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName }));
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation }));
           if (elements.lastSavedIndicator) {
               elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
           }
@@ -808,9 +838,9 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Chyba při ukládání dat.", 'error');
       }
   };
-  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } scheduleRecalc(); };
-  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
-  const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); state.clientName = typeof importedState.clientName === 'string' ? importedState.clientName : ''; const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; }
+  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } scheduleRecalc(); };
+  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
+  const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); state.clientName = typeof importedState.clientName === 'string' ? importedState.clientName : ''; state.clientSalutation = typeof importedState.clientSalutation === 'string' ? importedState.clientSalutation : ''; const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; }
             saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
 
   const createProviderSection = (providerKey) => {
@@ -1113,9 +1143,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const metrics = [
               { label: 'Investováno', value: cellNum(totalInvest) },
               { label: 'Aktuální hodnota', value: cellNum(totalCurrent) },
-              { label: 'Čistý výsledek', value: cellNum(pnl), extraClass: pnlClass },
-              { label: 'Výkonnost (XIRR)', value: isFinite(fundIrr) ? `${cellPct(fundIrr)} p.a.` : '—', extraClass: irrClass },
-              { label: 'Váž. prům. doba', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+              { label: 'Čistý výnos', value: cellNum(pnl), extraClass: pnlClass },
+              { label: 'Průměrný roční výnos (XIRR)', value: isFinite(fundIrr) ? `${cellPct(fundIrr)} p.a.` : '—', extraClass: irrClass },
+              { label: 'Průměrná doba investice', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
           ];
 
           const transactionRows = investments.map((inv, index) => {
@@ -1422,7 +1452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const contributionPath = "M" + historicalPoints.map(p => `${xScale(p.date)},${yScale(p.contributions)}`).join(" L");
     const valuePath = "M" + historicalPoints.map(p => `${xScale(p.date)},${yScale(p.value)}`).join(" L");
     const projectionPath = "M" + projectionPoints.map(p => `${xScale(p.date)},${yScale(p.value)}`).join(" L");
-    innerHTML += `<path d="${contributionPath}" fill="none" stroke="#A4C4BC" stroke-width="2"></path>`;
+    innerHTML += `<path d="${contributionPath}" fill="none" stroke="rgba(51,55,61,0.55)" stroke-width="2"></path>`;
     innerHTML += `<path d="${valuePath}" fill="none" stroke="#4DB1C8" stroke-width="2.5"></path>`;
     innerHTML += `<path d="${projectionPath}" fill="none" stroke="#0d2c54" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
     const xToday = xScale(today);
@@ -1469,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0d2c54" stroke-width="1.5"></line>`;
     innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0d2c54" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
-    innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="#A4C4BC" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
+    innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="rgba(51,55,61,0.55)" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
     if (options.isForPdf) {
         const fixedTooltipPoints = [ { date: today, label: 'Dnes' } ];
         const endOfYear = new Date(today.getFullYear(), 11, 31);
@@ -1937,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
           ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
-          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#A4C4BC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="rgba(51,55,61,0.55)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
           ${hasIrr && valuePath ? `<path d="${valuePath}" fill="none" stroke="url(#chartValueStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
           ${irrPositive && projectionPath ? `<path d="${projectionPath}" fill="none" stroke="url(#chartProjectionStroke)" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />` : ''}
           ${todayLine}
@@ -1970,6 +2000,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!clientName) {
           showToast('Před exportem vyplňte jméno klienta.', 'error');
           elements.clientNameInput?.focus();
+          return;
+      }
+
+      const clientSalutation = (state.clientSalutation || '').trim();
+      if (!clientSalutation) {
+          showToast('Před exportem vyplňte oslovení klienta.', 'error');
+          elements.clientSalutationInput?.focus();
           return;
       }
 
@@ -2039,6 +2076,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const summarySection = `<section class="card">
         <div class="section-heading">
+          <span class="pill">SOUHRN</span>
           <h2>Souhrn Vašeho portfolia</h2>
           <p>Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.</p>
         </div>
@@ -2047,6 +2085,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const fundsSection = `<section class="card">
         <div class="section-heading">
+          <span class="pill">DETAIL FONDŮ</span>
           <h2>Výsledky po fondech</h2>
           <p>Přehled všech sledovaných fondů včetně výkonu, ziskovosti a časové rozlohy investic.</p>
         </div>
@@ -2055,6 +2094,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const pieSection = `<section class="card">
         <div class="section-heading">
+          <span class="pill">ALOKACE</span>
           <h2>Alokace portfolia</h2>
           <p>Rozložení kapitálu mezi jednotlivé fondy k datu exportu.</p>
         </div>
@@ -2063,6 +2103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lineSection = `<section class="card">
         <div class="section-heading">
+          <span class="pill">VÝVOJ</span>
           <h2>Vývoj hodnoty portfolia</h2>
           <p>Historický vývoj a projekce při zachování aktuální míry zhodnocení portfolia.</p>
         </div>
@@ -2071,6 +2112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const disclaimerSection = `<section class="card">
         <div class="section-heading">
+          <span class="pill">POZNÁMKY</span>
           <h2>Důležitá upozornění</h2>
           <p>Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.</p>
         </div>
@@ -2086,6 +2128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const explanationsSection = `<section class="card">
         <div class="section-heading">
+          <span class="pill">VYSVĚTLIVKY</span>
           <h2>Vysvětlivky a použité metriky</h2>
           <p>Stručná rekapitulace klíčových pojmů pro rychlou orientaci nad výsledky.</p>
         </div>
@@ -2096,20 +2139,50 @@ document.addEventListener('DOMContentLoaded', () => {
           ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${cellNum(fxRate, 4)}</span></div>`
           : '';
 
-      const leadTemplate = 'Dobrý den, [Jméno klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
-      const leadCopy = leadTemplate.replace('[Jméno klienta]', htmlEscape(clientName));
+      const leadTemplate = 'Dobrý den, [Oslovení klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
+      const leadCopy = leadTemplate.replace('[Oslovení klienta]', htmlEscape(clientSalutation));
 
       const heroSection = `<header class="export-hero">
-        <div class="brand-logo">Fair<span>Life</span></div>
-        <span class="export-hero__badge">Klientský report</span>
-        <h1 class="export-hero__title">Report investičního portfolia</h1>
-        <p class="export-hero__lead">${leadCopy}</p>
-        <div class="export-hero__meta">
-          <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
-          <div class="export-hero__meta-item"><span class="meta-label">Generováno</span><span class="meta-value">${htmlEscape(generatedLabel)}</span></div>
-          <div class="export-hero__meta-item"><span class="meta-label">Měna výstupu</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
-          <div class="export-hero__meta-item"><span class="meta-label">Počet fondů</span><span class="meta-value">${fundCount}</span></div>
-          ${fxMeta}
+        <div class="export-hero__layout">
+          <div class="export-hero__content">
+            <div class="brand-logo">Fair<span>Life</span></div>
+            <span class="export-hero__badge">Klientský report</span>
+            <h1 class="export-hero__title">Report investičního portfolia</h1>
+            <p class="export-hero__lead">${leadCopy}</p>
+            <div class="export-hero__meta">
+              <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">Generováno</span><span class="meta-value">${htmlEscape(generatedLabel)}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">Měna výstupu</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">Počet fondů</span><span class="meta-value">${fundCount}</span></div>
+              ${fxMeta}
+            </div>
+          </div>
+          <div class="export-hero__features">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 3a9 9 0 019 9h-9V3z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 12H5a7 7 0 007 7v-7z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <span class="feature-title">Diverzifikované portfolio</span>
+                <span class="feature-desc">Vaše investice jsou rozloženy pro optimální růst a bezpečnost.</span>
+              </div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 16l5-5 4 4 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M20 9V4h-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <span class="feature-title">Dlouhodobý růst</span>
+                <span class="feature-desc">Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.</span>
+              </div>
+            </div>
+          </div>
         </div>
       </header>`;
 
@@ -2301,8 +2374,12 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.chartTooltip = document.getElementById('chart-tooltip');
     elements.importFile = document.getElementById('import-file-input');
     elements.clientNameInput = document.getElementById('client-name');
+    elements.clientSalutationInput = document.getElementById('client-salutation');
     if (elements.clientNameInput) {
         elements.clientNameInput.value = state.clientName;
+    }
+    if (elements.clientSalutationInput) {
+        elements.clientSalutationInput.value = state.clientSalutation;
     }
     const currentYearEl = document.getElementById('current-year');
     if (currentYearEl) {
@@ -2347,6 +2424,18 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = trimmed;
         }
         state.clientName = trimmed;
+        saveState();
+    });
+    elements.clientSalutationInput?.addEventListener('input', (e) => {
+        state.clientSalutation = e.target.value;
+        saveState();
+    });
+    elements.clientSalutationInput?.addEventListener('blur', (e) => {
+        const trimmed = e.target.value.trim();
+        if (trimmed !== e.target.value) {
+            e.target.value = trimmed;
+        }
+        state.clientSalutation = trimmed;
         saveState();
     });
     const providerSections = elements.providerSections;

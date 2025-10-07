@@ -12,7 +12,7 @@ Interaktivní webová kalkulačka pro správu investičního portfolia.
 
 ## Jak exportovat klientský report
 1. Vyplňte všechna potřebná data ve fondech a zkontrolujte výsledky.
-2. V části *Správa dat* zadejte jméno klienta (povinné pro export).
+2. V části *Správa dat* zadejte jméno a příjmení klienta (1. pád) a připravte si také oslovení v 5. pádě (např. "Pepo", "paní Nováková"). Obojí je povinné pro export.
 3. Volitelně doplňte směnný kurz, pokud pracujete s více měnami.
 4. Klikněte na tlačítko **„Exportovat report pro klienta (.html)”** – stáhne se samostatný soubor s interaktivní prezentací grafů a tabulek.
 
