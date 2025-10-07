@@ -6,29 +6,12 @@
   <title>Report investičního portfolia</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-    :root {
-        color-scheme: light;
-        --surface: #ffffff;
-        --surface-muted: #f1f5f9;
-        --border: rgba(15, 118, 110, 0.12);
-        --border-strong: rgba(15, 118, 110, 0.24);
-        --accent: #14b8a6;
-        --accent-strong: #0f766e;
-        --accent-soft: rgba(20, 184, 166, 0.16);
-    }
-
+    /* Custom styles for better UX and consistency */
     html,body{
-        font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
         scroll-behavior: smooth;
-        min-height: 100%;
-        background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
     }
     .tabular{ font-variant-numeric: tabular-nums; }
-    body[data-mode="client"] .advisor-only { display: none !important; }
-    .client-only { display: none; }
-    body[data-mode="client"] .client-only { display: flex !important; }
     button:disabled{ opacity: .5; cursor: not-allowed; }
     .editable[contenteditable="true"]:empty:before{
         content: attr(data-ph);
@@ -77,13 +60,9 @@
     .toast {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.875rem 1.2rem;
-        border-radius: 0.875rem;
-        box-shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.35);
-        border: 1px solid var(--border);
-        background-color: #ffffff;
-        color: #0f172a;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         opacity: 0;
         transform: translateX(100%);
         transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1);
@@ -92,8 +71,8 @@
         opacity: 1;
         transform: translateX(0);
     }
-    .toast-success { background-color: rgba(20, 184, 166, 0.12); border-color: rgba(20, 184, 166, 0.3); color: #047857; }
-    .toast-error { background-color: rgba(248, 113, 113, 0.14); border-color: rgba(239, 68, 68, 0.35); color: #b91c1c; }
+    .toast-success { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .toast-error { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
 
     /* Interactive Chart Styles */
     #chart-tooltip {
@@ -116,284 +95,112 @@
         border-color: #60a5fa !important; /* blue-400 */
         box-shadow: 0 0 0 1px #60a5fa;
     }
-    .card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 1.25rem;
-        box-shadow: 0 15px 40px -25px rgba(15, 23, 42, 0.5);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        color: #0f172a;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 45px -25px rgba(15, 23, 42, 0.5);
-        border-color: var(--border-strong);
-    }
-
-    .section-title {
-        letter-spacing: -0.015em;
-    }
-
-    .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        padding: 0.45rem 0.9rem;
-        border-radius: 999px;
-        font-size: 0.8rem;
-        background: var(--accent-soft);
-        color: var(--accent-strong);
-        border: 1px solid rgba(20, 184, 166, 0.3);
-    }
-
-    .glass-input {
-        background: rgba(255, 255, 255, 0.92);
-        border-color: rgba(148, 163, 184, 0.35);
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .glass-input:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.18);
-    }
-
-    .primary-btn {
-        background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
-        color: #f8fafc;
-        border: none;
-        box-shadow: 0 18px 35px -20px rgba(15, 118, 110, 0.6);
-    }
-
-    .secondary-btn {
-        background: rgba(45, 212, 191, 0.12);
-        color: #0f172a;
-        border: 1px solid rgba(45, 212, 191, 0.25);
-    }
-
-    .secondary-btn:hover {
-        border-color: rgba(45, 212, 191, 0.35);
-        background: rgba(45, 212, 191, 0.18);
-    }
-
-    .primary-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 22px 45px -20px rgba(15, 118, 110, 0.55);
-    }
-
-    .danger-btn {
-        background: rgba(248, 113, 113, 0.12);
-        color: #b91c1c;
-        border: 1px solid rgba(248, 113, 113, 0.3);
-        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    }
-
-    .danger-btn:hover {
-        background: rgba(248, 113, 113, 0.22);
-        border-color: rgba(239, 68, 68, 0.45);
-        color: #991b1b;
-    }
-
-    .tag-muted {
-        color: #94a3b8;
-    }
-
-    .gradient-divider {
-        height: 1px;
-        background: linear-gradient(90deg, rgba(45, 212, 191, 0), rgba(45, 212, 191, 0.45), rgba(45, 212, 191, 0));
-    }
-
   </style>
 </head>
-<body data-mode="advisor" class="antialiased text-slate-800">
-  <header class="bg-gradient-to-b from-teal-50 via-white to-white border-b border-teal-100/60">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-        <div class="flex items-start gap-6">
-          <div class="p-4 rounded-3xl bg-white border border-teal-100 shadow-md shadow-teal-100/70">
-            <svg class="h-14 w-14 text-teal-500" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 23.25C9 15.6487 15.1487 9.5 22.75 9.5C30.3513 9.5 36.5 15.6487 36.5 23.25C36.5 30.8513 30.3513 37 22.75 37H12.5C10.8431 37 9.5 35.6569 9.5 34V23.25Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M16 24.5L21.125 29L31 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="space-y-5">
-            <span class="pill">Report investičního portfolia</span>
-            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 section-title">Přehled vašeho finančního světa</h1>
-            <p class="text-slate-600 max-w-2xl text-base leading-relaxed">Sledujte výkonnost fondů, analyzujte cashflow a prezentujte výsledky klientům v jednom elegantním a interaktivním rozhraní.</p>
-            <div class="flex flex-wrap gap-3 text-xs sm:text-sm text-slate-500">
-              <span>© <span id="current-year"></span> Ondřej Lacina.</span>
-              <span>Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb.</span>
-              <span>Šíření mimo strukturu Fair-life je zakázáno.</span>
-            </div>
-            <div class="client-only flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-500" id="client-meta-banner">
-              <span><strong>Klient:</strong> <span id="client-name-display">—</span></span>
-              <span class="hidden sm:inline">|</span>
-              <span><strong>Generováno:</strong> <span id="generated-at-display">—</span></span>
-              <span class="hidden sm:inline">|</span>
-              <span><strong>Měna výstupu:</strong> <span id="report-currency-display">—</span></span>
-            </div>
-          </div>
+<body class="bg-neutral-50 text-neutral-900">
+  <header class="bg-white border-b border-neutral-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <!-- Simplified SVG Logo -->
+          <svg width="120" height="30" viewBox="0 0 120 30" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="20" font-family="Arial, sans-serif" font-size="20" font-weight="bold">
+              <tspan fill="#2c3e50">Fair</tspan><tspan fill="#58b4c8">Life</tspan>
+            </text>
+          </svg>
         </div>
-        <div class="grid gap-4 w-full sm:grid-cols-2 lg:w-[360px]">
-          <div class="rounded-2xl border border-teal-100 bg-white p-5 shadow-sm shadow-teal-100/60">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-500 shadow-inner">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.75 5.75h14.5M4.75 12h6.5m-6.5 6.25h10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M15.5 16.75l2.25 2.25L20 16.75m-4.5-9.5l2.25-2.25L20 7.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-teal-700">Interaktivní řízení</p>
-                <p class="text-sm text-slate-600">Import, export a validace dat v reálném čase.</p>
-              </div>
-            </div>
-          </div>
-          <div class="rounded-2xl border border-teal-100 bg-white p-5 shadow-sm shadow-teal-100/60">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-500 shadow-inner">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.75 18.25l4-4 3 3 7.5-7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M4.75 6.75h14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-teal-700">Pokročilé analýzy</p>
-                <p class="text-sm text-slate-600">XIRR, projekce výnosů a vizualizace portfolia.</p>
-              </div>
-            </div>
-          </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-neutral-800">Report investičního portfolia</h1>
+          <p class="text-xs text-neutral-600 mt-1">
+            © <span id="current-year"></span> Ondřej Lacina. Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb. Jakékoliv šíření bez povolení nebo mimo strukturu Fair-life je přísně zakázáno.
+          </p>
         </div>
       </div>
     </div>
   </header>
 
   <!-- Tooltip for charts -->
-  <div id="chart-tooltip" class="absolute hidden z-20 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-teal-100 rounded-xl shadow-lg"></div>
+  <div id="chart-tooltip" class="absolute hidden z-20 p-2 text-sm bg-white rounded-lg shadow-xl border border-neutral-200"></div>
 
   <!-- Toast container for notifications -->
   <div id="toast-container"></div>
 
-  <main class="relative px-4 sm:px-6 lg:px-8 py-12">
-    <div class="max-w-7xl mx-auto space-y-12">
+  <main class="px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto space-y-8">
 
       <!-- === SELF-TESTS & STATUS NOTIFICATIONS === -->
-      <div id="status-container" class="space-y-4"></div>
+      <div id="status-container"></div>
 
       <!-- === FX & OUTPUT CONTROLS === -->
-      <div class="grid gap-6 xl:grid-cols-3">
-        <section class="card p-6 sm:p-7 xl:col-span-2">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div class="space-y-2">
-              <h2 class="text-xl font-semibold text-slate-900">Nastavení měny</h2>
-              <p class="text-sm text-slate-500">Zadejte kurz EUR/CZK a zvolte výstupní měnu reportu.</p>
-            </div>
-            <div class="flex items-center gap-4 flex-wrap">
-              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-slate-600">
-                <span class="font-medium text-slate-700 whitespace-nowrap">Kurz (CZK za 1 EUR)</span>
-                <input id="fx-rate" type="number" step="0.0001" placeholder="např. 25.30" class="glass-input px-3 py-2 rounded-xl border w-[170px] tabular text-right text-slate-900 placeholder:text-slate-400" />
-              </label>
-              <div class="hidden sm:block w-px h-9 bg-slate-200/70"></div>
-              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-slate-600">
-                <span class="font-medium text-slate-700">Výstup v měně</span>
-                <select id="out-curr" class="glass-input px-3 py-2 rounded-xl border bg-white text-slate-900">
-                  <option value="CZK" selected>CZK</option>
-                  <option value="EUR">EUR</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <!-- === DATA MANAGEMENT === -->
-        <section class="card p-6 sm:p-7 advisor-only">
-          <div class="flex flex-col gap-5">
-            <div class="space-y-2">
-              <h3 class="text-xl font-semibold text-slate-900">Správa dat</h3>
-              <p class="text-sm text-slate-500">Synchronizujte portfolio jedním kliknutím.</p>
-            </div>
-            <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 text-sm flex-wrap">
-              <label class="flex items-center gap-2 text-sm text-slate-600">
-                <span class="font-medium text-slate-700 whitespace-nowrap">Jméno klienta</span>
-                <input id="client-name" type="text" placeholder="např. Jana Nováková" class="glass-input px-3 py-2 rounded-xl border text-slate-900 placeholder:text-slate-400 w-[220px]" />
-              </label>
-              <div class="flex items-center gap-2 flex-wrap">
-                <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
-                <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
-              </div>
-              <button data-action="export-presentation" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v6.586L7.707 8.293a1 1 0 10-1.414 1.414l3.293 3.293a1 1 0 001.414 0l3.293-3.293a1 1 0 10-1.414-1.414L11 9.586V3z" /><path d="M3 13a2 2 0 012-2h2a1 1 0 010 2H5v2h10v-2h-2a1 1 0 110-2h2a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3z" /></svg>
-                <span>Export prezentace pro klienta</span>
-              </button>
-              <input type="file" id="import-file-input" class="hidden" accept=".json">
-              <div id="last-saved-indicator" class="ml-auto text-xs text-slate-500/80"></div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div class="gradient-divider"></div>
-
-      <!-- === INPUT SECTIONS (PROVIDERS) === -->
-      <section class="space-y-6 advisor-only">
-        <div class="space-y-3">
-          <span class="pill">Vstupní data</span>
-          <div class="space-y-2">
-            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Správa poskytovatelů a transakcí</h2>
-            <p class="text-sm text-slate-600 max-w-3xl">Importujte nebo přepisujte data jednotlivých platforem, kontrolujte jejich konzistenci a sledujte výsledky okamžitě po zadání.</p>
-          </div>
+      <section class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200">
+        <div class="flex items-center gap-4 flex-wrap">
+          <label class="flex items-center gap-2">
+            <span class="text-neutral-700 font-medium whitespace-nowrap">Kurz (CZK za 1 EUR)</span>
+            <input id="fx-rate" type="number" step="0.0001" placeholder="např. 25.30" class="px-3 py-2 rounded-xl border border-neutral-300 w-[140px] tabular" />
+          </label>
+          <div class="border-l border-neutral-200 h-8"></div>
+          <label class="flex items-center gap-2">
+            <span class="text-neutral-700 font-medium">Výstup v měně</span>
+            <select id="out-curr" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white">
+              <option value="CZK" selected>CZK</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </label>
         </div>
-        <div id="provider-sections" class="flex flex-col gap-6"></div>
       </section>
 
-      <div class="gradient-divider"></div>
+      <!-- === DATA MANAGEMENT === -->
+      <section class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200">
+        <div class="flex items-center gap-4 flex-wrap">
+            <h3 class="text-base font-medium text-neutral-800">Správa dat</h3>
+            <div class="flex items-center gap-2 text-sm flex-wrap">
+                <button data-action="export-json" type="button" class="px-3 py-2 rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200">Exportovat do .json</button>
+                <button data-action="import-json" type="button" class="px-3 py-2 rounded-xl border border-neutral-300 bg-neutral-100 hover:bg-neutral-200">Importovat z .json</button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+            </div>
+            <div id="last-saved-indicator" class="text-xs text-neutral-500 ml-auto"></div>
+        </div>
+      </section>
+
+      <!-- === INPUT SECTIONS (PROVIDERS) === -->
+      <div id="provider-sections" class="space-y-8"></div>
       
       <!-- === RESULTS BY FUND (REDESIGNED) === -->
-      <section class="card p-7 sm:p-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-semibold text-slate-900">Výsledky po fondech</h2>
-            <p class="text-sm text-slate-500">Detailní rozpad portfolia včetně XIRR pro jednotlivé fondy.</p>
-          </div>
-          <div id="amount-note-funds" class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Částky v CZK</div>
+      <section class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200">
+        <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 class="text-lg md:text-xl font-semibold">Výsledky po fondech</h2>
+          <div id="amount-note-funds" class="text-xs text-neutral-500">Částky v CZK</div>
         </div>
         <div id="funds-by-card-container" class="space-y-4">
+          <!-- Fund cards will be injected here -->
         </div>
       </section>
 
       <!-- === PORTFOLIO SUMMARY === -->
-      <section class="card p-7 sm:p-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-semibold text-slate-900">Souhrn portfolia</h2>
-            <p class="text-sm text-slate-500">Celkový výkon, vývoj hodnoty a časově vážené výnosy.</p>
-          </div>
-          <div id="amount-note-portfolio" class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Částky v CZK</div>
+      <section class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200">
+        <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h2 class="text-lg md:text-xl font-semibold">Souhrn portfolia</h2>
+          <div id="amount-note-portfolio" class="text-xs text-neutral-500">Částky v CZK</div>
         </div>
         <div id="portfolio-summary-content" class="text-sm">
+          <!-- Content is generated by JS -->
         </div>
       </section>
 
       <!-- === CHARTS & VISUALIZATIONS === -->
       <section id="charts-section" class="space-y-8">
-        <div id="line-chart-card" class="card p-7 sm:p-8" style="display: none;">
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 id="line-chart-title" class="text-2xl font-semibold text-slate-900">Vývoj hodnoty portfolia s predikcí do roku 2035</h2>
-            <p class="text-sm text-slate-500 max-w-md">Simulace navazuje na aktuální XIRR a ukazuje odhad dalšího růstu při zachování tempa.</p>
-          </div>
-          <div id="line-chart-container" class="relative mt-6"></div>
+        <div id="line-chart-card" class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200" style="display: none;">
+          <h2 class="text-lg md:text-xl font-semibold mb-4">Vývoj hodnoty portfolia s predikcí do roku 2035</h2>
+          <div id="line-chart-container" class="relative"></div>
         </div>
-        <div id="pie-chart-card" class="card p-7 sm:p-8" style="display: none;">
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="text-2xl font-semibold text-slate-900">Alokace portfolia v čase</h2>
-            <p class="text-sm text-slate-500 max-w-md">Prozkoumejte rozložení kapitálu v jednotlivých fondech k libovolnému datu.</p>
-          </div>
-          <div id="pie-chart-container" class="max-w-xl w-full mx-auto mt-6"></div>
-           <div class="mt-6">
-               <input type="range" id="pie-time-slider" class="w-full accent-teal-500">
-               <div class="flex justify-between text-xs text-slate-500 mt-2">
+        <div id="pie-chart-card" class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200" style="display: none;">
+          <h2 class="text-lg md:text-xl font-semibold mb-2">Alokace portfolia v čase</h2>
+          <div id="pie-chart-container" class="max-w-lg w-full mx-auto"></div>
+           <div class="mt-4">
+               <input type="range" id="pie-time-slider" class="w-full">
+               <div class="flex justify-between text-xs text-neutral-500 mt-1">
                    <span id="slider-start-date-label"></span>
-                   <span id="slider-current-date-label" class="font-semibold text-teal-600"></span>
+                   <span id="slider-current-date-label" class="font-bold text-sky-600"></span>
                    <span id="slider-end-date-label"></span>
                </div>
           </div>
@@ -401,55 +208,50 @@
       </section>
 
       <!-- === ANNUITY CALCULATOR === -->
-      <section id="annuity-calculator-section" class="card p-7 sm:p-8">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 class="text-2xl font-semibold text-slate-900">Kalkulačka nekonečné renty</h2>
-            <p class="text-sm text-slate-500">Zjistěte, jak velký kapitál je potřeba pro pasivní příjem z portfolia.</p>
-          </div>
-        </div>
-        <div class="mt-5 flex items-center gap-4 flex-wrap">
-            <label class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span class="text-sm font-medium text-slate-700 whitespace-nowrap">Požadovaná měsíční renta</span>
-                <input id="annuity-input" type="text" placeholder="např. 10 000" class="glass-input px-3 py-2 rounded-xl border w-[200px] tabular text-right text-slate-900 placeholder:text-slate-400" />
+      <section id="annuity-calculator-section" class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200">
+        <h2 class="text-lg md:text-xl font-semibold mb-4">Kalkulačka nekonečné renty</h2>
+        <div class="flex items-center gap-4 flex-wrap">
+            <label class="flex items-center gap-2">
+                <span class="text-neutral-700 font-medium whitespace-nowrap">Požadovaná měsíční renta</span>
+                <input id="annuity-input" type="text" placeholder="např. 10 000" class="px-3 py-2 rounded-xl border border-neutral-300 w-[180px] tabular" />
             </label>
-            <div id="annuity-annual-equivalent" class="text-sm text-slate-500"></div>
+            <div id="annuity-annual-equivalent" class="text-sm text-neutral-600"></div>
         </div>
-        <div id="annuity-result" class="mt-5 text-sm text-slate-900 bg-teal-50 border border-teal-100 rounded-xl p-5" style="display: none;"></div>
-        <p id="annuity-disclaimer" class="mt-3 text-xs text-slate-500/90 italic" style="display: none;">
+        <div id="annuity-result" class="mt-4 text-sm text-neutral-800 bg-sky-50 border border-sky-200 rounded-xl p-4" style="display: none;"></div>
+        <p id="annuity-disclaimer" class="mt-3 text-xs text-neutral-500 italic" style="display: none;">
           *Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.
         </p>
       </section>
 
       <!-- === EXPLANATIONS === -->
-      <section id="explanations-section" class="card p-7 sm:p-8">
-        <details class="group">
-          <summary class="text-lg font-semibold cursor-pointer flex items-center justify-between text-slate-900">
+      <section id="explanations-section" class="card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200">
+        <details>
+          <summary class="text-lg font-semibold cursor-pointer flex items-center justify-between">
             <span>Vysvětlivky a použité metriky</span>
-            <svg class="summary-arrow w-5 h-5 transition-transform group-open:rotate-90 text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg class="summary-arrow w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
             </svg>
           </summary>
-          <div class="mt-4 pt-4 border-t border-slate-200 text-sm text-slate-600 space-y-5">
+          <div class="mt-4 pt-4 border-t text-sm text-neutral-700 space-y-4">
             <div>
-              <h4 class="font-semibold text-slate-900">Co je to XIRR a jak funguje?</h4>
-               <p class="mt-2 leading-relaxed">
+              <h4 class="font-semibold text-neutral-800">Co je to XIRR a jak funguje?</h4>
+               <p class="mt-2">
                 XIRR (z anglického <em>eXtended Internal Rate of Return</em>) je nejpřesnější metoda pro výpočet <strong>průměrného ročního zhodnocení</strong> vaší investice.
               </p>
-              <p class="mt-2 leading-relaxed">
-                <strong>Proč je lepší než jednoduché procento?</strong> Protože bere v potaz čas. Koruna, kterou jste investoval před třemi lety, měla mnohem více času pracovat než koruna, kterou jste vložil minulý měsíc. XIRR toto spravedlivě zohledňuje, a proto je tento ukazatel klíčový pro správné vyhodnocení investic s více vklady (nebo výběry) v čase.
+              <p class="mt-2">
+                <strong>Proč je lepší než jednoduché procento?</strong> Protože bere v potaz **čas**. Koruna, kterou jste investoval před třemi lety, měla mnohem více času pracovat než koruna, kterou jste vložil minulý měsíc. XIRR toto spravedlivě zohledňuje, a proto je tento ukazatel klíčový pro správné vyhodnocení investic s více vklady (nebo výběry) v čase. Funguje stejně dobře pro jediný vklad i pro celé portfolio.
               </p>
-              <p class="mt-2 leading-relaxed">
-                <strong>Je to dopočet na 12 měsíců, i když data mám jen za kratší dobu?</strong> Ano. Pokud známe zhodnocení například za 8 měsíců, XIRR dopočítá, jakému <strong>průměrnému ročnímu zhodnocení</strong> by to odpovídalo, kdyby investice pokračovala stejným tempem.
+              <p class="mt-2">
+                <strong>Je to dopočet na 12 měsíců, i když data mám jen za kratší dobu?</strong> Ano, přesně tak. Pokud známe zhodnocení například za 8 měsíců, XIRR nám dopočítá, jakému <strong>průměrnému ročnímu (12měsíčnímu) zhodnocení</strong> by to odpovídalo, kdyby investice pokračovala stejným tempem.
               </p>
             </div>
-             <div class="pt-4 border-t border-slate-200">
-              <h4 class="font-semibold text-slate-900">Co je kumulativní zhodnocení?</h4>
-               <p class="mt-2 leading-relaxed">
-                Tento údaj ukazuje celkový čistý zisk nebo ztrátu jako procento z celkově zainvestované částky. Je to přímočarý indikátor celkové výkonnosti.
+             <div class="pt-4 border-t">
+              <h4 class="font-semibold text-neutral-800">Co je Kumulativní zhodnocení?</h4>
+               <p class="mt-2">
+                Tento údaj ukazuje celkový čistý zisk nebo ztrátu jako procento z celkově zainvestované částky. Je to jednoduchý ukazatel celkové výkonnosti.
               </p>
-              <p class="mt-2 leading-relaxed">
-                <strong>Příklad:</strong> Pokud jste do portfolia celkem vložil 100&nbsp;000&nbsp;Kč a jeho aktuální hodnota je 120&nbsp;000&nbsp;Kč, kumulativní zhodnocení činí +20&nbsp;%. Na rozdíl od XIRR ale nezohledňuje čas, po který byly jednotlivé vklady investovány.
+              <p class="mt-2">
+                <strong>Příklad:</strong> Pokud jste do portfolia celkem vložil 100 000 Kč a jeho aktuální hodnota je 120 000 Kč, kumulativní zhodnocení činí +20 %. Na rozdíl od XIRR ale tento ukazatel nezohledňuje, jak dlouho byly jednotlivé vklady v portfoliu zainvestovány.
               </p>
             </div>
           </div>
@@ -462,29 +264,19 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-  const state = {
+  // === APPLICATION STATE & CONSTANTS ===
+  const state = { 
       rows: { avant: [], codya: [], atris: [], jt: [] },
-      meta: { clientName: '', generatedAt: '' },
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {}
   };
-  const elements = {};
-  const STORAGE_KEY = 'fairlife-investment-calculator-state-v2';
-  const LEGACY_STORAGE_KEY = 'investmentCalculatorState';
-  const SAVE_DEBOUNCE = 220;
-  const MS_PER_DAY = 86400000;
-  const CHART_END_YEAR = 2035;
-  const APP_MODE = document.body?.dataset?.mode || 'advisor';
-  const isClientMode = APP_MODE === 'client';
-  const presentationData = window.__PRESENTATION_DATA__ || null;
-  let saveTimer = null;
   let rowSeq = 0;
   let rafId = 0;
 
   const PROVIDERS = { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' };
   const CHART_COLORS = [
-      '#0f766e', '#14b8a6', '#0ea5e9', '#6366f1', '#f97316', '#fb7185', '#facc15',
-      '#34d399', '#22d3ee', '#a855f7', '#4ade80', '#7c3aed', '#ef4444', '#f59e0b'
+      '#38bdf8', '#34d399', '#f59e0b', '#f43f5e', '#a78bfa', '#14b8a6', '#ec4899',
+      '#84cc16', '#eab308', '#ef4444', '#8b5cf6', '#06b6d4', '#d946ef', '#f97316'
   ];
   const getColor = (fundName) => {
       if (!state.fundColorMap[fundName]) {
@@ -494,1048 +286,64 @@ document.addEventListener('DOMContentLoaded', () => {
       return state.fundColorMap[fundName];
   };
   
+  // === UTILITY FUNCTIONS ===
   const utils = {
     nf: (d = 2, opts = {}) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d, ...opts }),
     toDate: (s) => { if (!s) return null; const t = String(s).trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(t)) { const d = new Date(t); return isNaN(d.getTime()) ? null : d; } const m = t.match(/^([0-3]?\d)\.?\s*([01]?\d)\.?\s*(\d{4})$/); if (m) { const d = new Date(`${m[3]}-${m[2]}-${m[1]}`); return isNaN(d.getTime()) ? null : d; } const genericDate = new Date(t); return isNaN(genericDate.getTime()) ? null : genericDate; },
-    monthsDiff: (d1, d2) => { if (!(d1 instanceof Date && d2 instanceof Date && !isNaN(d1) && !isNaN(d2))) return NaN; const days = (d2.getTime() - d1.getTime()) / MS_PER_DAY; return Math.max(0, days / (365.2425 / 12)); },
-    numCZ: (v) => { if (v === null || v === undefined) return NaN; let t = String(v).replace(/ /g, ' ').trim(); if (t === '') return NaN; t = t.replace(/\s*(Kč|CZK|€|EUR)\s*/gi, ''); t = t.replace(/[−–—]/g, '-'); let isNegative = false; if (t.startsWith('(') && t.endsWith(')')) { isNegative = true; t = t.substring(1, t.length - 1); } t = t.replace(/\s/g, ''); const lastComma = t.lastIndexOf(','); const lastDot = t.lastIndexOf('.'); if (lastComma > lastDot) { t = t.replace(/\./g, '').replace(',', '.'); } else if (lastDot > -1 && t.length - lastDot - 1 > 2) { t = t.replace(/,/g, ''); } else { t = t.replace(/,/g, ''); } const num = parseFloat(t); if (isNaN(num)) return NaN; return isNegative ? -Math.abs(num) : num; },
-    normName: s => String(s || '').replace(/[ \s]+/g, ' ').trim(),
+    monthsDiff: (d1, d2) => { if (!(d1 instanceof Date && d2 instanceof Date && !isNaN(d1) && !isNaN(d2))) return NaN; const days = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24); return Math.max(0, days / (365.2425 / 12)); },
+    numCZ: (v) => { if (v === null || v === undefined) return NaN; let t = String(v).replace(/\u00A0/g, ' ').trim(); if (t === '') return NaN; t = t.replace(/\s*\b(Kč|CZK|€|EUR)\b\s*/gi, ''); t = t.replace(/[\u2212\u2013\u2014]/g, '-'); let isNegative = false; if (t.startsWith('(') && t.endsWith(')')) { isNegative = true; t = t.substring(1, t.length - 1); } t = t.replace(/\s/g, ''); const lastComma = t.lastIndexOf(','); const lastDot = t.lastIndexOf('.'); if (lastComma > lastDot) { t = t.replace(/\./g, '').replace(',', '.'); } else if (lastDot > -1 && t.length - lastDot - 1 > 2) { t = t.replace(/,/g, ''); } else { t = t.replace(/,/g, ''); } const num = parseFloat(t); if (isNaN(num)) return NaN; return isNegative ? -Math.abs(num) : num; },
+    normName: s => String(s || '').replace(/[\u00A0\s]+/g, ' ').trim(),
     convertAmount: (amt, from, to, fxRate) => { if (!isFinite(amt)) return NaN; if (from === to) return amt; const k = fxRate; if (!isFinite(k) || k <= 0) return NaN; if (from === 'EUR' && to === 'CZK') return amt * k; if (from === 'CZK' && to === 'EUR') return amt / k; return NaN; }
-  };
-
-  const cloneDeep = (value) => {
-      if (typeof structuredClone === 'function') {
-          try {
-              return structuredClone(value);
-          } catch (error) {
-              console.warn('structuredClone fallback used', error);
-          }
-      }
-      return JSON.parse(JSON.stringify(value));
   };
 
   const fmt2 = utils.nf(2); const fmt4 = utils.nf(4); const fmt1 = utils.nf(1); const fmt0 = utils.nf(0);
   const cellNum = (v, d = 2) => { if(!isFinite(v)) return '—'; if(d === 4) return fmt4.format(v); if(d === 1) return fmt1.format(v); if(d === 0) return fmt0.format(v); return fmt2.format(v); };
   const cellPct = v => isFinite(v) ? fmt2.format(v * 100) + ' %' : '—';
   
+  // === FINANCIAL CALCULATIONS ===
   const finance = (() => {
-    function xnpv(rate, cfs) { if (!isFinite(rate)) return NaN; const sortedCfs = cfs.slice().sort((a, b) => a.date - b.date); const t0 = sortedCfs[0]?.date; if (!t0) return NaN; return sortedCfs.reduce((sum, cf) => { const days = (cf.date - t0) / MS_PER_DAY; return sum + cf.amount / Math.pow(1 + rate, days / 365.25); }, 0); }
-    function xirr(cfs, iterations = 100) { if (!Array.isArray(cfs) || cfs.length < 2) return NaN; let hasPos = false, hasNeg = false; for (const cf of cfs) { if (cf.amount > 0) hasPos = true; if (cf.amount < 0) hasNeg = true; } if (!hasPos || !hasNeg) return NaN; let low = -0.9999, high = 10.0; let mid; for (let i = 0; i < iterations; i++) { mid = (low + high) / 2; const npv = xnpv(mid, cfs); if (Math.abs(npv) < 1e-6) break; if (npv > 0) { low = mid; } else { high = mid; } } return isFinite(mid) ? mid : NaN; }
+    function xnpv(rate, cfs) { if (!isFinite(rate)) return NaN; const sortedCfs = cfs.slice().sort((a, b) => a.date - b.date); const t0 = sortedCfs[0]?.date; if (!t0) return NaN; return sortedCfs.reduce((sum, cf) => { const days = (cf.date - t0) / 86400000; return sum + cf.amount / Math.pow(1 + rate, days / 365.25); }, 0); }
+    function xirr(cfs, iterations = 100) { if (!Array.isArray(cfs) || cfs.length < 2) return NaN; let hasPos = false, hasNeg = false; for (const cf of cfs) { if (cf.amount > 0) hasPos = true; if (cf.amount < 0) hasNeg = true; } if (!hasPos || !hasNeg) return NaN; let low = -0.9999, high = 10.0; let mid; for (let i = 0; i < iterations; i++) { mid = (low + high) / 2; const npv = xnpv(mid, cfs); if (Math.abs(npv) < 1e-6) break; if (npv > 0) { low = mid; } else { high = mid; } } return isFinite(mid) ? mid : NaN; } // Returns rate, not percentage
     return { xnpv, xirr };
   })();
   
+  // === UI RENDERING & EVENT HANDLING ===
   const scheduleRecalc = () => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(recalculateAndRender); };
-  const showToast = (message, type = 'success') => {
-      const container = elements.toastContainer || document.getElementById('toast-container');
-      if (!container) return;
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.innerHTML = `<svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">${type === 'success' ? `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />` : `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`}</svg><span>${message}</span>`;
-      container.appendChild(toast);
-      requestAnimationFrame(() => {
-          toast.classList.add('show');
-      });
-      setTimeout(() => {
-          toast.classList.remove('show');
-          toast.addEventListener('transitionend', () => toast.remove());
-      }, 3000);
-  };
+  const showToast = (message, type = 'success') => { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.innerHTML = `<svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">${type === 'success' ? `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />` : `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`}</svg><span>${message}</span>`; container.appendChild(toast); requestAnimationFrame(() => { toast.classList.add('show'); }); setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000); };
 
-  const commitStateToStorage = () => {
-      try {
-          localStorage.removeItem(LEGACY_STORAGE_KEY);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows: state.rows, meta: state.meta }));
-          if (elements.lastSavedIndicator) {
-              elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
-          }
-      } catch (error) {
-          console.error('Failed to save state:', error);
-          showToast('Chyba při ukládání dat.', 'error');
-      }
-  };
+  // === DATA PERSISTENCE ===
+  const saveState = () => { try { localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows })); document.getElementById('last-saved-indicator').textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`; } catch (e) { console.error("Failed to save state:", e); showToast("Chyba při ukládání dat.", 'error'); } };
+  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); scheduleRecalc(); };
+  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
+  const importState = (file) => { if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const importedState = JSON.parse(e.target.result); if (importedState && typeof importedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; }); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; saveState(); renderAllInputs(); scheduleRecalc(); showToast("Data byla úspěšně importována."); } else { throw new Error("Invalid file structure."); } } catch (err) { console.error("Failed to import state:", err); showToast("Chyba při importu: neplatný formát souboru.", 'error'); } }; reader.readAsText(file); };
 
-  const saveState = (immediate = false) => {
-      if (isClientMode) {
-          return;
-      }
-      if (immediate) {
-          if (saveTimer) {
-              clearTimeout(saveTimer);
-              saveTimer = null;
-          }
-          commitStateToStorage();
-          return;
-      }
-      if (saveTimer) {
-          clearTimeout(saveTimer);
-      }
-      saveTimer = setTimeout(() => {
-          commitStateToStorage();
-          saveTimer = null;
-      }, SAVE_DEBOUNCE);
-  };
-  const loadState = () => {
-      if (presentationData && typeof presentationData === 'object') {
-          Object.keys(PROVIDERS).forEach((key) => {
-              const providerRows = Array.isArray(presentationData.rows?.[key]) ? presentationData.rows[key] : [];
-              state.rows[key] = cloneDeep(providerRows);
-          });
-          const allIds = Object.values(state.rows).flat().map((row) => row.id).filter((id) => typeof id === 'number');
-          rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
-          const exportedName = typeof presentationData.meta?.clientName === 'string' ? presentationData.meta.clientName.trim() : '';
-          const exportedGenerated = presentationData.generatedAt || presentationData.meta?.generatedAt || '';
-          state.meta.clientName = exportedName;
-          state.meta.generatedAt = exportedGenerated;
-          if (elements.clientNameInput) {
-              elements.clientNameInput.value = exportedName;
-          }
-          const exportedCurrency = typeof presentationData.outCurr === 'string' ? presentationData.outCurr : null;
-          if (elements.outCurrency && exportedCurrency) {
-              elements.outCurrency.value = exportedCurrency;
-          }
-          const exportedFx = presentationData.fxRate;
-          if (elements.fxRate) {
-              if (isFinite(exportedFx)) {
-                  elements.fxRate.value = fmt4.format(exportedFx);
-              } else {
-                  elements.fxRate.value = '';
-              }
-          }
-          renderAllInputs();
-          performFullRecalc();
-          return;
-      }
-      if (isClientMode) {
-          renderAllInputs();
-          performFullRecalc();
-          return;
-      }
-      let restored = false;
-      try {
-          let savedStateJSON = localStorage.getItem(STORAGE_KEY);
-          let migrated = false;
-          if (!savedStateJSON) {
-              savedStateJSON = localStorage.getItem(LEGACY_STORAGE_KEY);
-              migrated = Boolean(savedStateJSON);
-          }
-          if (savedStateJSON) {
-              const savedState = JSON.parse(savedStateJSON);
-              if (savedState && typeof savedState.rows === 'object') {
-                  Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; });
-                  const allIds = Object.values(state.rows).flat().map(r => r.id);
-                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
-                  restored = true;
-              }
-              if (savedState && typeof savedState.meta === 'object') {
-                  const savedName = typeof savedState.meta.clientName === 'string' ? savedState.meta.clientName.trim() : '';
-                  state.meta = { ...state.meta, ...savedState.meta, clientName: savedName };
-                  if (elements.clientNameInput) {
-                      elements.clientNameInput.value = state.meta.clientName || '';
-                  }
-                  restored = true;
-              }
-              if (migrated) {
-                  localStorage.removeItem(LEGACY_STORAGE_KEY);
-                  saveState(true);
-              }
-          }
-      } catch (error) {
-          console.error('Failed to load state:', error);
-          showToast('Nepodařilo se načíst uložená data.', 'error');
-      }
-      if (restored) {
-          showToast('Data byla úspěšně načtena z prohlížeče.');
-      }
-      renderAllInputs();
-      scheduleRecalc();
-  };
-  const exportState = () => {
-      const payload = { rows: cloneDeep(state.rows), meta: { ...state.meta } };
-      const stateString = JSON.stringify(payload, null, 2);
-      const blob = new Blob([stateString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("Data byla úspěšně exportována.");
-  };
-  const importState = (file) => {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          try {
-              const importedState = JSON.parse(e.target.result);
-              if (importedState && typeof importedState.rows === 'object') {
-                  Object.keys(PROVIDERS).forEach(key => { state.rows[key] = importedState.rows[key] || []; });
-                  const allIds = Object.values(state.rows).flat().map(r => r.id);
-                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
-                  if (importedState.meta && typeof importedState.meta === 'object') {
-                      const importedName = typeof importedState.meta.clientName === 'string' ? importedState.meta.clientName.trim() : '';
-                      state.meta = { ...state.meta, ...importedState.meta, clientName: importedName };
-                      if (elements.clientNameInput) {
-                          elements.clientNameInput.value = state.meta.clientName || '';
-                      }
-                  }
-                  saveState(true);
-                  renderAllInputs();
-                  scheduleRecalc();
-                  showToast("Data byla úspěšně importována.");
-              } else {
-                  throw new Error("Invalid file structure.");
-              }
-          } catch (err) {
-              console.error("Failed to import state:", err);
-              showToast("Chyba při importu: neplatný formát souboru.", 'error');
-          }
-      };
-      reader.readAsText(file);
-  };
-  const exportClientPresentation = () => {
-      if (document.activeElement && typeof document.activeElement.blur === 'function') {
-          document.activeElement.blur();
-      }
-      cancelAnimationFrame(rafId);
-      const { funds, portfolioSummary, hasMixedCurrencies, outCurr, fxRate } = performFullRecalc();
-      if (!funds.length || !portfolioSummary?.hasData) {
-          showToast('Pro export je potřeba mít vyplněné a přepočítané portfolio.', 'error');
-          return;
-      }
-      if (hasMixedCurrencies && !isFinite(fxRate)) {
-          showToast('Doplňte směnný kurz EUR/CZK, aby bylo možné vytvořit prezentaci.', 'error');
-          return;
-      }
-      const clientNameInput = elements.clientNameInput || document.getElementById('client-name');
-      if (clientNameInput) {
-          state.meta.clientName = clientNameInput.value || '';
-      }
-      const clientName = (state.meta.clientName || '').trim();
-      state.meta.clientName = clientName;
-      saveState(true);
-      const rowsSnapshot = cloneDeep(state.rows);
-      const generatedAtIso = new Date().toISOString();
-      const presentationData = preparePresentationData(funds, portfolioSummary, outCurr, fxRate);
-      const exportPayload = {
-          generatedAt: generatedAtIso,
-          outCurr,
-          fxRate: isFinite(fxRate) ? fxRate : null,
-          hasMixedCurrencies,
-          clientName,
-          funds: funds.map(f => ({
-              fund: f.fund,
-              invest: f.invest,
-              current: f.current,
-              curr: f.curr,
-              qty: f.qty,
-              issueNav: f.issueNav,
-              currNav: f.currNav,
-              investConverted: utils.convertAmount(f.invest, f.curr, outCurr, fxRate),
-              currentConverted: utils.convertAmount(f.current, f.curr, outCurr, fxRate),
-              pnlConverted: utils.convertAmount(f.pnl, f.curr, outCurr, fxRate),
-              pnl: f.pnl,
-              ret: f.ret,
-              irr: f.irr,
-              months: f.months,
-              dateIn: f.dateIn ? f.dateIn.toISOString() : null,
-              originalDateIn: f.originalDateIn ? f.originalDateIn.toISOString() : null,
-              currDate: f.currDate ? f.currDate.toISOString() : null
-          })),
-          summary: {
-              totalInvestConverted: portfolioSummary.totalInvestConverted,
-              totalCurrentConverted: portfolioSummary.totalCurrentConverted,
-              totalPnl: portfolioSummary.totalPnl,
-              totalRet: portfolioSummary.totalRet,
-              portfolioIrr: portfolioSummary.portfolioIrr,
-              weightedAvgMonths: portfolioSummary.weightedAvgMonths,
-              minValuationDate: portfolioSummary.minValuationDate ? portfolioSummary.minValuationDate.toISOString() : null,
-              maxValuationDate: portfolioSummary.maxValuationDate ? portfolioSummary.maxValuationDate.toISOString() : null,
-              hasData: portfolioSummary.hasData
-          },
-          rows: rowsSnapshot,
-          meta: { clientName, generatedAt: generatedAtIso },
-          presentation: presentationData
-      };
-
-      state.meta.generatedAt = exportPayload.generatedAt;
-      saveState(true);
-      const htmlContent = buildClientPresentationHTML(exportPayload);
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `fairlife-prezentace-${new Date().toISOString().split('T')[0]}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('Prezentace byla připravena ke stažení.');
-  };
-
-  const preparePresentationData = (funds, portfolioSummary, outCurr, fxRate) => {
-      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
-      const grouped = new Map();
-      const depositsByDay = new Map();
-
-      funds.forEach(f => {
-          if (!f.fund) return;
-          const fundName = f.fund;
-          let group = grouped.get(fundName);
-          if (!group) {
-              group = {
-                  name: fundName,
-                  color: getColor(fundName),
-                  transactions: [],
-                  totalInvest: 0,
-                  totalCurrent: 0,
-                  weightedDuration: 0,
-                  cfs: [],
-                  latestDate: null
-              };
-              grouped.set(fundName, group);
-          }
-
-          const investConverted = convert(f.invest, f.curr);
-          const currentConverted = convert(f.current, f.curr);
-          const effectiveDate = f.dateIn instanceof Date ? new Date(f.dateIn.getTime()) : null;
-
-          if (isFinite(investConverted)) {
-              group.totalInvest += investConverted;
-              if (effectiveDate) {
-                  group.cfs.push({ date: effectiveDate, amount: -investConverted });
-                  const dayKey = effectiveDate.toISOString().split('T')[0];
-                  let aggregate = depositsByDay.get(dayKey);
-                  if (!aggregate) {
-                      aggregate = { date: new Date(effectiveDate.getTime()), amount: 0, entries: [] };
-                      depositsByDay.set(dayKey, aggregate);
-                  }
-                  aggregate.amount += investConverted;
-                  aggregate.entries.push({ fund: fundName, amount: investConverted });
-              }
-              if (isFinite(f.months)) {
-                  group.weightedDuration += investConverted * f.months;
-              }
-          }
-
-          if (isFinite(currentConverted)) {
-              group.totalCurrent += currentConverted;
-          }
-
-          if (f.currDate instanceof Date) {
-              const dateClone = new Date(f.currDate.getTime());
-              group.latestDate = group.latestDate && group.latestDate > dateClone ? group.latestDate : dateClone;
-          }
-
-          group.transactions.push({
-              effectiveDate,
-              displayDate: f.originalDateIn instanceof Date ? new Date(f.originalDateIn.getTime()) : (effectiveDate ? new Date(effectiveDate.getTime()) : null),
-              investConverted,
-              pnlConverted: (isFinite(investConverted) && isFinite(currentConverted)) ? currentConverted - investConverted : NaN,
-              ret: f.ret,
-              irr: f.irr,
-              months: f.months
-          });
-      });
-
-      const fundsView = [];
-      grouped.forEach(group => {
-          group.transactions.sort((a, b) => {
-              if (a.effectiveDate && b.effectiveDate) return a.effectiveDate - b.effectiveDate;
-              if (a.effectiveDate) return -1;
-              if (b.effectiveDate) return 1;
-              return 0;
-          });
-          group.transactions.forEach((tx, index) => {
-              tx.label = index === 0 ? 'První vklad' : `Dokup #${index}`;
-          });
-          const latestTransactionDate = group.latestDate || (group.transactions[group.transactions.length - 1]?.effectiveDate || null);
-          if (isFinite(group.totalCurrent) && latestTransactionDate) {
-              group.cfs.push({ date: latestTransactionDate, amount: group.totalCurrent });
-          }
-          const fundIrr = group.cfs.length >= 2 ? finance.xirr(group.cfs) : NaN;
-          const weightedAvgMonths = group.totalInvest > 0 ? group.weightedDuration / group.totalInvest : NaN;
-          fundsView.push({
-              name: group.name,
-              color: group.color,
-              totalInvest: group.totalInvest,
-              totalCurrent: group.totalCurrent,
-              pnl: group.totalCurrent - group.totalInvest,
-              irr: fundIrr,
-              weightedMonths: weightedAvgMonths,
-              latestDate: latestTransactionDate,
-              transactions: group.transactions.map(tx => ({
-                  label: tx.label,
-                  displayDate: tx.displayDate ? tx.displayDate.toISOString() : null,
-                  investConverted: tx.investConverted,
-                  pnlConverted: tx.pnlConverted,
-                  ret: tx.ret,
-                  irr: tx.irr,
-                  months: tx.months
-              }))
-          });
-      });
-
-      fundsView.sort((a, b) => (isFinite(b.totalCurrent) ? b.totalCurrent : 0) - (isFinite(a.totalCurrent) ? a.totalCurrent : 0));
-
-      const pieData = fundsView
-          .filter(f => isFinite(f.totalCurrent) && f.totalCurrent > 0)
-          .map(f => ({ name: f.name, color: f.color, value: f.totalCurrent }));
-
-      const aggregatedDeposits = Array.from(depositsByDay.values()).sort((a, b) => a.date - b.date);
-
-      const buildLineChartDataset = () => {
-          if (!aggregatedDeposits.length) return null;
-          const irr = portfolioSummary?.portfolioIrr;
-          const dailyRate = isFinite(irr) ? Math.pow(1 + irr, 1 / 365.25) - 1 : 0;
-          const firstDate = new Date(aggregatedDeposits[0].date.getTime());
-          let lastDate = new Date(firstDate.getTime());
-          let runningValue = 0;
-          let cumulativeContrib = 0;
-          const historicalPoints = [{ date: firstDate.toISOString(), value: 0, contributions: 0 }];
-          const depositPoints = [];
-
-          aggregatedDeposits.forEach(dep => {
-              const dateClone = new Date(dep.date.getTime());
-              const days = Math.max(0, (dateClone - lastDate) / MS_PER_DAY);
-              if (days > 0 && runningValue > 0) {
-                  runningValue *= Math.pow(1 + dailyRate, days);
-                  historicalPoints.push({ date: new Date(dateClone.getTime()).toISOString(), value: runningValue, contributions: cumulativeContrib });
-              }
-              runningValue += dep.amount;
-              cumulativeContrib += dep.amount;
-              historicalPoints.push({ date: dateClone.toISOString(), value: runningValue, contributions: cumulativeContrib });
-              depositPoints.push({
-                  date: dateClone.toISOString(),
-                  amount: dep.amount,
-                  cumulativeValue: runningValue,
-                  entries: dep.entries.map(entry => ({ fund: entry.fund, amount: entry.amount }))
-              });
-              lastDate = dateClone;
-          });
-
-          const valuationDate = portfolioSummary?.maxValuationDate instanceof Date
-              ? new Date(portfolioSummary.maxValuationDate.getTime())
-              : new Date(lastDate.getTime());
-          const valuationDays = Math.max(0, (valuationDate - lastDate) / MS_PER_DAY);
-          const valuationValue = runningValue * Math.pow(1 + dailyRate, valuationDays);
-          historicalPoints.push({ date: valuationDate.toISOString(), value: valuationValue, contributions: cumulativeContrib });
-
-          const projectionPoints = [];
-          const futureMarkers = [];
-          if (isFinite(irr) && irr > -1) {
-              for (let year = valuationDate.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
-                  const projectionDate = new Date(year, 11, 31);
-                  if (projectionDate <= valuationDate) continue;
-                  const daysAhead = Math.max(0, (projectionDate - valuationDate) / MS_PER_DAY);
-                  const projectedValue = valuationValue * Math.pow(1 + dailyRate, daysAhead);
-                  projectionPoints.push({ date: projectionDate.toISOString(), value: projectedValue });
-                  if ((year - valuationDate.getFullYear()) % 4 === 0 || year === CHART_END_YEAR) {
-                      futureMarkers.push({ date: projectionDate.toISOString(), value: projectedValue, label: `${year}` });
-                  }
-              }
-          }
-
-          return {
-              firstDate: firstDate.toISOString(),
-              valuationDate: valuationDate.toISOString(),
-              valuationValue,
-              cumulativeContributions: cumulativeContrib,
-              points: historicalPoints,
-              projectionPoints,
-              depositPoints,
-              futureMarkers
-          };
-      };
-
-      return {
-          fundsView,
-          pieData,
-          lineChart: buildLineChartDataset()
-      };
-  };
-
-  const escapeHtml = (value) => {
-      if (value === null || value === undefined) return '';
-      return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-  };
-
-  const buildClientPresentationHTML = (payload) => {
-      const SCRIPT_PLACEHOLDER = '__SCRIPT_END__';
-      const summary = payload.summary || {};
-      const presentation = payload.presentation || { fundsView: [], pieData: [], lineChart: null };
-      const outCurr = payload.outCurr || 'CZK';
-      const nf0 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      const nf1 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-      const nf2 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const formatNumber = (value, digits = 0) => {
-          if (!isFinite(value)) return '—';
-          if (digits === 1) return nf1.format(value);
-          if (digits === 2) return nf2.format(value);
-          return nf0.format(value);
-      };
-      const formatPercent = (value) => isFinite(value) ? `${nf2.format(value * 100)} %` : '—';
-      const formatDate = (iso) => {
-          if (!iso) return '—';
-          const date = new Date(iso);
-          return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('cs-CZ');
-      };
-      const formatDateTime = (iso) => {
-          if (!iso) return '—';
-          const date = new Date(iso);
-          return isNaN(date.getTime()) ? '—' : date.toLocaleString('cs-CZ');
-      };
-
-      const fundsMarkup = presentation.fundsView.length
-          ? presentation.fundsView.map(fund => {
-              const transactionsRows = fund.transactions.map(tx => `
-                  <tr class="border-t border-slate-200/70">
-                      <td class="py-2 pr-3 text-sm text-slate-600">${escapeHtml(tx.label)} <span class="text-slate-400">(${formatDate(tx.displayDate)})</span></td>
-                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${formatNumber(tx.investConverted)}</td>
-                      <td class="py-2 pr-3 text-right tabular text-sm ${tx.pnlConverted >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatNumber(tx.pnlConverted)}</td>
-                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${formatPercent(tx.ret)}</td>
-                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${isFinite(tx.months) ? `${formatNumber(tx.months, 1)} měs.` : '—'}</td>
-                      <td class="py-2 pr-3 text-right tabular text-sm text-slate-700">${isFinite(tx.irr) ? `${formatPercent(tx.irr)} p.a.` : '—'}</td>
-                  </tr>`).join('');
-              const latestIso = fund.latestDate instanceof Date ? fund.latestDate.toISOString() : fund.latestDate;
-              return `
-                  <section class="card overflow-hidden">
-                      <div class="grid grid-cols-1 md:grid-cols-5 gap-x-6 gap-y-4 p-6">
-                          <div class="md:col-span-2">
-                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Fond</div>
-                              <div class="mt-2 flex items-center gap-3">
-                                  <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${fund.color}"></span>
-                                  <span class="font-semibold text-lg text-slate-900">${escapeHtml(fund.name)}</span>
-                              </div>
-                              <div class="mt-2 text-xs text-slate-400">Poslední ocenění: ${formatDate(latestIso)}</div>
-                          </div>
-                          <div>
-                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Aktuální hodnota</div>
-                              <div class="mt-2 font-semibold tabular text-lg text-slate-900">${formatNumber(fund.totalCurrent)}</div>
-                          </div>
-                          <div>
-                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Čistý výsledek</div>
-                              <div class="mt-2 font-semibold tabular text-lg ${fund.pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatNumber(fund.pnl)}</div>
-                          </div>
-                          <div>
-                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Výkonnost (XIRR)</div>
-                              <div class="mt-2 font-semibold tabular text-lg ${isFinite(fund.irr) && fund.irr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(fund.irr) ? `${formatPercent(fund.irr)} p.a.` : '—'}</div>
-                          </div>
-                          <div>
-                              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Váž. prům. doba</div>
-                              <div class="mt-2 font-semibold tabular text-lg text-slate-900">${isFinite(fund.weightedMonths) ? `${formatNumber(fund.weightedMonths, 1)} měs.` : '—'}</div>
-                          </div>
-                      </div>
-                      <div class="border-t border-slate-200/70 bg-slate-50/60">
-                          <table class="w-full text-left">
-                              <thead>
-                                  <tr class="text-xs uppercase tracking-[0.18em] text-slate-400">
-                                      <th class="py-3 pr-3">Transakce</th>
-                                      <th class="py-3 pr-3 text-right">Investice</th>
-                                      <th class="py-3 pr-3 text-right">Výnos</th>
-                                      <th class="py-3 pr-3 text-right">Kumulativně</th>
-                                      <th class="py-3 pr-3 text-right">Doba (měs.)</th>
-                                      <th class="py-3 pr-3 text-right">XIRR p.a.</th>
-                                  </tr>
-                              </thead>
-                              <tbody>
-                                  ${transactionsRows}
-                              </tbody>
-                          </table>
-                      </div>
-                  </section>`;
-          }).join('\n')
-          : '<div class="rounded-2xl border border-slate-200/70 bg-white/80 py-12 text-center text-slate-500">Žádná data pro zobrazení fondů.</div>';
-
-      const pieTotal = presentation.pieData.reduce((sum, item) => sum + (isFinite(item.value) ? item.value : 0), 0);
-      const pieLegendMarkup = presentation.pieData.map(item => `
-          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200/60 bg-white/70 px-3 py-2">
-              <div class="flex items-center gap-3">
-                  <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${item.color}"></span>
-                  <span class="text-sm text-slate-600">${escapeHtml(item.name)}</span>
-              </div>
-              <span class="text-sm font-semibold tabular text-slate-900">${pieTotal > 0 ? formatPercent(item.value / pieTotal) : '—'}</span>
-          </div>`).join('\n');
-
-      const summaryDisclaimer = summary.minValuationDate && summary.maxValuationDate
-          ? (() => {
-              const minDate = formatDate(summary.minValuationDate instanceof Date ? summary.minValuationDate.toISOString() : summary.minValuationDate);
-              const maxDate = formatDate(summary.maxValuationDate instanceof Date ? summary.maxValuationDate.toISOString() : summary.maxValuationDate);
-              return minDate === maxDate
-                  ? `Hodnoty jsou platné k ${maxDate}.`
-                  : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minDate} – ${maxDate}.`;
-          })()
-          : '';
-
-      const sanitized = JSON.stringify(payload)
-          .replace(/</g, '\u003c')
-          .replace(/>/g, '\u003e')
-          .replace(/`/g, '\u0060')
-          .replace(/\$\{/g, '\u0024{')
-          .replace(/<\/script/gi, '<\\/script');
-
-      const html = `<!doctype html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Prezentace portfolia – ${escapeHtml(payload.meta?.clientName || 'Klient')}</title>
-  <script src="https://cdn.tailwindcss.com">${SCRIPT_PLACEHOLDER}
-  <style>
-    :root {
-      color-scheme: light;
-    }
-    body {
-      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
-      background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
-      color: #0f172a;
-    }
-    .card {
-      border-radius: 1.25rem;
-      border: 1px solid rgba(15, 118, 110, 0.12);
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 18px 45px -24px rgba(15, 23, 42, 0.45);
-    }
-    .tabular {
-      font-variant-numeric: tabular-nums;
-    }
-    .chart-card {
-      border-radius: 1.25rem;
-      border: 1px solid rgba(15, 118, 110, 0.12);
-      background: rgba(255, 255, 255, 0.94);
-      box-shadow: 0 18px 45px -24px rgba(15, 23, 42, 0.4);
-    }
-    .chart-wrapper svg {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    @media (max-width: 768px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-</head>
-<body class="min-h-screen">
-  <div class="bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-500 text-white">
-    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12">
-      <div class="flex flex-wrap items-center justify-between gap-6">
-        <div>
-          <p class="text-sm uppercase tracking-[0.3em] text-white/70">Prezentace portfolia</p>
-          <h1 class="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">${escapeHtml(payload.meta?.clientName || 'Klient')}</h1>
-        </div>
-        <div class="rounded-2xl bg-white/15 px-6 py-4 text-sm backdrop-blur">
-          <div class="flex items-center gap-3">
-            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300"></span>
-            <div>
-              <div class="text-xs uppercase tracking-[0.2em] text-white/80">Datum generování</div>
-              <div class="text-base font-medium">${formatDateTime(payload.meta?.generatedAt)}</div>
-            </div>
-          </div>
-          <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-white/80">
-            <div>
-              <span class="uppercase tracking-[0.2em] block">Měna</span>
-              <span class="text-base font-medium text-white">${escapeHtml(outCurr)}</span>
-            </div>
-            <div>
-              <span class="uppercase tracking-[0.2em] block">Kurz</span>
-              <span class="text-base font-medium text-white">${summary.hasData && isFinite(payload.fxRate) ? nf2.format(payload.fxRate) : '—'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p class="max-w-3xl text-sm text-white/80">
-        Tento report shrnuje výkonnost Vašeho investičního portfolia a přináší detailní pohled na jednotlivé fondy, dosažené výsledky a očekávaný vývoj.
-      </p>
-    </div>
-  </div>
-
-  <main class="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10">
-    <section class="card p-8">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <h2 class="text-2xl font-semibold text-slate-900">Souhrn portfolia</h2>
-        <span class="rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-medium text-emerald-700">Částky v ${escapeHtml(outCurr)}</span>
-      </div>
-      <div class="mt-6 grid gap-6 md:grid-cols-2">
-        <div class="space-y-4">
-          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
-            <p class="text-sm text-slate-500">Celkové vklady</p>
-            <p class="mt-1 text-2xl font-semibold tabular text-slate-900">${formatNumber(summary.totalInvestConverted)}</p>
-          </div>
-          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
-            <p class="text-sm text-slate-500">Aktuální hodnota</p>
-            <p class="mt-1 text-2xl font-semibold tabular text-slate-900">${formatNumber(summary.totalCurrentConverted)}</p>
-          </div>
-          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
-            <p class="text-sm text-slate-500">Čistý zisk / ztráta</p>
-            <p class="mt-1 text-2xl font-semibold tabular ${summary.totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatNumber(summary.totalPnl)}</p>
-          </div>
-        </div>
-        <div class="space-y-4">
-          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
-            <p class="text-sm text-slate-500">Kumulativní zhodnocení</p>
-            <p class="mt-1 text-2xl font-semibold tabular ${summary.totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatPercent(summary.totalRet)}</p>
-          </div>
-          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
-            <p class="text-sm text-slate-500">XIRR (časově vážený výnos)</p>
-            <p class="mt-1 text-2xl font-semibold tabular ${isFinite(summary.portfolioIrr) && summary.portfolioIrr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(summary.portfolioIrr) ? `${formatPercent(summary.portfolioIrr)} p.a.` : '—'}</p>
-          </div>
-          <div class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3">
-            <p class="text-sm text-slate-500">Vážená prům. doba investice</p>
-            <p class="mt-1 text-2xl font-semibold tabular text-slate-900">${isFinite(summary.weightedAvgMonths) ? `${formatNumber(summary.weightedAvgMonths, 1)} měs.` : '—'}</p>
-          </div>
-        </div>
-      </div>
-      ${summaryDisclaimer ? `<p class="mt-6 text-xs text-slate-400">${summaryDisclaimer}</p>` : ''}
-    </section>
-
-    <section class="space-y-6">
-      <h2 class="text-2xl font-semibold text-slate-900">Výsledky po fondech</h2>
-      ${fundsMarkup}
-    </section>
-
-    <section class="grid gap-6 lg:grid-cols-2">
-      <div class="chart-card p-6">
-        <h3 class="text-lg font-semibold text-slate-900">Vývoj portfolia a predikce</h3>
-        <div id="client-line-chart" class="chart-wrapper mt-4"></div>
-      </div>
-      <div class="chart-card p-6">
-        <h3 class="text-lg font-semibold text-slate-900">Rozložení portfolia</h3>
-        <div id="client-pie-chart" class="chart-wrapper mt-4"></div>
-        <div class="mt-6 space-y-3">
-          ${pieLegendMarkup}
-        </div>
-      </div>
-    </section>
-
-    <section class="card p-8">
-      <h2 class="text-2xl font-semibold text-slate-900">Vysvětlivky a metriky</h2>
-      <div class="mt-6 space-y-6 text-sm text-slate-600">
-        <div>
-          <h3 class="font-semibold text-slate-800">XIRR – časově vážený výnos</h3>
-          <p class="mt-2">XIRR (Extended Internal Rate of Return) představuje nejpřesnější metodu pro výpočet průměrného ročního zhodnocení portfolia, protože zohledňuje načasování jednotlivých vkladů a výběrů.</p>
-        </div>
-        <div>
-          <h3 class="font-semibold text-slate-800">Kumulativní zhodnocení</h3>
-          <p class="mt-2">Udává celkový čistý zisk či ztrátu jako procento z celkově vložených prostředků. Nezohledňuje však dobu investování jednotlivých částek.</p>
-        </div>
-        <div>
-          <h3 class="font-semibold text-slate-800">Predikce vývoje</h3>
-          <p class="mt-2">Budoucí vývoj je odhad založený na dosavadní výkonnosti portfolia. Skutečná výkonnost se může lišit v závislosti na tržních podmínkách.</p>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="bg-slate-900/90 py-6 text-center text-xs text-slate-300">
-    © ${new Date().getFullYear()} FairLife. Report je určen výhradně pro potřeby klienta a obsahuje důvěrné informace o investicích.
-  </footer>
-
-  <script id="presentation-data">window.__PRESENTATION_DATA__ = ${sanitized};${SCRIPT_PLACEHOLDER}
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const data = window.__PRESENTATION_DATA__ || {};
-      const presentation = data.presentation || {};
-      const outCurr = data.outCurr || 'CZK';
-      const nf0 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      const nf2 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const formatNumber = (value) => isFinite(value) ? nf0.format(value) : '—';
-      const formatCurrency = (value) => isFinite(value) ? `${nf0.format(value)} ${outCurr}` : '—';
-      const formatPercent = (value) => isFinite(value) ? `${nf2.format(value * 100)} %` : '—';
-      const toDate = (iso) => iso ? new Date(iso) : null;
-
-      const renderPieChart = () => {
-        const container = document.getElementById('client-pie-chart');
-        if (!container) return;
-        const pieData = Array.isArray(presentation.pieData) ? presentation.pieData : [];
-        if (!pieData.length) {
-          container.innerHTML = '<div class="rounded-xl border border-slate-200/70 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">Graf není k dispozici.</div>';
-          return;
-        }
-        const total = pieData.reduce((sum, item) => sum + (isFinite(item.value) ? item.value : 0), 0);
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const outerRadius = 100;
-        const innerRadius = 55;
-        let startAngle = -Math.PI / 2;
-        const svg = document.createElementNS(svgNS, 'svg');
-        svg.setAttribute('viewBox', '0 0 220 220');
-        svg.setAttribute('aria-hidden', 'true');
-        pieData.forEach(item => {
-          const value = isFinite(item.value) ? item.value : 0;
-          if (value <= 0) return;
-          const angle = (value / total) * Math.PI * 2;
-          const endAngle = startAngle + angle;
-          const largeArc = angle > Math.PI ? 1 : 0;
-          const x1 = 110 + outerRadius * Math.cos(startAngle);
-          const y1 = 110 + outerRadius * Math.sin(startAngle);
-          const x2 = 110 + outerRadius * Math.cos(endAngle);
-          const y2 = 110 + outerRadius * Math.sin(endAngle);
-          const ix1 = 110 + innerRadius * Math.cos(endAngle);
-          const iy1 = 110 + innerRadius * Math.sin(endAngle);
-          const ix2 = 110 + innerRadius * Math.cos(startAngle);
-          const iy2 = 110 + innerRadius * Math.sin(startAngle);
-          const path = document.createElementNS(svgNS, 'path');
-          path.setAttribute('d', `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2} ${iy2} Z`);
-          path.setAttribute('fill', item.color || '#0f766e');
-          const title = document.createElementNS(svgNS, 'title');
-          const percent = total > 0 ? value / total : 0;
-          title.textContent = `${item.name} – ${formatCurrency(value)} (${formatPercent(percent)})`;
-          path.appendChild(title);
-          svg.appendChild(path);
-          startAngle = endAngle;
-        });
-        container.innerHTML = '';
-        container.appendChild(svg);
-      };
-
-      const renderLineChart = () => {
-        const container = document.getElementById('client-line-chart');
-        if (!container) return;
-        const lineData = presentation.lineChart;
-        if (!lineData || !Array.isArray(lineData.points) || !lineData.points.length) {
-          container.innerHTML = '<div class="rounded-xl border border-slate-200/70 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">Graf není k dispozici.</div>';
-          return;
-        }
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const width = container.clientWidth || 860;
-        const height = 360;
-        const margin = { top: 30, right: 28, bottom: 60, left: 80 };
-        const boundedWidth = width - margin.left - margin.right;
-        const boundedHeight = height - margin.top - margin.bottom;
-        const historical = lineData.points.map(p => ({ date: toDate(p.date), value: p.value, contributions: p.contributions })).filter(p => p.date instanceof Date && !isNaN(p.date));
-        const projection = Array.isArray(lineData.projectionPoints)
-          ? lineData.projectionPoints.map(p => ({ date: toDate(p.date), value: p.value })).filter(p => p.date instanceof Date && !isNaN(p.date))
-          : [];
-        const allDates = [...historical.map(p => p.date), ...projection.map(p => p.date)];
-        if (!allDates.length) {
-          container.innerHTML = '<div class="rounded-xl border border-slate-200/70 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">Graf není k dispozici.</div>';
-          return;
-        }
-        const firstDate = historical[0].date;
-        const lastDate = projection.length ? projection[projection.length - 1].date : historical[historical.length - 1].date;
-        const totalSpan = Math.max(1, lastDate - firstDate);
-        const allValues = [...historical.map(p => p.value), ...projection.map(p => p.value)];
-        const maxValue = Math.max(...allValues, 1);
-        const xScale = (date) => margin.left + ((date - firstDate) / totalSpan) * boundedWidth;
-        const yScale = (value) => margin.top + boundedHeight - (value / maxValue) * boundedHeight;
-
-        const svg = document.createElementNS(svgNS, 'svg');
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-        const gridLines = 5;
-        for (let i = 0; i <= gridLines; i++) {
-          const value = (maxValue / gridLines) * i;
-          const y = yScale(value);
-          const line = document.createElementNS(svgNS, 'line');
-          line.setAttribute('x1', margin.left);
-          line.setAttribute('x2', width - margin.right);
-          line.setAttribute('y1', y);
-          line.setAttribute('y2', y);
-          line.setAttribute('stroke', '#e2e8f0');
-          line.setAttribute('stroke-dasharray', '2 3');
-          svg.appendChild(line);
-          const label = document.createElementNS(svgNS, 'text');
-          label.setAttribute('x', margin.left - 10);
-          label.setAttribute('y', y + 4);
-          label.setAttribute('text-anchor', 'end');
-          label.setAttribute('font-size', '11');
-          label.setAttribute('fill', '#64748b');
-          label.textContent = formatNumber(value);
-          svg.appendChild(label);
-        }
-
-        const yearStart = firstDate.getFullYear();
-        const yearEnd = lastDate.getFullYear();
-        for (let year = yearStart; year <= yearEnd; year++) {
-          if (year % 2 !== 0 && year !== yearStart && year !== yearEnd) continue;
-          const tickDate = new Date(year, 0, 1);
-          if (tickDate < firstDate || tickDate > lastDate) continue;
-          const x = xScale(tickDate);
-          const label = document.createElementNS(svgNS, 'text');
-          label.setAttribute('x', x);
-          label.setAttribute('y', height - 20);
-          label.setAttribute('text-anchor', 'middle');
-          label.setAttribute('font-size', '11');
-          label.setAttribute('fill', '#64748b');
-          label.textContent = year.toString();
-          svg.appendChild(label);
-        }
-
-        const pathD = historical.map((p, index) => `${index === 0 ? 'M' : 'L'}${xScale(p.date)},${yScale(p.value)}`).join(' ');
-        const path = document.createElementNS(svgNS, 'path');
-        path.setAttribute('d', pathD);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', '#0f766e');
-        path.setAttribute('stroke-width', '2.5');
-        svg.appendChild(path);
-
-        if (projection.length) {
-          const projPath = `M${xScale(historical[historical.length - 1].date)},${yScale(historical[historical.length - 1].value)} ` +
-            projection.map(p => `L${xScale(p.date)},${yScale(p.value)}`).join(' ');
-          const proj = document.createElementNS(svgNS, 'path');
-          proj.setAttribute('d', projPath);
-          proj.setAttribute('fill', 'none');
-          proj.setAttribute('stroke', '#0f766e');
-          proj.setAttribute('stroke-width', '2');
-          proj.setAttribute('stroke-dasharray', '6 4');
-          svg.appendChild(proj);
-        }
-
-        const depositPoints = Array.isArray(lineData.depositPoints) ? lineData.depositPoints : [];
-        depositPoints.forEach(dep => {
-          const date = toDate(dep.date);
-          if (!date) return;
-          const circle = document.createElementNS(svgNS, 'circle');
-          circle.setAttribute('cx', xScale(date));
-          circle.setAttribute('cy', yScale(dep.cumulativeValue));
-          circle.setAttribute('r', 5);
-          circle.setAttribute('fill', '#0ea5e9');
-          circle.setAttribute('stroke', '#fff');
-          circle.setAttribute('stroke-width', '2');
-          const title = document.createElementNS(svgNS, 'title');
-          const entries = Array.isArray(dep.entries) ? dep.entries : [];
-          const details = entries.map(entry => `${entry.fund}: ${formatCurrency(entry.amount)}`).join('\n');
-          title.textContent = `${date.toLocaleDateString('cs-CZ')}\nVklad: ${formatCurrency(dep.amount)}\nKumulativně: ${formatCurrency(dep.cumulativeValue)}${details ? `\n${details}` : ''}`;
-          circle.appendChild(title);
-          svg.appendChild(circle);
-        });
-
-        const markers = Array.isArray(lineData.futureMarkers) ? lineData.futureMarkers : [];
-        markers.forEach(marker => {
-          const date = toDate(marker.date);
-          if (!date) return;
-          const circle = document.createElementNS(svgNS, 'circle');
-          circle.setAttribute('cx', xScale(date));
-          circle.setAttribute('cy', yScale(marker.value));
-          circle.setAttribute('r', 5);
-          circle.setAttribute('fill', '#0f766e');
-          circle.setAttribute('stroke', '#fff');
-          circle.setAttribute('stroke-width', '2');
-          const title = document.createElementNS(svgNS, 'title');
-          title.textContent = `${marker.label}: ${formatCurrency(marker.value)}`;
-          circle.appendChild(title);
-          svg.appendChild(circle);
-        });
-
-        container.innerHTML = '';
-        container.appendChild(svg);
-      };
-
-      renderPieChart();
-      renderLineChart();
-      window.addEventListener('resize', () => {
-        renderLineChart();
-      });
-    });
-  ${SCRIPT_PLACEHOLDER}
-</body>
-</html>`;
-      return html.replaceAll(SCRIPT_PLACEHOLDER, '</scr' + 'ipt>');
-  };
+  // === HTML TEMPLATES & RENDERERS FOR INPUTS ===
   const createProviderSection = (providerKey) => {
       const providerName = PROVIDERS[providerKey];
       const isAtris = providerKey === 'atris';
       let specialTooltip = '';
       if(isAtris) {
-          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-teal-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-white text-slate-600 text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-teal-100 shadow-lg">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
+          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sky-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-neutral-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
       }
       const section = document.createElement('section');
-      section.className = 'card p-7 sm:p-8 space-y-6';
-      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-slate-900 flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-slate-500">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-teal-100/80 bg-white/80"><table class="w-full text-sm border-separate border-spacing-x-2 text-slate-600"><thead><tr class="text-xs uppercase tracking-[0.18em] text-slate-400"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-slate-200/70">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-slate-200/70">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      section.className = 'card p-6 bg-white rounded-2xl shadow-sm border border-neutral-200';
+      section.innerHTML = `<div class="flex items-center justify-between gap-3 mb-4 flex-wrap"><h2 class="text-lg md:text-xl font-semibold flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium">+ Přidat řádek</button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="px-3 py-2 rounded-xl border border-sky-300 bg-sky-100 hover:bg-sky-200 text-sky-800">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="px-3 py-2 rounded-xl border border-rose-300 bg-rose-100 hover:bg-rose-200 text-rose-800">Smazat vše</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm border-separate border-spacing-x-2"><thead><tr><th class="py-2 pr-3 font-semibold text-left w-[280px]">Fond</th><th class="py-2 pr-3 font-semibold text-right">Čistá investice</th><th class="py-2 pr-3 font-semibold text-left">Datum připsání</th><th class="py-2 pr-3 font-semibold text-right">Počet CP</th><th class="py-2 pr-3 font-semibold text-right border-l border-neutral-200">Upis. NAV</th><th class="py-2 pr-3 font-semibold text-right">Poslední známé NAV</th><th class="py-2 pr-3 font-semibold text-right">Akt. hodnota investice</th><th class="py-2 pr-3 font-semibold text-left border-l border-neutral-200">Datum ocenění</th><th class="py-2 pr-3 font-semibold text-left">Měna</th><th class="py-2 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
       return section;
   };
-  const createInputRow = (providerKey, rowData) => {
-      const tr = document.createElement('tr');
-      tr.className = 'fade-in';
-      tr.dataset.id = rowData.id;
-      const nameCell = document.createElement('td');
-      nameCell.className = 'py-1 pr-3';
-      const nameWrap = document.createElement('div');
-      nameWrap.className = 'relative flex items-center';
-      const nameDiv = document.createElement('div');
-      nameDiv.contentEditable = true;
-      nameDiv.className = 'editable flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-slate-200/70 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-400 shadow-sm';
-      nameDiv.textContent = rowData.fund || '';
-      nameDiv.dataset.ph = 'Název fondu...';
-      nameDiv.dataset.key = 'fund';
-      nameWrap.appendChild(nameDiv);
-      nameCell.appendChild(nameWrap);
-      const createCell = (content) => { const td = document.createElement('td'); td.className = 'py-1 align-middle'; td.appendChild(content); return td; };
-      const createInput = (key, type, extraClass = '') => {
-          const input = document.createElement('input');
-          input.type = type;
-          input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full focus:border-teal-500 focus:ring-1 focus:ring-teal-400 transition-all text-slate-900 placeholder:text-slate-400 ${extraClass}`;
-          let displayValue = rowData[key] || '';
-          if (['invest', 'totalCurrent'].includes(key)) {
-              const num = utils.numCZ(displayValue);
-              if (isFinite(num)) {
-                  displayValue = fmt0.format(num);
-              }
+  const createInputRow = (providerKey, rowData) => { const tr = document.createElement('tr'); tr.className = 'fade-in'; tr.dataset.id = rowData.id; const nameCell = document.createElement('td'); nameCell.className = 'py-1 pr-3'; const nameWrap = document.createElement('div'); nameWrap.className = 'relative flex items-center'; const nameDiv = document.createElement('div'); nameDiv.contentEditable = true; nameDiv.className = 'editable flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-neutral-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500'; nameDiv.textContent = rowData.fund || ''; nameDiv.dataset.ph = 'Název fondu...'; nameDiv.dataset.key = 'fund'; nameWrap.appendChild(nameDiv); nameCell.appendChild(nameWrap); const createCell = (content) => { const td = document.createElement('td'); td.className = 'py-1'; td.appendChild(content); return td; }; const createInput = (key, type, extraClass = '') => { const input = document.createElement('input'); input.type = type; input.className = `px-2 py-1.5 rounded-lg border border-neutral-300 w-full focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all ${extraClass}`; 
+      let displayValue = rowData[key] || '';
+      if (['invest', 'totalCurrent'].includes(key)) {
+          const num = utils.numCZ(displayValue);
+          if (isFinite(num)) {
+              displayValue = fmt0.format(num);
           }
-          input.value = displayValue;
-          if (type === 'text' && key.toLowerCase().includes('date')) { input.placeholder = 'dd.mm.rrrr'; }
-          input.dataset.key = key;
-          return input;
-      };
-      const createSelect = (key) => {
-          const select = document.createElement('select');
-          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-400';
-          select.dataset.key = key;
-          ['CZK', 'EUR'].forEach(c => {
-              const option = document.createElement('option');
-              option.value = c;
-              option.textContent = c;
-              if (c === rowData[key]) option.selected = true;
-              select.appendChild(option);
-          });
-          return select;
-      };
-      const delBtnCell = document.createElement('td');
-      delBtnCell.className = 'py-1 text-right';
-      const delBtn = document.createElement('button');
-      delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
-      delBtn.className = 'p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors';
-      delBtn.title = "Smazat řádek";
-      delBtn.dataset.action = 'delete-row';
-      delBtn.dataset.id = rowData.id;
-      delBtn.dataset.provider = providerKey;
-      delBtnCell.appendChild(delBtn);
-      tr.append(
-          nameCell,
-          createCell(createInput('invest', 'text', 'tabular text-right')),
-          createCell(createInput('dateIn', 'text')),
-          createCell(createInput('qty', 'text', 'tabular text-right')),
-          createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-slate-200/70')),
-          createCell(createInput('currNav', 'text', 'tabular text-right')),
-          createCell(createInput('totalCurrent', 'text', 'tabular text-right')),
-          createCell(createInput('currDate', 'text', 'border-l border-slate-200/70')),
-          createCell(createSelect('curr')),
-          delBtnCell
-      );
-      return tr;
-  };
-  const renderProviderInputs = (providerKey, newRowId = null) => {
-      const tbody = document.querySelector(`[data-tbody-for="${providerKey}"]`);
-      if (!tbody) return;
-      const fragment = document.createDocumentFragment();
-      state.rows[providerKey].forEach(row => { fragment.appendChild(createInputRow(providerKey, row)); });
-      tbody.innerHTML = '';
-      tbody.appendChild(fragment);
-      if (newRowId) {
-          const newRowEl = tbody.querySelector(`[data-id="${newRowId}"]`);
-          if (newRowEl) { newRowEl.querySelector('[data-key="fund"]').focus(); }
       }
-  };
+      input.value = displayValue;
+      if (type === 'text' && key.toLowerCase().includes('date')) { input.placeholder = 'dd.mm.rrrr'; } input.dataset.key = key; return input; }; const createSelect = (key) => { const select = document.createElement('select'); select.className = 'px-2 py-1.5 rounded-lg border border-neutral-300 w-full bg-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500'; select.dataset.key = key; ['CZK', 'EUR'].forEach(c => { const option = document.createElement('option'); option.value = c; option.textContent = c; if (c === rowData[key]) option.selected = true; select.appendChild(option); }); return select; }; const delBtnCell = document.createElement('td'); delBtnCell.className = 'py-1 text-right'; const delBtn = document.createElement('button'); delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`; delBtn.className = 'p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg'; delBtn.title = "Smazat řádek"; delBtn.dataset.action = 'delete-row'; delBtn.dataset.id = rowData.id; delBtn.dataset.provider = providerKey; delBtnCell.appendChild(delBtn); tr.append( nameCell, createCell(createInput('invest', 'text', 'tabular text-right')), createCell(createInput('dateIn', 'text')), createCell(createInput('qty', 'text', 'tabular text-right')), createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-neutral-200')), createCell(createInput('currNav', 'text', 'tabular text-right')), createCell(createInput('totalCurrent', 'text', 'tabular text-right')), createCell(createInput('currDate', 'text', 'border-l border-neutral-200')), createCell(createSelect('curr')), delBtnCell ); return tr; };
+  const renderProviderInputs = (providerKey, newRowId = null) => { const tbody = document.querySelector(`[data-tbody-for="${providerKey}"]`); if (!tbody) return; const fragment = document.createDocumentFragment(); state.rows[providerKey].forEach(row => { fragment.appendChild(createInputRow(providerKey, row)); }); tbody.innerHTML = ''; tbody.appendChild(fragment); if (newRowId) { const newRowEl = tbody.querySelector(`[data-id="${newRowId}"]`); if (newRowEl) { newRowEl.querySelector('[data-key="fund"]').focus(); } } };
   const renderAllInputs = () => { Object.keys(PROVIDERS).forEach(key => renderProviderInputs(key)); };
-
+  
+  // === CORE LOGIC & CALCULATIONS ===
   const parseRow = r => ({
       id: r.id,
       fund: utils.normName(r.fund),
@@ -1548,113 +356,86 @@ document.addEventListener('DOMContentLoaded', () => {
       currDate: utils.toDate(r.currDate),
       curr: r.curr || 'CZK',
   });
-  const getRowStatus = (p) => {
-      let missing = [];
-      let conflicts = [];
-      const hasTotalPath = isFinite(p.invest) && p.invest > 0 && isFinite(p.totalCurrent) && p.totalCurrent > 0 && p.dateIn && p.currDate;
-      const hasUnitPath = isFinite(p.issueNav) && p.issueNav > 0 && isFinite(p.currNav) && p.currNav > 0 && (isFinite(p.qty) || isFinite(p.invest)) && p.dateIn && p.currDate;
-      if (!p.fund) missing.push('název fondu');
-      if (!p.dateIn) missing.push('datum připsání');
-      if (!p.currDate) missing.push('datum ocenění');
-      if (!hasTotalPath && !hasUnitPath) missing.push('min. vstupů');
-      const calculatedInvest = p.qty * p.issueNav;
-      if(isFinite(p.invest) && isFinite(calculatedInvest) && Math.abs(p.invest - calculatedInvest) > 1e-2) conflicts.push(`Investice ≠ Počet CP × Upis. NAV`);
-      const calculatedCurrent = p.qty * p.currNav;
-      if(isFinite(p.totalCurrent) && isFinite(calculatedCurrent) && Math.abs(p.totalCurrent - calculatedCurrent) > 1e-2) conflicts.push(`Akt. hodnota ≠ Počet CP × Posl. NAV`);
-      if (conflicts.length > 0) return ['conflict', conflicts.join('; ')];
-      if (missing.length > 0) return ['error', `Chybějící pole: ${missing.join(', ')}`];
-      return ['ok', ''];
-  };
+  const getRowStatus = (p) => { let missing = []; let conflicts = []; const hasTotalPath = isFinite(p.invest) && p.invest > 0 && isFinite(p.totalCurrent) && p.totalCurrent > 0 && p.dateIn && p.currDate; const hasUnitPath = isFinite(p.issueNav) && p.issueNav > 0 && isFinite(p.currNav) && p.currNav > 0 && (isFinite(p.qty) || isFinite(p.invest)) && p.dateIn && p.currDate; if (!p.fund) missing.push('název fondu'); if (!p.dateIn) missing.push('datum připsání'); if (!p.currDate) missing.push('datum ocenění'); if (!hasTotalPath && !hasUnitPath) missing.push('min. vstupů'); const calculatedInvest = p.qty * p.issueNav; if(isFinite(p.invest) && isFinite(calculatedInvest) && Math.abs(p.invest - calculatedInvest) > 1e-2) conflicts.push(`Investice ≠ Počet CP × Upis. NAV`); const calculatedCurrent = p.qty * p.currNav; if(isFinite(p.totalCurrent) && isFinite(calculatedCurrent) && Math.abs(p.totalCurrent - calculatedCurrent) > 1e-2) conflicts.push(`Akt. hodnota ≠ Počet CP × Posl. NAV`); if (conflicts.length > 0) return ['conflict', conflicts.join('; ')]; if (missing.length > 0) return ['error', `Chybějící pole: ${missing.join(', ')}`]; return ['ok', '']; };
   const processAllRows = () => {
       const processedFunds = [];
       const allCurrencies = new Set();
+      
       Object.entries(state.rows).forEach(([providerKey, providerRows]) => {
           providerRows.forEach(rawRow => {
               allCurrencies.add(rawRow.curr || 'CZK');
+              
               let p = parseRow(rawRow);
               const [status, _] = getRowStatus(p);
               if (status === 'error') return;
+
               let effectiveDateIn = p.dateIn;
               if (providerKey === 'atris' && p.dateIn) {
                   effectiveDateIn = new Date(p.dateIn.getFullYear(), p.dateIn.getMonth() + 1, 5);
               }
+              
               let invest = p.invest;
               let qty = p.qty;
               let current = p.totalCurrent;
               if (!isFinite(qty) && isFinite(p.invest) && isFinite(p.issueNav) && p.issueNav > 0) qty = p.invest / p.issueNav;
               if (!isFinite(invest) && isFinite(p.qty) && isFinite(p.issueNav) && p.issueNav > 0) invest = p.qty * p.issueNav;
               if (!isFinite(current) && isFinite(qty) && isFinite(p.currNav) && p.currNav > 0) current = qty * p.currNav;
+              
               if (!isFinite(invest) || !isFinite(current) || !effectiveDateIn || !p.currDate) return;
+
               const months = utils.monthsDiff(effectiveDateIn, p.currDate);
               const ret = (isFinite(invest) && invest > 0 && isFinite(current)) ? (current / invest - 1) : NaN;
               const irr = (isFinite(invest) && isFinite(current) && effectiveDateIn && p.currDate) ? finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: p.currDate, amount: current }]) : NaN;
+              
               processedFunds.push({
                   ...p,
                   invest, qty, current,
                   pnl: isFinite(invest) && isFinite(current) ? current - invest : NaN,
                   ret, months, irr,
-                  dateIn: effectiveDateIn,
-                  originalDateIn: p.dateIn
+                  dateIn: effectiveDateIn, // Use the adjusted date for all calculations
+                  originalDateIn: p.dateIn // Keep original for display if needed
               });
           });
       });
+      
       const { funds, hasMixedCurrencies: hasMixed } = { funds: processedFunds, hasMixedCurrencies: allCurrencies.size > 1 };
-      const outCurr = elements.outCurrency?.value || 'CZK';
-      const fxRate = utils.numCZ(elements.fxRate?.value);
+      const outCurr = document.getElementById('out-curr').value; 
+      const fxRate = utils.numCZ(document.getElementById('fx-rate').value);
+      
       const portfolioSummary = calculateSummary(funds, outCurr, fxRate);
+
       state.lastProcessedData = { funds, hasMixedCurrencies: hasMixed, portfolioSummary };
       return state.lastProcessedData;
   };
 
-  const performFullRecalc = () => {
-    const { funds, hasMixedCurrencies, portfolioSummary } = processAllRows();
-    const outCurr = elements.outCurrency?.value || 'CZK';
-    const fxRate = utils.numCZ(elements.fxRate?.value);
-    const statusContainer = elements.statusContainer || document.getElementById('status-container');
-    if (statusContainer) {
-      if (hasMixedCurrencies && !isFinite(fxRate)) {
-        statusContainer.innerHTML = `<div class="rounded-2xl border border-teal-100 bg-teal-50 p-5 text-sm text-teal-900/80 shadow-sm"><strong class="text-teal-900">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
-      } else {
-        statusContainer.innerHTML = '';
-      }
-    }
-    renderResults(funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
+  // === MAIN RENDER CYCLE ===
+  const recalculateAndRender = () => { 
+    const { funds, hasMixedCurrencies, portfolioSummary } = processAllRows(); 
+    const outCurr = document.getElementById('out-curr').value; 
+    const fxRate = utils.numCZ(document.getElementById('fx-rate').value); 
+    const statusContainer = document.getElementById('status-container'); 
+    if (hasMixedCurrencies && !isFinite(fxRate)) { 
+        statusContainer.innerHTML = `<div class="p-4 bg-sky-100 border border-sky-200 text-sky-800 rounded-xl text-sm"><strong>Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`; 
+    } else { 
+        statusContainer.innerHTML = ''; 
+    } 
+    renderResults(funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary); 
     calculateAnnuity();
-    return { funds, hasMixedCurrencies, portfolioSummary, outCurr, fxRate };
   };
-
-  const recalculateAndRender = () => {
-    performFullRecalc();
-  };
-  const updateClientBanner = (outCurr) => {
-    if (!isClientMode || !elements.clientMetaBanner) {
-        return;
-    }
-    const name = (state.meta.clientName || '').trim();
-    if (elements.clientNameDisplay) {
-        elements.clientNameDisplay.textContent = name || '—';
-    }
-    if (elements.currencyDisplay) {
-        elements.currencyDisplay.textContent = outCurr || '—';
-    }
-    const generated = state.meta.generatedAt ? new Date(state.meta.generatedAt) : null;
-    const formatted = generated && !Number.isNaN(generated.valueOf()) ? generated.toLocaleString('cs-CZ') : new Date().toLocaleString('cs-CZ');
-    if (elements.generatedAtDisplay) {
-        elements.generatedAtDisplay.textContent = formatted;
-    }
-  };
-
   const renderResults = (funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     const groupedFunds = funds.reduce((acc, f) => { if(!f.fund) return acc; const key = f.fund; if (!acc[key]) acc[key] = []; acc[key].push(f); return acc; }, {});
     Object.values(groupedFunds).forEach(group => group.sort((a, b) => a.dateIn - b.dateIn));
+    
+    // Assign persistent colors
     Object.keys(groupedFunds).forEach(name => getColor(name));
+
     renderFundsByCard(groupedFunds, outCurr, fxRate);
     renderSummary(portfolioSummary, outCurr);
     renderCharts(groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioSummary.portfolioIrr);
-    updateClientBanner(outCurr);
   };
-
+  
+  // === SUB-RENDERERS & CALCULATORS ===
   const calculateSummary = (funds, outCurr, fxRate) => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     let totalInvestConverted = 0, totalCurrentConverted = 0;
@@ -1691,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalRet = totalInvestConverted > 0 ? (totalPnl / totalInvestConverted) : NaN;
     const portfolioIrr = finance.xirr(cfsForIrr);
     const weightedAvgMonths = totalInvestConverted > 0 ? weightedDurationSum / totalInvestConverted : NaN;
+    
     return {
         totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths,
         minValuationDate, maxValuationDate,
@@ -1699,17 +481,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderFundsByCard = (groupedFunds, outCurr, fxRate) => {
-      const container = elements.fundsContainer || document.getElementById('funds-by-card-container');
-      if (!container) return;
+      const container = document.getElementById('funds-by-card-container');
       container.innerHTML = "";
-      if (elements.amountNoteFunds) {
-          elements.amountNoteFunds.textContent = `Částky v ${outCurr}`;
-      }
+      document.getElementById('amount-note-funds').textContent = `Částky v ${outCurr}`;
       const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+
       if (Object.keys(groupedFunds).length === 0) {
-          container.innerHTML = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Nejsou k dispozici žádná data pro výpočet.</div>`;
+          container.innerHTML = `<div class="text-center py-8 text-neutral-500">Nejsou k dispozici žádná data pro výpočet.</div>`;
           return;
       }
+      
       Object.entries(groupedFunds).forEach(([name, investments]) => {
           let totalInvest = 0, totalCurrent = 0, weightedDurationSum = 0;
           const cfs = [];
@@ -1731,134 +512,115 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isFinite(totalCurrent) && investments.length > 0 && latestDate.getTime() > 0) {
               cfs.push({date: latestDate, amount: totalCurrent});
           }
+
           const fundIrr = finance.xirr(cfs);
           const pnl = totalCurrent - totalInvest;
           const weightedAvgMonths = totalInvest > 0 ? weightedDurationSum / totalInvest : NaN;
-          const pnlClass = pnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
+          const pnlClass = pnl >= 0 ? 'text-green-600' : 'text-red-600';
           const fundColor = getColor(name);
+
           const detailsRows = investments.map((r, i) => {
-              const convertedCurrent = convert(r.current, r.curr);
-              const convertedInvest = convert(r.invest, r.curr);
-              const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
+              const convertedCurrent = convert(r.current, r.curr); const convertedInvest = convert(r.invest, r.curr); const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
               const displayDate = r.originalDateIn || r.dateIn;
-              return `<tr class="border-t border-slate-100"><td class="py-2 pr-3 text-slate-600">${i === 0 ? 'První vklad' : `Dokup #${i}`} <span class="text-slate-400">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td><td class="py-2 pr-3 text-right tabular text-slate-700">${cellNum(convertedInvest)}</td><td class="py-2 pr-3 text-right tabular ${convertedPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${cellNum(convertedPnl)}</td><td class="py-2 pr-3 text-right tabular text-slate-700">${cellPct(r.ret)}</td><td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(r.months) ? cellNum(r.months, 1) + ' měs.' : '—'}</td><td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(r.irr) ? cellPct(r.irr) + ' p.a.' : '—'}</td></tr>`;
+              return `<tr class="border-t"><td class="py-2 pr-3">${i === 0 ? 'První vklad' : `Dokup #${i}`} <span class="text-neutral-500">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td><td class="py-2 pr-3 text-right tabular">${cellNum(convertedInvest)}</td><td class="py-2 pr-3 text-right tabular ${convertedPnl >= 0 ? 'text-green-600' : 'text-red-600'}">${cellNum(convertedPnl)}</td><td class="py-2 pr-3 text-right tabular">${cellPct(r.ret)}</td><td class="py-2 pr-3 text-right tabular">${isFinite(r.months) ? cellNum(r.months, 1) + ' měs.' : '—'}</td><td class="py-2 pr-3 text-right tabular">${isFinite(r.irr) ? cellPct(r.irr) + ' p.a.' : '—'}</td></tr>`;
           }).join('');
+
           const card = document.createElement('div');
-          card.className = "card overflow-hidden";
+          card.className = "border rounded-xl";
           card.innerHTML = `
-              <div class="grid grid-cols-2 md:grid-cols-6 gap-x-6 gap-y-4 p-5 sm:p-6 items-start">
-                  <div class="col-span-2">
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Fond</div>
-                    <div class="mt-2 font-semibold text-lg text-slate-900 flex items-center gap-3">
-                      <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${fundColor}"></span>
-                      <span class="truncate" title="${name}">${name}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Aktuální hodnota</div>
-                    <div class="mt-2 font-semibold tabular text-base text-slate-900">${cellNum(totalCurrent)}</div>
-                    <div class="text-xs text-slate-400">k ${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Čistý výsledek</div>
-                    <div class="mt-2 font-semibold tabular text-base ${pnlClass}">${cellNum(pnl)}</div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Výkonnost (XIRR)</div>
-                    <div class="mt-2 font-semibold tabular text-base ${isFinite(fundIrr) && fundIrr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</div>
-                  </div>
-                  <div>
-                    <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Váž. prům. doba</div>
-                    <div class="mt-2 font-semibold tabular text-base text-slate-900">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</div>
-                  </div>
+              <div class="grid grid-cols-2 md:grid-cols-6 gap-x-4 gap-y-2 p-4 items-center">
+                  <div class="col-span-2"><div class="text-sm text-neutral-500">Fond</div><div class="font-bold text-base flex items-center gap-2"><div class="w-3 h-3 rounded-sm flex-shrink-0" style="background-color: ${fundColor}"></div><span title="${name}">${name}</span></div></div>
+                  <div><div class="text-sm text-neutral-500">Aktuální hodnota</div><div class="font-semibold tabular text-base">${cellNum(totalCurrent)}</div> <div class="text-xs text-neutral-500">k ${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</div> </div>
+                  <div><div class="text-sm text-neutral-500">Celkový zisk/ztráta</div><div class="font-semibold tabular text-base ${pnlClass}">${cellNum(pnl)}</div></div>
+                  <div><div class="text-sm text-neutral-500">Výkonnost (XIRR)</div><div class="font-semibold tabular text-base ${isFinite(fundIrr) && fundIrr >= 0 ? 'text-green-600' : 'text-red-600'}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</div></div>
+                  <div><div class="text-sm text-neutral-500">Váž. prům. doba</div><div class="font-semibold tabular text-base">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</div></div>
               </div>
-              <details>
-                <summary class="text-xs text-slate-500 hover:text-slate-700 cursor-pointer px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2">Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
-                <div class="px-5 pb-5"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500"><th class="py-2 pr-3 font-semibold">Transakce</th><th class="py-2 pr-3 font-semibold text-right">Investice</th><th class="py-2 pr-3 font-semibold text-right">Výnos</th><th class="py-2 pr-3 font-semibold text-right">Kumulativně</th><th class="py-2 pr-3 font-semibold text-right">Doba (měs.)</th><th class="py-2 pr-3 font-semibold text-right">XIRR p.a.</th></tr></thead><tbody>${detailsRows}</tbody></table></div>
+              <details><summary class="text-xs text-neutral-500 hover:text-neutral-800 cursor-pointer p-2 bg-neutral-50 rounded-b-xl flex items-center gap-1">Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
+              <div class="p-4"><table class="w-full text-sm"><thead><tr class="text-left text-neutral-600"><th class="py-1 pr-3 font-semibold">Transakce</th><th class="py-1 pr-3 font-semibold text-right">Investice</th><th class="py-1 pr-3 font-semibold text-right">Výnos</th><th class="py-1 pr-3 font-semibold text-right">Kumulativně</th><th class="py-1 pr-3 font-semibold text-right">Doba (měs.)</th><th class="py-1 pr-3 font-semibold text-right">XIRR p.a.</th></tr></thead><tbody>${detailsRows}</tbody></table></div>
               </details>`;
           container.appendChild(card);
       });
   };
-  const renderSummary = (summaryData, outCurr) => {
-    const summaryContainer = elements.portfolioSummary || document.getElementById('portfolio-summary-content'); 
-    if (elements.amountNotePortfolio) {
-        elements.amountNotePortfolio.textContent = `Částky v ${outCurr}`;
-    }
-    if (!summaryContainer) return;
-    if (!summaryData.hasData) {
-        summaryContainer.innerHTML = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Žádná data pro souhrn.</div>`;
-        return;
-    }
+  const renderSummary = (summaryData, outCurr) => { 
+    const summaryContainer = document.getElementById('portfolio-summary-content'); 
+    document.getElementById('amount-note-portfolio').textContent = `Částky v ${outCurr}`; 
+    if (!summaryData.hasData) { 
+        summaryContainer.innerHTML = `<div class="text-center py-8 text-neutral-500">Žádná data pro souhrn.</div>`; 
+        return; 
+    } 
     const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
-    const pnlClass = totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
-    let dateDisclaimer = '';
-    if (minValuationDate && maxValuationDate) {
-        const minStr = minValuationDate.toLocaleDateString('cs-CZ');
-        const maxStr = maxValuationDate.toLocaleDateString('cs-CZ');
-        if (minStr === maxStr) {
-            dateDisclaimer = `Hodnoty jsou platné k ${maxStr}.`;
-        } else {
-            dateDisclaimer = `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`;
-        }
-    }
-    summaryContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="space-y-4"><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Celkové vklady</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalInvestConverted)}</span></div><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Aktuální hodnota</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalCurrentConverted)}</span></div><div class="flex justify-between items-baseline"><span class="text-slate-500">Čistý zisk / ztráta</span><span class="font-semibold tabular text-lg ${pnlClass}">${cellNum(totalPnl)}</span></div></div><div class="space-y-4"><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Kumulativní zhodnocení</span><span class="font-semibold tabular text-lg ${pnlClass}">${cellPct(totalRet)}</span></div><div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">XIRR (časově vážený výnos)</span><span class="font-bold tabular text-lg ${isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span></div><div class="flex justify-between items-baseline"><span class="text-slate-500">Vážená prům. doba investice</span><span class="font-medium tabular text-lg text-slate-900">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span></div></div></div><div class="text-xs text-slate-400 mt-4 italic">${dateDisclaimer}</div>`;
+    const pnlClass = totalPnl >= 0 ? 'text-green-600' : 'text-red-600'; 
+    let dateDisclaimer = ''; 
+    if (minValuationDate && maxValuationDate) { 
+        const minStr = minValuationDate.toLocaleDateString('cs-CZ'); 
+        const maxStr = maxValuationDate.toLocaleDateString('cs-CZ'); 
+        if (minStr === maxStr) { 
+            dateDisclaimer = `Hodnoty jsou platné k ${maxStr}.`; 
+        } else { 
+            dateDisclaimer = `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`; 
+        } 
+    } 
+    summaryContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"><div class="space-y-3"><div class="flex justify-between items-baseline pb-2 border-b"><span class="text-neutral-600">Celkové vklady</span><span class="font-medium tabular text-lg">${cellNum(totalInvestConverted)}</span></div><div class="flex justify-between items-baseline pb-2 border-b"><span class="text-neutral-600">Aktuální hodnota</span><span class="font-medium tabular text-lg">${cellNum(totalCurrentConverted)}</span></div><div class="flex justify-between items-baseline"><span class="text-neutral-600">Čistý zisk / ztráta</span><span class="font-bold tabular text-lg ${pnlClass}">${cellNum(totalPnl)}</span></div></div><div class="space-y-3"><div class="flex justify-between items-baseline pb-2 border-b"><span class="text-neutral-600">Kumulativní zhodnocení</span><span class="font-medium tabular text-lg ${pnlClass}">${cellPct(totalRet)}</span></div><div class="flex justify-between items-baseline pb-2 border-b"><span class="text-neutral-600">XIRR (časově vážený výnos)</span><span class="font-bold tabular text-lg ${isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-green-600' : 'text-red-600'}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span></div><div class="flex justify-between items-baseline"><span class="text-neutral-600">Vážená prům. doba investice</span><span class="font-medium tabular text-lg">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span></div></div></div><div class="text-xs text-neutral-500 mt-4 italic">${dateDisclaimer}</div>`; 
   };
-
+  // === CHART RENDERING FUNCTIONS (full versions) ===
   const renderCharts = (groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioIrr) => {
-    const chartsSection = elements.chartsSection || document.getElementById('charts-section');
-    const lineCard = elements.lineChartCard || document.getElementById('line-chart-card');
-    const pieCard = elements.pieChartCard || document.getElementById('pie-chart-card');
+    const chartsSection = document.getElementById('charts-section');
+    const lineCard = document.getElementById('line-chart-card');
+    const pieCard = document.getElementById('pie-chart-card');
+    
+    // Line Chart
     if (funds.length > 0) {
         lineCard.style.display = 'block';
-        const lineContainer = elements.lineChartContainer || document.getElementById('line-chart-container');
-        if (lineContainer) {
-            renderLineChart(lineContainer, funds, portfolioIrr, outCurr, fxRate);
-        }
+        renderLineChart(document.getElementById('line-chart-container'), funds, portfolioIrr, outCurr, fxRate);
     } else {
         lineCard.style.display = 'none';
     }
+
+    // Pie Chart
     if (!hasMixedCurrencies || isFinite(fxRate)) {
         const chartData = Object.values(groupedFunds).flat();
         if (chartData.length > 0) {
             pieCard.style.display = 'block';
-            setupTimeSlider(funds);
+            setupTimeSlider(funds); // This will do the initial render
         } else {
             pieCard.style.display = 'none';
         }
     } else {
         pieCard.style.display = 'block';
-        const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
-        if (pieContainer) {
-        pieContainer.innerHTML = `<div class="text-center py-10 text-slate-500">Pro zobrazení grafu doplňte směnný kurz.</div>`;
-        }
+        document.getElementById('pie-chart-container').innerHTML = `<div class="text-center py-10 text-neutral-500">Pro zobrazení grafu doplňte směnný kurz.</div>`;
     }
-    if (chartsSection) {
-        chartsSection.style.display = (pieCard.style.display === 'block' || lineCard.style.display === 'block') ? 'block' : 'none';
-    }
+
+    chartsSection.style.display = (pieCard.style.display === 'block' || lineCard.style.display === 'block') ? 'block' : 'none';
   };
 
   const renderLineChart = (container, funds, portfolioIrr, outCurr, fxRate, options = {}) => {
     container.innerHTML = "";
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+    
     const deposits = funds.map(f => ({ date: f.dateIn, amount: convert(f.invest, f.curr), fund: f.fund })).filter(d => isFinite(d.amount)).sort((a,b) => a.date - b.date);
     if (deposits.length === 0) return;
+
     const displayIrr = isFinite(portfolioIrr) ? portfolioIrr : 0;
+    
     const dailyRate = Math.pow(1 + displayIrr, 1 / 365.25) - 1;
     const today = new Date(); today.setHours(0,0,0,0);
     const firstDate = deposits[0].date;
-    const futureEndDate = new Date(`${CHART_END_YEAR}-12-31`);
+    const futureEndDate = new Date('2035-12-31');
     const totalTimeSpan = futureEndDate - firstDate;
+
+    // Handle case where timespan is zero to avoid division by zero
     if (totalTimeSpan <= 0) {
-      container.innerHTML = `<div class="text-center py-10 text-slate-500">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
+      container.innerHTML = `<div class="text-center py-10 text-neutral-500">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
       return;
     }
+
     const allPoints = [];
     let runningValue = 0;
     let lastDate = firstDate;
     let cumulativeContributions = 0;
     allPoints.push({ date: firstDate, value: 0, contributions: 0 });
     for (const deposit of deposits) {
-      const daysSinceLast = (deposit.date - lastDate) / MS_PER_DAY;
+      const daysSinceLast = (deposit.date - lastDate) / (1000 * 60 * 60 * 24);
       if (daysSinceLast > 0) {
         runningValue *= Math.pow(1 + dailyRate, daysSinceLast);
         allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
@@ -1868,15 +630,18 @@ document.addEventListener('DOMContentLoaded', () => {
       allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
       lastDate = deposit.date;
     }
-    const valueAtToday = runningValue * Math.pow(1 + dailyRate, (today - lastDate) / MS_PER_DAY);
+    
+    const valueAtToday = runningValue * Math.pow(1 + dailyRate, (today - lastDate) / (1000 * 60 * 60 * 24));
     allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
+    
     const projectionPoints = [{ date: today, value: valueAtToday }];
-    for (let year = today.getFullYear() + 1; year <= CHART_END_YEAR; year++) {
-      const nextDate = new Date(year + '-12-31');
-      const daysFromToday = (nextDate - today) / MS_PER_DAY;
+    for (let year = today.getFullYear() + 1; year <= 2035; year++) {
+      const nextDate = new Date(`${year}-12-31`);
+      const daysFromToday = (nextDate - today) / (1000 * 60 * 60 * 24);
       const projectedValue = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
       projectionPoints.push({ date: nextDate, value: projectedValue });
     }
+
     const width = options.isForPdf ? 800 : container.clientWidth;
     const height = 400;
     const margin = {top: 20, right: 20, bottom: 60, left: 70};
@@ -1884,13 +649,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const boundedHeight = height - margin.top - margin.bottom;
     const maxValue = Math.max(...allPoints.map(p => p.value), ...projectionPoints.map(p => p.value));
     const yMax = Math.ceil(maxValue / 100000) * 100000 || 100000;
+    
     const xScale = (date) => margin.left + ((date - firstDate) / totalTimeSpan) * boundedWidth;
     const yScale = (value) => margin.top + boundedHeight - (value / yMax) * boundedHeight;
     const xToDate = (x) => new Date(firstDate.getTime() + ((x - margin.left) / boundedWidth) * totalTimeSpan);
+
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', height);
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
     let innerHTML = '';
     const yAxisTicks = 5;
     for (let i = 0; i <= yAxisTicks; i++) {
@@ -1899,9 +667,9 @@ document.addEventListener('DOMContentLoaded', () => {
       innerHTML += `<line class="line-chart-grid-line" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>`;
       innerHTML += `<text class="line-chart-axis-text" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${val/1000000} M</text>`;
     }
-    for (let year = firstDate.getFullYear(); year <= CHART_END_YEAR; year+=2) {
+    for (let year = firstDate.getFullYear(); year <= 2035; year+=2) {
       if(year < firstDate.getFullYear()) continue;
-      const date = new Date(year + '-01-01');
+      const date = new Date(`${year}-01-01`);
       const x = xScale(date);
       innerHTML += `<text class="line-chart-axis-text" x="${x}" y="${height - 25}" text-anchor="middle">${year}</text>`;
     }
@@ -1912,8 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
     innerHTML += `<path d="${contributionPath}" fill="none" stroke="#9ca3af" stroke-width="2"></path>`;
     innerHTML += `<path d="${valuePath}" fill="none" stroke="#10b981" stroke-width="2.5"></path>`;
     innerHTML += `<path d="${projectionPath}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
+    
     const xToday = xScale(today);
     const snapPoints = [{x: xToday, y: yScale(valueAtToday), date: today, value: valueAtToday, isToday: true}];
+    
     if (!options.isForPdf) {
         const depositsByDay = deposits.reduce((acc, deposit) => {
             const day = deposit.date.toISOString().split('T')[0];
@@ -1921,61 +691,72 @@ document.addEventListener('DOMContentLoaded', () => {
             acc[day].dailyDeposits.push(deposit);
             return acc;
         }, {});
+
         const sortedDays = Object.values(depositsByDay).sort((a,b) => a.date - b.date);
+        
         let runningValueForDots = 0;
         let lastDateForDots = firstDate;
+
         sortedDays.forEach(dayData => {
-            const daysSinceLast = (dayData.date - lastDateForDots) / MS_PER_DAY;
+            const daysSinceLast = (dayData.date - lastDateForDots) / (1000 * 60 * 60 * 24);
             if(daysSinceLast > 0){
                  runningValueForDots *= Math.pow(1 + dailyRate, daysSinceLast);
             }
+            
             const totalDayInvestment = dayData.dailyDeposits.reduce((sum, d) => sum + d.amount, 0);
             runningValueForDots += totalDayInvestment;
+            
             const x = xScale(dayData.date);
             const y = yScale(runningValueForDots);
+
             let tooltipText = '';
             if (dayData.dailyDeposits.length > 1) {
-            tooltipText = `<div class="font-bold text-slate-800">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
-                    dayData.dailyDeposits.map(d => `<div class="text-sm text-slate-600">${d.fund}: ${cellNum(d.amount, 0)} ${outCurr}</div>`).join('');
+                tooltipText = `<div class="font-bold text-neutral-800">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
+                    dayData.dailyDeposits.map(d => `<div class="text-sm text-neutral-600">${d.fund}: ${cellNum(d.amount, 0)} ${outCurr}</div>`).join('');
             } else {
                 const d = dayData.dailyDeposits[0];
-                tooltipText = `<div class="text-slate-700">Vklad (${d.fund}): ${cellNum(d.amount, 0)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
+                tooltipText = `<div class="text-neutral-800">Vklad (${d.fund}): ${cellNum(d.amount, 0)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
             }
+
             const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
-            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#14b8a6" data-tooltip-text='${escapedTooltipText}'></circle>`;
+            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#0ea5e9" data-tooltip-text='${escapedTooltipText}'></circle>`;
+            
             snapPoints.push({
                 x,
                 y,
                 date: dayData.date,
                 value: runningValueForDots,
                 isDeposit: true,
-                tooltipText: tooltipText
+                tooltipText: tooltipText 
             });
+
             lastDateForDots = dayData.date;
         });
     }
-    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0f766e" stroke-width="1.5"></line>`;
-    innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0f766e" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
+    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#3b82f6" stroke-width="1.5"></line>`;
+    innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#3b82f6" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
     innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#10b981"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#10b981" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="#9ca3af" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
+
     if (options.isForPdf) {
         const fixedTooltipPoints = [ { date: today, label: 'Dnes' } ];
         const endOfYear = new Date(today.getFullYear(), 11, 31);
         if (endOfYear > today) {
             fixedTooltipPoints.push({ date: endOfYear, label: endOfYear.getFullYear().toString() });
         }
-        for (let year = today.getFullYear() + 3; year <= CHART_END_YEAR; year += 3) {
+        for (let year = today.getFullYear() + 3; year <= 2035; year += 3) {
             const date = new Date(year, 11, 31);
             if (date <= futureEndDate) {
                 fixedTooltipPoints.push({ date, label: year.toString() });
             }
         }
+        
         fixedTooltipPoints.forEach(point => {
-            const daysFromToday = (point.date - today) / MS_PER_DAY;
+            const daysFromToday = (point.date - today) / (1000 * 60 * 60 * 24);
             const value = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
             const x = xScale(point.date);
             const y = yScale(value);
             innerHTML += `<g transform="translate(${x}, ${y})">
-                <circle r="5" fill="#0f766e" stroke="white" stroke-width="2"></circle>
+                <circle r="5" fill="#3b82f6" stroke="white" stroke-width="2"></circle>
                 <rect x="-40" y="-35" width="80" height="20" rx="5" fill="rgba(255,255,255,0.8)"></rect>
                 <text text-anchor="middle" y="-20" font-size="10px" fill="#1f2937">
                     <tspan x="0" dy="0">${point.label}: ${cellNum(value, 0)}</tspan>
@@ -1983,7 +764,9 @@ document.addEventListener('DOMContentLoaded', () => {
             </g>`;
         });
     }
+
     svg.innerHTML = innerHTML;
+
     if (!options.isForPdf) {
         const interactionLayer = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         interactionLayer.setAttribute('width', boundedWidth);
@@ -2002,12 +785,15 @@ document.addEventListener('DOMContentLoaded', () => {
         svg.appendChild(guideLine);
         svg.appendChild(guideCircle);
         svg.appendChild(interactionLayer);
+        
         interactionLayer.addEventListener('mousemove', (e) => {
             const x = e.offsetX;
             const snapThreshold = 10;
             let finalX = x, finalY, finalDate, finalValue, tooltipText;
+
             let closestSnapPoint = null;
             let minDistance = snapThreshold;
+
             snapPoints.forEach(p => {
                 const dist = Math.abs(x - p.x);
                 if (dist < minDistance) {
@@ -2015,13 +801,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     closestSnapPoint = p;
                 }
             });
+
             if (closestSnapPoint) {
                 finalX = closestSnapPoint.x;
                 finalY = closestSnapPoint.y;
                 finalDate = closestSnapPoint.date;
                 finalValue = closestSnapPoint.value;
                 if (closestSnapPoint.isToday) {
-                tooltipText = `<div class="font-bold text-slate-800">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-600">Dopočítaná hodnota: ${cellNum(finalValue, 0)} ${outCurr}</div>`;
+                    tooltipText = `<div class="font-bold text-neutral-800">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-neutral-600">Dopočítaná hodnota: ${cellNum(finalValue, 0)} ${outCurr}</div>`;
                 } else {
                     tooltipText = closestSnapPoint.tooltipText;
                 }
@@ -2037,8 +824,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalValue = allPoints[allPoints.length-1].value;
                 }
                 finalY = yScale(finalValue);
-                tooltipText = `<div class="font-bold text-slate-800">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-600">${cellNum(finalValue, 0)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-neutral-800">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-neutral-600">${cellNum(finalValue, 0)} ${outCurr}</div>`;
             }
+
             guideLine.setAttribute('x1', finalX);
             guideLine.setAttribute('y1', finalY);
             guideLine.setAttribute('x2', finalX);
@@ -2047,94 +835,91 @@ document.addEventListener('DOMContentLoaded', () => {
             guideCircle.setAttribute('cy', finalY);
             guideLine.style.opacity = 1;
             guideCircle.style.opacity = 1;
-            const tooltip = elements.chartTooltip;
-            if (tooltip) {
-                tooltip.innerHTML = tooltipText;
-                tooltip.classList.remove('hidden');
-            }
+            
+            const tooltip = document.getElementById('chart-tooltip');
+            tooltip.innerHTML = tooltipText;
+            tooltip.classList.remove('hidden');
         });
         interactionLayer.addEventListener('mouseout', () => {
             guideLine.style.opacity = 0;
             guideCircle.style.opacity = 0;
-            const tooltip = elements.chartTooltip;
-            tooltip?.classList.add('hidden');
+            document.getElementById('chart-tooltip').classList.add('hidden');
         });
     }
     container.appendChild(svg);
   };
-
   const setupTimeSlider = (funds) => {
-    const slider = elements.pieSlider || document.getElementById('pie-time-slider');
-    if (!slider) return;
+    const slider = document.getElementById('pie-time-slider');
     const deposits = funds.map(f => f.dateIn).sort((a,b) => a - b);
     if(deposits.length === 0) return;
     const firstDate = deposits[0];
-    const endDate = new Date(`${CHART_END_YEAR}-12-31`);
+    const endDate = new Date('2035-12-31');
     const today = new Date();
+
     slider.min = firstDate.getTime();
     slider.max = endDate.getTime();
+    
     if (!slider.dataset.initialized) {
         slider.value = today.getTime();
         slider.dataset.initialized = 'true';
     }
-    if (elements.sliderStartLabel) {
-        elements.sliderStartLabel.textContent = firstDate.toLocaleDateString('cs-CZ');
-    }
-    if (elements.sliderEndLabel) {
-        elements.sliderEndLabel.textContent = endDate.toLocaleDateString('cs-CZ');
-    }
+    
+    document.getElementById('slider-start-date-label').textContent = firstDate.toLocaleDateString('cs-CZ');
+    document.getElementById('slider-end-date-label').textContent = endDate.toLocaleDateString('cs-CZ');
+
     updatePieChartFromSlider();
   };
   const updatePieChartFromSlider = () => {
     const { funds } = state.lastProcessedData;
-    const outCurr = elements.outCurrency?.value || 'CZK';
-    const fxRate = utils.numCZ(elements.fxRate?.value);
-    const slider = elements.pieSlider || document.getElementById('pie-time-slider');
-    if (!slider) return;
+    const outCurr = document.getElementById('out-curr').value;
+    const fxRate = utils.numCZ(document.getElementById('fx-rate').value);
+    const slider = document.getElementById('pie-time-slider');
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+
     const currentDate = new Date(parseInt(slider.value));
-    if (elements.sliderCurrentLabel) {
-        elements.sliderCurrentLabel.textContent = currentDate.toLocaleDateString('cs-CZ');
-    }
+    document.getElementById('slider-current-date-label').textContent = currentDate.toLocaleDateString('cs-CZ');
+    
     const dataForDate = Object.entries(funds.reduce((acc, f) => { if (!acc[f.fund]) acc[f.fund] = { investments: [], irr: null }; acc[f.fund].investments.push(f); if (isFinite(f.irr)) acc[f.fund].irr = f.irr; return acc; }, {})).map(([name, {investments, irr}]) => {
         let value = 0;
         const cfs = investments
             .filter(inv => inv.dateIn <= currentDate)
             .map(inv => ({ date: inv.dateIn, amount: -convert(inv.invest, inv.curr) }))
             .sort((a,b) => a.date - b.date);
+
         if (cfs.length > 0) {
-            const fundIrr = investments[0]?.irr;
+            const fundIrr = investments[0]?.irr; // Assuming all investments in a fund have same IRR
             if (isFinite(fundIrr)) {
                 const dailyRate = Math.pow(1 + fundIrr, 1 / 365.25) - 1;
                 let runningValue = 0;
                 let lastDate = cfs[0].date;
                 cfs.forEach(cf => {
-                    const days = (cf.date - lastDate) / MS_PER_DAY;
+                    const days = (cf.date - lastDate) / (1000 * 60 * 60 * 24);
                     runningValue *= Math.pow(1 + dailyRate, days);
                     runningValue += -cf.amount;
                     lastDate = cf.date;
                 });
-                const daysFinal = (currentDate - lastDate) / MS_PER_DAY;
+                const daysFinal = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
                 value = runningValue * Math.pow(1 + dailyRate, daysFinal);
             }
         }
         return { name, totalCurrent: value };
     }).filter(d => d.totalCurrent > 0);
-    const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
-    if (pieContainer) {
-        renderPieChart(pieContainer, dataForDate, outCurr);
-    }
+    
+    renderPieChart(document.getElementById('pie-chart-container'), dataForDate, outCurr);
   };
   const renderPieChart = (container, data, outCurr, options = {}) => {
     container.innerHTML = '';
     if(data.length === 0) {
-        container.innerHTML = `<div class="text-center py-10 text-slate-500">Pro zvolené datum nejsou data.</div>`;
+        container.innerHTML = `<div class="text-center py-10 text-neutral-500">Pro zvolené datum nejsou data.</div>`;
         return;
     }
+    
     const pieTotal = data.reduce((sum, d) => sum + d.totalCurrent, 0);
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute('viewBox', '0 0 100 100');
     let angle = -90; const outerRadius = 48; const innerRadius = 25;
+
+    // Fix for single item pie chart
     if (data.length === 1 && pieTotal > 0) {
         const d = data[0];
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -2165,78 +950,95 @@ document.addEventListener('DOMContentLoaded', () => {
             g.appendChild(path); svg.appendChild(g);
         });
     }
+
     const legend = data.map((d) => `<div class="flex items-center gap-2 text-sm"><div class="w-3 h-3 rounded-sm" style="background-color: ${getColor(d.name)}"></div><div class="flex-1 truncate" title="${d.name}">${d.name}</div><div class="font-medium tabular">${cellPct(d.totalCurrent/pieTotal)}</div></div>`).join('');
-    const gridClass = options.isForPdf ? 'grid-cols-2 items-center' : 'sm:grid-cols-2';
+    
+    const gridClass = options.isForPdf ? 'grid-cols-2 items-center' : 'sm:grid-cols-2'; // Adjusted for PDF
     container.innerHTML = `<div class="grid ${gridClass} gap-6 items-center"><div class="chart-svg-wrapper"></div><div class="space-y-2">${legend}</div></div>`;
     container.querySelector('.chart-svg-wrapper').appendChild(svg);
   };
 
+  // === ANNUITY CALCULATOR LOGIC ===
   const calculateAnnuity = () => {
       const { portfolioSummary, funds } = state.lastProcessedData;
       const { portfolioIrr, totalCurrentConverted } = portfolioSummary;
-      const monthlyAnnuity = utils.numCZ(elements.annuityInput?.value);
-      const resultDiv = elements.annuityResult || document.getElementById('annuity-result');
-      const annualDiv = elements.annuityAnnual || document.getElementById('annuity-annual-equivalent');
-      const disclaimer = elements.annuityDisclaimer || document.getElementById('annuity-disclaimer');
-      if (!resultDiv || !annualDiv || !disclaimer) {
-          return;
-      }
+      const monthlyAnnuity = utils.numCZ(document.getElementById('annuity-input').value);
+      const resultDiv = document.getElementById('annuity-result');
+      const annualDiv = document.getElementById('annuity-annual-equivalent');
+      const disclaimer = document.getElementById('annuity-disclaimer');
+
       if (!isFinite(monthlyAnnuity) || monthlyAnnuity <= 0) {
           resultDiv.style.display = 'none';
           annualDiv.textContent = '';
           disclaimer.style.display = 'none';
           return;
       }
+      
       disclaimer.style.display = 'block';
       const annualAnnuity = monthlyAnnuity * 12;
       annualDiv.textContent = `(což odpovídá ${cellNum(annualAnnuity, 0)} Kč ročně)`;
+
       if (!isFinite(portfolioIrr) || portfolioIrr <= 0 || funds.length === 0) {
           resultDiv.innerHTML = 'Pro výpočet renty je potřeba mít v portfoliu data s kladným zhodnocením (XIRR).';
           resultDiv.style.display = 'block';
           return;
       }
+
       const targetCapital = annualAnnuity / portfolioIrr;
+
       if (totalCurrentConverted >= targetCapital) {
           resultDiv.innerHTML = `<strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>${cellNum(totalCurrentConverted, 0)} Kč</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.`;
           resultDiv.style.display = 'block';
           return;
       }
+
+      // Find the date when portfolio value will reach target capital
       const dailyRate = Math.pow(1 + portfolioIrr, 1 / 365.25) - 1;
       let days = 0;
       let futureValue = totalCurrentConverted;
-      for (let i = 0; i < 365 * 100; i++) {
+      
+      // Limit iterations to prevent infinite loops with very low IRR
+      for (let i = 0; i < 365 * 100; i++) { // Max 100 years
           futureValue *= (1 + dailyRate);
           days++;
           if (futureValue >= targetCapital) break;
       }
+
+
       if (futureValue < targetCapital) {
           resultDiv.innerHTML = `Při současném tempu růstu se Vám nepodaří dosáhnout cílové částky v rozumném časovém horizontu.`;
           resultDiv.style.display = 'block';
           return;
       }
+
       const targetDate = new Date();
       targetDate.setDate(targetDate.getDate() + days);
+
       const monthNames = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
       const formattedDate = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
+
       resultDiv.innerHTML = `Pro měsíční rentu <strong>${cellNum(monthlyAnnuity, 0)} Kč</strong> potřebujete kapitál o velikosti přibližně <strong>${cellNum(targetCapital, 0)} Kč</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>${formattedDate}</strong>.`;
       resultDiv.style.display = 'block';
   };
-
   const handleInputChange = (e) => {
     const target = e.target;
     const key = target.dataset.key;
     if (!key) return;
+
     const tr = target.closest('tr');
     if (!tr) return;
+
     const id = parseInt(tr.dataset.id, 10);
     const providerKey = tr.closest('tbody').dataset.tbodyFor;
     const row = state.rows[providerKey].find(r => r.id === id);
     if (!row) return;
+
     if (target.type === 'checkbox') {
         row[key] = target.checked;
     } else {
         row[key] = target.isContentEditable ? target.textContent : target.value;
     }
+
     if (['invest', 'qty', 'issueNav', 'currNav', 'totalCurrent'].includes(key)) {
         const p = parseRow(row);
         if (isFinite(p.invest) && isFinite(p.issueNav) && p.issueNav > 0 && (!row.qty || utils.numCZ(row.qty) <= 0)) {
@@ -2247,115 +1049,54 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.querySelector('[data-key="invest"]').value = row.invest;
         }
         if (isFinite(p.qty) && isFinite(p.currNav) && p.currNav > 0 && (!row.totalCurrent || utils.numCZ(row.totalCurrent) <= 0)) {
-             row.totalCurrent = String(p.qty * p.currNav);
-             tr.querySelector('[data-key="totalCurrent"]').value = row.totalCurrent;
+            row.totalCurrent = String(p.qty * p.currNav);
+            tr.querySelector('[data-key="totalCurrent"]').value = row.totalCurrent;
         }
     }
-    updateInputHighlights(tr, row);
+
+    updateInputHighlights(tr);
     scheduleRecalc();
     saveState();
   };
 
-  const updateInputHighlights = (tr, row) => {
-      const parsed = parseRow(row || {});
+  const updateInputHighlights = (tr) => {
+      const p = parseRow({}, tr);
       const fields = ['invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'totalCurrent', 'currDate'];
-      fields.forEach(field => {
-          const input = tr.querySelector(`[data-key="${field}"]`);
-          if (input) input.classList.remove('input-highlight');
+      fields.forEach(key => tr.querySelector(`[data-key="${key}"]`).classList.remove('input-highlight'));
+      const hasAnyValue = Object.values(p).some(v => v || v === 0);
+      if (!hasAnyValue || !p.fund) return;
+      const highlight = (keys) => keys.forEach(key => {
+          const el = tr.querySelector(`[data-key="${key}"]`);
+          if (el && !el.value) el.classList.add('input-highlight');
       });
-
-      if (!parsed || !parsed.fund) {
-          return;
-      }
-
-      const markMissing = (...keys) => {
-          keys.forEach(field => {
-              const input = tr.querySelector(`[data-key="${field}"]`);
-              if (!input) return;
-              const currentValue = row?.[field];
-              if (currentValue === undefined || String(currentValue).trim() === '') {
-                  input.classList.add('input-highlight');
-              }
-          });
-      };
-
-      if (!parsed.dateIn) markMissing('dateIn');
-      if (!parsed.currDate) markMissing('currDate');
-
-      const hasInvest = Number.isFinite(parsed.invest) && parsed.invest > 0;
-      const hasQty = Number.isFinite(parsed.qty) && parsed.qty > 0;
-      const hasIssueNav = Number.isFinite(parsed.issueNav) && parsed.issueNav > 0;
-      const hasCurrent = Number.isFinite(parsed.totalCurrent);
-      const hasNav = Number.isFinite(parsed.currNav) && parsed.currNav > 0;
-
+      if (!p.dateIn) highlight(['dateIn']);
+      if (!p.currDate) highlight(['currDate']);
+      const hasInvest = isFinite(p.invest) && p.invest > 0;
+      const hasQty = isFinite(p.qty) && p.qty > 0;
+      const hasIssueNav = isFinite(p.issueNav) && p.issueNav > 0;
       if (!hasInvest && !hasQty) {
-          markMissing('invest');
+          highlight(['invest']);
       } else if (!hasInvest && hasQty && !hasIssueNav) {
-          markMissing('issueNav');
+          highlight(['issueNav']);
       }
-
-      if (!hasCurrent && !hasNav) {
-          markMissing('currNav', 'totalCurrent');
+      if (!isFinite(p.totalCurrent) && !isFinite(p.currNav)) {
+          highlight(['currNav', 'totalCurrent']);
       }
   };
 
   const init = () => {
-    elements.fxRate = document.getElementById('fx-rate');
-    elements.outCurrency = document.getElementById('out-curr');
-    elements.statusContainer = document.getElementById('status-container');
-    elements.toastContainer = document.getElementById('toast-container');
-    elements.lastSavedIndicator = document.getElementById('last-saved-indicator');
-    elements.providerSections = document.getElementById('provider-sections');
-    elements.fundsContainer = document.getElementById('funds-by-card-container');
-    elements.amountNoteFunds = document.getElementById('amount-note-funds');
-    elements.portfolioSummary = document.getElementById('portfolio-summary-content');
-    elements.amountNotePortfolio = document.getElementById('amount-note-portfolio');
-    elements.lineChartCard = document.getElementById('line-chart-card');
-    elements.pieChartCard = document.getElementById('pie-chart-card');
-    elements.chartsSection = document.getElementById('charts-section');
-    elements.lineChartContainer = document.getElementById('line-chart-container');
-    elements.lineChartTitle = document.getElementById('line-chart-title');
-    elements.pieChartContainer = document.getElementById('pie-chart-container');
-    elements.pieSlider = document.getElementById('pie-time-slider');
-    elements.sliderStartLabel = document.getElementById('slider-start-date-label');
-    elements.sliderCurrentLabel = document.getElementById('slider-current-date-label');
-    elements.sliderEndLabel = document.getElementById('slider-end-date-label');
-    elements.annuityInput = document.getElementById('annuity-input');
-    elements.annuityAnnual = document.getElementById('annuity-annual-equivalent');
-    elements.annuityResult = document.getElementById('annuity-result');
-    elements.annuityDisclaimer = document.getElementById('annuity-disclaimer');
-    elements.chartTooltip = document.getElementById('chart-tooltip');
-    elements.importFile = document.getElementById('import-file-input');
-    elements.clientNameInput = document.getElementById('client-name');
-    elements.clientMetaBanner = document.getElementById('client-meta-banner');
-    elements.clientNameDisplay = document.getElementById('client-name-display');
-    elements.generatedAtDisplay = document.getElementById('generated-at-display');
-    elements.currencyDisplay = document.getElementById('report-currency-display');
-
-    const currentYearEl = document.getElementById('current-year');
-    if (currentYearEl) {
-        currentYearEl.textContent = new Date().getFullYear();
-    }
-    if (elements.lineChartTitle) {
-        elements.lineChartTitle.textContent = `Vývoj hodnoty portfolia s predikcí do roku ${CHART_END_YEAR}`;
-    }
-
-    const providerContainer = elements.providerSections;
-    if (providerContainer) {
-        providerContainer.innerHTML = '';
-        Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
-    }
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+    const providerContainer = document.getElementById('provider-sections');
+    Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
     document.addEventListener('click', (e) => {
-        if (isClientMode) return;
         const button = e.target.closest('button[data-action]'); if (!button) return;
         const { action, provider, id } = button.dataset;
         if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: 'CZK' }); renderProviderInputs(provider, newId); }
         if (action === 'delete-row') { const rowElement = button.closest('tr'); rowElement.className = 'fade-out'; rowElement.addEventListener('animationend', () => { state.rows[provider] = state.rows[provider].filter(r => r.id !== parseInt(id,10)); rowElement.remove(); scheduleRecalc(); saveState(); }); }
         if (action === 'delete-all') { if (confirm(`Opravdu chcete smazat všechny řádky pro ${PROVIDERS[provider]}?`)) { state.rows[provider] = []; renderProviderInputs(provider); scheduleRecalc(); saveState(); } }
         if (action === 'export-json') exportState();
-        if (action === 'import-json') elements.importFile?.click();
-        if (action === 'export-presentation') exportClientPresentation();
-        if (action === 'add-sample') {
+        if (action === 'import-json') document.getElementById('import-file-input').click();
+        if (action === 'add-sample') { 
             const today = new Date().toISOString().split('T')[0];
             const SAMPLES = {
                 avant: [ { id: ++rowSeq, fund: 'r2p invest SICAV, a.s.', invest: '100000', dateIn: '15.03.2021', issueNav: '1.05', currNav: '1.25', currDate: today, curr: 'CZK' } ],
@@ -2368,55 +1109,39 @@ document.addEventListener('DOMContentLoaded', () => {
             renderProviderInputs(provider); scheduleRecalc(); showToast(`Ukázková data pro ${PROVIDERS[provider]} byla načtena.`); saveState();
         }
     });
-    elements.fxRate?.addEventListener('input', scheduleRecalc);
-    elements.outCurrency?.addEventListener('change', scheduleRecalc);
-    elements.annuityInput?.addEventListener('input', calculateAnnuity);
-    elements.clientNameInput?.addEventListener('input', (e) => {
-        state.meta.clientName = e.target.value;
-    });
-    elements.clientNameInput?.addEventListener('blur', (e) => {
-        const trimmed = (e.target.value || '').trim();
-        if (trimmed !== e.target.value) {
-            e.target.value = trimmed;
+    document.getElementById('fx-rate').addEventListener('input', scheduleRecalc);
+    document.getElementById('out-curr').addEventListener('change', scheduleRecalc);
+    document.getElementById('annuity-input').addEventListener('input', calculateAnnuity);
+    const providerSections = document.getElementById('provider-sections');
+    providerSections.addEventListener('input', (e) => { if (e.target.matches('input, select')) handleInputChange(e); });
+    providerSections.addEventListener('focusout', (e) => {
+        if (e.target.isContentEditable) handleInputChange(e);
+        const key = e.target.dataset.key;
+        if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+            const num = utils.numCZ(e.target.value);
+            if (isFinite(num)) {
+                e.target.value = fmt0.format(num);
+            } else {
+                e.target.value = '';
+            }
         }
-        state.meta.clientName = trimmed;
-        saveState();
     });
-    const providerSections = elements.providerSections;
-    if (providerSections) {
-        providerSections.addEventListener('input', (e) => {
-            if (e.target.matches('input, select')) handleInputChange(e);
-        });
-        providerSections.addEventListener('focusout', (e) => {
-            if (e.target.isContentEditable) handleInputChange(e);
-            const key = e.target.dataset.key;
-            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
-                const num = utils.numCZ(e.target.value);
-                if (isFinite(num)) {
-                    e.target.value = fmt0.format(num);
-                } else {
-                    e.target.value = '';
-                }
+    providerSections.addEventListener('focusin', (e) => {
+        const key = e.target.dataset.key;
+        if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+            const num = utils.numCZ(e.target.value);
+            if (isFinite(num)) {
+                e.target.value = num;
             }
-        });
-        providerSections.addEventListener('focusin', (e) => {
-            const key = e.target.dataset.key;
-            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
-                const num = utils.numCZ(e.target.value);
-                if (isFinite(num)) {
-                    e.target.value = num;
-                }
-            }
-        });
-        providerSections.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); } });
-    }
-    elements.annuityInput?.addEventListener('focusin', (e) => {
+        }
+    });
+    document.getElementById('annuity-input').addEventListener('focusin', (e) => {
         const num = utils.numCZ(e.target.value);
         if (isFinite(num)) {
             e.target.value = num;
         }
     });
-    elements.annuityInput?.addEventListener('focusout', (e) => {
+    document.getElementById('annuity-input').addEventListener('focusout', (e) => {
         const num = utils.numCZ(e.target.value);
         if (isFinite(num)) {
             e.target.value = fmt0.format(num);
@@ -2424,45 +1149,31 @@ document.addEventListener('DOMContentLoaded', () => {
             e.target.value = '';
         }
     });
-    elements.importFile?.addEventListener('change', (e) => { if (e.target.files.length > 0) { importState(e.target.files[0]); e.target.value = ''; } });
-    elements.pieSlider?.addEventListener('input', updatePieChartFromSlider);
-    let tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
-    if (!tooltip) {
-        tooltip = document.createElement('div');
-        tooltip.id = 'chart-tooltip';
-        tooltip.className = 'absolute hidden z-20 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-teal-100 rounded-xl shadow-lg';
-        document.body.appendChild(tooltip);
-    }
-    elements.chartTooltip = tooltip;
-    document.addEventListener('mousemove', e => {
-        if (!tooltip) return;
+    providerSections.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); } });
+    document.getElementById('import-file-input').addEventListener('change', (e) => { if (e.target.files.length > 0) { importState(e.target.files[0]); e.target.value = ''; } });
+    document.getElementById('pie-time-slider').addEventListener('input', updatePieChartFromSlider);
+    const tooltip = document.getElementById('chart-tooltip');
+    document.addEventListener('mousemove', e => { 
         let newLeft = e.pageX + 15;
         let newTop = e.pageY + 15;
         if (tooltip.offsetWidth && newLeft + tooltip.offsetWidth > window.innerWidth) {
             newLeft = e.pageX - tooltip.offsetWidth - 15;
         }
-        tooltip.style.left = `${newLeft}px`;
-        tooltip.style.top = `${newTop}px`;
+        tooltip.style.left = `${newLeft}px`; 
+        tooltip.style.top = `${newTop}px`; 
     });
-    document.addEventListener('mouseover', e => {
-        if (!tooltip) return;
-        const segment = e.target.closest('.pie-segment');
-        const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
-        if (segment) {
-            tooltip.innerHTML = `<div class="font-bold text-slate-800">${segment.dataset.name}</div><div class="text-slate-600">${segment.dataset.value} (${segment.dataset.percent})</div>`;
-            tooltip.classList.remove('hidden');
-        } else if (dot && dot.dataset.tooltipText) {
-            tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"');
-            tooltip.classList.remove('hidden');
-        }
+    document.addEventListener('mouseover', e => { 
+        const segment = e.target.closest('.pie-segment'); 
+        const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]'); 
+        if (segment) { 
+            tooltip.innerHTML = `<div class="font-bold text-neutral-800">${segment.dataset.name}</div><div class="text-neutral-600">${segment.dataset.value} (${segment.dataset.percent})</div>`; 
+            tooltip.classList.remove('hidden'); 
+        } else if (dot && dot.dataset.tooltipText) { 
+            tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"'); 
+            tooltip.classList.remove('hidden'); 
+        } 
     });
-    document.addEventListener('mouseout', e => {
-        if (!tooltip) return;
-        if (e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) {
-            tooltip.classList.add('hidden');
-        }
-    });
-    window.addEventListener('beforeunload', () => saveState(true));
+    document.addEventListener('mouseout', e => { if(e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) { tooltip.classList.add('hidden'); } });
     loadState();
   };
   init();
