@@ -205,74 +205,92 @@
     .text-negative { color: #b91c1c; }
     .muted { color: #94a3b8; }
 
-    .export-shell { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem; padding: 3rem 1.75rem 4rem; }
-    .export-hero { background: linear-gradient(140deg, rgba(20,184,166,0.16) 0%, rgba(14,165,233,0.18) 100%); border-radius: 1.75rem; padding: 2.5rem; box-shadow: 0 30px 70px -45px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 1.75rem; }
-    .export-hero__badge { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.9rem; border-radius: 999px; background: rgba(15,118,110,0.15); color: #0f766e; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-    .export-hero__title { font-size: 2rem; font-weight: 600; color: #0f172a; margin: 0; }
-    .export-hero__lead { color: #0f172a; max-width: 44rem; line-height: 1.6; font-size: 1rem; margin: 0; }
-    .export-hero__meta { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-    .export-hero__meta-item { background: rgba(255,255,255,0.75); border: 1px solid rgba(15,118,110,0.12); border-radius: 1rem; padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.35rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45); }
-    .meta-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
-    .meta-value { font-size: 1rem; font-weight: 600; color: #0f172a; }
+    .export-shell { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.75rem; padding: 3.2rem 2rem 4.2rem; background: linear-gradient(180deg, rgba(241,245,249,0.4) 0%, rgba(250,245,255,0.55) 42%, rgba(255,247,237,0.55) 100%); }
+    .export-hero { background: linear-gradient(135deg, rgba(253,242,248,0.95) 0%, rgba(224,242,254,0.92) 50%, rgba(236,253,245,0.92) 100%); border-radius: 1.9rem; padding: 2.75rem; box-shadow: 0 32px 70px -45px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 1.9rem; position: relative; overflow: hidden; }
+    .export-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 12% 18%, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0) 55%), radial-gradient(circle at 88% 20%, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0) 60%); pointer-events: none; }
+    .export-hero > * { position: relative; z-index: 1; }
+    .export-hero__badge { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.95rem; border-radius: 999px; background: rgba(236,72,153,0.12); color: #be185d; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+    .export-hero__title { font-size: 2.15rem; font-weight: 600; color: #0f172a; margin: 0; letter-spacing: -0.015em; }
+    .export-hero__lead { color: #1f2937; max-width: 46rem; line-height: 1.65; font-size: 1.02rem; margin: 0; }
+    .export-hero__meta { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .export-hero__meta-item { background: rgba(255,255,255,0.8); border: 1px solid rgba(79,70,229,0.15); border-radius: 1.1rem; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
+    .export-hero__disclaimer { font-size: 0.85rem; color: #475569; line-height: 1.55; margin: 0; }
+    .meta-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #6366f1; font-weight: 600; }
+    .meta-value { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
 
-    .section-heading { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
-    .section-heading h2 { margin: 0; font-size: 1.45rem; font-weight: 600; color: #0f172a; }
-    .section-heading p { margin: 0; font-size: 0.95rem; color: #64748b; }
+    .section-heading { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.35rem; }
+    .section-heading h2 { margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827; letter-spacing: -0.01em; }
+    .section-heading p { margin: 0; font-size: 0.95rem; color: #64748b; line-height: 1.55; }
 
-    .summary-export { display: flex; flex-direction: column; gap: 1.5rem; }
-    .summary-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-    .summary-card { padding: 1.2rem 1.35rem; border-radius: 1.25rem; border: 1px solid rgba(15,118,110,0.12); background: linear-gradient(180deg, rgba(240,253,250,0.6) 0%, rgba(255,255,255,0.95) 100%); box-shadow: 0 20px 45px -35px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 0.6rem; }
-    .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem; color: #0f766e; font-weight: 600; }
-    .summary-value { font-size: 1.55rem; font-weight: 600; color: #0f172a; }
+    .narrative { display: flex; flex-direction: column; gap: 1.1rem; background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(249,250,251,0.92) 100%); border-radius: 1.5rem; border: 1px solid rgba(148,163,184,0.22); padding: 1.8rem 2rem; box-shadow: 0 22px 55px -45px rgba(15,23,42,0.55); }
+    .narrative h2 { margin: 0; font-size: 1.35rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
+    .narrative p { margin: 0; font-size: 0.95rem; color: #334155; line-height: 1.7; }
+
+    .summary-export { display: flex; flex-direction: column; gap: 1.6rem; }
+    .summary-grid { display: grid; gap: 1.15rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .summary-card { padding: 1.25rem 1.45rem; border-radius: 1.35rem; border: 1px solid rgba(148,163,184,0.2); background: linear-gradient(180deg, rgba(236,253,245,0.8) 0%, rgba(255,255,255,0.98) 100%); box-shadow: 0 26px 60px -45px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 0.65rem; }
+    .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
+    .summary-value { font-size: 1.6rem; font-weight: 600; color: #0f172a; }
     .summary-note { font-size: 0.85rem; color: #64748b; margin: 0; }
 
-    .fund-export-grid { display: flex; flex-direction: column; gap: 1.5rem; }
-    .fund-export { background: rgba(255,255,255,0.95); border-radius: 1.5rem; border: 1px solid rgba(15,118,110,0.14); padding: 1.75rem; display: flex; flex-direction: column; gap: 1.35rem; box-shadow: 0 26px 60px -45px rgba(15, 23, 42, 0.55); }
-    .fund-export__header { display: flex; flex-direction: column; gap: 1rem; }
+    .fund-export-grid { display: flex; flex-direction: column; gap: 1.65rem; }
+    .fund-export { background: rgba(255,255,255,0.96); border-radius: 1.6rem; border: 1px solid rgba(148,163,184,0.28); padding: 1.85rem; display: flex; flex-direction: column; gap: 1.4rem; box-shadow: 0 28px 60px -46px rgba(15, 23, 42, 0.55); }
+    .fund-export__header { display: flex; flex-direction: column; gap: 1.05rem; }
     .fund-export__title { display: flex; flex-direction: column; gap: 0.75rem; }
-    .fund-export__name-row { display: flex; align-items: center; gap: 0.75rem; font-size: 1.15rem; font-weight: 600; color: #0f172a; }
-    .fund-export__dot { width: 0.75rem; height: 0.75rem; border-radius: 999px; display: inline-block; box-shadow: 0 0 0 3px rgba(20,184,166,0.2); }
+    .fund-export__name-row { display: flex; align-items: center; gap: 0.75rem; font-size: 1.18rem; font-weight: 600; color: #0f172a; }
+    .fund-export__dot { width: 0.75rem; height: 0.75rem; border-radius: 999px; display: inline-block; box-shadow: 0 0 0 3px rgba(99,102,241,0.18); }
     .fund-export__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: #64748b; }
-    .fund-export__meta span { padding: 0.35rem 0.65rem; border-radius: 999px; background: rgba(15,118,110,0.08); color: #0f766e; font-weight: 500; }
-    .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.9rem; }
-    .fund-export__metric { background: rgba(240,253,250,0.7); border: 1px solid rgba(15,118,110,0.12); border-radius: 1.1rem; padding: 0.9rem 1rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); display: flex; flex-direction: column; gap: 0.45rem; }
-    .metric-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #0f766e; font-weight: 600; }
-    .metric-value { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
+    .fund-export__meta span { padding: 0.35rem 0.65rem; border-radius: 999px; background: rgba(224,242,254,0.6); color: #0ea5e9; font-weight: 500; }
+    .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; }
+    .fund-export__metric { background: rgba(236,253,245,0.75); border: 1px solid rgba(20,184,166,0.16); border-radius: 1.15rem; padding: 0.95rem 1.1rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); display: flex; flex-direction: column; gap: 0.5rem; }
+    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #0f766e; font-weight: 600; }
+    .metric-value { font-size: 1.25rem; font-weight: 600; color: #0f172a; }
     .metric-sub { font-size: 0.75rem; color: #94a3b8; }
 
-    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1.1rem; border: 1px solid rgba(148,163,184,0.25); background: rgba(248,250,252,0.9); }
-    .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1.15rem; border: 1px solid rgba(203,213,225,0.5); background: rgba(248,250,252,0.92); }
+    .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
     .fund-export__table th,
-    .fund-export__table td { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(148,163,184,0.25); }
-    .fund-export__table th { text-align: left; font-weight: 600; color: #475569; background: rgba(15,118,110,0.08); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
+    .fund-export__table td { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(203,213,225,0.45); }
+    .fund-export__table th { text-align: left; font-weight: 600; color: #475569; background: rgba(226,232,240,0.6); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
     .fund-export__table th.text-right,
     .fund-export__table td.text-right { text-align: right; }
 
-    .line-export { display: flex; flex-direction: column; gap: 1.25rem; border-radius: 1.5rem; padding: 1.75rem; background: linear-gradient(180deg, rgba(237,252,247,0.9) 0%, rgba(255,255,255,0.95) 100%); border: 1px solid rgba(15,118,110,0.12); box-shadow: 0 26px 60px -45px rgba(15, 23, 42, 0.55); }
-    .line-legend { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-    .legend-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; color: #0f172a; background: rgba(255,255,255,0.85); border: 1px solid rgba(15,118,110,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
-    .legend-pill::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 999px; background: currentColor; display: inline-flex; }
-    .legend-pill--base { color: #0f172a; }
+    .line-export { display: flex; flex-direction: column; gap: 1.35rem; border-radius: 1.55rem; padding: 1.9rem; background: linear-gradient(180deg, rgba(236,253,245,0.85) 0%, rgba(255,255,255,0.98) 100%); border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 28px 60px -46px rgba(15, 23, 42, 0.55); }
+    .line-legend { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+    .legend-pill { display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: #0f172a; background: rgba(255,255,255,0.92); border: 1px solid rgba(148,163,184,0.3); box-shadow: inset 0 1px 0 rgba(255,255,255,0.65); }
+    .legend-pill::before { content: ''; width: 0.55rem; height: 0.55rem; border-radius: 999px; background: currentColor; display:inline-flex; }
+    .legend-pill--base { color: #1f2937; }
     .legend-pill--value { color: #0f766e; }
     .legend-pill--projection { color: #0ea5e9; }
-    .legend-pill--projection::before { background: linear-gradient(90deg, #14b8a6 0%, #0ea5e9 100%); }
+    .legend-pill--projection::before { background: linear-gradient(90deg, #22d3ee 0%, #6366f1 100%); }
     .legend-pill--value::before { background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
     .legend-pill--base::before { background: #1f2937; }
-    .line-canvas { border-radius: 1.2rem; overflow: hidden; background: #ffffff; border: 1px solid rgba(148,163,184,0.2); }
+    .line-canvas { border-radius: 1.25rem; overflow: hidden; background: #ffffff; border: 1px solid rgba(148,163,184,0.25); }
     .line-canvas svg { width: 100%; height: auto; display: block; }
+    .chart-footnote { margin: 0; font-size: 0.82rem; color: #64748b; line-height: 1.6; }
 
-    .pie-export { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: center; }
+    .pie-export { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: center; }
     .pie-canvas { display: flex; justify-content: center; }
-    .pie-canvas svg { max-width: 280px; width: 100%; height: auto; filter: drop-shadow(0 18px 35px rgba(15,23,42,0.2)); }
-    .pie-legend { display: flex; flex-direction: column; gap: 0.8rem; }
-    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; font-size: 0.88rem; color: #0f172a; padding: 0.55rem 0.75rem; border-radius: 0.85rem; background: rgba(255,255,255,0.85); border: 1px solid rgba(148,163,184,0.22); }
-    .legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 999px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(15,118,110,0.08); }
+    .pie-canvas svg { max-width: 300px; width: 100%; height: auto; filter: drop-shadow(0 22px 38px rgba(15,23,42,0.22)); }
+    .pie-slice { transition: transform 0.28s ease, filter 0.28s ease; transform-origin: 50px 50px; }
+    .pie-slice:hover { transform: scale(1.04); filter: drop-shadow(0 12px 18px rgba(15,23,42,0.25)); }
+    .pie-legend { display: flex; flex-direction: column; gap: 0.85rem; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; font-size: 0.9rem; color: #0f172a; padding: 0.6rem 0.85rem; border-radius: 0.9rem; background: rgba(255,255,255,0.92); border: 1px solid rgba(148,163,184,0.28); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+    .legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 999px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(203,213,225,0.3); }
     .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
     .legend-value { font-weight: 600; color: #0f766e; }
+    .export-explanations { display: grid; gap: 1.3rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); font-size: 0.96rem; color: #475569; }
+    .export-explanations article { background: rgba(255,255,255,0.94); border-radius: 1.3rem; border: 1px solid rgba(203,213,225,0.45); padding: 1.45rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); display: flex; flex-direction: column; gap: 0.8rem; }
+    .export-explanations h3 { margin: 0; font-size: 1.08rem; font-weight: 600; color: #0f172a; }
 
-    .export-explanations { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); font-size: 0.95rem; color: #475569; }
-    .export-explanations article { background: rgba(255,255,255,0.92); border-radius: 1.25rem; border: 1px solid rgba(148,163,184,0.25); padding: 1.35rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); display: flex; flex-direction: column; gap: 0.75rem; }
-    .export-explanations h3 { margin: 0; font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+    .disclaimer-block { display: flex; flex-direction: column; gap: 0.9rem; background: rgba(255,255,255,0.92); border: 1px solid rgba(248,113,113,0.25); border-radius: 1.2rem; padding: 1.35rem 1.5rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
+    .disclaimer-title { font-size: 0.88rem; font-weight: 600; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
+    .disclaimer-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+    .disclaimer-item { display: flex; gap: 0.75rem; font-size: 0.9rem; color: #334155; line-height: 1.6; }
+    .disclaimer-item::before { content: '•'; color: #b91c1c; font-weight: 600; }
+
+    .alert { padding: 1.15rem 1.45rem; border-radius: 1.15rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(254,226,226,0.75); color: #b91c1c; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+
 
     .alert { padding: 1.1rem 1.4rem; border-radius: 1.1rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(254,226,226,0.7); color: #b91c1c; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
   </style>
@@ -1151,7 +1169,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const legend = exportChart.hasIrr
             ? `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span><span class="legend-pill legend-pill--value">Odhad hodnoty</span>${exportChart.irrPositive ? '<span class="legend-pill legend-pill--projection">Projekce</span>' : ''}</div>`
             : `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span></div>`;
-        return `<div class="line-export">${legend}<div class="line-canvas">${exportChart.svg}</div></div>`;
+        const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
+        return `<div class="line-export">${legend}<div class="line-canvas">${exportChart.svg}</div>${footnote}</div>`;
     }
 
     if (!container) return;
@@ -1523,9 +1542,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const x2Inner = 50 + innerRadius * Math.cos(endRad);
           const y2Inner = 50 + innerRadius * Math.sin(endRad);
           const tooltip = `${name} • ${cellNum(value)} (${cellPct(percent)})`;
-          return `<path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" data-tooltip-text="${htmlEscape(tooltip)}">
+          return `<g class="pie-slice" data-tooltip-text="${htmlEscape(tooltip)}">
+            <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
             <title>${htmlEscape(tooltip)}</title>
-          </path>`;
+          </g>`;
       }).join('');
       const backdrop = `<circle cx="50" cy="50" r="${outerRadius}" fill="rgba(240,253,250,0.65)" />`;
       const inner = `<circle cx="50" cy="50" r="${innerRadius - 6}" fill="#ffffff" stroke="rgba(148,163,184,0.35)" stroke-width="1.5" />`;
@@ -1631,9 +1651,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const yMaxRaw = Math.max(...valuesForMax, 0);
       const yMax = yMaxRaw > 0 ? Math.ceil(yMaxRaw / 1000) * 1000 : 1000;
 
-      const width = 760;
-      const height = 360;
-      const margin = { top: 20, right: 24, bottom: 60, left: 70 };
+      const width = 820;
+      const height = 380;
+      const margin = { top: 32, right: 36, bottom: 78, left: 88 };
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
       const xScale = (date) => margin.left + ((date - firstDate) / span) * chartWidth;
@@ -1656,19 +1676,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const defs = `
         <defs>
           <linearGradient id="chartBackdrop" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#f0fdfa" />
+            <stop offset="0%" stop-color="#f8fafc" />
             <stop offset="100%" stop-color="#ffffff" />
           </linearGradient>
           <linearGradient id="chartValueStroke" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stop-color="#0f766e" />
-            <stop offset="100%" stop-color="#14b8a6" />
+            <stop offset="100%" stop-color="#38bdf8" />
           </linearGradient>
           <linearGradient id="chartProjectionStroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#14b8a6" />
-            <stop offset="100%" stop-color="#0ea5e9" />
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#6366f1" />
           </linearGradient>
           <linearGradient id="chartAreaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#0f766e" stop-opacity="0.28" />
+            <stop offset="0%" stop-color="#0f766e" stop-opacity="0.24" />
             <stop offset="100%" stop-color="#0f766e" stop-opacity="0" />
           </linearGradient>
         </defs>`;
@@ -1683,7 +1703,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const xLabels = [];
       const startYear = firstDate.getFullYear();
       const endYear = timelineEnd.getFullYear();
-      for (let year = startYear; year <= endYear; year += 2) {
+      const yearSpan = endYear - startYear;
+      const maxTicks = 6;
+      const yearStep = Math.max(1, Math.ceil((yearSpan + 1) / maxTicks));
+      for (let year = startYear; year <= endYear; year += yearStep) {
           const date = new Date(year, 0, 1);
           if (date < firstDate) continue;
           if (date > timelineEnd) break;
@@ -1717,40 +1740,36 @@ document.addEventListener('DOMContentLoaded', () => {
           <rect x="${margin.left - 8}" y="${margin.top - 12}" width="${chartWidth + 16}" height="${chartHeight + 24}" rx="22" fill="rgba(255,255,255,0.78)" stroke="rgba(148,163,184,0.25)" />
           ${yTicks.map(tick => {
               const y = formatCoord(yScale(tick));
-              return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="4 4" />
-              <text x="${margin.left - 12}" y="${y + 4}" text-anchor="end" font-size="11" fill="#64748b">${cellNum(tick, 0)}</text>`;
+              return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="4 4" />
+              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${cellNum(tick, 0)}</text>`;
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
           ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
-          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#334155" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
           ${hasIrr && valuePath ? `<path d="${valuePath}" fill="none" stroke="url(#chartValueStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
           ${irrPositive && projectionPath ? `<path d="${projectionPath}" fill="none" stroke="url(#chartProjectionStroke)" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />` : ''}
           ${todayLine}
           ${depositMarkers}
           ${todayMarker}
-          ${projectionMarkers}
-          <g transform="translate(${margin.left}, ${height - 12})" font-size="12" fill="#0f172a">
-            <g transform="translate(0,0)">
-              <line x1="0" y1="-6" x2="24" y2="-6" stroke="#1f2937" stroke-width="3" />
-              <text x="32" y="-4">Kumulované vklady</text>
-            </g>
-            ${hasIrr ? `<g transform="translate(220,0)">
-              <line x1="0" y1="-6" x2="24" y2="-6" stroke="url(#chartValueStroke)" stroke-width="3" />
-              <text x="32" y="-4">Odhad hodnoty</text>
-            </g>` : ''}
-            ${irrPositive ? `<g transform="translate(430,0)">
-              <line x1="0" y1="-6" x2="24" y2="-6" stroke="url(#chartProjectionStroke)" stroke-width="3" stroke-dasharray="8 6" />
-              <text x="32" y="-4">Projekce</text>
-            </g>` : ''}
-          </g>
+            ${projectionMarkers}
         </svg>
       `;
+
+      let footnote = '';
+      if (!hasIrr) {
+          footnote = 'Graf zachycuje pouze kumulované vklady, protože pro portfolio zatím nelze spolehlivě určit míru XIRR.';
+      } else if (!irrPositive) {
+          footnote = 'Odhad aktuální hodnoty vychází z vypočtené XIRR, projekce nejsou zobrazeny, protože míra výnosu je nulová nebo záporná.';
+      } else {
+          footnote = 'Projekce navazují na aktuální roční míru XIRR. Historické výsledky nejsou zárukou výnosů budoucích.';
+      }
 
       return {
           available: true,
           svg,
           hasIrr,
-          irrPositive
+          irrPositive,
+          footnote
       };
   };
 
@@ -1821,6 +1840,13 @@ document.addEventListener('DOMContentLoaded', () => {
           ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
           : '';
 
+      const narrativeSection = `<section class="narrative">
+        <h2>Jak číst tento report</h2>
+        <p>Tento dokument shrnuje aktuální stav portfolia klienta ${htmlEscape(clientName)} a převádí všechny dostupné údaje do cílové měny ${htmlEscape(outCurr)}.</p>
+        <p>V první části najdete klíčové souhrnné metriky, následně detailní pohled na jednotlivé fondy a vizualizace rozložení i vývoje hodnoty. Každá tabulka vychází z dat zadaných poradcem v den exportu.</p>
+        <p>Pokud budete mít k výsledkům otázky nebo budete chtít upravit investiční plán, spojte se prosím se svým finančním poradcem.</p>
+      </section>`;
+
       const summarySection = `<section class="card">
         <div class="section-heading">
           <h2>Souhrn portfolia</h2>
@@ -1851,6 +1877,21 @@ document.addEventListener('DOMContentLoaded', () => {
           <p>Historický vývoj a projekce při zachování aktuální míry zhodnocení portfolia.</p>
         </div>
         ${lineBlock}
+      </section>`;
+
+      const disclaimerSection = `<section class="card">
+        <div class="section-heading">
+          <h2>Důležitá upozornění</h2>
+          <p>Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.</p>
+        </div>
+        <div class="disclaimer-block">
+          <h3 class="disclaimer-title">Klíčové poznámky</h3>
+          <ul class="disclaimer-list">
+            <li class="disclaimer-item">Historické výnosy nejsou zárukou výsledků budoucích. Projekce vycházejí z aktuálního vývoje portfolia.</li>
+            <li class="disclaimer-item">Veškeré částky platí k datu generování reportu a mohou se v čase měnit podle tržních podmínek.</li>
+            <li class="disclaimer-item">Výpočty vychází z dat poskytnutých poradcem; v případě neúplných nebo nepřesných údajů mohou být výsledky zkreslené.</li>
+          </ul>
+        </div>
       </section>`;
 
       const explanationsSection = `<section class="card">
@@ -1892,10 +1933,12 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="export-shell">
     ${heroSection}
     ${currencyWarning}
+    ${narrativeSection}
     ${summarySection}
     ${fundsSection}
     ${pieSection}
     ${lineSection}
+    ${disclaimerSection}
     ${explanationsSection}
   </div>
   <script>${tooltipScript}${SCRIPT_CLOSE_TAG}
