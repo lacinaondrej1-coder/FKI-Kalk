@@ -6,62 +6,77 @@
   <title>Report investičního portfolia</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
     :root {
         color-scheme: light;
-        --surface: #ffffff;
-        --surface-muted: #f1f5f9;
-        --border: rgba(15, 118, 110, 0.12);
-        --border-strong: rgba(15, 118, 110, 0.24);
-        --accent: #14b8a6;
-        --accent-strong: #0f766e;
-        --accent-soft: rgba(20, 184, 166, 0.16);
+        --color-bg-start: #FDFEFF;
+        --color-bg-end: #F8F9FA;
+        --color-primary: #0d2c54;
+        --color-accent: #4DB1C8;
+        --color-text: #33373D;
+        --color-muted: #888B90;
+        --color-border: #EAECEE;
+        --color-border-strong: #D0E0E8;
+        --color-card: #FFFFFF;
+        --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
+        --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
     }
 
-    html,body{
-        font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
+    html, body {
+        font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
         scroll-behavior: smooth;
         min-height: 100%;
-        background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 55%, #f1f5f9 100%);
+        background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+        color: var(--color-text);
     }
-    .tabular{ font-variant-numeric: tabular-nums; }
-    button:disabled{ opacity: .5; cursor: not-allowed; }
-    .editable[contenteditable="true"]:empty:before{
+
+    .tabular { font-variant-numeric: tabular-nums; }
+    .hidden { display: none !important; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .editable[contenteditable="true"]:empty:before {
         content: attr(data-ph);
-        color: #9ca3af;
+        color: var(--color-muted);
         pointer-events: none;
-        display: block; /* For placeholder to work */
+        display: block;
     }
-    .editable{ outline: none; }
-    /* Prevent number input arrows */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-      -webkit-appearance: none; 
-      margin: 0; 
+    .editable {
+        outline: none;
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+        padding: 0.6rem 0.75rem;
+        background: #fff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .editable:focus {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
     input[type=number] { -moz-appearance: textfield; }
 
-    /* Animations */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(-10px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-    
+
     @keyframes fadeOut {
         from { opacity: 1; transform: scale(0.95); }
         to { opacity: 0; transform: scale(1); }
     }
     .fade-out { animation: fadeOut 0.3s ease-in forwards; }
 
-    /* Details/Summary animation */
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
     details > summary .summary-arrow { transition: transform 0.2s; }
     details[open] > summary .summary-arrow { transform: rotate(90deg); }
 
-    /* Toast Notifications */
     #toast-container {
         position: fixed;
         top: 1.5rem;
@@ -74,276 +89,440 @@
     .toast {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.875rem 1.2rem;
-        border-radius: 0.875rem;
-        box-shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.35);
-        border: 1px solid var(--border);
-        background-color: #ffffff;
-        color: #0f172a;
+        gap: 0.75rem;
+        padding: 0.9rem 1.15rem;
+        border-radius: 1rem;
+        box-shadow: var(--color-shadow);
+        border: 1px solid var(--color-border);
+        background-color: var(--color-card);
+        color: var(--color-text);
         opacity: 0;
         transform: translateX(100%);
-        transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1);
+        transition: all 0.35s cubic-bezier(0.21, 1.02, 0.73, 1);
     }
     .toast.show {
         opacity: 1;
         transform: translateX(0);
     }
-    .toast-success { background-color: rgba(20, 184, 166, 0.12); border-color: rgba(20, 184, 166, 0.3); color: #047857; }
-    .toast-error { background-color: rgba(248, 113, 113, 0.14); border-color: rgba(239, 68, 68, 0.35); color: #b91c1c; }
+    .toast-success { background-color: rgba(77, 177, 200, 0.12); border-color: rgba(77, 177, 200, 0.35); color: var(--color-primary); }
+    .toast-error { background-color: rgba(220, 53, 69, 0.14); border-color: rgba(220, 53, 69, 0.35); color: #b91c1c; }
 
-    /* Interactive Chart Styles */
     #chart-tooltip {
+        position: absolute;
+        z-index: 20;
         transition: opacity 0.2s;
         pointer-events: none;
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+        border-radius: 0.75rem;
+        box-shadow: var(--color-shadow);
+        padding: 0.5rem 0.75rem;
+        opacity: 0;
     }
-    .pie-segment {
-        cursor: pointer;
-        transition: transform 0.2s cubic-bezier(0.21, 1.02, 0.73, 1);
-        transform-origin: center center;
-    }
-    .pie-segment:hover { transform: scale(1.04); }
-    .line-chart-grid-line { stroke: #e5e7eb; stroke-dasharray: 2 3; }
-    .line-chart-axis-text { font-size: 11px; fill: #6b7280; }
-    .line-chart-dot { cursor: pointer; transition: r 0.2s; }
-    .line-chart-dot:hover { r: 6; }
 
-    /* Smart Input Highlighting */
-    .input-highlight {
-        border-color: #60a5fa !important; /* blue-400 */
-        box-shadow: 0 0 0 1px #60a5fa;
-    }
     .card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 1.25rem;
-        box-shadow: 0 15px 40px -25px rgba(15, 23, 42, 0.5);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        color: #0f172a;
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        border-radius: 1.5rem;
+        box-shadow: none;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
     }
 
     .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 45px -25px rgba(15, 23, 42, 0.5);
-        border-color: var(--border-strong);
+        transform: translateY(-3px);
+        border-color: var(--color-border-strong);
+        box-shadow: var(--color-shadow);
     }
 
-    .section-title {
-        letter-spacing: -0.015em;
-    }
-
-    .pill {
+    .primary-btn, .secondary-btn, .danger-btn {
         display: inline-flex;
         align-items: center;
-        gap: 0.4rem;
-        padding: 0.45rem 0.9rem;
-        border-radius: 999px;
-        font-size: 0.8rem;
-        background: var(--accent-soft);
-        color: var(--accent-strong);
-        border: 1px solid rgba(20, 184, 166, 0.3);
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.9rem;
+        padding: 0.65rem 1.1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .primary-btn {
+        background: var(--color-primary);
+        color: #fff;
+        border: 1px solid var(--color-primary);
+        box-shadow: var(--color-shadow);
+    }
+    .primary-btn:hover {
+        box-shadow: var(--color-shadow-strong);
+        background: #143d76;
+        border-color: #143d76;
+    }
+
+    .secondary-btn {
+        background: rgba(77, 177, 200, 0.12);
+        color: var(--color-primary);
+        border: 1px solid rgba(77, 177, 200, 0.4);
+    }
+    .secondary-btn:hover {
+        background: rgba(77, 177, 200, 0.18);
+        border-color: rgba(77, 177, 200, 0.55);
+    }
+
+    .danger-btn {
+        background: rgba(220, 53, 69, 0.08);
+        color: #b91c1c;
+        border: 1px solid rgba(220, 53, 69, 0.35);
+    }
+    .danger-btn:hover {
+        background: rgba(220, 53, 69, 0.14);
+        border-color: rgba(220, 53, 69, 0.45);
     }
 
     .glass-input {
         background: rgba(255, 255, 255, 0.92);
-        border-color: rgba(148, 163, 184, 0.35);
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+        padding: 0.6rem 0.75rem;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-
+    .glass-input::placeholder {
+        color: var(--color-muted);
+    }
     .glass-input:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.18);
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
+        outline: none;
     }
 
-    .primary-btn {
-        background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
-        color: #f8fafc;
-        border: none;
-        box-shadow: 0 18px 35px -20px rgba(15, 118, 110, 0.6);
+    h1.report-title {
+        font-size: 3.333rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    h2.section-title {
+        font-size: 2.167rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        margin: 0;
+    }
+    h3.card-subtitle {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--color-text);
+        margin: 0;
+    }
+    p {
+        font-size: 1.167rem;
+        line-height: 1.6;
+        color: var(--color-text);
+    }
+    .muted-text { color: var(--color-muted); font-size: 0.85rem; }
+    .text-body { color: var(--color-text); }
+    .text-muted { color: var(--color-muted); }
+    .text-primary { color: var(--color-primary); }
+    .text-accent { color: var(--color-accent); }
+    .stat-value { font-size: 4rem; font-weight: 700; color: var(--color-accent); }
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 1.1rem;
+        border-radius: 999px;
+        background: rgba(13, 44, 84, 0.08);
+        color: var(--color-primary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .border-subtle { border-color: var(--color-border) !important; }
+    .border-accent-soft { border-color: rgba(77, 177, 200, 0.35) !important; }
+    .bg-accent-soft { background: rgba(77, 177, 200, 0.12); }
+    #pie-time-slider { accent-color: var(--color-accent); }
+
+    .report-header {
+        padding: 4rem 1.5rem 2.5rem;
+    }
+    .report-header__inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    .brand-logo {
+        font-size: 1.9rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--color-primary);
+    }
+    .brand-logo span { color: var(--color-accent); }
+
+    .hero-layout {
+        display: grid;
+        gap: 2.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        align-items: start;
+    }
+    .hero-intro { display: flex; flex-direction: column; gap: 1.5rem; }
+    .hero-badges { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .hero-badge {
+        background: rgba(13, 44, 84, 0.08);
+        color: var(--color-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .hero-disclaimer { font-size: 0.9rem; color: var(--color-muted); display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+    .feature-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+    .feature-card {
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        border-radius: 1.5rem;
+        padding: 1.3rem 1.4rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--color-border-strong);
+        box-shadow: var(--color-shadow);
+    }
+    .feature-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 1rem;
+        background: rgba(77, 177, 200, 0.15);
+        color: var(--color-primary);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+    .feature-text { display: flex; flex-direction: column; gap: 0.35rem; }
+    .feature-title { font-weight: 600; color: var(--color-primary); font-size: 1rem; }
+    .feature-desc { font-size: 0.95rem; color: var(--color-text); line-height: 1.5; }
+
+    .input-highlight {
+        border-color: var(--color-accent) !important;
+        box-shadow: 0 0 0 1px var(--color-accent);
     }
 
-    .secondary-btn {
-        background: rgba(45, 212, 191, 0.12);
-        color: #0f172a;
-        border: 1px solid rgba(45, 212, 191, 0.25);
+    .delete-row-button {
+        color: var(--color-muted);
+    }
+    .delete-row-button:hover {
+        color: #B2403D;
+        background: rgba(178, 64, 61, 0.08);
     }
 
-    .secondary-btn:hover {
-        border-color: rgba(45, 212, 191, 0.35);
-        background: rgba(45, 212, 191, 0.18);
+    .divider { height: 1px; background: var(--color-border); }
+
+    .bg-card-soft { background: rgba(255, 255, 255, 0.85); }
+    .bg-card-muted { background: rgba(255, 255, 255, 0.7); }
+    .bg-divider { background: rgba(13, 44, 84, 0.12); }
+
+    .image-organic-mask {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        clip-path: path('M12,10 C20,-6 44,-2 58,10 C72,22 84,46 70,68 C56,90 28,98 10,82 C-8,66 4,26 12,10 Z');
+        border: 2px solid rgba(13,44,84,0.1);
+        box-shadow: var(--color-shadow);
     }
+    .fund-card__header { display: grid; gap: 1.4rem; grid-template-columns: auto 1fr; align-items: center; }
+    .fund-card__name { font-size: 1.35rem; font-weight: 600; color: var(--color-primary); }
+    .fund-card__dot { width: 0.8rem; height: 0.8rem; border-radius: 999px; box-shadow: 0 0 0 3px rgba(13,44,84,0.1); }
+    .fund-card__meta { display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.92rem; color: var(--color-muted); }
+    .fund-card__meta span { padding: 0.35rem 0.75rem; border-radius: 999px; background: rgba(77,177,200,0.14); color: var(--color-primary); font-weight: 500; }
+    .fund-card__metrics { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .fund-card__metric { background: rgba(13,44,84,0.04); border: 1px solid rgba(13,44,84,0.08); border-radius: 1.1rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .fund-card__metric .metric-label { color: var(--color-muted); }
+    .fund-card__metric .metric-value { color: var(--color-primary); font-weight: 600; }
+    .fund-card__transactions { border-radius: 1.2rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.85); overflow: hidden; }
+    .fund-card__transactions summary { padding: 0.75rem 1.1rem; display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; font-weight: 600; color: var(--color-primary); cursor: pointer; background: rgba(77,177,200,0.08); }
+    .fund-card__transactions summary:hover { background: rgba(77,177,200,0.14); }
 
-    .primary-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 22px 45px -20px rgba(15, 118, 110, 0.55);
+    .pie-segment {
+        cursor: pointer;
+        transition: transform 0.25s ease, filter 0.25s ease;
+        transform-origin: 50px 50px;
     }
-
-    .danger-btn {
-        background: rgba(248, 113, 113, 0.12);
-        color: #b91c1c;
-        border: 1px solid rgba(248, 113, 113, 0.3);
-        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    .pie-segment:hover {
+        transform: scale(1.05);
+        filter: drop-shadow(0 4px 8px rgba(13, 44, 84, 0.15));
     }
+    .line-chart-grid-line { stroke: #E5E8EE; stroke-dasharray: 2 3; }
+    .line-chart-axis-text { font-size: 12px; fill: var(--color-muted); }
+    .line-chart-dot { cursor: pointer; transition: r 0.2s; }
+    .line-chart-dot:hover { r: 7; }
 
-    .danger-btn:hover {
-        background: rgba(248, 113, 113, 0.22);
-        border-color: rgba(239, 68, 68, 0.45);
-        color: #991b1b;
+    .text-positive { color: #1B7F5F; }
+    .text-negative { color: #B2403D; }
+    .muted { color: var(--color-muted); }
+
+    /* Export report styling */
+    .export-shell {
+        max-width: 1080px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+        padding: 3.5rem 2rem 4rem;
+        background: linear-gradient(180deg, rgba(253,254,255,0.92) 0%, rgba(248,249,250,0.95) 100%);
     }
-
-    .tag-muted {
-        color: #94a3b8;
+    .export-hero {
+        background: var(--color-card);
+        border-radius: 1.9rem;
+        border: 2px solid var(--color-primary);
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+        box-shadow: none;
     }
-
-    .gradient-divider {
-        height: 1px;
-        background: linear-gradient(90deg, rgba(45, 212, 191, 0), rgba(45, 212, 191, 0.45), rgba(45, 212, 191, 0));
+    .export-hero__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        background: rgba(13,44,84,0.08);
+        color: var(--color-primary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
     }
-
-    /* Static export helpers */
-    .text-positive { color: #0f766e; }
-    .text-negative { color: #b91c1c; }
-    .muted { color: #94a3b8; }
-
-    .export-shell { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.75rem; padding: 3.2rem 2rem 4.2rem; background: linear-gradient(180deg, rgba(241,245,249,0.4) 0%, rgba(250,245,255,0.55) 42%, rgba(255,247,237,0.55) 100%); }
-    .export-hero { background: linear-gradient(135deg, rgba(253,242,248,0.95) 0%, rgba(224,242,254,0.92) 50%, rgba(236,253,245,0.92) 100%); border-radius: 1.9rem; padding: 2.75rem; box-shadow: 0 32px 70px -45px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 1.9rem; position: relative; overflow: hidden; }
-    .export-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 12% 18%, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0) 55%), radial-gradient(circle at 88% 20%, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0) 60%); pointer-events: none; }
-    .export-hero > * { position: relative; z-index: 1; }
-    .export-hero__badge { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.95rem; border-radius: 999px; background: rgba(236,72,153,0.12); color: #be185d; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
-    .export-hero__title { font-size: 2.15rem; font-weight: 600; color: #0f172a; margin: 0; letter-spacing: -0.015em; }
-    .export-hero__lead { color: #1f2937; max-width: 46rem; line-height: 1.65; font-size: 1.02rem; margin: 0; }
+    .export-hero__title { font-size: 3.1rem; font-weight: 700; color: var(--color-primary); letter-spacing: 0.08em; text-transform: uppercase; margin: 0; }
+    .export-hero__lead { color: var(--color-text); line-height: 1.6; font-size: 1.1rem; margin: 0; }
     .export-hero__meta { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-    .export-hero__meta-item { background: rgba(255,255,255,0.8); border: 1px solid rgba(79,70,229,0.15); border-radius: 1.1rem; padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
-    .export-hero__disclaimer { font-size: 0.85rem; color: #475569; line-height: 1.55; margin: 0; }
-    .meta-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #6366f1; font-weight: 600; }
-    .meta-value { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+    .export-hero__meta-item {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid var(--color-border);
+        border-radius: 1.2rem;
+        padding: 1rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+    .meta-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
+    .meta-value { font-size: 1.1rem; font-weight: 600; color: var(--color-primary); }
+    .export-hero__disclaimer { font-size: 0.9rem; color: var(--color-muted); line-height: 1.6; margin: 0; }
 
-    .section-heading { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.35rem; }
-    .section-heading h2 { margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827; letter-spacing: -0.01em; }
-    .section-heading p { margin: 0; font-size: 0.95rem; color: #64748b; line-height: 1.55; }
+    .narrative { display: flex; flex-direction: column; gap: 1rem; background: var(--color-card); border-radius: 1.5rem; border: 1px solid var(--color-border); padding: 1.8rem 2.1rem; }
+    .narrative h2 { margin: 0; font-size: 1.35rem; font-weight: 600; color: var(--color-primary); }
+    .narrative p { margin: 0; font-size: 1rem; color: var(--color-text); }
 
-    .narrative { display: flex; flex-direction: column; gap: 1.1rem; background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(249,250,251,0.92) 100%); border-radius: 1.5rem; border: 1px solid rgba(148,163,184,0.22); padding: 1.8rem 2rem; box-shadow: 0 22px 55px -45px rgba(15,23,42,0.55); }
-    .narrative h2 { margin: 0; font-size: 1.35rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
-    .narrative p { margin: 0; font-size: 0.95rem; color: #334155; line-height: 1.7; }
-
-    .summary-export { display: flex; flex-direction: column; gap: 1.6rem; }
-    .summary-grid { display: grid; gap: 1.15rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-    .summary-card { padding: 1.25rem 1.45rem; border-radius: 1.35rem; border: 1px solid rgba(148,163,184,0.2); background: linear-gradient(180deg, rgba(236,253,245,0.8) 0%, rgba(255,255,255,0.98) 100%); box-shadow: 0 26px 60px -45px rgba(15, 23, 42, 0.55); display: flex; flex-direction: column; gap: 0.65rem; }
-    .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
-    .summary-value { font-size: 1.6rem; font-weight: 600; color: #0f172a; }
-    .summary-note { font-size: 0.85rem; color: #64748b; margin: 0; }
+    .summary-grid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; gap: 0.65rem; }
+    .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
+    .summary-value { font-size: 1.6rem; font-weight: 600; color: var(--color-primary); }
+    .summary-note { font-size: 0.9rem; color: var(--color-muted); margin: 0; }
 
     .fund-export-grid { display: flex; flex-direction: column; gap: 1.65rem; }
-    .fund-export { background: rgba(255,255,255,0.96); border-radius: 1.6rem; border: 1px solid rgba(148,163,184,0.28); padding: 1.85rem; display: flex; flex-direction: column; gap: 1.4rem; box-shadow: 0 28px 60px -46px rgba(15, 23, 42, 0.55); }
-    .fund-export__header { display: flex; flex-direction: column; gap: 1.05rem; }
-    .fund-export__title { display: flex; flex-direction: column; gap: 0.75rem; }
-    .fund-export__name-row { display: flex; align-items: center; gap: 0.75rem; font-size: 1.18rem; font-weight: 600; color: #0f172a; }
-    .fund-export__dot { width: 0.75rem; height: 0.75rem; border-radius: 999px; display: inline-block; box-shadow: 0 0 0 3px rgba(99,102,241,0.18); }
-    .fund-export__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: #64748b; }
-    .fund-export__meta span { padding: 0.35rem 0.65rem; border-radius: 999px; background: rgba(224,242,254,0.6); color: #0ea5e9; font-weight: 500; }
+    .fund-export { background: var(--color-card); border-radius: 1.6rem; border: 1px solid var(--color-border); padding: 1.85rem; display: flex; flex-direction: column; gap: 1.4rem; }
+    .fund-export__header { display: grid; gap: 1.2rem; grid-template-columns: auto 1fr; align-items: center; }
+    .fund-export__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.85rem; color: var(--color-muted); }
+    .fund-export__meta span { padding: 0.4rem 0.7rem; border-radius: 999px; background: rgba(77,177,200,0.12); color: var(--color-primary); font-weight: 500; }
     .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; }
-    .fund-export__metric { background: rgba(236,253,245,0.75); border: 1px solid rgba(20,184,166,0.16); border-radius: 1.15rem; padding: 0.95rem 1.1rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); display: flex; flex-direction: column; gap: 0.5rem; }
-    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: #0f766e; font-weight: 600; }
-    .metric-value { font-size: 1.25rem; font-weight: 600; color: #0f172a; }
-    .metric-sub { font-size: 0.75rem; color: #94a3b8; }
+    .fund-export__metric { background: rgba(77,177,200,0.08); border: 1px solid rgba(77,177,200,0.2); border-radius: 1.15rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-muted); font-weight: 600; }
+    .metric-value { font-size: 1.25rem; font-weight: 600; color: var(--color-primary); }
+    .metric-sub { font-size: 0.78rem; color: var(--color-muted); }
 
-    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1.15rem; border: 1px solid rgba(203,213,225,0.5); background: rgba(248,250,252,0.92); }
-    .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1.15rem; border: 1px solid var(--color-border); background: rgba(248,249,250,0.9); }
+    .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     .fund-export__table th,
-    .fund-export__table td { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(203,213,225,0.45); }
-    .fund-export__table th { text-align: left; font-weight: 600; color: #475569; background: rgba(226,232,240,0.6); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
+    .fund-export__table td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(234,236,238,0.7); }
+    .fund-export__table th { text-align: left; font-weight: 600; color: var(--color-muted); background: rgba(242,244,246,0.8); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem; }
     .fund-export__table th.text-right,
     .fund-export__table td.text-right { text-align: right; }
 
-    .line-export { display: flex; flex-direction: column; gap: 1.35rem; border-radius: 1.55rem; padding: 1.9rem; background: linear-gradient(180deg, rgba(236,253,245,0.85) 0%, rgba(255,255,255,0.98) 100%); border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 28px 60px -46px rgba(15, 23, 42, 0.55); }
-    .line-legend { display: flex; flex-wrap: wrap; gap: 0.65rem; }
-    .legend-pill { display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: #0f172a; background: rgba(255,255,255,0.92); border: 1px solid rgba(148,163,184,0.3); box-shadow: inset 0 1px 0 rgba(255,255,255,0.65); }
-    .legend-pill::before { content: ''; width: 0.55rem; height: 0.55rem; border-radius: 999px; background: currentColor; display:inline-flex; }
-    .legend-pill--base { color: #1f2937; }
-    .legend-pill--value { color: #0f766e; }
-    .legend-pill--projection { color: #0ea5e9; }
-    .legend-pill--projection::before { background: linear-gradient(90deg, #22d3ee 0%, #6366f1 100%); }
-    .legend-pill--value::before { background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
-    .legend-pill--base::before { background: #1f2937; }
-    .line-canvas { border-radius: 1.25rem; overflow: hidden; background: #ffffff; border: 1px solid rgba(148,163,184,0.25); }
+    .line-export { display: flex; flex-direction: column; gap: 1.35rem; border-radius: 1.55rem; padding: 2rem; background: var(--color-card); border: 1px solid var(--color-border); }
+    .line-canvas { border-radius: 1.25rem; overflow: hidden; background: #ffffff; border: 1px solid var(--color-border); }
     .line-canvas svg { width: 100%; height: auto; display: block; }
-    .chart-footnote { margin: 0; font-size: 0.82rem; color: #64748b; line-height: 1.6; }
+    .chart-footnote { margin: 0; font-size: 0.9rem; color: var(--color-muted); line-height: 1.6; }
 
     .pie-export { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: center; }
     .pie-canvas { display: flex; justify-content: center; }
-    .pie-canvas svg { max-width: 300px; width: 100%; height: auto; filter: drop-shadow(0 22px 38px rgba(15,23,42,0.22)); }
-    .pie-slice { transition: transform 0.28s ease, filter 0.28s ease; transform-origin: 50px 50px; }
-    .pie-slice:hover { transform: scale(1.04); filter: drop-shadow(0 12px 18px rgba(15,23,42,0.25)); }
+    .pie-canvas svg { max-width: 320px; width: 100%; height: auto; }
     .pie-legend { display: flex; flex-direction: column; gap: 0.85rem; }
-    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; font-size: 0.9rem; color: #0f172a; padding: 0.6rem 0.85rem; border-radius: 0.9rem; background: rgba(255,255,255,0.92); border: 1px solid rgba(148,163,184,0.28); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
-    .legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 999px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(203,213,225,0.3); }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; font-size: 0.95rem; color: var(--color-text); padding: 0.7rem 1rem; border-radius: 0.9rem; background: var(--color-card); border: 1px solid var(--color-border); }
+    .legend-dot { width: 0.9rem; height: 0.9rem; border-radius: 999px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(13,44,84,0.1); }
     .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-    .legend-value { font-weight: 600; color: #0f766e; }
-    .export-explanations { display: grid; gap: 1.3rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); font-size: 0.96rem; color: #475569; }
-    .export-explanations article { background: rgba(255,255,255,0.94); border-radius: 1.3rem; border: 1px solid rgba(203,213,225,0.45); padding: 1.45rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); display: flex; flex-direction: column; gap: 0.8rem; }
-    .export-explanations h3 { margin: 0; font-size: 1.08rem; font-weight: 600; color: #0f172a; }
+    .legend-value { font-weight: 600; color: var(--color-primary); }
 
-    .disclaimer-block { display: flex; flex-direction: column; gap: 0.9rem; background: rgba(255,255,255,0.92); border: 1px solid rgba(248,113,113,0.25); border-radius: 1.2rem; padding: 1.35rem 1.5rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
+    .export-explanations { display: grid; gap: 1.3rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); font-size: 0.96rem; color: var(--color-text); }
+    .export-explanations article { background: var(--color-card); border-radius: 1.3rem; border: 1px solid var(--color-border); padding: 1.45rem; display: flex; flex-direction: column; gap: 0.8rem; }
+    .export-explanations h3 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--color-primary); }
+
+    .disclaimer-block { display: flex; flex-direction: column; gap: 0.9rem; background: rgba(255,255,255,0.95); border: 1px solid rgba(220,53,69,0.25); border-radius: 1.2rem; padding: 1.35rem 1.5rem; }
     .disclaimer-title { font-size: 0.88rem; font-weight: 600; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
     .disclaimer-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-    .disclaimer-item { display: flex; gap: 0.75rem; font-size: 0.9rem; color: #334155; line-height: 1.6; }
-    .disclaimer-item::before { content: '•'; color: #b91c1c; font-weight: 600; }
+    .disclaimer-item { display: flex; gap: 0.75rem; font-size: 0.9rem; color: var(--color-text); line-height: 1.6; }
 
-    .alert { padding: 1.15rem 1.45rem; border-radius: 1.15rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(254,226,226,0.75); color: #b91c1c; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
-
-
-    .alert { padding: 1.1rem 1.4rem; border-radius: 1.1rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(254,226,226,0.7); color: #b91c1c; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+    @media (max-width: 768px) {
+        .report-header { padding: 3rem 1rem 2rem; }
+        .export-hero { padding: 2.2rem; }
+        h1.report-title { font-size: 2.6rem; }
+        h2.section-title { font-size: 1.9rem; }
+    }
   </style>
 </head>
-<body class="antialiased text-slate-800">
-  <header class="bg-gradient-to-b from-teal-50 via-white to-white border-b border-teal-100/60">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-        <div class="flex items-start gap-6">
-          <div class="p-4 rounded-3xl bg-white border border-teal-100 shadow-md shadow-teal-100/70">
-            <svg class="h-14 w-14 text-teal-500" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 23.25C9 15.6487 15.1487 9.5 22.75 9.5C30.3513 9.5 36.5 15.6487 36.5 23.25C36.5 30.8513 30.3513 37 22.75 37H12.5C10.8431 37 9.5 35.6569 9.5 34V23.25Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M16 24.5L21.125 29L31 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+<body class="antialiased text-body">
+  <header class="report-header">
+    <div class="report-header__inner">
+      <div class="brand-logo">Fair<span>Life</span></div>
+      <div class="hero-layout">
+        <div class="hero-intro">
+          <div class="hero-badges">
+            <span class="hero-badge">Report investičního portfolia</span>
           </div>
-          <div class="space-y-5">
-            <span class="pill">Report investičního portfolia</span>
-            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 section-title">Přehled vašeho finančního světa</h1>
-            <p class="text-slate-600 max-w-2xl text-base leading-relaxed">Sledujte výkonnost fondů, analyzujte cashflow a prezentujte výsledky klientům v jednom elegantním a interaktivním rozhraní.</p>
-            <div class="flex flex-wrap gap-3 text-xs sm:text-sm text-slate-500">
-              <span>© <span id="current-year"></span> Ondřej Lacina.</span>
-              <span>Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb.</span>
-              <span>Šíření mimo strukturu Fair-life je zakázáno.</span>
-            </div>
+          <h1 class="report-title">Přehled vašeho finančního světa</h1>
+          <p>Sledujte výkonnost fondů, analyzujte cashflow a připravte pro klienty precizní výstupy v jednom elegantním prostředí.</p>
+          <div class="hero-disclaimer">
+            <span>© <span id="current-year"></span> Ondřej Lacina</span>
+            <span>Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb.</span>
+            <span>Šíření mimo strukturu Fair-life je zakázáno.</span>
           </div>
         </div>
-        <div class="flex flex-col gap-4 w-full lg:w-[360px]">
-          <div class="rounded-2xl border border-teal-100 bg-white p-5 shadow-sm shadow-teal-100/60">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-500 shadow-inner">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.75 5.75h14.5M4.75 12h6.5m-6.5 6.25h10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M15.5 16.75l2.25 2.25L20 16.75m-4.5-9.5l2.25-2.25L20 7.25" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-teal-700">Interaktivní řízení</p>
-                <p class="text-sm text-slate-600">Import, export a validace dat v reálném čase.</p>
-              </div>
+        <div class="feature-stack">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4.75 5.75h14.5M4.75 12h6.5m-6.5 6.25h10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15.5 16.75l2.25 2.25L20 16.75m-4.5-9.5l2.25-2.25L20 7.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="feature-text">
+              <span class="feature-title">Interaktivní řízení</span>
+              <span class="feature-desc">Import, export i validace dat v reálném čase na jednom místě.</span>
             </div>
           </div>
-          <div class="rounded-2xl border border-teal-100 bg-white p-5 shadow-sm shadow-teal-100/60">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-500 shadow-inner">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.75 18.25l4-4 3 3 7.5-7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M4.75 6.75h14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-teal-700">Pokročilé analýzy</p>
-                <p class="text-sm text-slate-600">XIRR, projekce výnosů a vizualizace portfolia.</p>
-              </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4.75 18.25l4-4 3 3 7.5-7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4.75 6.75h14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="feature-text">
+              <span class="feature-title">Pokročilé analýzy</span>
+              <span class="feature-desc">XIRR, projekce výnosů i vizualizace portfolia bez nutnosti dalších nástrojů.</span>
             </div>
           </div>
         </div>
@@ -352,7 +531,7 @@
   </header>
 
   <!-- Tooltip for charts -->
-  <div id="chart-tooltip" class="absolute hidden z-20 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-teal-100 rounded-xl shadow-lg"></div>
+  <div id="chart-tooltip" class="hidden"></div>
 
   <!-- Toast container for notifications -->
   <div id="toast-container"></div>
@@ -368,18 +547,18 @@
         <section class="card p-6 sm:p-7 xl:col-span-2">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div class="space-y-2">
-              <h2 class="text-xl font-semibold text-slate-900">Nastavení měny</h2>
-              <p class="text-sm text-slate-500">Zadejte kurz EUR/CZK a zvolte výstupní měnu reportu.</p>
+              <h2 class="section-title">Nastavení měny</h2>
+              <p class="text-sm text-muted">Zadejte kurz EUR/CZK a zvolte výstupní měnu reportu.</p>
             </div>
             <div class="flex items-center gap-4 flex-wrap">
-              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-slate-600">
-                <span class="font-medium text-slate-700 whitespace-nowrap">Kurz (CZK za 1 EUR)</span>
-                <input id="fx-rate" type="number" step="0.0001" placeholder="např. 25.30" class="glass-input px-3 py-2 rounded-xl border w-[170px] tabular text-right text-slate-900 placeholder:text-slate-400" />
+              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-body">
+                <span class="font-medium text-primary whitespace-nowrap">Kurz (CZK za 1 EUR)</span>
+                <input id="fx-rate" type="number" step="0.0001" placeholder="např. 25.30" class="glass-input px-3 py-2 rounded-xl border w-[170px] tabular text-right text-primary placeholder:text-muted" />
               </label>
-              <div class="hidden sm:block w-px h-9 bg-slate-200/70"></div>
-              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-slate-600">
-                <span class="font-medium text-slate-700">Výstup v měně</span>
-                <select id="out-curr" class="glass-input px-3 py-2 rounded-xl border bg-white text-slate-900">
+              <div class="hidden sm:block w-px h-9 bg-divider"></div>
+              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-body">
+                <span class="font-medium text-primary">Výstup v měně</span>
+                <select id="out-curr" class="glass-input px-3 py-2 rounded-xl border bg-white text-primary">
                   <option value="CZK" selected>CZK</option>
                   <option value="EUR">EUR</option>
                 </select>
@@ -392,13 +571,13 @@
         <section class="card p-6 sm:p-7">
           <div class="space-y-5">
             <div class="space-y-2">
-              <h3 class="text-xl font-semibold text-slate-900">Správa dat</h3>
-              <p class="text-sm text-slate-500">Synchronizujte portfolio jedním kliknutím.</p>
+              <h3 class="card-subtitle">Správa dat</h3>
+              <p class="text-sm text-muted">Synchronizujte portfolio jedním kliknutím.</p>
             </div>
             <div class="flex flex-col gap-3 text-sm">
               <label class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span class="font-medium text-slate-700 whitespace-nowrap">Jméno klienta</span>
-                <input id="client-name" type="text" placeholder="např. Jan Novák" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[220px] text-slate-900 placeholder:text-slate-400" />
+                <span class="font-medium text-primary whitespace-nowrap">Jméno klienta</span>
+                <input id="client-name" type="text" placeholder="např. Jan Novák" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[220px] text-primary placeholder:text-muted" />
               </label>
               <div class="flex flex-wrap gap-2">
                 <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
@@ -412,36 +591,36 @@
                 </button>
                 <input type="file" id="import-file-input" class="hidden" accept=".json">
               </div>
-              <div id="last-saved-indicator" class="text-xs text-slate-500/80 sm:ml-auto"></div>
+              <div id="last-saved-indicator" class="text-xs text-muted sm:ml-auto"></div>
             </div>
           </div>
         </section>
       </div>
 
-      <div class="gradient-divider"></div>
+      <div class="divider"></div>
 
       <!-- === INPUT SECTIONS (PROVIDERS) === -->
       <section class="space-y-6">
         <div class="space-y-3">
           <span class="pill">Vstupní data</span>
           <div class="space-y-2">
-            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Správa poskytovatelů a transakcí</h2>
-            <p class="text-sm text-slate-600 max-w-3xl">Importujte nebo přepisujte data jednotlivých platforem, kontrolujte jejich konzistenci a sledujte výsledky okamžitě po zadání.</p>
+            <h2 class="section-title">Správa poskytovatelů a transakcí</h2>
+            <p class="text-sm text-body max-w-3xl">Importujte nebo přepisujte data jednotlivých platforem, kontrolujte jejich konzistenci a sledujte výsledky okamžitě po zadání.</p>
           </div>
         </div>
         <div id="provider-sections" class="flex flex-col gap-6"></div>
       </section>
 
-      <div class="gradient-divider"></div>
+      <div class="divider"></div>
       
       <!-- === RESULTS BY FUND (REDESIGNED) === -->
       <section class="card p-7 sm:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-semibold text-slate-900">Výsledky po fondech</h2>
-            <p class="text-sm text-slate-500">Detailní rozpad portfolia včetně XIRR pro jednotlivé fondy.</p>
+            <h2 class="section-title">Výsledky po fondech</h2>
+            <p class="text-sm text-muted">Detailní rozpad portfolia včetně XIRR pro jednotlivé fondy.</p>
           </div>
-          <div id="amount-note-funds" class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Částky v CZK</div>
+          <div id="amount-note-funds" class="text-xs font-medium uppercase tracking-[0.2em] text-muted">Částky v CZK</div>
         </div>
         <div id="funds-by-card-container" class="space-y-4">
         </div>
@@ -451,10 +630,10 @@
       <section class="card p-7 sm:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-semibold text-slate-900">Souhrn portfolia</h2>
-            <p class="text-sm text-slate-500">Celkový výkon, vývoj hodnoty a časově vážené výnosy.</p>
+            <h2 class="section-title">Souhrn portfolia</h2>
+            <p class="text-sm text-muted">Celkový výkon, vývoj hodnoty a časově vážené výnosy.</p>
           </div>
-          <div id="amount-note-portfolio" class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Částky v CZK</div>
+          <div id="amount-note-portfolio" class="text-xs font-medium uppercase tracking-[0.2em] text-muted">Částky v CZK</div>
         </div>
         <div id="portfolio-summary-content" class="text-sm">
         </div>
@@ -464,22 +643,22 @@
       <section id="charts-section" class="space-y-8">
         <div id="line-chart-card" class="card p-7 sm:p-8" style="display: none;">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="text-2xl font-semibold text-slate-900">Vývoj hodnoty portfolia s predikcí do roku 2035</h2>
-            <p class="text-sm text-slate-500 max-w-md">Simulace navazuje na aktuální XIRR a ukazuje odhad dalšího růstu při zachování tempa.</p>
+            <h2 class="section-title">Vývoj hodnoty portfolia s predikcí do roku 2035</h2>
+            <p class="text-sm text-muted max-w-md">Simulace navazuje na aktuální XIRR a ukazuje odhad dalšího růstu při zachování tempa.</p>
           </div>
           <div id="line-chart-container" class="relative mt-6"></div>
         </div>
         <div id="pie-chart-card" class="card p-7 sm:p-8" style="display: none;">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="text-2xl font-semibold text-slate-900">Alokace portfolia v čase</h2>
-            <p class="text-sm text-slate-500 max-w-md">Prozkoumejte rozložení kapitálu v jednotlivých fondech k libovolnému datu.</p>
+            <h2 class="section-title">Alokace portfolia v čase</h2>
+            <p class="text-sm text-muted max-w-md">Prozkoumejte rozložení kapitálu v jednotlivých fondech k libovolnému datu.</p>
           </div>
           <div id="pie-chart-container" class="max-w-xl w-full mx-auto mt-6"></div>
            <div class="mt-6">
-               <input type="range" id="pie-time-slider" class="w-full accent-teal-500">
-               <div class="flex justify-between text-xs text-slate-500 mt-2">
+               <input type="range" id="pie-time-slider" class="w-full">
+               <div class="flex justify-between text-xs text-muted mt-2">
                    <span id="slider-start-date-label"></span>
-                   <span id="slider-current-date-label" class="font-semibold text-teal-600"></span>
+                   <span id="slider-current-date-label" class="font-semibold text-accent"></span>
                    <span id="slider-end-date-label"></span>
                </div>
           </div>
@@ -490,19 +669,19 @@
       <section id="annuity-calculator-section" class="card p-7 sm:p-8">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 class="text-2xl font-semibold text-slate-900">Kalkulačka nekonečné renty</h2>
-            <p class="text-sm text-slate-500">Zjistěte, jak velký kapitál je potřeba pro pasivní příjem z portfolia.</p>
+            <h2 class="section-title">Kalkulačka nekonečné renty</h2>
+            <p class="text-sm text-muted">Zjistěte, jak velký kapitál je potřeba pro pasivní příjem z portfolia.</p>
           </div>
         </div>
         <div class="mt-5 flex items-center gap-4 flex-wrap">
             <label class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span class="text-sm font-medium text-slate-700 whitespace-nowrap">Požadovaná měsíční renta</span>
-                <input id="annuity-input" type="text" placeholder="např. 10 000" class="glass-input px-3 py-2 rounded-xl border w-[200px] tabular text-right text-slate-900 placeholder:text-slate-400" />
+                <span class="text-sm font-medium text-primary whitespace-nowrap">Požadovaná měsíční renta</span>
+                <input id="annuity-input" type="text" placeholder="např. 10 000" class="glass-input px-3 py-2 rounded-xl border w-[200px] tabular text-right text-primary placeholder:text-muted" />
             </label>
-            <div id="annuity-annual-equivalent" class="text-sm text-slate-500"></div>
+            <div id="annuity-annual-equivalent" class="text-sm text-muted"></div>
         </div>
-        <div id="annuity-result" class="mt-5 text-sm text-slate-900 bg-teal-50 border border-teal-100 rounded-xl p-5" style="display: none;"></div>
-        <p id="annuity-disclaimer" class="mt-3 text-xs text-slate-500/90 italic" style="display: none;">
+        <div id="annuity-result" class="mt-5 text-sm text-primary bg-accent-soft border border-accent-soft rounded-xl p-5" style="display: none;"></div>
+        <p id="annuity-disclaimer" class="mt-3 text-xs text-muted italic" style="display: none;">
           *Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.
         </p>
       </section>
@@ -510,15 +689,15 @@
       <!-- === EXPLANATIONS === -->
       <section id="explanations-section" class="card p-7 sm:p-8">
         <details class="group">
-          <summary class="text-lg font-semibold cursor-pointer flex items-center justify-between text-slate-900">
+          <summary class="text-lg font-semibold cursor-pointer flex items-center justify-between text-primary">
             <span>Vysvětlivky a použité metriky</span>
-            <svg class="summary-arrow w-5 h-5 transition-transform group-open:rotate-90 text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <svg class="summary-arrow w-5 h-5 transition-transform group-open:rotate-90 text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
             </svg>
           </summary>
-          <div class="mt-4 pt-4 border-t border-slate-200 text-sm text-slate-600 space-y-5">
+          <div class="mt-4 pt-4 border-t border-subtle text-sm text-body space-y-5">
             <div>
-              <h4 class="font-semibold text-slate-900">Co je to XIRR a jak funguje?</h4>
+              <h4 class="font-semibold text-primary">Co je to XIRR a jak funguje?</h4>
                <p class="mt-2 leading-relaxed">
                 XIRR (z anglického <em>eXtended Internal Rate of Return</em>) je nejpřesnější metoda pro výpočet <strong>průměrného ročního zhodnocení</strong> vaší investice.
               </p>
@@ -529,8 +708,8 @@
                 <strong>Je to dopočet na 12 měsíců, i když data mám jen za kratší dobu?</strong> Ano. Pokud známe zhodnocení například za 8 měsíců, XIRR dopočítá, jakému <strong>průměrnému ročnímu zhodnocení</strong> by to odpovídalo, kdyby investice pokračovala stejným tempem.
               </p>
             </div>
-             <div class="pt-4 border-t border-slate-200">
-              <h4 class="font-semibold text-slate-900">Co je kumulativní zhodnocení?</h4>
+             <div class="pt-4 border-t border-subtle">
+              <h4 class="font-semibold text-primary">Co je kumulativní zhodnocení?</h4>
                <p class="mt-2 leading-relaxed">
                 Tento údaj ukazuje celkový čistý zisk nebo ztrátu jako procento z celkově zainvestované částky. Je to přímočarý indikátor celkové výkonnosti.
               </p>
@@ -560,13 +739,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const PROVIDERS = { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' };
   const CHART_COLORS = [
-      '#0f766e', '#14b8a6', '#f97316', '#fbbf24', '#ec4899', '#6366f1', '#0ea5e9',
-      '#10b981', '#22d3ee', '#fb7185', '#a855f7', '#84cc16', '#facc15', '#f472b6'
+      '#0d2c54', '#4DB1C8', '#8CC0A0', '#B5C7D3', '#E8B89B', '#6E7DA2', '#A4C4BC', '#F2D7B6'
   ];
   const SCRIPT_CLOSE_TAG = '<' + '/script>';
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const PROJECTION_END_YEAR = 2035;
   const getColor = (fundName) => {
+      if (!state.fundColorMap[fundName]) {
+          const colorIndex = Object.keys(state.fundColorMap).length % CHART_COLORS.length;
+          state.fundColorMap[fundName] = CHART_COLORS[colorIndex];
+      }
+      return state.fundColorMap[fundName];
+  };
+  const createFundImageDataURI = (name, color) => {
+      const initials = name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(part => part.charAt(0).toUpperCase())
+        .join('') || 'FL';
+      const secondary = '#ffffff';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${color}" stop-opacity="0.9"/><stop offset="100%" stop-color="${color}" stop-opacity="0.6"/></linearGradient></defs><rect width="120" height="120" rx="32" fill="url(#grad)"/><circle cx="96" cy="24" r="18" fill="${secondary}" fill-opacity="0.25"/><text x="60" y="72" text-anchor="middle" font-family="Montserrat" font-size="36" font-weight="600" fill="#ffffff">${initials}</text></svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  };
+
+
       if (!state.fundColorMap[fundName]) {
           const colorIndex = Object.keys(state.fundColorMap).length % CHART_COLORS.length;
           state.fundColorMap[fundName] = CHART_COLORS[colorIndex];
@@ -633,11 +830,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const isAtris = providerKey === 'atris';
       let specialTooltip = '';
       if(isAtris) {
-          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-teal-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-white text-slate-600 text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-teal-100 shadow-lg">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
+          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-white text-body text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-accent-soft">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
       }
       const section = document.createElement('section');
       section.className = 'card p-7 sm:p-8 space-y-6';
-      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-slate-900 flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-slate-500">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-teal-100/80 bg-white/80"><table class="w-full text-sm border-separate border-spacing-x-2 text-slate-600"><thead><tr class="text-xs uppercase tracking-[0.18em] text-slate-400"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-slate-200/70">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-slate-200/70">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
       return section;
   };
   const createInputRow = (providerKey, rowData) => {
@@ -650,7 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nameWrap.className = 'relative flex items-center';
       const nameDiv = document.createElement('div');
       nameDiv.contentEditable = true;
-      nameDiv.className = 'editable flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-slate-200/70 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-400 shadow-sm';
+      nameDiv.className = 'editable flex-1 min-w-0';
       nameDiv.textContent = rowData.fund || '';
       nameDiv.dataset.ph = 'Název fondu...';
       nameDiv.dataset.key = 'fund';
@@ -660,7 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const createInput = (key, type, extraClass = '') => {
           const input = document.createElement('input');
           input.type = type;
-          input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full focus:border-teal-500 focus:ring-1 focus:ring-teal-400 transition-all text-slate-900 placeholder:text-slate-400 ${extraClass}`;
+          input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full transition-all text-primary ${extraClass}`;
           let displayValue = rowData[key] || '';
           if (['invest', 'totalCurrent'].includes(key)) {
               const num = utils.numCZ(displayValue);
@@ -675,7 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const createSelect = (key) => {
           const select = document.createElement('select');
-          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-400';
+          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-primary';
           select.dataset.key = key;
           ['CZK', 'EUR'].forEach(c => {
               const option = document.createElement('option');
@@ -690,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
       delBtnCell.className = 'py-1 text-right';
       const delBtn = document.createElement('button');
       delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
-      delBtn.className = 'p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors';
+      delBtn.className = 'p-1.5 rounded-lg transition-colors delete-row-button';
       delBtn.title = "Smazat řádek";
       delBtn.dataset.action = 'delete-row';
       delBtn.dataset.id = rowData.id;
@@ -701,10 +898,10 @@ document.addEventListener('DOMContentLoaded', () => {
           createCell(createInput('invest', 'text', 'tabular text-right')),
           createCell(createInput('dateIn', 'text')),
           createCell(createInput('qty', 'text', 'tabular text-right')),
-          createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-slate-200/70')),
+          createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-subtle')),
           createCell(createInput('currNav', 'text', 'tabular text-right')),
           createCell(createInput('totalCurrent', 'text', 'tabular text-right')),
-          createCell(createInput('currDate', 'text', 'border-l border-slate-200/70')),
+          createCell(createInput('currDate', 'text', 'border-l border-subtle')),
           createCell(createSelect('curr')),
           delBtnCell
       );
@@ -801,7 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusContainer = elements.statusContainer || document.getElementById('status-container');
     if (statusContainer) {
     if (hasMixedCurrencies && !isFinite(fxRate)) {
-        statusContainer.innerHTML = `<div class="rounded-2xl border border-teal-100 bg-teal-50 p-5 text-sm text-teal-900/80 shadow-sm"><strong class="text-teal-900">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
+        statusContainer.innerHTML = `<div class="rounded-2xl border border-accent-soft bg-accent-soft p-5 text-sm text-body"><strong class="text-primary">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
     } else {
         statusContainer.innerHTML = '';
     }
@@ -863,8 +1060,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderFundsByCard = (groupedFunds, outCurr, fxRate, options = {}) => {
-      const { isStaticExport = false } = options;
-      const container = options.container || elements.fundsContainer || document.getElementById('funds-by-card-container');
+      const { isStaticExport = false, container: providedContainer } = options;
+      const container = providedContainer || elements.fundsContainer || document.getElementById('funds-by-card-container');
       if (!isStaticExport && !container) return '';
 
       const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
@@ -875,15 +1072,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (fundEntries.length === 0) {
-          const empty = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Nejsou k dispozici žádná data pro výpočet.</div>`;
+          const emptyState = `<div class="card p-6 text-center muted-text">Nejsou k dispozici žádná data pro výpočet.</div>`;
           if (isStaticExport) {
-              return empty;
+              return emptyState;
           }
-          container.innerHTML = empty;
+          container.innerHTML = emptyState;
           return;
       }
 
-      const cardsHtml = fundEntries.map(([name, investments]) => {
+      const buildMetrics = (metrics, variant = 'interactive') => metrics.map(({ label, value, extraClass = '', note = '' }) => {
+          if (variant === 'interactive') {
+              return `<div class="fund-card__metric"><span class="metric-label">${label}</span><span class="metric-value ${extraClass}">${value}</span>${note ? `<span class="metric-sub">${note}</span>` : ''}</div>`;
+          }
+          return `<div class="fund-export__metric"><span class="metric-label">${label}</span><span class="metric-value ${extraClass}">${value}</span>${note ? `<span class="metric-sub">${note}</span>` : ''}</div>`;
+      }).join('');
+
+      const cards = fundEntries.map(([name, investments]) => {
           investments.sort((a, b) => a.dateIn - b.dateIn);
           let totalInvest = 0;
           let totalCurrent = 0;
@@ -913,28 +1117,20 @@ document.addEventListener('DOMContentLoaded', () => {
           const fundIrr = finance.xirr(cfs);
           const pnl = totalCurrent - totalInvest;
           const weightedAvgMonths = totalInvest > 0 ? weightedDurationSum / totalInvest : NaN;
-          const pnlClassInteractive = pnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
-          const pnlClassExport = pnl >= 0 ? 'text-positive' : 'text-negative';
-          const irrClassInteractive = isFinite(fundIrr) && fundIrr >= 0 ? 'text-emerald-600' : 'text-rose-600';
-          const irrClassExport = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
           const fundColor = getColor(name);
+          const pnlClass = pnl >= 0 ? 'text-positive' : 'text-negative';
+          const irrClass = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
+          const safeName = htmlEscape(name);
 
-          const detailsRowsInteractive = investments.map((inv, index) => {
-              const convertedCurrent = convert(inv.current, inv.curr);
-              const convertedInvest = convert(inv.invest, inv.curr);
-              const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
-              const displayDate = inv.originalDateIn || inv.dateIn;
-              return `<tr class="border-t border-slate-100">
-                <td class="py-2 pr-3 text-slate-600">${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="text-slate-400">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
-                <td class="py-2 pr-3 text-right tabular text-slate-700">${cellNum(convertedInvest)}</td>
-                <td class="py-2 pr-3 text-right tabular ${convertedPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${cellNum(convertedPnl)}</td>
-                <td class="py-2 pr-3 text-right tabular text-slate-700">${cellPct(inv.ret)}</td>
-                <td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(inv.months) ? cellNum(inv.months, 1) + ' měs.' : '—'}</td>
-                <td class="py-2 pr-3 text-right tabular text-slate-700">${isFinite(inv.irr) ? cellPct(inv.irr) + ' p.a.' : '—'}</td>
-              </tr>`;
-          }).join('');
+          const metrics = [
+              { label: 'Investováno', value: cellNum(totalInvest) },
+              { label: 'Aktuální hodnota', value: cellNum(totalCurrent) },
+              { label: 'Čistý výsledek', value: cellNum(pnl), extraClass: pnlClass },
+              { label: 'Výkonnost (XIRR)', value: isFinite(fundIrr) ? `${cellPct(fundIrr)} p.a.` : '—', extraClass: irrClass },
+              { label: 'Váž. prům. doba', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+          ];
 
-          const detailsRowsStatic = investments.map((inv, index) => {
+          const transactionRows = investments.map((inv, index) => {
               const convertedCurrent = convert(inv.current, inv.curr);
               const convertedInvest = convert(inv.invest, inv.curr);
               const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
@@ -943,108 +1139,96 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
                 <td class="text-right">${cellNum(convertedInvest)}</td>
                 <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${cellNum(convertedPnl)}</td>
-                <td class="text-right">${cellPct(inv.ret)}</td>
+                <td class="text-right">${cellNum(convertedCurrent)}</td>
                 <td class="text-right">${isFinite(inv.months) ? cellNum(inv.months, 1) + ' měs.' : '—'}</td>
                 <td class="text-right">${isFinite(inv.irr) ? cellPct(inv.irr) + ' p.a.' : '—'}</td>
               </tr>`;
           }).join('');
 
-          const headerBlock = `
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-x-6 gap-y-4 p-5 sm:p-6 items-start">
-              <div class="col-span-2">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Fond</div>
-                <div class="mt-2 font-semibold text-lg text-slate-900 flex items-center gap-3">
-                  <span class="inline-flex h-2.5 w-2.5 rounded-full" style="background-color: ${fundColor}"></span>
-                  <span class="truncate" title="${name}">${name}</span>
-                </div>
-              </div>
-              <div>
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Aktuální hodnota</div>
-                <div class="mt-2 font-semibold tabular text-base text-slate-900">${cellNum(totalCurrent)}</div>
-                <div class="text-xs text-slate-400">k ${latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : 'N/A'}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Čistý výsledek</div>
-                <div class="mt-2 font-semibold tabular text-base ${pnlClassInteractive}">${cellNum(pnl)}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Výkonnost (XIRR)</div>
-                <div class="mt-2 font-semibold tabular text-base ${irrClassInteractive}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Váž. prům. doba</div>
-                <div class="mt-2 font-semibold tabular text-base text-slate-900">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</div>
-              </div>
-            </div>`;
-
-          const tableBlock = `<div class="px-5 pb-5">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-left text-slate-500">
-                  <th class="py-2 pr-3 font-semibold">Transakce</th>
-                  <th class="py-2 pr-3 font-semibold text-right">Investice</th>
-                  <th class="py-2 pr-3 font-semibold text-right">Výnos</th>
-                  <th class="py-2 pr-3 font-semibold text-right">Kumulativně</th>
-                  <th class="py-2 pr-3 font-semibold text-right">Doba (měs.)</th>
-                  <th class="py-2 pr-3 font-semibold text-right">XIRR p.a.</th>
-                </tr>
-              </thead>
-              <tbody>${detailsRowsInteractive}</tbody>
-            </table>
-          </div>`;
-
           if (isStaticExport) {
-          const firstInvestment = investments[0];
-          const firstDate = firstInvestment ? (firstInvestment.originalDateIn || firstInvestment.dateIn) : null;
-          const latestDateLabel = latestDate.getTime() > 0 ? latestDate.toLocaleDateString('cs-CZ') : null;
-          const exportHeader = `<div class="fund-export__header">
-                <div class="fund-export__title">
-                  <div class="fund-export__name-row">
-                    <span class="fund-export__dot" style="background:${fundColor}"></span>
-                    <span class="fund-export__name">${htmlEscape(name)}</span>
-                  </div>
-                  <div class="fund-export__meta">
-                    ${firstDate ? `<span>První vklad: ${firstDate.toLocaleDateString('cs-CZ')}</span>` : ''}
-                    ${latestDateLabel ? `<span>Aktualizováno: ${latestDateLabel}</span>` : ''}
-                    <span>Transakcí: ${investments.length}</span>
-                  </div>
-                </div>
-                <div class="fund-export__metrics">
-                  <div class="fund-export__metric"><span class="metric-label">Aktuální hodnota</span><span class="metric-value">${cellNum(totalCurrent)}</span>${latestDateLabel ? `<span class="metric-sub">k ${latestDateLabel}</span>` : ''}</div>
-                  <div class="fund-export__metric"><span class="metric-label">Čistý výsledek</span><span class="metric-value ${pnlClassExport}">${cellNum(pnl)}</span></div>
-                  <div class="fund-export__metric"><span class="metric-label">Výkonnost (XIRR)</span><span class="metric-value ${irrClassExport}">${isFinite(fundIrr) ? cellPct(fundIrr) + ' p.a.' : '—'}</span></div>
-                  <div class="fund-export__metric"><span class="metric-label">Váž. prům. doba</span><span class="metric-value">${isFinite(weightedAvgMonths) ? cellNum(weightedAvgMonths, 1) + ' měs.' : '—'}</span></div>
-                </div>
-              </div>`;
-              const exportTable = `<div class="fund-export__table-wrapper">
-                <table class="fund-export__table">
-                  <thead>
-                    <tr>
-                      <th>Transakce</th>
-                      <th class="text-right">Investice</th>
-                      <th class="text-right">Výnos</th>
-                      <th class="text-right">Kumulativně</th>
-                      <th class="text-right">Doba (měs.)</th>
-                      <th class="text-right">XIRR p.a.</th>
-                    </tr>
-                  </thead>
-                  <tbody>${detailsRowsStatic}</tbody>
-                </table>
-              </div>`;
-              return `<section class="fund-export">${exportHeader}${exportTable}</section>`;
+              const metricsHtml = buildMetrics(metrics, 'static');
+              const imageSrc = createFundImageDataURI(name, fundColor);
+              const metaChips = [
+                  `Transakcí ${investments.length}`,
+                  latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
+                  `Cílová měna ${outCurr}`
+              ].filter(Boolean).map(chip => `<span>${chip}</span>`).join('');
+
+              return `<article class="fund-export">
+  <div class="fund-export__header">
+    <img src="${imageSrc}" alt="Vizualizace fondu ${safeName}" class="image-organic-mask" />
+    <div class="fund-export__title">
+      <div class="fund-card__name">${safeName}</div>
+      <div class="fund-export__meta">${metaChips}</div>
+    </div>
+  </div>
+  <div class="fund-export__metrics">${metricsHtml}</div>
+  <div class="fund-export__table-wrapper">
+    <table class="fund-export__table">
+      <thead>
+        <tr>
+          <th>Transakce</th>
+          <th class="text-right">Investice</th>
+          <th class="text-right">Výnos</th>
+          <th class="text-right">Kumulativně</th>
+          <th class="text-right">Doba (měs.)</th>
+          <th class="text-right">XIRR p.a.</th>
+        </tr>
+      </thead>
+      <tbody>${transactionRows}</tbody>
+    </table>
+  </div>
+</article>`;
           }
 
-          return `<div class="card overflow-hidden">${headerBlock}<details>
-            <summary class="text-xs text-slate-500 hover:text-slate-700 cursor-pointer px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2">Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
-            ${tableBlock}
-          </details></div>`;
-      }).join('');
+          const metricsHtml = buildMetrics(metrics);
+          const imageSrc = createFundImageDataURI(name, fundColor);
+          const metaChips = [
+              `Transakcí ${investments.length}`,
+              latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
+              `Cílová měna ${outCurr}`
+          ].filter(Boolean).map(chip => `<span>${chip}</span>`).join('');
+
+          return `<div class="card p-6 sm:p-7">
+  <div class="flex flex-col gap-5">
+    <div class="fund-card__header">
+      <img src="${imageSrc}" alt="Vizualizace fondu ${safeName}" class="image-organic-mask" />
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <span class="fund-card__dot" style="background-color: ${fundColor}"></span>
+          <span class="fund-card__name" title="${safeName}">${safeName}</span>
+        </div>
+        <div class="fund-card__meta">${metaChips}</div>
+      </div>
+    </div>
+    <div class="fund-card__metrics">${metricsHtml}</div>
+    <details class="fund-card__transactions">
+      <summary>Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
+      <div class="fund-export__table-wrapper">
+        <table class="fund-export__table">
+          <thead>
+            <tr>
+              <th>Transakce</th>
+              <th class="text-right">Investice</th>
+              <th class="text-right">Výnos</th>
+              <th class="text-right">Kumulativně</th>
+              <th class="text-right">Doba (měs.)</th>
+              <th class="text-right">XIRR p.a.</th>
+            </tr>
+          </thead>
+          <tbody>${transactionRows}</tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+</div>`;
+      });
 
       if (isStaticExport) {
-          return cardsHtml;
+          return cards.join('');
       }
 
-      container.innerHTML = cardsHtml;
+      container.innerHTML = cards.join('');
   };
   const renderSummary = (summaryData, outCurr, options = {}) => {
     const { isStaticExport = false } = options;
@@ -1055,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!summaryData.hasData) {
-        const empty = `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Žádná data pro souhrn.</div>`;
+        const empty = `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Žádná data pro souhrn.</div>`;
         if (isStaticExport) {
             return empty;
         }
@@ -1066,9 +1250,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
-    const pnlClassInteractive = totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const pnlClassInteractive = totalPnl >= 0 ? 'text-positive' : 'text-negative';
     const pnlClassExport = totalPnl >= 0 ? 'text-positive' : 'text-negative';
-    const irrClassInteractive = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const irrClassInteractive = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
     const irrClassExport = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
     let dateDisclaimer = '';
     if (minValuationDate && maxValuationDate) {
@@ -1103,19 +1287,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return exportContent;
     }
 
-    const content = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="space-y-4">
-        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Celkové vklady</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalInvestConverted)}</span></div>
-        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Aktuální hodnota</span><span class="font-medium tabular text-lg text-slate-900">${cellNum(totalCurrentConverted)}</span></div>
-        <div class="flex justify-between items-baseline"><span class="text-slate-500">Čistý zisk / ztráta</span><span class="font-semibold tabular text-lg ${pnlClassInteractive}">${cellNum(totalPnl)}</span></div>
+    const interactiveMetrics = [
+      { label: 'Celkové vklady', value: cellNum(totalInvestConverted) },
+      { label: 'Aktuální hodnota', value: cellNum(totalCurrentConverted) },
+      { label: 'Čistý zisk / ztráta', value: cellNum(totalPnl), toneClass: pnlClassInteractive },
+      { label: 'Kumulativní zhodnocení', value: cellPct(totalRet), toneClass: pnlClassInteractive },
+      { label: 'XIRR', value: isFinite(portfolioIrr) ? `${cellPct(portfolioIrr)} p.a.` : '—', toneClass: irrClassInteractive },
+      { label: 'Váž. prům. doba', value: isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—' }
+    ];
+    const interactiveCards = interactiveMetrics.map(({ label, value, toneClass }) => `
+      <div class="summary-card">
+        <span class="summary-label">${label}</span>
+        <span class="summary-value ${toneClass ? toneClass : ''}">${value}</span>
       </div>
-      <div class="space-y-4">
-        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">Kumulativní zhodnocení</span><span class="font-semibold tabular text-lg ${pnlClassInteractive}">${cellPct(totalRet)}</span></div>
-        <div class="flex justify-between items-baseline pb-3 border-b border-slate-200/70"><span class="text-slate-500">XIRR (časově vážený výnos)</span><span class="font-bold tabular text-lg ${irrClassInteractive}">${isFinite(portfolioIrr) ? cellPct(portfolioIrr) + ' p.a.' : '—'}</span></div>
-        <div class="flex justify-between items-baseline"><span class="text-slate-500">Vážená prům. doba investice</span><span class="font-medium tabular text-lg text-slate-900">${isFinite(weightedAvgMonths) ? `${cellNum(weightedAvgMonths, 1)} měs.` : '—'}</span></div>
-      </div>
-    </div>
-    <div class="text-xs text-slate-400 mt-4 italic">${dateDisclaimer}</div>`;
+    `).join('');
+    const content = `<div class="summary-export">
+      <div class="summary-grid">${interactiveCards}</div>
+      ${dateDisclaimer ? `<p class="summary-note">${htmlEscape(dateDisclaimer)}</p>` : ''}
+    </div>`;
 
     if (summaryContainer) {
         summaryContainer.innerHTML = content;
@@ -1147,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pieCard.style.display = 'block';
         const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
         if (pieContainer) {
-        pieContainer.innerHTML = `<div class="text-center py-10 text-slate-500">Pro zobrazení grafu doplňte směnný kurz.</div>`;
+        pieContainer.innerHTML = `<div class="text-center py-10 text-muted">Pro zobrazení grafu doplňte směnný kurz.</div>`;
         }
     }
     if (chartsSection) {
@@ -1162,9 +1351,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const exportChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioIrr, conversionReady);
         if (!exportChart.available) {
             if (exportChart.reason === 'conversion') {
-                return `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Liniový graf nelze vytvořit bez platného převodu měn.</div>`;
+                return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Liniový graf nelze vytvořit bez platného převodu měn.</div>`;
             }
-            return `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Pro liniový graf nejsou k dispozici údaje.</div>`;
+            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Pro liniový graf nejsou k dispozici údaje.</div>`;
         }
         const legend = exportChart.hasIrr
             ? `<div class="line-legend"><span class="legend-pill legend-pill--base">Kumulované vklady</span><span class="legend-pill legend-pill--value">Odhad hodnoty</span>${exportChart.irrPositive ? '<span class="legend-pill legend-pill--projection">Projekce</span>' : ''}</div>`
@@ -1185,7 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const futureEndDate = new Date('2035-12-31');
     const totalTimeSpan = futureEndDate - firstDate;
     if (totalTimeSpan <= 0) {
-      container.innerHTML = `<div class="text-center py-10 text-slate-500">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
+      container.innerHTML = `<div class="text-center py-10 text-muted">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
       return;
     }
     const allPoints = [];
@@ -1245,9 +1434,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const contributionPath = "M" + historicalPoints.map(p => `${xScale(p.date)},${yScale(p.contributions)}`).join(" L");
     const valuePath = "M" + historicalPoints.map(p => `${xScale(p.date)},${yScale(p.value)}`).join(" L");
     const projectionPath = "M" + projectionPoints.map(p => `${xScale(p.date)},${yScale(p.value)}`).join(" L");
-    innerHTML += `<path d="${contributionPath}" fill="none" stroke="#9ca3af" stroke-width="2"></path>`;
-    innerHTML += `<path d="${valuePath}" fill="none" stroke="#10b981" stroke-width="2.5"></path>`;
-    innerHTML += `<path d="${projectionPath}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
+    innerHTML += `<path d="${contributionPath}" fill="none" stroke="#A4C4BC" stroke-width="2"></path>`;
+    innerHTML += `<path d="${valuePath}" fill="none" stroke="#4DB1C8" stroke-width="2.5"></path>`;
+    innerHTML += `<path d="${projectionPath}" fill="none" stroke="#0d2c54" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
     const xToday = xScale(today);
     const snapPoints = [{x: xToday, y: yScale(valueAtToday), date: today, value: valueAtToday, isToday: true}];
     if (!options.isForPdf) {
@@ -1271,14 +1460,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = yScale(runningValueForDots);
             let tooltipText = '';
             if (dayData.dailyDeposits.length > 1) {
-            tooltipText = `<div class="font-bold text-slate-800">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
-                    dayData.dailyDeposits.map(d => `<div class="text-sm text-slate-600">${d.fund}: ${cellNum(d.amount, 0)} ${outCurr}</div>`).join('');
+            tooltipText = `<div class="font-bold text-primary">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
+                    dayData.dailyDeposits.map(d => `<div class="text-sm text-body">${d.fund}: ${cellNum(d.amount, 0)} ${outCurr}</div>`).join('');
             } else {
                 const d = dayData.dailyDeposits[0];
-                tooltipText = `<div class="text-slate-700">Vklad (${d.fund}): ${cellNum(d.amount, 0)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
+                tooltipText = `<div class="text-primary">Vklad (${d.fund}): ${cellNum(d.amount, 0)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
             }
             const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
-            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#14b8a6" data-tooltip-text='${escapedTooltipText}'></circle>`;
+            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#4DB1C8" data-tooltip-text='${escapedTooltipText}'></circle>`;
             snapPoints.push({
                 x,
                 y,
@@ -1290,9 +1479,9 @@ document.addEventListener('DOMContentLoaded', () => {
             lastDateForDots = dayData.date;
         });
     }
-    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0f766e" stroke-width="1.5"></line>`;
-    innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0f766e" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
-    innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#10b981"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#10b981" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="#9ca3af" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
+    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0d2c54" stroke-width="1.5"></line>`;
+    innerHTML += `<circle cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0d2c54" stroke="white" stroke-width="2" data-tooltip-text="Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${cellNum(valueAtToday,0)} ${outCurr}"></circle>`;
+    innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="#A4C4BC" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
     if (options.isForPdf) {
         const fixedTooltipPoints = [ { date: today, label: 'Dnes' } ];
         const endOfYear = new Date(today.getFullYear(), 11, 31);
@@ -1311,7 +1500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const x = xScale(point.date);
             const y = yScale(value);
             innerHTML += `<g transform="translate(${x}, ${y})">
-                <circle r="5" fill="#0f766e" stroke="white" stroke-width="2"></circle>
+                <circle r="5" fill="#0d2c54" stroke="white" stroke-width="2"></circle>
                 <rect x="-40" y="-35" width="80" height="20" rx="5" fill="rgba(255,255,255,0.8)"></rect>
                 <text text-anchor="middle" y="-20" font-size="10px" fill="#1f2937">
                     <tspan x="0" dy="0">${point.label}: ${cellNum(value, 0)}</tspan>
@@ -1357,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalDate = closestSnapPoint.date;
                 finalValue = closestSnapPoint.value;
                 if (closestSnapPoint.isToday) {
-                tooltipText = `<div class="font-bold text-slate-800">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-600">Dopočítaná hodnota: ${cellNum(finalValue, 0)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-primary">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">Dopočítaná hodnota: ${cellNum(finalValue, 0)} ${outCurr}</div>`;
                 } else {
                     tooltipText = closestSnapPoint.tooltipText;
                 }
@@ -1373,7 +1562,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalValue = allPoints[allPoints.length-1].value;
                 }
                 finalY = yScale(finalValue);
-                tooltipText = `<div class="font-bold text-slate-800">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-slate-600">${cellNum(finalValue, 0)} ${outCurr}</div>`;
+                tooltipText = `<div class="font-bold text-primary">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">${cellNum(finalValue, 0)} ${outCurr}</div>`;
             }
             guideLine.setAttribute('x1', finalX);
             guideLine.setAttribute('y1', finalY);
@@ -1387,13 +1576,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tooltip) {
                 tooltip.innerHTML = tooltipText;
                 tooltip.classList.remove('hidden');
+                tooltip.style.opacity = '1';
             }
         });
         interactionLayer.addEventListener('mouseout', () => {
             guideLine.style.opacity = 0;
             guideCircle.style.opacity = 0;
             const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
-            tooltip?.classList.add('hidden');
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.style.opacity = '0';
+            }
         });
     }
     container.appendChild(svg);
@@ -1467,7 +1660,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isStaticExport) {
         if (!data.length || !(pieTotal > 0)) {
-            return `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-10 text-center text-slate-500">Nejsou k dispozici data pro koláčový graf.</div>`;
+            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Nejsou k dispozici data pro koláčový graf.</div>`;
         }
         const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
         const svg = buildStaticPieChartSvg(slices, pieTotal);
@@ -1478,16 +1671,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     container.innerHTML = '';
     if(data.length === 0) {
-        container.innerHTML = `<div class="text-center py-10 text-slate-500">Pro zvolené datum nejsou data.</div>`;
+        container.innerHTML = `<div class="text-center py-10 text-muted">Pro zvolené datum nejsou data.</div>`;
         return;
     }
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute('viewBox', '0 0 100 100');
-    let angle = -90; const outerRadius = 48; const innerRadius = 25;
+    let angle = -90; const outerRadius = 48; const innerRadius = 24;
     if (data.length === 1 && pieTotal > 0) {
         const d = data[0];
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.classList.add('pie-segment');
+        g.dataset.name = d.name;
+        g.dataset.value = `${cellNum(d.totalCurrent)} ${outCurr}`;
+        g.dataset.percent = cellPct(d.totalCurrent / pieTotal);
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute('cx', 50);
         circle.setAttribute('cy', 50);
@@ -1514,16 +1710,24 @@ document.addEventListener('DOMContentLoaded', () => {
             g.appendChild(path); svg.appendChild(g);
         });
     }
-    const legend = data.map((d) => `<div class="flex items-center gap-2 text-sm"><div class="w-3 h-3 rounded-sm" style="background-color: ${getColor(d.name)}"></div><div class="flex-1 truncate" title="${d.name}">${d.name}</div><div class="font-medium tabular">${cellPct(d.totalCurrent/pieTotal)}</div></div>`).join('');
-    const gridClass = options.isForPdf ? 'grid-cols-2 items-center' : 'sm:grid-cols-2';
-    container.innerHTML = `<div class="grid ${gridClass} gap-6 items-center"><div class="chart-svg-wrapper"></div><div class="space-y-2">${legend}</div></div>`;
-    container.querySelector('.chart-svg-wrapper').appendChild(svg);
+    const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    centerCircle.setAttribute('cx', 50);
+    centerCircle.setAttribute('cy', 50);
+    centerCircle.setAttribute('r', innerRadius - 3);
+    centerCircle.setAttribute('fill', '#ffffff');
+    centerCircle.setAttribute('stroke', '#EAECEE');
+    centerCircle.setAttribute('stroke-width', '2');
+    centerCircle.setAttribute('pointer-events', 'none');
+    svg.appendChild(centerCircle);
+    const legend = data.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${getColor(d.name)}"></span><span class="legend-name">${d.name}</span><span class="legend-value">${cellPct(d.totalCurrent / pieTotal)}</span></div>`).join('');
+    container.innerHTML = `<div class="pie-export"><div class="pie-canvas"></div><div class="pie-legend">${legend}</div></div>`;
+    container.querySelector('.pie-canvas').appendChild(svg);
   };
 
   const buildStaticPieChartSvg = (slices, total) => {
       if (!slices.length || !(total > 0)) return '';
       const outerRadius = 48;
-      const innerRadius = 26;
+      const innerRadius = 24;
       let angle = -90;
       const parts = slices.map(({ name, value, color }) => {
           const percent = value / total;
@@ -1548,7 +1752,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </g>`;
       }).join('');
       const backdrop = `<circle cx="50" cy="50" r="${outerRadius}" fill="rgba(240,253,250,0.65)" />`;
-      const inner = `<circle cx="50" cy="50" r="${innerRadius - 6}" fill="#ffffff" stroke="rgba(148,163,184,0.35)" stroke-width="1.5" />`;
+      const inner = `<circle cx="50" cy="50" r="${innerRadius - 3}" fill="#ffffff" stroke="rgba(148,163,184,0.35)" stroke-width="1.5" />`;
       return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${backdrop}${parts}${inner}</svg>`;
   };
 
@@ -1680,19 +1884,19 @@ document.addEventListener('DOMContentLoaded', () => {
             <stop offset="100%" stop-color="#ffffff" />
           </linearGradient>
           <linearGradient id="chartValueStroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#0f766e" />
-            <stop offset="100%" stop-color="#38bdf8" />
+            <stop offset="0%" stop-color="#4DB1C8" />
+            <stop offset="100%" stop-color="#0d2c54" />
           </linearGradient>
           <linearGradient id="chartProjectionStroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#38bdf8" />
-            <stop offset="100%" stop-color="#6366f1" />
+            <stop offset="0%" stop-color="#0d2c54" />
+            <stop offset="100%" stop-color="#A4C4BC" />
           </linearGradient>
           <linearGradient id="chartAreaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#0f766e" stop-opacity="0.24" />
-            <stop offset="100%" stop-color="#0f766e" stop-opacity="0" />
+            <stop offset="0%" stop-color="#4DB1C8" stop-opacity="0.25" />
+            <stop offset="100%" stop-color="#4DB1C8" stop-opacity="0" />
           </linearGradient>
         </defs>`;
-      const todayLine = hasIrr ? `<line x1="${formatCoord(xScale(today))}" y1="${margin.top}" x2="${formatCoord(xScale(today))}" y2="${margin.top + chartHeight}" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="6 6" stroke-opacity="0.7" />` : '';
+      const todayLine = hasIrr ? `<line x1="${formatCoord(xScale(today))}" y1="${margin.top}" x2="${formatCoord(xScale(today))}" y2="${margin.top + chartHeight}" stroke="#4DB1C8" stroke-width="1.5" stroke-dasharray="6 6" stroke-opacity="0.7" />` : '';
 
       const yTicks = [];
       const tickCount = 5;
@@ -1721,17 +1925,17 @@ document.addEventListener('DOMContentLoaded', () => {
           const amountLabel = cellNum(point.amount);
           const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${cellNum(item.amount)})`).join(' • ');
           const tooltip = `${dateLabel} • ${amountLabel} ${outCurr}${breakdownText ? `\n${breakdownText}` : ''}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0f766e" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDate(point.date);
           const tooltip = `Odhad ${dateLabel}: ${cellNum(point.value)} ${outCurr}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#0ea5e9" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const todayTooltip = `Dnes (${formatDate(today)}): ${cellNum(valueAtToday)} ${outCurr}`;
-      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#0ea5e9" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
+      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
       const svg = `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Vývoj portfolia">
@@ -1745,7 +1949,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
           ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
-          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#334155" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="#A4C4BC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
           ${hasIrr && valuePath ? `<path d="${valuePath}" fill="none" stroke="url(#chartValueStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
           ${irrPositive && projectionPath ? `<path d="${projectionPath}" fill="none" stroke="url(#chartProjectionStroke)" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />` : ''}
           ${todayLine}
@@ -1817,7 +2021,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const pieBlock = allocationData.length
           ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true })
-          : `<div class="rounded-2xl border border-slate-200/60 bg-white/70 py-6 text-center text-slate-500">Pro koláčový graf nejsou dostupná data.</div>`;
+          : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">Pro koláčový graf nejsou dostupná data.</div>`;
 
       const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady });
 
@@ -1907,9 +2111,10 @@ document.addEventListener('DOMContentLoaded', () => {
           : '';
 
       const heroSection = `<header class="export-hero">
-        <span class="export-hero__badge">Interaktivní prezentace portfolia</span>
+        <div class="brand-logo">Fair<span>Life</span></div>
+        <span class="export-hero__badge">Klientský report</span>
         <h1 class="export-hero__title">Report investičního portfolia</h1>
-        <p class="export-hero__lead">Tato prezentace shrnuje přehled Vašeho investičního portfolia – najdete v ní souhrn výsledků, rozložení fondů i výhled dalšího vývoje, který jsem pro Vás připravil jako Váš finanční poradce.</p>
+        <p class="export-hero__lead">Tato prezentace shrnuje aktuální stav Vašeho investičního portfolia a převádí všechny dostupné údaje do cílové měny ${htmlEscape(outCurr)}.</p>
         <div class="export-hero__meta">
           <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
           <div class="export-hero__meta-item"><span class="meta-label">Generováno</span><span class="meta-value">${htmlEscape(generatedLabel)}</span></div>
@@ -2213,14 +2418,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const segment = e.target.closest('.pie-segment');
         const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
         if (segment) {
-            tooltip.innerHTML = `<div class="font-bold text-slate-800">${segment.dataset.name}</div><div class="text-slate-600">${segment.dataset.value} (${segment.dataset.percent})</div>`;
+            tooltip.innerHTML = `<div class="font-bold text-primary">${segment.dataset.name}</div><div class="text-body">${segment.dataset.value} (${segment.dataset.percent})</div>`;
             tooltip.classList.remove('hidden');
+            tooltip.style.opacity = '1';
         } else if (dot && dot.dataset.tooltipText) {
             tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"');
             tooltip.classList.remove('hidden');
+            tooltip.style.opacity = '1';
         }
     });
-    document.addEventListener('mouseout', e => { if(e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) { tooltip.classList.add('hidden'); } });
+    document.addEventListener('mouseout', e => {
+        if (e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) {
+            tooltip.classList.add('hidden');
+            tooltip.style.opacity = '0';
+        }
+    });
     loadState();
   };
   init();
