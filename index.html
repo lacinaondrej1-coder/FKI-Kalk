@@ -327,22 +327,37 @@
         flex-shrink: 0;
     }
     /* PATCH */
+    .benefit {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-block: 14px;
+    }
+    /* PATCH */
     .benefit-icon {
-        width: 28px;
-        height: 28px;
-        display: inline-grid;
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        display: grid;
         place-items: center;
         border-radius: 999px;
         background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-        margin-right: 12px;
-        flex-shrink: 0;
     }
     /* PATCH */
     .benefit-icon > svg {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         color: var(--color-primary);
         stroke-width: 2;
+    }
+    /* PATCH */
+    .benefit-title {
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+    /* PATCH */
+    .benefit-desc {
+        opacity: 0.85;
     }
     .feature-text { display: flex; flex-direction: column; gap: 0.35rem; }
     .feature-title { font-weight: 600; color: var(--color-primary); font-size: 1rem; }
@@ -628,24 +643,24 @@
           </div>
         </div>
         <div class="feature-stack">
-            <div class="feature-card">
+            <div class="feature-card benefit">
               <!-- /* PATCH */ -->
               <div class="benefit-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-diverzifikace" /></svg>
               </div>
             <div class="feature-text">
-              <span class="feature-title">Interaktivní řízení</span>
-              <span class="feature-desc">Import, export i validace dat v reálném čase na jednom místě.</span>
+              <span class="feature-title benefit-title">Interaktivní řízení</span>
+              <span class="feature-desc benefit-desc">Import, export i validace dat v reálném čase na jednom místě.</span>
             </div>
           </div>
-            <div class="feature-card">
+            <div class="feature-card benefit">
               <!-- /* PATCH */ -->
               <div class="benefit-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-rust" /></svg>
               </div>
             <div class="feature-text">
-              <span class="feature-title">Pokročilé analýzy</span>
-              <span class="feature-desc">XIRR, projekce výnosů i vizualizace portfolia bez nutnosti dalších nástrojů.</span>
+              <span class="feature-title benefit-title">Pokročilé analýzy</span>
+              <span class="feature-desc benefit-desc">XIRR, projekce výnosů i vizualizace portfolia bez nutnosti dalších nástrojů.</span>
             </div>
           </div>
         </div>
@@ -2555,24 +2570,24 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
           <div class="export-hero__features">
-            <div class="feature-card">
+            <div class="feature-card benefit">
               <!-- /* PATCH */ -->
               <div class="benefit-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-diverzifikace" /></svg>
               </div>
               <div class="feature-text">
-                <span class="feature-title">Diverzifikované portfolio</span>
-                <span class="feature-desc">Vaše investice jsou rozloženy pro optimální růst a bezpečnost.</span>
+                <span class="feature-title benefit-title">Diverzifikované portfolio</span>
+                <span class="feature-desc benefit-desc">Vaše investice jsou rozloženy pro optimální růst a bezpečnost.</span>
               </div>
             </div>
-            <div class="feature-card">
+            <div class="feature-card benefit">
               <!-- /* PATCH */ -->
               <div class="benefit-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-rust" /></svg>
               </div>
               <div class="feature-text">
-                <span class="feature-title">Dlouhodobý růst</span>
-                <span class="feature-desc">Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.</span>
+                <span class="feature-title benefit-title">Dlouhodobý růst</span>
+                <span class="feature-desc benefit-desc">Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.</span>
               </div>
             </div>
           </div>
@@ -2580,7 +2595,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </header>`;
 
       /* PATCH */
-      const iconSprite = `<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="ico-diverzifikace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3a9 9 0 0 1 7 3"/><path d="M21 12a9 9 0 0 1-3 7"/><path d="M12 21a9 9 0 0 1-7-3"/><path d="M3 12a9 9 0 0 1 3-7"/><path d="M12 3v5.5"/><path d="M21 12h-5.5"/><path d="M12 21v-5.5"/><path d="M3 12h5.5"/></symbol><symbol id="ico-rust" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 21v-7"/><path d="M12 14c-2.6 0-4.6-2-5.4-4.8 2.8-.5 4.7.7 5.4 2.9"/><path d="M12 14c2.6 0 4.6-2 5.4-4.8-2.8-.5-4.7.7-5.4 2.9"/><path d="M9 11l4-4 3 3 3-3"/><path d="M16 7h3v3"/></symbol></defs></svg>`;
+      const iconSprite = `<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="ico-diverzifikace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3a9 9 0 0 1 7 4"/><path d="M21 12a9 9 0 0 1-3 6.5"/><path d="M16.5 19.5a9 9 0 0 1-8.5.5"/><path d="M6 18a9 9 0 0 1-2-7"/><path d="M12 12V4.5"/><path d="M12 12l5.5 2"/><path d="M12 12l-4 6"/><path d="M12 12l-5-3.5"/></symbol><symbol id="ico-rust" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 21v-6"/><path d="M12 15c-2.5 0-4.5-2.2-5-5 2.8-.4 4.6.8 5 3"/><path d="M12 15c2.5 0 4.5-2.2 5-5-2.8-.4-4.6.8-5 3"/><path d="M5 17l4-4 3 3 5-6 2 2"/><path d="M18 9h3v3"/></symbol></defs></svg>`;
       /* PATCH */
       const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString('cs-CZ');})();";
       /* PATCH */
