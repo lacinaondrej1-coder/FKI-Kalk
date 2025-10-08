@@ -2407,6 +2407,35 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       /* PATCH */
+      const toneCopy = communicationTone === 'tykani'
+          ? {
+              heroLead: (sal) => `Ahoj ${sal}, připravil jsem pro tebe tento přehledný report, kde jednoduše uvidíš, jak se daří tvým investicím. Věřím, že je vše maximálně srozumitelné, ale pokud budeš mít jakékoli otázky, dej mi prosím vědět – rád vše s tebou projdu osobně.`,
+              benefitPortfolio: 'Tvé investice jsou rozloženy pro optimální růst a bezpečnost.',
+              benefitGrowth: 'Strategie je nastavená s ohledem na dlouhodobé zhodnocení tvého majetku.',
+              narrativeTitle: 'Vítej ve svém reportu',
+              narrativeBody: 'Na následujících stránkách najdeš klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Ber to jako takovou „mapu“ naší společné cesty za tvými finančními cíli.',
+              summaryTitle: 'Souhrn tvého portfolia',
+              summaryBody: 'Klíčové ukazatele, které ti v kostce ukážou celkové zdraví a výkon tvých investic.',
+              xirrExplanation: 'Jde o klíčový ukazatel reálné výkonnosti tvého portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jsi do portfolia vkládal. Výsledné procento ti tak dává přesný obraz o tom, jak efektivně tvoje peníze v průměru každý rok pracovaly.',
+              cumulativeExplanation: 'Tento údaj ti poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje tvůj <strong>celkový čistý výnos jako procento ze všech tvých vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
+              disclaimerIntro: 'Prosím věnuj pozornost následujícím informacím a limitům výpočtů.'
+          }
+          : {
+              heroLead: (sal) => `Dobrý den, ${sal}, připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.`,
+              benefitPortfolio: 'Vaše investice jsou rozloženy pro optimální růst a bezpečnost.',
+              benefitGrowth: 'Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.',
+              narrativeTitle: 'Vítejte ve Vašem reportu',
+              narrativeBody: 'Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou „mapu“ naší společné cesty za Vašimi finančními cíli.',
+              summaryTitle: 'Souhrn Vašeho portfolia',
+              summaryBody: 'Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.',
+              xirrExplanation: 'Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.',
+              cumulativeExplanation: 'Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
+              disclaimerIntro: 'Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.'
+          };
+      /* PATCH */
+      const heroLeadText = toneCopy.heroLead(salutation);
+
+      /* PATCH */
       const formattedOverrides = {
           totalCurrent: formatCurrency0(snapshot.portfolioSummary.totalCurrentConverted, outCurr)
       };
@@ -2464,32 +2493,6 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const generatedDateLabel = generatedAt.toLocaleDateString('cs-CZ');
       const fundCount = Object.keys(groupedFunds).length;
-      const toneCopy = communicationTone === 'tykani'
-          ? {
-              heroLead: (sal) => `Ahoj ${sal}, připravil jsem pro tebe tento přehledný report, kde jednoduše uvidíš, jak se daří tvým investicím. Věřím, že je vše maximálně srozumitelné, ale pokud budeš mít jakékoli otázky, dej mi prosím vědět – rád vše s tebou projdu osobně.`,
-              benefitPortfolio: 'Tvé investice jsou rozloženy pro optimální růst a bezpečnost.',
-              benefitGrowth: 'Strategie je nastavená s ohledem na dlouhodobé zhodnocení tvého majetku.',
-              narrativeTitle: 'Vítej ve svém reportu',
-              narrativeBody: 'Na následujících stránkách najdeš klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Ber to jako takovou „mapu“ naší společné cesty za tvými finančními cíli.',
-              summaryTitle: 'Souhrn tvého portfolia',
-              summaryBody: 'Klíčové ukazatele, které ti v kostce ukážou celkové zdraví a výkon tvých investic.',
-              xirrExplanation: 'Jde o klíčový ukazatel reálné výkonnosti tvého portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jsi do portfolia vkládal. Výsledné procento ti tak dává přesný obraz o tom, jak efektivně tvoje peníze v průměru každý rok pracovaly.',
-              cumulativeExplanation: 'Tento údaj ti poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje tvůj <strong>celkový čistý výnos jako procento ze všech tvých vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
-              disclaimerIntro: 'Prosím věnuj pozornost následujícím informacím a limitům výpočtů.'
-          }
-          : {
-              heroLead: (sal) => `Dobrý den, ${sal}, připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.`,
-              benefitPortfolio: 'Vaše investice jsou rozloženy pro optimální růst a bezpečnost.',
-              benefitGrowth: 'Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.',
-              narrativeTitle: 'Vítejte ve Vašem reportu',
-              narrativeBody: 'Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou „mapu“ naší společné cesty za Vašimi finančními cíli.',
-              summaryTitle: 'Souhrn Vašeho portfolia',
-              summaryBody: 'Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.',
-              xirrExplanation: 'Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.',
-              cumulativeExplanation: 'Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
-              disclaimerIntro: 'Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.'
-          };
-      const heroLeadText = toneCopy.heroLead(salutation);
       const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
           ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
           : '';
