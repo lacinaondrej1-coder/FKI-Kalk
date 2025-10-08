@@ -699,10 +699,19 @@
                 <input id="client-salutation" type="text" placeholder="např. Pepo" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[260px] text-primary placeholder:text-muted" />
                 <span class="text-xs text-muted">Tip: Pepo, Jano, paní Nováková…</span>
               </label>
-              <label class="flex items-center gap-2 text-sm text-body">
-                <input id="client-prefer-vykanie" type="checkbox" class="form-checkbox" />
-                <span>Preferovat vykání v reportu</span>
-              </label>
+              <div class="flex flex-col gap-2 text-sm text-body">
+                <span class="font-medium text-primary">Forma komunikace v reportu</span>
+                <div class="flex flex-wrap items-center gap-4">
+                  <label class="inline-flex items-center gap-2">
+                    <input id="client-tone-vykani" type="radio" name="client-tone" value="vykani" class="form-radio" />
+                    <span>Vykání</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2">
+                    <input id="client-tone-tykani" type="radio" name="client-tone" value="tykani" class="form-radio" />
+                    <span>Tykání</span>
+                  </label>
+                </div>
+              </div>
               <div class="flex flex-wrap gap-2">
                 <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
                 <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
@@ -842,15 +851,21 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-  const state = { 
+  const state = {
       rows: { avant: [], codya: [], atris: [], jt: [] },
       lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {},
       clientName: '',
       clientSalutation: '',
-      clientPreferVykanie: false
+      clientTone: 'vykani'
   };
   const elements = {};
+  const updateToneInputs = () => {
+      if (!Array.isArray(elements.clientToneInputs)) return;
+      elements.clientToneInputs.forEach((input) => {
+          input.checked = input.value === state.clientTone;
+      });
+  };
   let rowSeq = 0;
   let rafId = 0;
 
@@ -1002,12 +1017,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return replaceEnding(lower + 'e');
   };
   /* PATCH */
-  const formatSalutation = ({ firstName = '', lastName = '', preferVykanie = false, manualSalutation = '' }) => {
+  const formatSalutation = ({ firstName = '', lastName = '', tone = 'vykani', manualSalutation = '' }) => {
       const manual = manualSalutation.trim();
       if (manual) return manual;
       const first = firstName.trim();
       const last = lastName.trim();
-      if (preferVykanie) {
+      if (tone === 'vykani') {
           if (last) {
               if (/ová$/i.test(last)) {
                   return `paní ${last}`;
@@ -1053,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveState = () => {
       try {
-          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientPreferVykanie: state.clientPreferVykanie }));
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientTone: state.clientTone }));
           if (elements.lastSavedIndicator) {
               elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
           }
@@ -1062,8 +1077,8 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Chyba při ukládání dat.", 'error');
       }
   };
-  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; state.clientPreferVykanie = Boolean(savedState.clientPreferVykanie); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } if (elements.clientPreferVykanieInput) { elements.clientPreferVykanieInput.checked = state.clientPreferVykanie; } scheduleRecalc(); };
-  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientPreferVykanie: state.clientPreferVykanie }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
+  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; if (typeof savedState.clientTone === 'string') { state.clientTone = savedState.clientTone === 'tykani' ? 'tykani' : 'vykani'; } else if (Object.prototype.hasOwnProperty.call(savedState, 'clientPreferVykanie')) { state.clientTone = savedState.clientPreferVykanie ? 'vykani' : 'tykani'; } const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } updateToneInputs(); scheduleRecalc(); };
+  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientTone: state.clientTone }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
   const importState = (file) => {
       if (!file) return;
       const reader = new FileReader();
@@ -1076,7 +1091,13 @@ document.addEventListener('DOMContentLoaded', () => {
                   });
                   state.clientName = typeof importedState.clientName === 'string' ? importedState.clientName : '';
                   state.clientSalutation = typeof importedState.clientSalutation === 'string' ? importedState.clientSalutation : '';
-                  state.clientPreferVykanie = Boolean(importedState.clientPreferVykanie);
+                  if (typeof importedState.clientTone === 'string') {
+                      state.clientTone = importedState.clientTone === 'tykani' ? 'tykani' : 'vykani';
+                  } else if (Object.prototype.hasOwnProperty.call(importedState, 'clientPreferVykanie')) {
+                      state.clientTone = importedState.clientPreferVykanie ? 'vykani' : 'tykani';
+                  } else {
+                      state.clientTone = 'vykani';
+                  }
                   const allIds = Object.values(state.rows).flat().map(r => r.id);
                   rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
                   if (elements.clientNameInput) {
@@ -1085,9 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   if (elements.clientSalutationInput) {
                       elements.clientSalutationInput.value = state.clientSalutation;
                   }
-                  if (elements.clientPreferVykanieInput) {
-                      elements.clientPreferVykanieInput.checked = state.clientPreferVykanie;
-                  }
+                  updateToneInputs();
                   saveState();
                   renderAllInputs();
                   scheduleRecalc();
@@ -1512,6 +1531,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const renderSummary = (summaryData, outCurr, options = {}) => {
     const { isStaticExport = false, hasMixedCurrencies = false, hasFx = true } = options;
+    const tone = options.tone === 'tykani' ? 'tykani' : 'vykani';
     const summaryContainer = options.container || elements.portfolioSummary || document.getElementById('portfolio-summary-content');
 
     if (!isStaticExport && elements.amountNotePortfolio) {
@@ -1566,13 +1586,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (options.captureFormatted && typeof options.captureFormatted === 'object') {
             Object.assign(options.captureFormatted, formatted);
         }
+        const labelSet = tone === 'tykani'
+            ? {
+                totalInvest: 'TVÉ CELKOVÉ VKLADY',
+                totalCurrent: 'AKTUÁLNÍ HODNOTA',
+                totalPnl: 'TVŮJ ČISTÝ VÝNOS',
+                totalRet: 'CELKOVÉ ZHODNOCENÍ',
+                irr: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)',
+                weightedMonths: 'PRŮMĚRNÁ DOBA INVESTICE'
+            }
+            : {
+                totalInvest: 'VAŠE CELKOVÉ VKLADY',
+                totalCurrent: 'AKTUÁLNÍ HODNOTA',
+                totalPnl: 'ČISTÝ VÝNOS',
+                totalRet: 'CELKOVÉ ZHODNOCENÍ',
+                irr: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)',
+                weightedMonths: 'PRŮMĚRNÁ DOBA INVESTICE'
+            };
         const summaryMetrics = [
-            { label: 'VAŠE CELKOVÉ VKLADY', value: formatted.totalInvest },
-            { label: 'AKTUÁLNÍ HODNOTA', value: formatted.totalCurrent },
-            { label: 'ČISTÝ VÝNOS', value: formatted.totalPnl, toneClass: pnlClassExport },
-            { label: 'CELKOVÉ ZHODNOCENÍ', value: formatted.totalRet, toneClass: pnlClassExport },
-            { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: formatted.irr, toneClass: irrClassExport },
-            { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: formatted.weightedMonths }
+            { label: labelSet.totalInvest, value: formatted.totalInvest },
+            { label: labelSet.totalCurrent, value: formatted.totalCurrent },
+            { label: labelSet.totalPnl, value: formatted.totalPnl, toneClass: pnlClassExport },
+            { label: labelSet.totalRet, value: formatted.totalRet, toneClass: pnlClassExport },
+            { label: labelSet.irr, value: formatted.irr, toneClass: irrClassExport },
+            { label: labelSet.weightedMonths, value: formatted.weightedMonths }
         ];
 
         const cards = summaryMetrics.map(({ label, value, toneClass }) => `
@@ -2341,10 +2378,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const manualSalutation = (state.clientSalutation || '').trim();
       const nameParts = parseClientName(clientName);
+      const communicationTone = state.clientTone === 'tykani' ? 'tykani' : 'vykani';
       const salutation = formatSalutation({
           firstName: nameParts.firstName,
           lastName: nameParts.lastName,
-          preferVykanie: !!state.clientPreferVykanie,
+          tone: communicationTone,
           manualSalutation
       });
       if (!salutation) {
@@ -2375,7 +2413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const formattedCapture = {};
       /* PATCH */
-      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true, formattedTotals: formattedOverrides, captureFormatted: formattedCapture });
+      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true, formattedTotals: formattedOverrides, captureFormatted: formattedCapture, tone: communicationTone });
 
       /* PATCH */
       const sharedFormattedTotals = {
@@ -2409,11 +2447,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const explanationsBlock = `<div class="export-explanations">
         <article>
           <h3>Co je XIRR a jak funguje?</h3>
-          <p>Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.</p>
+          <p>${toneCopy.xirrExplanation}</p>
         </article>
         <article>
           <h3>Co znamená kumulativní zhodnocení?</h3>
-          <p>Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.</p>
+          <p>${toneCopy.cumulativeExplanation}</p>
         </article>
       </div>`;
 
@@ -2426,21 +2464,47 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const generatedDateLabel = generatedAt.toLocaleDateString('cs-CZ');
       const fundCount = Object.keys(groupedFunds).length;
+      const toneCopy = communicationTone === 'tykani'
+          ? {
+              heroLead: (sal) => `Ahoj ${sal}, připravil jsem pro tebe tento přehledný report, kde jednoduše uvidíš, jak se daří tvým investicím. Věřím, že je vše maximálně srozumitelné, ale pokud budeš mít jakékoli otázky, dej mi prosím vědět – rád vše s tebou projdu osobně.`,
+              benefitPortfolio: 'Tvé investice jsou rozloženy pro optimální růst a bezpečnost.',
+              benefitGrowth: 'Strategie je nastavená s ohledem na dlouhodobé zhodnocení tvého majetku.',
+              narrativeTitle: 'Vítej ve svém reportu',
+              narrativeBody: 'Na následujících stránkách najdeš klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Ber to jako takovou „mapu“ naší společné cesty za tvými finančními cíli.',
+              summaryTitle: 'Souhrn tvého portfolia',
+              summaryBody: 'Klíčové ukazatele, které ti v kostce ukážou celkové zdraví a výkon tvých investic.',
+              xirrExplanation: 'Jde o klíčový ukazatel reálné výkonnosti tvého portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jsi do portfolia vkládal. Výsledné procento ti tak dává přesný obraz o tom, jak efektivně tvoje peníze v průměru každý rok pracovaly.',
+              cumulativeExplanation: 'Tento údaj ti poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje tvůj <strong>celkový čistý výnos jako procento ze všech tvých vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
+              disclaimerIntro: 'Prosím věnuj pozornost následujícím informacím a limitům výpočtů.'
+          }
+          : {
+              heroLead: (sal) => `Dobrý den, ${sal}, připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.`,
+              benefitPortfolio: 'Vaše investice jsou rozloženy pro optimální růst a bezpečnost.',
+              benefitGrowth: 'Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.',
+              narrativeTitle: 'Vítejte ve Vašem reportu',
+              narrativeBody: 'Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou „mapu“ naší společné cesty za Vašimi finančními cíli.',
+              summaryTitle: 'Souhrn Vašeho portfolia',
+              summaryBody: 'Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.',
+              xirrExplanation: 'Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.',
+              cumulativeExplanation: 'Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
+              disclaimerIntro: 'Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.'
+          };
+      const heroLeadText = toneCopy.heroLead(salutation);
       const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
           ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
           : '';
 
       const narrativeSection = `<section class="narrative">
-        <h2>Vítejte ve Vašem reportu</h2>
-        <p>Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou 'mapu' naší společné cesty za Vašimi finančními cíli.</p>
+        <h2>${htmlEscape(toneCopy.narrativeTitle)}</h2>
+        <p>${htmlEscape(toneCopy.narrativeBody)}</p>
       </section>`;
 
       const summarySection = `<section class="card">
         <div class="section-heading">
           <span class="pill">SOUHRN</span>
-          <h2>Souhrn Vašeho portfolia</h2>
+          <h2>${htmlEscape(toneCopy.summaryTitle)}</h2>
           <p class="section-meta">Částky v ${htmlEscape(outCurr)}</p>
-          <p>Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.</p>
+          <p>${htmlEscape(toneCopy.summaryBody)}</p>
         </div>
         ${summaryBlock}
       </section>`;
@@ -2477,7 +2541,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="section-heading">
           <span class="pill">POZNÁMKY</span>
           <h2>Důležitá upozornění</h2>
-          <p>Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.</p>
+          <p>${htmlEscape(toneCopy.disclaimerIntro)}</p>
         </div>
         <div class="disclaimer-block">
           <h3 class="disclaimer-title">Klíčové poznámky</h3>
@@ -2505,16 +2569,13 @@ document.addEventListener('DOMContentLoaded', () => {
           ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatFxRate(fxRate)}</span></div>`
           : '';
 
-      const leadTemplate = 'Dobrý den, [Oslovení klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
-      const leadCopy = leadTemplate.replace('[Oslovení klienta]', htmlEscape(salutation));
-
       const heroSection = `<header class="export-hero">
         <div class="export-hero__layout">
           <div class="export-hero__content">
             <div class="brand-logo">Fair<span>Life</span></div>
             <span class="export-hero__badge">Klientský report</span>
             <h1 class="export-hero__title">Report investičního portfolia</h1>
-            <p class="export-hero__lead">${leadCopy}</p>
+            <p class="export-hero__lead">${htmlEscape(heroLeadText)}</p>
             <div class="export-hero__meta">
               <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
               <!-- /* PATCH */ -->
@@ -2528,13 +2589,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="feature-card benefit">
               <div class="feature-text">
                 <span class="feature-title benefit-title">Diverzifikované portfolio</span>
-                <span class="feature-desc benefit-desc">Vaše investice jsou rozloženy pro optimální růst a bezpečnost.</span>
+                <span class="feature-desc benefit-desc">${htmlEscape(toneCopy.benefitPortfolio)}</span>
               </div>
             </div>
             <div class="feature-card benefit">
               <div class="feature-text">
                 <span class="feature-title benefit-title">Dlouhodobý růst</span>
-                <span class="feature-desc benefit-desc">Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.</span>
+                <span class="feature-desc benefit-desc">${htmlEscape(toneCopy.benefitGrowth)}</span>
               </div>
             </div>
           </div>
@@ -2737,16 +2798,14 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.importFile = document.getElementById('import-file-input');
     elements.clientNameInput = document.getElementById('client-name');
     elements.clientSalutationInput = document.getElementById('client-salutation');
-    elements.clientPreferVykanieInput = document.getElementById('client-prefer-vykanie');
+    elements.clientToneInputs = Array.from(document.querySelectorAll('input[name="client-tone"]'));
     if (elements.clientNameInput) {
         elements.clientNameInput.value = state.clientName;
     }
     if (elements.clientSalutationInput) {
         elements.clientSalutationInput.value = state.clientSalutation;
     }
-    if (elements.clientPreferVykanieInput) {
-        elements.clientPreferVykanieInput.checked = state.clientPreferVykanie;
-    }
+    updateToneInputs();
     const currentYearEl = document.getElementById('current-year');
     if (currentYearEl) {
         currentYearEl.textContent = new Date().getFullYear();
@@ -2804,9 +2863,13 @@ document.addEventListener('DOMContentLoaded', () => {
         state.clientSalutation = trimmed;
         saveState();
     });
-    elements.clientPreferVykanieInput?.addEventListener('change', (e) => {
-        state.clientPreferVykanie = e.target.checked;
-        saveState();
+    elements.clientToneInputs.forEach((input) => {
+        input.addEventListener('change', (e) => {
+            if (!e.target.checked) return;
+            state.clientTone = e.target.value === 'tykani' ? 'tykani' : 'vykani';
+            updateToneInputs();
+            saveState();
+        });
     });
     const providerSections = elements.providerSections;
     if (providerSections) {
