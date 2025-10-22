@@ -12,65 +12,41 @@
         :root {
             color-scheme: light;
         }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
-            background: radial-gradient(circle at top, #0ea5e980, rgba(14, 165, 233, 0) 45%), #f1f5f9;
-            color: #0f172a;
+            background: linear-gradient(180deg, #f6f8fb 0%, #eef2fb 100%);
+            color: #0f1c2f;
             min-height: 100vh;
+            margin: 0;
         }
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .tabular-nums { font-variant-numeric: tabular-nums; }
+        a { color: inherit; }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         details > summary .summary-arrow { transition: transform 0.2s; }
         details[open] > summary .summary-arrow { transform: rotate(90deg); }
         #toast-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
-        .toast { display: flex; align-items: center; padding: 1rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); opacity: 0; transform: translateX(100%); transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1); }
+        .toast { display: flex; align-items: center; padding: 1rem 1.25rem; border-radius: 14px; box-shadow: 0 18px 35px -18px rgba(15, 23, 42, 0.35); opacity: 0; transform: translateX(100%); transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1); }
         .toast.show { opacity: 1; transform: translateX(0); }
         .toast-success { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
         .toast-error { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-        .line-chart-grid-line { stroke: #e5e7eb; stroke-dasharray: 2 3; }
-        .line-chart-axis-text { font-size: 11px; fill: #6b7280; user-select: none; }
-        .pie-segment { cursor: pointer; transition: transform 0.2s cubic-bezier(0.21, 1.02, 0.73, 1); transform-origin: center center; }
-        .pie-segment:hover { transform: scale(1.04); }
-        .chart-path { transition: d 0.3s ease-out; }
         .report-shell {
-            max-width: 1160px;
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 0 1.5rem 4rem;
+            padding: 0 1.5rem;
         }
-        @media (min-width: 768px) {
-            .report-shell {
-                padding-left: 2.5rem;
-                padding-right: 2.5rem;
-            }
-        }
-        .report-card {
-            background: #ffffff;
-            border-radius: 28px;
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            box-shadow: 0 35px 80px -45px rgba(15, 23, 42, 0.65);
-            padding: 2rem;
-        }
-        @media (max-width: 640px) {
-            .report-card {
-                border-radius: 20px;
-                padding: 1.5rem;
-            }
-        }
-        .report-section-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            color: #0f172a;
+        @media (min-width: 1280px) {
+            .report-shell { padding: 0 2.5rem; }
         }
         .report-hero {
-            background: linear-gradient(135deg, #0284c7, #0f172a);
-            color: #f8fafc;
-            padding: 3.5rem 0 4.5rem;
-            border-bottom-left-radius: 48px;
-            border-bottom-right-radius: 48px;
+            background: radial-gradient(120% 140% at 15% 10%, rgba(40, 82, 190, 0.12) 0%, rgba(40, 82, 190, 0) 55%),
+                        radial-gradient(120% 140% at 80% 0%, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0) 60%),
+                        linear-gradient(180deg, #f9fbff 0%, #e3ebff 100%);
+            padding: 3.75rem 0 5rem;
+            border-bottom-left-radius: 56px;
+            border-bottom-right-radius: 56px;
             position: relative;
             overflow: hidden;
         }
@@ -78,57 +54,276 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.35), transparent 55%);
+            background: radial-gradient(circle at 110% 0%, rgba(59, 130, 246, 0.35), transparent 65%);
             pointer-events: none;
         }
-        .report-hero-brand {
-            font-size: 2.25rem;
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            display: inline-flex;
-            gap: 0.35rem;
-            align-items: center;
-        }
-        .report-hero-metrics {
-            margin-top: 2.5rem;
+        .report-hero-grid {
+            position: relative;
+            z-index: 1;
             display: grid;
-            gap: 1.25rem;
+            gap: 2.5rem;
         }
-        @media (min-width: 768px) {
-            .report-hero-metrics {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+        @media (min-width: 1024px) {
+            .report-hero-grid {
+                grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+                align-items: center;
             }
         }
+        .report-hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            font-size: 0.72rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #1d4ed8;
+        }
+        .report-hero-title {
+            font-size: clamp(2rem, 5vw, 3.25rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin: 1rem 0 1.5rem;
+            color: #0f1c2f;
+        }
+        .report-hero-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 520px;
+            color: rgba(15, 28, 47, 0.75);
+        }
+        .report-hero-brand {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #1f3f82;
+        }
+        .report-hero-cards {
+            display: grid;
+            gap: 1.35rem;
+        }
         .report-hero-card {
-            background: rgba(15, 23, 42, 0.35);
-            border-radius: 20px;
-            padding: 1.5rem;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            backdrop-filter: blur(4px);
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 26px;
+            border: 1px solid rgba(199, 210, 254, 0.9);
+            box-shadow: 0 34px 70px -50px rgba(30, 64, 175, 0.45);
+            padding: 1.9rem;
         }
         .report-hero-card h3 {
-            font-size: 0.85rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #133178;
+            margin-bottom: 0.6rem;
+        }
+        .report-hero-card p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: rgba(15, 28, 47, 0.7);
+        }
+        .report-hero-card small {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            letter-spacing: 0.16em;
-            color: rgba(241, 245, 249, 0.75);
+            color: rgba(37, 99, 235, 0.7);
+            margin-bottom: 0.85rem;
         }
-        .report-hero-card strong {
-            display: block;
+        .report-main {
+            margin-top: -72px;
+            position: relative;
+            z-index: 2;
+        }
+        @media (max-width: 768px) {
+            .report-main { margin-top: -52px; }
+        }
+        .report-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 2.75rem;
+            padding-bottom: 4.5rem;
+        }
+        .report-surface {
+            background: #ffffff;
+            border-radius: 32px;
+            border: 1px solid rgba(199, 210, 254, 0.6);
+            box-shadow: 0 45px 110px -80px rgba(15, 23, 42, 0.75);
+            padding: clamp(1.75rem, 3vw, 2.75rem);
+        }
+        .report-surface--soft {
+            background: linear-gradient(180deg, rgba(239, 246, 255, 0.75) 0%, rgba(255, 255, 255, 0.9) 100%);
+            border-color: rgba(191, 219, 254, 0.85);
+        }
+        .report-surface-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        @media (min-width: 768px) {
+            .report-surface-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+        }
+        .report-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.22);
+            font-size: 0.72rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #1d4ed8;
+        }
+        .report-section-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #0f1c2f;
             margin-top: 0.75rem;
-            font-size: 1.5rem;
-            font-weight: 700;
         }
-        .report-hero-card span {
+        .report-section-desc {
+            margin-top: 0.45rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: rgba(15, 28, 47, 0.65);
+            max-width: 560px;
+        }
+        .report-pill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 1.2rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: #fff;
+            color: #1e3a8a;
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+        .report-pill-btn:hover {
+            border-color: rgba(59, 130, 246, 0.45);
+            box-shadow: 0 12px 30px -18px rgba(59, 130, 246, 0.55);
+        }
+        .report-pill-btn--primary {
+            background: linear-gradient(120deg, #2563eb, #3b82f6);
+            color: #ffffff;
+            border-color: transparent;
+        }
+        .report-pill-btn--primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 40px -24px rgba(37, 99, 235, 0.6);
+        }
+        .report-pill-btn--danger {
+            color: #be123c;
+            border-color: rgba(244, 63, 94, 0.25);
+            background: rgba(254, 226, 226, 0.65);
+        }
+        .report-pill-btn--danger:hover {
+            border-color: rgba(244, 63, 94, 0.45);
+            box-shadow: 0 18px 40px -26px rgba(244, 63, 94, 0.55);
+        }
+        .report-info-grid {
+            display: grid;
+            gap: 1.35rem;
+        }
+        @media (min-width: 768px) {
+            .report-info-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        .metric-card {
+            background: rgba(248, 250, 255, 0.95);
+            border-radius: 22px;
+            border: 1px solid rgba(199, 210, 254, 0.65);
+            padding: 1.4rem 1.5rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        }
+        .metric-card h3 {
+            font-size: 0.75rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(15, 28, 47, 0.55);
+        }
+        .metric-card strong {
+            display: block;
+            margin-top: 0.65rem;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #0f1c2f;
+        }
+        .metric-card span {
             display: block;
             margin-top: 0.35rem;
             font-size: 0.85rem;
-            color: rgba(226, 232, 240, 0.78);
+            color: rgba(15, 28, 47, 0.55);
+        }
+        .report-alert {
+            background: rgba(254, 226, 226, 0.75);
+            border: 1px solid rgba(248, 113, 113, 0.45);
+            color: #991b1b;
+            border-radius: 18px;
+            padding: 0.9rem 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.92rem;
         }
         .report-table thead tr {
-            background: rgba(148, 163, 184, 0.08);
+            background: rgba(226, 232, 240, 0.55);
+        }
+        .report-table th {
+            padding: 0.9rem 1rem;
+            font-weight: 600;
+            color: rgba(15, 28, 47, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.7rem;
+        }
+        .report-table td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid rgba(203, 213, 225, 0.45);
         }
         .report-table tbody tr:hover {
-            background: rgba(148, 163, 184, 0.06);
+            background: rgba(226, 232, 240, 0.35);
+        }
+        .line-chart-grid-line { stroke: rgba(191, 219, 254, 0.7); stroke-dasharray: 3 4; }
+        .line-chart-axis-text { font-size: 11px; fill: rgba(15, 28, 47, 0.5); user-select: none; }
+        .pie-segment { cursor: pointer; transition: transform 0.2s cubic-bezier(0.21, 1.02, 0.73, 1); transform-origin: center center; }
+        .pie-segment:hover { transform: scale(1.04); }
+        .chart-path { transition: d 0.3s ease-out; }
+        details summary {
+            cursor: pointer;
+            border-radius: 18px;
+            padding: 1rem 1.25rem;
+            background: rgba(59, 130, 246, 0.12);
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        details[open] > div {
+            margin-top: 1.25rem;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 22px;
+            border: 1px solid rgba(191, 219, 254, 0.7);
+            padding: 1.5rem;
         }
     </style>
 </head>
@@ -194,87 +389,52 @@
                 setCurrentValue(e.target.value);
             };
 
-            return <input ref={ref} type="text" inputMode="numeric" className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-right outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 tabular-nums transition" value={currentValue} onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} autoComplete="off" />;
+            return <input ref={ref} type="text" inputMode="numeric" className="w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-right outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 tabular-nums transition shadow-inner" value={currentValue} onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} autoComplete="off" />;
         };
 
         const InfoCard = ({ title, value, subValue }) => (
-            <div className="rounded-2xl p-4 border border-slate-100 bg-slate-50/60 backdrop-blur-sm">
-              <div className="text-neutral-600 text-sm">{title}</div>
-              <div className="text-2xl font-semibold mt-1 tabular-nums">{value}</div>
-              {subValue && <div className="text-xs text-neutral-500 mt-1">{subValue}</div>}
+            <div className="metric-card">
+                <h3>{title}</h3>
+                <strong className="tabular-nums">{value}</strong>
+                {subValue && <span>{subValue}</span>}
             </div>
         );
 
-        const ReportHero = ({ analysis, lastSaved }) => {
-            const hasData = analysis?.hasData;
-            const investedValue = hasData
-                ? czk.format(analysis.hasFollowUpInvestment ? analysis.totalInvestedWithFollowUp : analysis.totalInvestedInitial)
-                : "Zadejte investici";
-            const depositNote = hasData
-                ? analysis.hasFollowUpInvestment
-                    ? `z toho dodatečně ${czk.format(analysis.totalInvestedWithFollowUp - analysis.totalInvestedInitial)}`
-                    : "bez dalších vkladů"
-                : "čeká na zadání";
-            const returnValue = hasData
-                ? pct.format(analysis.hasFollowUpInvestment ? analysis.weightedReturnAfterY1 : analysis.weightedReturnInitial)
-                : "—";
-            const returnNote = hasData
-                ? analysis.hasFollowUpInvestment
-                    ? "po dodatečném vkladu"
-                    : "základní scénář"
-                : "";
-            const recoveryValue = hasData
-                ? analysis.hasFailure
-                    ? formatRecoveryTime(analysis.recoveryTime)
-                    : `${Y} let`
-                : "—";
-            const recoveryNote = hasData
-                ? analysis.hasFailure
-                    ? "od posledního relevantního krachu"
-                    : "plánovaný investiční horizont"
-                : "";
-
-            const metrics = [
-                { label: "Celkem investováno", value: investedValue, note: depositNote },
-                { label: "Očekávané roční zhodnocení", value: returnValue, note: returnNote },
-                { label: analysis?.hasFailure ? "Doba zotavení" : "Investiční horizont", value: recoveryValue, note: recoveryNote }
-            ];
-
-            return (
-                <header className="report-hero">
-                    <div className="report-shell">
-                        <div className="relative z-10 space-y-6">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                                <div className="space-y-3">
-                                    <span className="report-hero-brand">
-                                        <span>Fair</span>
-                                        <span style={{ color: '#bae6fd' }}>Life</span>
-                                    </span>
-                                    <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">Investiční kalkulačka report</h1>
-                                    <p className="text-sm md:text-base text-sky-100/90 max-w-2xl">
-                                        Prémiový náhled portfolia připravený pro klientské prezentace a reporty s důrazem na přehlednost klíčových metrik.
-                                    </p>
-                                </div>
-                                {lastSaved && (
-                                    <div className="text-[10px] uppercase tracking-[0.3em] text-sky-100/80">
-                                        Uloženo v {lastSaved}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="report-hero-metrics">
-                                {metrics.map((metric) => (
-                                    <div key={metric.label} className="report-hero-card">
-                                        <h3>{metric.label}</h3>
-                                        <strong>{metric.value}</strong>
-                                        {metric.note && <span>{metric.note}</span>}
-                                    </div>
-                                ))}
-                            </div>
+        const ReportHero = ({ lastSaved }) => (
+            <header className="report-hero">
+                <div className="report-shell report-hero-grid">
+                    <div>
+                        <div className="report-hero-brand">FairLife</div>
+                        <span className="report-hero-kicker">Report investičního portfolia</span>
+                        <h1 className="report-hero-title">Přehled vašeho finančního světa</h1>
+                        <p className="report-hero-text">
+                            Sledujte výkonnost fondů, analyzujte cashflow a připravte pro klienty precizní výstupy v jednom elegantním prostředí.
+                        </p>
+                        {lastSaved && (
+                            <p className="report-hero-text" style={{ fontSize: '0.78rem', letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: '2rem' }}>
+                                Synchronizováno v {lastSaved}
+                            </p>
+                        )}
+                    </div>
+                    <div className="report-hero-cards">
+                        <div className="report-hero-card">
+                            <small>Interaktivní řízení</small>
+                            <h3>Import, export a přehled všech změn na jednom místě</h3>
+                            <p>
+                                Spravujte kompletní strukturu portfolia, sdílejte reporty s klienty a mějte jistotu v datech díky automatickému ukládání.
+                            </p>
+                        </div>
+                        <div className="report-hero-card">
+                            <small>Podrobné analýzy</small>
+                            <h3>XRRI, projekce výnosů i vizualizace portfolia bez nutnosti dalších nástrojů</h3>
+                            <p>
+                                Interaktivní grafy, scénáře s další investicí i simulace krachu fondů pomohou lépe vysvětlit budoucí vývoj klientům.
+                            </p>
                         </div>
                     </div>
-                </header>
-            );
-        };
+                </div>
+            </header>
+        );
 
         function App() {
             const [lastSaved, setLastSaved] = useState(null);
@@ -494,32 +654,29 @@
             
             return (
                 <Fragment>
-                    <ReportHero analysis={portfolioAnalysis} lastSaved={lastSaved} />
-                    <main className="report-shell">
-                        <div className="space-y-10 -mt-16 sm:-mt-20 relative z-10">
-                            <DataManagement 
-                                onExport={exportState} 
-                                onImport={importState} 
+                    <ReportHero lastSaved={lastSaved} />
+                    <main className="report-main">
+                        <div className="report-shell report-stack">
+                            <Summary analysis={portfolioAnalysis} />
+                            <DataManagement
+                                onExport={exportState}
+                                onImport={importState}
                                 onReset={resetAll}
                                 lastSaved={lastSaved}
                             />
-                            <Group title="CODYA" list={codya} setList={setCodya} portfolioTotal={portfolioAnalysis.totalInvestedInitial} />
                             <Group title="AVANT" list={avant} setList={setAvant} portfolioTotal={portfolioAnalysis.totalInvestedInitial} />
-                            
-                            <Summary analysis={portfolioAnalysis} />
+                            <Group title="CODYA" list={codya} setList={setCodya} portfolioTotal={portfolioAnalysis.totalInvestedInitial} />
                             <LineChart analysis={portfolioAnalysis} />
                             <PieChart analysis={portfolioAnalysis} />
                             <ProjectionTable analysis={portfolioAnalysis} />
                             <AnnuityCalculator analysis={portfolioAnalysis} />
-
-                            <section className="report-card">
+                            <section className="report-surface">
                                 <details>
-                                    <summary className="text-lg font-semibold cursor-pointer flex items-center justify-between text-slate-800">
+                                    <summary className="flex items-center justify-between text-base">
                                         <span>Vysvětlivky a použité metriky</span>
-                                        <svg className="summary-arrow w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.21 14.77a.75.75
- 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+                                        <svg className="summary-arrow w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
                                     </summary>
-                                    <div className="mt-4 pt-4 border-t border-slate-100 text-sm text-neutral-700 space-y-4">
+                                    <div className="text-sm text-neutral-700 space-y-4">
                                         <h4 className="font-semibold text-neutral-800">Co je to vážené průměrné zhodnocení?</h4>
                                         <p>Jedná se o průměrné očekávané zhodnocení celého portfolia. Výpočet zohledňuje, jak velká část portfolia je v jednotlivých fondech. Fond, do kterého jste investovali více peněz, má na výsledný průměr větší vliv (váhu).</p>
                                     </div>
@@ -527,10 +684,8 @@
                             </section>
                         </div>
                     </main>
-                    <footer className="report-shell pb-10">
-                        <div className="text-center text-xs text-slate-500">
-                            © {new Date().getFullYear()} Ondřej Lacina · Nástroj slouží pouze pro ilustrativní účely.
-                        </div>
+                    <footer className="report-shell pb-10 text-center text-xs text-slate-500">
+                        © {new Date().getFullYear()} Ondřej Lacina · Nástroj slouží pouze pro ilustrativní účely.
                     </footer>
                 </Fragment>
             );
@@ -539,16 +694,31 @@
         const DataManagement = ({ onExport, onImport, onReset, lastSaved }) => {
             const fileInputRef = useRef(null);
             return (
-                <section className="report-card">
+                <section className="report-surface report-surface--soft">
                     <input type="file" ref={fileInputRef} onChange={onImport} accept=".json" style={{ display: 'none' }} />
-                    <div className="flex flex-wrap justify-between items-center gap-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-md font-semibold text-neutral-800 mr-2">Správa dat</h2>
-                            <button onClick={onExport} className="px-3 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white/80 text-slate-700 hover:bg-white transition">Exportovat do .json</button>
-                            <button onClick={() => fileInputRef.current.click()} className="px-3 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white/80 text-slate-700 hover:bg-white transition">Importovat z .json</button>
-                            <button onClick={onReset} className="px-3 py-2 text-sm font-medium rounded-lg border border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-50 transition">Resetovat portfolio</button>
+                    <div className="report-surface-header">
+                        <div>
+                            <span className="report-kicker">Správa dat</span>
+                            <h2 className="report-section-title">Synchronizujte portfolio během vteřiny</h2>
+                            <p className="report-section-desc">
+                                Importujte aktuální stav investic, sdílejte klientům exporty a udržujte historii bezpečně uloženou v prohlížeči.
+                            </p>
                         </div>
-                        {lastSaved && <span className="text-xs text-neutral-500">Uloženo v {lastSaved}</span>}
+                        <div className="flex flex-wrap gap-2">
+                            <button onClick={onExport} className="report-pill-btn report-pill-btn--primary">Exportovat do .json</button>
+                            <button onClick={() => fileInputRef.current?.click()} className="report-pill-btn">Importovat z .json</button>
+                            <button onClick={onReset} className="report-pill-btn report-pill-btn--danger">Vynulovat portfolio</button>
+                        </div>
+                    </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-sky-100/80 bg-white/80 px-4 py-3 text-sm text-sky-800">
+                            <strong className="block text-xs uppercase tracking-[0.2em] text-sky-500/80 mb-2">Tip pro prezentaci</strong>
+                            Změny se ukládají automaticky. Export můžete klientovi poslat jako přílohu nebo uložit pro další schůzky.
+                        </div>
+                        <div className="rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm text-slate-600 flex items-center justify-between">
+                            <span>Poslední synchronizace</span>
+                            <span className="font-semibold text-slate-900">{lastSaved || 'čeká na první záznam'}</span>
+                        </div>
                     </div>
                 </section>
             );
@@ -557,13 +727,12 @@
         const SegmentSummary = ({ analysis, title }) => {
             if (!analysis || !analysis.hasData) return null;
             const { totalInvested, weightedReturn } = analysis;
-            const returnClass = weightedReturn >= 0 ? 'text-green-600' : 'text-red-600';
             return (
-                <div className="mt-4 pt-4 border-t border-slate-100">
-                    <h3 className="text-sm font-medium text-neutral-600 mb-2">Souhrn pro {title}</h3>
-                    <div className="grid sm:grid-cols-2 gap-4">
+                <div className="mt-8">
+                    <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-[0.18em] mb-3">Souhrn skupiny {title}</h3>
+                    <div className="grid sm:grid-cols-2 gap-3">
                         <InfoCard title={`Investováno v ${title}`} value={czk.format(totalInvested)} />
-                        <InfoCard title="Očekávaný roční výnos" value={<span className={returnClass}>{pct.format(weightedReturn)}</span>} />
+                        <InfoCard title="Očekávaný roční výnos" value={pct.format(weightedReturn)} />
                     </div>
                 </div>
             );
@@ -597,30 +766,31 @@
             const groupTotal = segmentAnalysis.totalInvested;
 
             return (
-                <section className="report-card space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h2 className="report-section-title">{title}</h2>
-                        <div className="flex items-center gap-2 flex-wrap">
-                             <button onClick={handleDemo} className="px-3 py-2 text-sm font-medium rounded-lg border border-sky-200 bg-sky-50/80 text-sky-700 hover:bg-sky-50 transition">Ukázka</button>
-                            <button onClick={reset} className="px-3 py-2 text-sm font-medium rounded-lg border border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-50 transition">Vynulovat</button>
-                            <button onClick={add} className="px-3 py-2 text-sm font-medium rounded-lg border border-emerald-200 bg-emerald-50/80 text-emerald-700 hover:bg-emerald-50 transition flex items-center gap-1.5">
-                                <span className="text-lg leading-none -mt-px">+</span>
-                                <span>Přidat fond</span>
-                            </button>
+                <section className="report-surface">
+                    <div className="report-surface-header">
+                        <div>
+                            <span className="report-kicker">Vstupy</span>
+                            <h2 className="report-section-title">Vstupy – {title}</h2>
+                            <p className="report-section-desc">Spravujte transakce a sledujte výkonnost jednotlivých fondů partnerů.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button onClick={handleDemo} className="report-pill-btn">Ukázka</button>
+                            <button onClick={reset} className="report-pill-btn report-pill-btn--danger">Smazat vše</button>
+                            <button onClick={add} className="report-pill-btn report-pill-btn--primary">Přidat řádek</button>
                         </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                    <div className="mt-6 overflow-x-auto">
+                        <table className="report-table text-sm">
                             <thead>
-                                <tr className="text-left text-neutral-600 border-b border-slate-100 bg-slate-50/80">
-                                    <th className="py-2 pr-3 font-medium">Fond</th>
-                                    <th className="py-2 pr-3 font-medium w-[150px]">Oček. zhodnocení</th>
-                                    <th className="py-2 pr-3 font-medium w-[160px]">Počáteční vklad</th>
-                                    <th className="py-2 pr-3 font-medium w-[160px]">Vklad po 1. roce</th>
-                                    <th className="py-2 pl-3 font-medium w-[140px]">Krach po roce</th>
-                                    <th className="py-2 pr-3 font-medium w-[130px]">Podíl ve skupině</th>
-                                    <th className="py-2 pr-3 font-medium w-[130px]">Podíl v portfoliu</th>
-                                    <th className="py-2 pr-3 font-medium w-[60px]"></th>
+                                <tr>
+                                    <th className="min-w-[180px]">Fond</th>
+                                    <th className="min-w-[140px]">Oček. zhodnocení</th>
+                                    <th className="min-w-[160px] text-right">Počáteční vklad</th>
+                                    <th className="min-w-[160px] text-right">Vklad po 1. roce</th>
+                                    <th className="min-w-[150px]">Krach po roce</th>
+                                    <th className="min-w-[140px] text-right">Podíl ve skupině</th>
+                                    <th className="min-w-[140px] text-right">Podíl v portfoliu</th>
+                                    <th className="w-12"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -629,27 +799,50 @@
                                     const segmentShare = groupTotal > 0 ? amount / groupTotal : 0;
                                     const portfolioShare = portfolioTotal > 0 ? amount / portfolioTotal : 0;
                                     return (
-                                    <tr key={f.id} className="border-b border-slate-100 last:border-b-0">
-                                        <td className="py-2 pr-3"><input className="w-full rounded-xl border-neutral-300 px-3 py-2 outline-none focus:border-sky-500" defaultValue={f.name} onBlur={e => patchFund(f.id, { name: e.target.value })} /></td>
-                                        <td className="py-2 pr-3"><div className="relative"><input type="text" inputMode="decimal" className="w-full rounded-xl border-neutral-300 px-3 py-2 pr-10 text-right outline-none focus:border-sky-500" defaultValue={f.returnStr} onBlur={e => patchFund(f.id, { returnStr: e.target.value })} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500">%</span></div></td>
-                                        <td className="py-2 pr-3"><MoneyInput value={f.amountStr} onChange={v => patchFund(f.id, { amountStr: v })} /></td>
-                                        <td className="py-2 pr-3"><MoneyInput value={f.amountStrY1} onChange={v => patchFund(f.id, { amountStrY1: v })} /></td>
-                                        <td className="py-2 pl-3">
-                                            <select 
-                                                className="w-full rounded-lg border-gray-300 text-sm focus:border-red-500 focus:ring-red-500" 
-                                                value={f.failureYear} 
-                                                onChange={e => patchFund(f.id, { failureYear: parseInt(e.target.value, 10) })}>
-                                                <option value="0">Nikdy</option>
-                                                {Array.from({length: Y}, (_, i) => i + 1).map(year => (
-                                                    <option key={year} value={year}>Po {year}. roce</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="py-2 pr-3 tabular-nums">{pct.format(segmentShare)}</td>
-                                        <td className="py-2 pr-3 tabular-nums">{pct.format(portfolioShare)}</td>
-                                        <td className="py-2 pr-3 text-center"><button onClick={() => remove(f.id)} className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg></button></td>
-                                    </tr>
-                                )})}
+                                        <tr key={f.id}>
+                                            <td>
+                                                <input
+                                                    className="w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                                                    defaultValue={f.name}
+                                                    onBlur={e => patchFund(f.id, { name: e.target.value })}
+                                                />
+                                            </td>
+                                            <td>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        className="w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2 pr-10 text-right outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                                                        defaultValue={f.returnStr}
+                                                        onBlur={e => patchFund(f.id, { returnStr: e.target.value })}
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">%</span>
+                                                </div>
+                                            </td>
+                                            <td className="text-right"><MoneyInput value={f.amountStr} onChange={v => patchFund(f.id, { amountStr: v })} /></td>
+                                            <td className="text-right"><MoneyInput value={f.amountStrY1} onChange={v => patchFund(f.id, { amountStrY1: v })} /></td>
+                                            <td>
+                                                <select
+                                                    className="w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-sm focus:border-red-500 focus:ring-2 focus:ring-rose-100"
+                                                    value={f.failureYear}
+                                                    onChange={e => patchFund(f.id, { failureYear: parseInt(e.target.value, 10) })}
+                                                >
+                                                    <option value="0">Nikdy</option>
+                                                    {Array.from({ length: Y }, (_, i) => i + 1).map(year => (
+                                                        <option key={year} value={year}>Po {year}. roce</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                            <td className="text-right tabular-nums">{pct.format(segmentShare)}</td>
+                                            <td className="text-right tabular-nums">{pct.format(portfolioShare)}</td>
+                                            <td className="text-center">
+                                                <button onClick={() => remove(f.id)} className="inline-flex items-center justify-center rounded-full p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -657,47 +850,93 @@
                 </section>
             );
         };
-        
-        const Summary = ({ analysis }) => {
-            if (!analysis.hasData) return <div className="text-center py-8 text-neutral-500">Zadejte alespoň jednu investici pro zobrazení souhrnu.</div>;
-            
-            const returnClassInitial = analysis.weightedReturnInitial >= 0 ? 'text-green-600' : 'text-red-600';
-            const returnClassAfterY1 = analysis.weightedReturnAfterY1 >= 0 ? 'text-green-600' : 'text-red-600';
 
-            const baseScenario = (
-                <div className="space-y-4">
-                    <h3 className="text-md font-semibold text-neutral-700">Základní scénář</h3>
-                    <InfoCard title="Počáteční investice" value={czk.format(analysis.totalInvestedInitial)} />
-                    <InfoCard title="Očekávaný roční výnos" value={<span className={returnClassInitial}>{pct.format(analysis.weightedReturnInitial)}</span>} />
-                </div>
-            );
+        const Summary = ({ analysis }) => {
+            if (!analysis.hasData) {
+                return (
+                    <section className="report-surface report-surface--soft">
+                        <span className="report-kicker">Souhrn portfolia</span>
+                        <h2 className="report-section-title mt-3">Zadejte první investici</h2>
+                        <p className="report-section-desc">Vyplňte alespoň jeden fond, aby se zobrazil souhrn včetně scénářů a projekcí.</p>
+                    </section>
+                );
+            }
+
+            const totalContributions = analysis.hasFollowUpInvestment ? analysis.totalInvestedWithFollowUp : analysis.totalInvestedInitial;
+            const latestProjection = analysis.projection[analysis.projection.length - 1];
+            const projectedValue = latestProjection ? latestProjection.baseline.end : totalContributions;
+            const netGain = projectedValue - totalContributions;
+            const totalReturnPct = totalContributions > 0 ? netGain / totalContributions : 0;
+            const annualReturn = analysis.hasFollowUpInvestment ? analysis.weightedReturnAfterY1 : analysis.weightedReturnInitial;
+            const breakEven = analysis.projection.find(p => p.baseline.end >= totalContributions);
+            const horizonMonths = Math.max(1, Math.round((breakEven ? breakEven.year : Y) * 12));
+
+            const metrics = [
+                { title: 'Vaše celkové vklady', value: czk.format(totalContributions) },
+                { title: 'Aktuální hodnota', value: czk.format(projectedValue) },
+                { title: 'Čistý výnos', value: czk.format(netGain) },
+                { title: 'Celkové zhodnocení', value: pct.format(totalReturnPct) },
+                { title: 'Průměrný roční výnos', value: pct.format(annualReturn) },
+                { title: 'Předpokládaná doba investice', value: `${horizonMonths} měs.` }
+            ];
+
+            const alertMessage = analysis.hasFailure
+                ? 'Portfolio obsahuje simulaci krachu fondu. Sledujte níže dobu zotavení a kumulativní ztrátu.'
+                : 'Souhrn vychází z aktuálně zadaných investic. Přidejte další vklady nebo aktualizujte výnosy pro přesnější projekce.';
 
             return (
-                <section className="report-card">
-                    <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                        <h2 className="report-section-title">Souhrn scénářů</h2>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 text-sky-700 text-xs font-medium border border-sky-100">
+                <section className="report-surface report-surface--soft">
+                    <div className="report-surface-header">
+                        <div>
+                            <span className="report-kicker">Souhrn portfolia</span>
+                            <h2 className="report-section-title">Souhrn Vašeho portfolia</h2>
+                            <p className="report-section-desc">Klíčové ukazatele, které určují celkovou velikost portfolia a výkon Vašich investic.</p>
+                        </div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 border border-slate-200 text-xs font-semibold text-slate-600">
                             <span className="w-2 h-2 rounded-full bg-sky-500"></span>
-                            Projektováno na {Y} let
+                            Částky v CZK
                         </div>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
-                        {baseScenario}
+                    <div className="report-alert mt-6">{alertMessage}</div>
+                    <div className="report-info-grid mt-6">
+                        {metrics.map(metric => (
+                            <InfoCard key={metric.title} title={metric.title} value={metric.value} />
+                        ))}
+                    </div>
+                    <div className="mt-8 grid md:grid-cols-2 gap-4">
+                        <div className="rounded-2xl border border-slate-200/70 bg-white/85 p-5">
+                            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-[0.18em]">Základní scénář</h3>
+                            <div className="mt-4 grid gap-3">
+                                <div className="flex items-center justify-between text-sm text-slate-600">
+                                    <span>Počáteční investice</span>
+                                    <span className="font-semibold text-slate-900 tabular-nums">{czk.format(analysis.totalInvestedInitial)}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-slate-600">
+                                    <span>Očekávaný roční výnos</span>
+                                    <span className="font-semibold text-slate-900 tabular-nums">{pct.format(analysis.weightedReturnInitial)}</span>
+                                </div>
+                            </div>
+                        </div>
                         {analysis.hasFollowUpInvestment && (
-                            <div className="space-y-4">
-                                <h3 className="text-md font-semibold text-neutral-700">Scénář s dalším vkladem</h3>
-                                <InfoCard title="Celkem investováno" value={czk.format(analysis.totalInvestedWithFollowUp)} />
-                                <InfoCard title="Očekávaný roční výnos" value={<span className={returnClassAfterY1}>{pct.format(analysis.weightedReturnAfterY1)}</span>} />
+                            <div className="rounded-2xl border border-sky-200/70 bg-sky-50/60 p-5">
+                                <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-[0.18em]">Scénář s dalším vkladem</h3>
+                                <div className="mt-4 grid gap-3">
+                                    <div className="flex items-center justify-between text-sm text-slate-600">
+                                        <span>Celkem investováno</span>
+                                        <span className="font-semibold text-slate-900 tabular-nums">{czk.format(analysis.totalInvestedWithFollowUp)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm text-slate-600">
+                                        <span>Očekávaný roční výnos</span>
+                                        <span className="font-semibold text-slate-900 tabular-nums">{pct.format(analysis.weightedReturnAfterY1)}</span>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
                     {analysis.hasFailure && (
-                        <div className="mt-6 pt-6 border-t border-slate-100">
-                             <h3 className="text-md font-semibold text-neutral-700">Analýza dopadu krachu</h3>
-                             <div className="grid md:grid-cols-2 gap-4 mt-4">
-                                <InfoCard title={`Celková kumulativní ztráta`} value={<span className="text-red-600">-{czk.format(analysis.totalLoss)}</span>} />
-                                <InfoCard title="Doba zotavení na celkový vklad" value={formatRecoveryTime(analysis.recoveryTime)} subValue="od posledního relevantního krachu" />
-                             </div>
+                        <div className="mt-8 grid md:grid-cols-2 gap-4">
+                            <InfoCard title="Celková kumulativní ztráta" value={`-${czk.format(analysis.totalLoss)}`} />
+                            <InfoCard title="Doba zotavení na celkový vklad" value={formatRecoveryTime(analysis.recoveryTime)} subValue="od posledního relevantního krachu" />
                         </div>
                     )}
                 </section>
@@ -837,10 +1076,13 @@
             const handleMouseLeave = () => { cancelAnimationFrame(animationFrameId.current); setTooltip(null); };
             
             return (
-                <section className="report-card space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <h2 className="report-section-title">Projekce vývoje portfolia</h2>
-                        <span className="text-xs text-slate-500">Časový horizont: {Y} let</span>
+                <section className="report-surface">
+                    <div className="report-surface-header mb-4">
+                        <div>
+                            <span className="report-kicker">Vývoj portfolia</span>
+                            <h2 className="report-section-title">Vývoj hodnoty portfolia s predikcí do roku {new Date().getFullYear() + Y}</h2>
+                            <p className="report-section-desc">Simulace porovnává základní scénář, dodatečný vklad a stres test s krachy fondů. Sledujte, jak se portfolio vyvíjí v čase.</p>
+                        </div>
                     </div>
                     <div className="relative h-96" ref={containerRef}>
                         {!chartData.hasData ? (
@@ -856,35 +1098,35 @@
                                     ))}
                                     {chartData.xAxisTicks.map(({ year, x }) => <text key={year} className="line-chart-axis-text" x={x} y={chartData.height - chartData.margin.bottom + 16} textAnchor="middle">{year === 0 ? "Dnes" : new Date().getFullYear() + year}</text>)}
                                 </g>
-                                <path d={createPath(chartData.scaledDepositsPoints)} fill="none" stroke="#9ca3af" strokeWidth="2" strokeDasharray="5 5"/>
-                                <path d={createPath(chartData.scaledBaseline)} fill="none" stroke="#10b981" strokeWidth="2.5" className="chart-path"/>
-                                {analysis.hasFollowUpInvestment && <path d={createPath(chartData.scaledFollowUp)} fill="none" stroke="#3b82f6" strokeWidth="2.5" className="chart-path"/>}
-                                {analysis.hasFailure && <path d={createPath(chartData.scaledFailure)} fill="none" stroke="#ef4444" strokeWidth="2.5" className="chart-path"/>}
-                                <circle cx={chartData.scaledBaseline[0]?.x} cy={chartData.scaledBaseline[0]?.y} r="5" fill="#4b5563" stroke="white" strokeWidth="2" />
+                                <path d={createPath(chartData.scaledDepositsPoints)} fill="none" stroke="#c7d2fe" strokeWidth="2" strokeDasharray="6 6"/>
+                                <path d={createPath(chartData.scaledBaseline)} fill="none" stroke="#2563eb" strokeWidth="2.8" className="chart-path"/>
+                                {analysis.hasFollowUpInvestment && <path d={createPath(chartData.scaledFollowUp)} fill="none" stroke="#0ea5e9" strokeWidth="2.6" className="chart-path"/>}
+                                {analysis.hasFailure && <path d={createPath(chartData.scaledFailure)} fill="none" stroke="#f97316" strokeWidth="2.6" className="chart-path"/>}
+                                <circle cx={chartData.scaledBaseline[0]?.x} cy={chartData.scaledBaseline[0]?.y} r="5" fill="#2563eb" stroke="white" strokeWidth="2" />
                                 
                                 <g transform={`translate(${chartData.margin.left}, ${chartData.height - 10})`} className="flex items-center gap-x-4">
-                                    <g><circle cx="0" cy="-4" r="4" fill="#10b981"></circle><text className="line-chart-axis-text" x="8" y="0">Základní</text></g>
-                                    {analysis.hasFollowUpInvestment && <g transform="translate(80, 0)"><circle cx="0" cy="-4" r="4" fill="#3b82f6"></circle><text className="line-chart-axis-text" x="8" y="0">S vkladem</text></g>}
-                                    {analysis.hasFailure && <g transform={`translate(${analysis.hasFollowUpInvestment ? 160 : 80}, 0)`}><circle cx="0" cy="-4" r="4" fill="#ef4444"></circle><text className="line-chart-axis-text" x="8" y="0">Při krachu</text></g>}
-                                    <g transform={`translate(${analysis.hasFailure ? (analysis.hasFollowUpInvestment ? 240: 160) : (analysis.hasFollowUpInvestment ? 160 : 80)}, 0)`}><line x1="0" y1="-4" x2="15" y2="-4" stroke="#9ca3af" strokeDasharray="3 3" strokeWidth="2"></line><text className="line-chart-axis-text" x="20" y="0">Vklady</text></g>
+                                    <g><circle cx="0" cy="-4" r="4" fill="#2563eb"></circle><text className="line-chart-axis-text" x="8" y="0">Základní</text></g>
+                                    {analysis.hasFollowUpInvestment && <g transform="translate(90, 0)"><circle cx="0" cy="-4" r="4" fill="#0ea5e9"></circle><text className="line-chart-axis-text" x="8" y="0">S vkladem</text></g>}
+                                    {analysis.hasFailure && <g transform={`translate(${analysis.hasFollowUpInvestment ? 180 : 90}, 0)`}><circle cx="0" cy="-4" r="4" fill="#f97316"></circle><text className="line-chart-axis-text" x="8" y="0">Stres test</text></g>}
+                                    <g transform={`translate(${analysis.hasFailure ? (analysis.hasFollowUpInvestment ? 270: 180) : (analysis.hasFollowUpInvestment ? 180 : 90)}, 0)`}><line x1="0" y1="-4" x2="15" y2="-4" stroke="#c7d2fe" strokeDasharray="4 4" strokeWidth="2"></line><text className="line-chart-axis-text" x="20" y="0">Vklady</text></g>
                                 </g>
 
                                 {tooltip && (
                                     <g className="pointer-events-none">
                                         <line stroke="#4b5563" strokeWidth="1" y1={chartData.margin.top} y2={chartData.height - chartData.margin.bottom} x1={tooltip.x} x2={tooltip.x}></line>
-                                        <circle r="5" fill="#10b981" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yBaseline}></circle>
-                                        {tooltip.yFollowUp && <circle r="5" fill="#3b82f6" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yFollowUp}></circle>}
-                                        {tooltip.yFailure && <circle r="5" fill="#ef4444" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yFailure}></circle>}
+                                        <circle r="5" fill="#2563eb" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yBaseline}></circle>
+                                        {tooltip.yFollowUp && <circle r="5" fill="#0ea5e9" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yFollowUp}></circle>}
+                                        {tooltip.yFailure && <circle r="5" fill="#f97316" stroke="white" strokeWidth="2" cx={tooltip.x} cy={tooltip.yFailure}></circle>}
                                     </g>
                                 )}
                             </svg>
                         )}
                         {tooltip && (
-                             <div className="absolute z-20 p-2 text-sm bg-white rounded-lg shadow-xl border border-neutral-200 pointer-events-none" style={{ left: tooltip.mouseX + 15, top: tooltip.mouseY + 15 }}>
-                                <div className="font-bold text-neutral-800 mb-1">{tooltip.date}</div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-neutral-600">{czk.format(tooltip.valBaseline)}</span></div>
-                                {tooltip.valFollowUp && <div className="flex items-center gap-2 mt-1"><div className="w-2 h-2 rounded-full bg-sky-500"></div><span className="text-neutral-600">{czk.format(tooltip.valFollowUp)}</span></div>}
-                                {tooltip.valFailure && <div className="flex items-center gap-2 mt-1"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-neutral-600">{czk.format(tooltip.valFailure)}</span></div>}
+                             <div className="absolute z-20 p-3 text-sm bg-white/95 rounded-2xl shadow-2xl border border-slate-200 pointer-events-none" style={{ left: tooltip.mouseX + 15, top: tooltip.mouseY + 15 }}>
+                                <div className="font-semibold text-slate-800 mb-1">{tooltip.date}</div>
+                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-600"></div><span className="text-slate-600">{czk.format(tooltip.valBaseline)}</span></div>
+                                {tooltip.valFollowUp && <div className="flex items-center gap-2 mt-1"><div className="w-2 h-2 rounded-full bg-sky-500"></div><span className="text-slate-600">{czk.format(tooltip.valFollowUp)}</span></div>}
+                                {tooltip.valFailure && <div className="flex items-center gap-2 mt-1"><div className="w-2 h-2 rounded-full bg-orange-500"></div><span className="text-slate-600">{czk.format(tooltip.valFailure)}</span></div>}
                             </div>
                         )}
                     </div>
@@ -915,15 +1157,34 @@
             };
             const handleSegmentMouseOut = () => { const tooltip = tooltipRef.current; if (tooltip) tooltip.style.display = 'none'; };
             return (
-                 <section className="report-card">
-                    <div ref={tooltipRef} className="absolute z-20 p-2 text-sm bg-white rounded-lg shadow-xl border border-neutral-200 pointer-events-none" style={{ display: 'none' }}></div>
-                    <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
-                        <h2 className="report-section-title">{title}</h2>
-                        {hasFollowUpInvestment && <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-lg"><button onClick={() => setView('initial')} className={`px-3 py-1 text-sm rounded-md transition ${view === 'initial' ? 'bg-white shadow' : 'hover:bg-neutral-200'}`}>Start</button><button onClick={() => setView('afterY1')} className={`px-3 py-1 text-sm rounded-md transition ${view === 'afterY1' ? 'bg-white shadow' : 'hover:bg-neutral-200'}`}>Po 1. roce</button></div>}
+                 <section className="report-surface">
+                    <div ref={tooltipRef} className="absolute z-30 p-3 text-sm bg-white/95 rounded-2xl shadow-2xl border border-slate-200 pointer-events-none" style={{ display: 'none' }}></div>
+                    <div className="report-surface-header mb-6">
+                        <div>
+                            <span className="report-kicker">Alokace portfolia</span>
+                            <h2 className="report-section-title">{title}</h2>
+                            <p className="report-section-desc">Prozkoumejte rozložení kapitálu mezi jednotlivé fondy a sledujte, které pozice mají největší vliv na celkový výkon.</p>
+                        </div>
+                        {hasFollowUpInvestment && (
+                            <div className="inline-flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-full">
+                                <button onClick={() => setView('initial')} className={`px-3 py-1 text-xs font-semibold rounded-full transition ${view === 'initial' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:bg-white/60'}`}>Start</button>
+                                <button onClick={() => setView('afterY1')} className={`px-3 py-1 text-xs font-semibold rounded-full transition ${view === 'afterY1' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:bg-white/60'}`}>Po 1. roce</button>
+                            </div>
+                        )}
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-6 items-center max-w-4xl mx-auto">
-                        <div className="w-full max-w-xs mx-auto"><svg viewBox="0 0 100 100">{segments.map((seg, i) => (<path key={i} d={seg.path} fill={seg.color} stroke="#fff" strokeWidth="1" className="pie-segment" onMouseMove={(e) => handleSegmentMouseMove(e, seg)} onMouseOut={handleSegmentMouseOut} />))}</svg></div>
-                        <div className="space-y-2 text-sm max-h-80 overflow-y-auto">{segments.map((seg, i) => (<div key={i} className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: seg.color }}></div><div className="flex-1 truncate" title={seg.name}>{seg.name}</div><div className="font-medium tabular-nums">{pct.format(pieTotal > 0 ? seg.amount / pieTotal : 0)}</div></div>))}</div>
+                    <div className="grid sm:grid-cols-2 gap-8 items-center">
+                        <div className="w-full max-w-xs mx-auto">
+                            <svg viewBox="0 0 100 100">{segments.map((seg, i) => (<path key={i} d={seg.path} fill={seg.color} stroke="#fff" strokeWidth="1" className="pie-segment" onMouseMove={(e) => handleSegmentMouseMove(e, seg)} onMouseOut={handleSegmentMouseOut} />))}</svg>
+                        </div>
+                        <div className="space-y-2 text-sm max-h-80 overflow-y-auto pr-1">
+                            {segments.map((seg, i) => (
+                                <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-200/60 bg-white/80 px-3 py-2">
+                                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }}></div>
+                                    <div className="flex-1 truncate" title={seg.name}>{seg.name}</div>
+                                    <div className="font-semibold tabular-nums text-slate-700">{pct.format(pieTotal > 0 ? seg.amount / pieTotal : 0)}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                  </section>
             );
@@ -937,23 +1198,27 @@
             const formatDate = (date) => date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' });
 
             return (
-                <section className="report-card">
-                    <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-                        <h2 className="report-section-title">Detailní srovnání projekcí</h2>
-                        <span className="text-xs text-slate-500">Výchozí datum: {today.toLocaleDateString('cs-CZ')}</span>
+                <section className="report-surface">
+                    <div className="report-surface-header mb-4">
+                        <div>
+                            <span className="report-kicker">Časová osa</span>
+                            <h2 className="report-section-title">Detailní srovnání projekcí</h2>
+                            <p className="report-section-desc">Každoroční vývoj portfolia v jednotlivých scénářích včetně dalších vkladů a případných krachů fondů.</p>
+                        </div>
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 border border-slate-200 text-xs font-semibold text-slate-600">Výchozí datum: {today.toLocaleDateString('cs-CZ')}</span>
                     </div>
-                    <div className="overflow-x-auto max-h-[450px]">
+                    <div className="overflow-x-auto max-h-[450px] rounded-3xl border border-slate-200/70">
                         <table className="report-table w-full text-sm text-left">
-                            <thead className="sticky top-0 bg-white shadow-sm">
-                                <tr className="border-b border-slate-100">
-                                    <th className="py-2 px-3 font-medium">Datum</th>
-                                    <th className="py-2 px-3 font-medium">Událost</th>
-                                    <th className="py-2 px-3 font-medium text-right">Hodnota (bez další inv.)</th>
-                                    {hasFollowUpInvestment && <th className="py-2 px-3 font-medium text-right">Hodnota (s další inv.)</th>}
-                                    {hasFailure && <th className="py-2 px-3 font-medium text-right">Hodnota (při krachu)</th>}
+                            <thead className="sticky top-0">
+                                <tr>
+                                    <th className="py-3 px-3">Datum</th>
+                                    <th className="py-3 px-3">Událost</th>
+                                    <th className="py-3 px-3 text-right">Hodnota (bez další inv.)</th>
+                                    {hasFollowUpInvestment && <th className="py-3 px-3 text-right">Hodnota (s další inv.)</th>}
+                                    {hasFailure && <th className="py-3 px-3 text-right">Hodnota (při krachu)</th>}
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="bg-white">
                                 <tr className="border-b border-slate-100 bg-neutral-50 font-semibold">
                                     <td className="py-2 px-3 tabular-nums">{formatDate(today)}</td>
                                     <td className="py-2 px-3">Počáteční vklad</td>
@@ -1013,18 +1278,31 @@
             }, [monthlyAnnuity, annualAnnuity, analysis]);
             if (!analysis.hasData) return null;
             return (
-                 <section className="report-card space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <h2 className="report-section-title">Kalkulačka nekonečné renty</h2>
-                        {analysis.hasData && <span className="text-xs text-slate-500">Pracuje s očekávaným zhodnocením portfolia</span>}
+                 <section className="report-surface">
+                    <div className="report-surface-header mb-4">
+                        <div>
+                            <span className="report-kicker">Dlouhodobá renta</span>
+                            <h2 className="report-section-title">Kalkulačka nekonečné renty</h2>
+                            <p className="report-section-desc">Zjistěte, jak velký kapitál potřebujete pro trvalou měsíční rentu nebo zda Vaše současné portfolio již cíl splňuje.</p>
+                        </div>
+                        <span className="text-xs text-slate-500">Pracuje s očekávaným zhodnocením portfolia</span>
                     </div>
                     <div className="flex items-center gap-4 flex-wrap">
-                        <label className="flex-shrink-0 text-neutral-700 font-medium">Požadovaná měsíční renta</label>
+                        <label className="flex-shrink-0 text-sm font-semibold text-slate-600 uppercase tracking-[0.16em]">Požadovaná měsíční renta</label>
                         <div className="flex-grow max-w-xs"><MoneyInput value={monthlyAnnuityStr} onChange={setMonthlyAnnuityStr} /></div>
-                        {annualAnnuity > 0 && <span className="text-neutral-600 text-sm">(což odpovídá {czk.format(annualAnnuity)} ročně)</span>}
+                        {annualAnnuity > 0 && <span className="text-neutral-500 text-sm">(což odpovídá {czk.format(annualAnnuity)} ročně)</span>}
                     </div>
-                    {annuityResult && <div className="mt-4 text-sm text-neutral-800 bg-sky-50 border border-sky-200 rounded-xl p-4">{annuityResult.type === 'sufficient' && <span><strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>{czk.format(annuityResult.totalInvested)}</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.</span>}{annuityResult.type === 'future' && <span>Pro měsíční rentu <strong>{czk.format(annuityResult.monthlyAnnuity)}</strong> potřebujete kapitál o velikosti přibližně <strong>{czk.format(annuityResult.targetCapital)}</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>{annuityResult.targetDate}</strong>.</span>}</div>}
-                    <p className="text-xs text-neutral-500 pt-2">*Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.</p>
+                    {annuityResult && (
+                        <div className="mt-5 text-sm text-slate-800 bg-sky-50 border border-sky-200 rounded-2xl p-4">
+                            {annuityResult.type === 'sufficient' && (
+                                <span><strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>{czk.format(annuityResult.totalInvested)}</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.</span>
+                            )}
+                            {annuityResult.type === 'future' && (
+                                <span>Pro měsíční rentu <strong>{czk.format(annuityResult.monthlyAnnuity)}</strong> potřebujete kapitál o velikosti přibližně <strong>{czk.format(annuityResult.targetCapital)}</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>{annuityResult.targetDate}</strong>.</span>
+                            )}
+                        </div>
+                    )}
+                    <p className="text-xs text-neutral-500 pt-3">*Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.</p>
                 </section>
             );
         };
