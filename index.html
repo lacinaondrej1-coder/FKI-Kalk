@@ -547,9 +547,18 @@
             }
 
             const today = startOfToday();
-            const finalDate = latestDate ? (today > latestDate ? today : latestDate) : today;
+            const horizonDate = earliestDate ? addYears(earliestDate, Y) : null;
+            const finalDateCandidates = [today];
+            if (latestDate) finalDateCandidates.push(latestDate);
+            if (horizonDate) finalDateCandidates.push(horizonDate);
+            const finalDate = new Date(Math.max(...finalDateCandidates.map((date) => date.getTime())));
             ensureEntry(finalDate).control = true;
-            ensureEntry(earliestDate).control = true;
+            if (earliestDate) {
+                ensureEntry(earliestDate).control = true;
+            }
+            if (horizonDate) {
+                ensureEntry(horizonDate).control = true;
+            }
 
             let controlCandidate = addYears(earliestDate, 3);
             while (controlCandidate && controlCandidate < finalDate) {
@@ -815,11 +824,11 @@
             createFund('PFFL', 7.5, 'CODYA'),
             createFund('Fond reverzních hypoték', 6.65, 'CODYA'),
             createFund('Silverline R.E.', 10, 'CODYA'),
-            createFund('Vigo Direct', 8, 'CODYA'),
-            createFund('Adax', 12, 'CODYA'),
-            createFund('Julius Meinl fond', 14.5, 'CODYA'),
-            createFund('Penta R.E.', 14, 'CODYA'),
-            createFund('Penta Equity', 14, 'CODYA'),
+            createFund('Vigo Direct', 10, 'CODYA'),
+            createFund('Adax', 20, 'CODYA'),
+            createFund('Julius Meinl fond', 10, 'CODYA'),
+            createFund('Penta R.E.', 10, 'CODYA'),
+            createFund('Penta Equity', 17.5, 'CODYA'),
             createFund('Artefin - Henry IF', 8.5, 'CODYA'),
             createFund('FČKD', 7.5, 'CODYA'),
             createFund('r2p invest', 8.5, 'AVANT'),
@@ -827,9 +836,9 @@
             createFund('Realia', 6, 'AVANT'),
             createFund('EBM', 8, 'AVANT'),
             createFund('Wero', 8, 'AVANT'),
-            createFund('Vihorev', 8.5, 'AVANT'),
+            createFund('Vihorev', 9, 'AVANT'),
             createFund('Real Luxembourg', 8, 'AVANT'),
-            createFund('Aguila', 7.5, 'AVANT'),
+            createFund('Aguila', 8, 'AVANT'),
             createFund('Spilberk', 7, 'AVANT'),
             createFund('Semper', 11, 'AVANT'),
         ];
