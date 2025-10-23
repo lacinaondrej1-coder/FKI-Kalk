@@ -2036,35 +2036,6 @@
             const [view, setView] = useState(fallbackKey);
             const containerRef = useRef(null);
             const [tooltip, setTooltip] = useState(null);
-
-            useEffect(() => {
-                if (!availableStages.length) {
-                    if (view !== null) {
-                        setView(null);
-                    }
-                    return;
-                }
-                if (!view || !availableStages.some((stage) => stage.key === view)) {
-                    setView(availableStages[availableStages.length - 1].key);
-                }
-            }, [availableStages, view]);
-
-            useEffect(() => {
-                setTooltip(null);
-            }, [view, availableStages.length]);
-
-            if (!analysis?.hasData || availableStages.length === 0) {
-                return null;
-            }
-
-            const activeStage = availableStages.find((stage) => stage.key === view) || availableStages[availableStages.length - 1];
-            const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
-            const total = Number(activeStage?.totalValue) || 0;
-            const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
-            const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'];
-            const outerRadius = 46;
-            const innerRadius = 28;
-            const degToRad = (value) => (value * Math.PI) / 180;
             const yearlyRows = useMemo(() => {
                 if (!Array.isArray(analysis?.timeline) || analysis.timeline.length === 0) {
                     return [];
@@ -2102,6 +2073,35 @@
                         gain: (row.endValue || 0) - (row.startValue || 0),
                     }));
             }, [analysis]);
+
+            useEffect(() => {
+                if (!availableStages.length) {
+                    if (view !== null) {
+                        setView(null);
+                    }
+                    return;
+                }
+                if (!view || !availableStages.some((stage) => stage.key === view)) {
+                    setView(availableStages[availableStages.length - 1].key);
+                }
+            }, [availableStages, view]);
+
+            useEffect(() => {
+                setTooltip(null);
+            }, [view, availableStages.length]);
+
+            if (!analysis?.hasData || availableStages.length === 0) {
+                return null;
+            }
+
+            const activeStage = availableStages.find((stage) => stage.key === view) || availableStages[availableStages.length - 1];
+            const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
+            const total = Number(activeStage?.totalValue) || 0;
+            const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
+            const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'];
+            const outerRadius = 46;
+            const innerRadius = 28;
+            const degToRad = (value) => (value * Math.PI) / 180;
 
             let angle = -90;
             const segments = data.map((item, index) => {
