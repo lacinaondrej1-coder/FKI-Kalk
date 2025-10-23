@@ -91,6 +91,8 @@
         @media (min-width: 1024px) {
             .brand-header-inner { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; }
         }
+        .hero-intro { display: flex; flex-direction: column; gap: 1.6rem; }
+        .brand-identity { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
         .brand-logo {
             font-weight: 700;
             font-size: 1.1rem;
@@ -106,11 +108,11 @@
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.5rem 1.1rem;
+            padding: 0.55rem 1.4rem;
             border-radius: 999px;
-            background: rgba(13, 44, 84, 0.06);
-            border: 1px solid rgba(13, 44, 84, 0.1);
-            font-size: 0.75rem;
+            background: rgba(13, 44, 84, 0.08);
+            border: 1px solid rgba(13, 44, 84, 0.14);
+            font-size: 0.78rem;
             letter-spacing: 0.2em;
             text-transform: uppercase;
             color: var(--primary);
@@ -1498,9 +1500,11 @@
                 <header className="brand-header">
                     <div className="brand-backdrop"></div>
                     <div className="app-shell brand-header-inner">
-                        <div>
-                            <div className="brand-logo">Fair<span>Life</span></div>
-                            <div className="hero-kicker">NÁVRH PORTFOLIA &amp; SCÉNÁŘE</div>
+                        <div className="hero-intro">
+                            <div className="brand-identity">
+                                <div className="brand-logo">Fair<span>Life</span></div>
+                                <div className="hero-kicker">NÁVRH PORTFOLIA &amp; SCÉNÁŘE</div>
+                            </div>
                             <h1 className="hero-title hero-title-upper">Sestavte investiční portfolio a vizualizujte jeho budoucnost</h1>
                             <p className="hero-description">
                                 Přidávejte fondy, nastavujte dnešní vklad, dokup po 1. roce a případný jednorázový pokles. Vše propočítáme do jedné křivky a přehledných karet, abyste mohli scénáře srozumitelně vysvětlit.
