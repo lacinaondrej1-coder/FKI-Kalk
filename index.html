@@ -358,7 +358,7 @@
             />
         );
 
-        const createFund = (name = 'Nový fond', rate = 5, segment = 'CODYA', startDate = toInputDate(startOfToday())) => ({
+        const createFund = (name = 'Nový fond', rate = 5, segment = 'CODYA', startDate = toInputDate(startOfToday()), options = {}) => ({
             id: randomId(),
             name,
             currency: BASE_CURRENCY,
@@ -368,6 +368,7 @@
             segment,
             topUpStr: '0',
             crashYear: '0',
+            defaultKey: options.defaultKey || null,
         });
 
         const sanitizeFund = (fund) => ({
@@ -380,6 +381,7 @@
             segment: fund?.segment || 'CODYA',
             topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
             crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
+            defaultKey: fund?.defaultKey || null,
         });
 
         const sanitizeTopUp = (topUp) => ({
@@ -821,32 +823,70 @@
             const finalValue = npv(mid);
             return Math.abs(finalValue) < 1e-4 ? mid : null;
         }
-        const getDefaultFunds = () => [
-            createFund('PFFL', 7.5, 'CODYA'),
-            createFund('Fond reverzních hypoték', 6.65, 'CODYA'),
-            createFund('Silverline R.E.', 10, 'CODYA'),
-            createFund('Vigo Direct', 8, 'CODYA'),
-            createFund('Adax', 20, 'CODYA'),
-            createFund('Julius Meinl fond', 10, 'CODYA'),
-            createFund('Penta R.E.', 10, 'CODYA'),
-            createFund('Penta Equity', 17.5, 'CODYA'),
-            createFund('Artefin - Henry IF', 8.5, 'CODYA'),
-            createFund('FČKD', 7.5, 'CODYA'),
-            createFund('r2p invest', 8.5, 'AVANT'),
-            createFund('Gartal', 7, 'AVANT'),
-            createFund('Realia', 6, 'AVANT'),
-            createFund('EBM', 9, 'AVANT'),
-            createFund('Wero', 8, 'AVANT'),
-            createFund('Vihorev', 9, 'AVANT'),
-            createFund('Real Luxembourg', 8, 'AVANT'),
-            createFund('Aguila', 7.5, 'AVANT'),
-            createFund('Spilberk', 7, 'AVANT'),
-            createFund('Semper', 11, 'AVANT'),
+        const DEFAULT_FUND_CONFIG = [
+            { key: 'CODYA::PFFL', segment: 'CODYA', name: 'PFFL', rate: 7.5 },
+            { key: 'CODYA::Fond reverzních hypoték', segment: 'CODYA', name: 'Fond reverzních hypoték', rate: 6.65 },
+            { key: 'CODYA::Silverline R.E.', segment: 'CODYA', name: 'Silverline R.E.', rate: 10 },
+            { key: 'CODYA::Vigo Direct', segment: 'CODYA', name: 'Vigo Direct', rate: 8 },
+            { key: 'CODYA::Adax', segment: 'CODYA', name: 'Adax', rate: 12 },
+            { key: 'CODYA::Julius Meinl fond', segment: 'CODYA', name: 'Julius Meinl fond', rate: 14.5 },
+            { key: 'CODYA::Penta R.E.', segment: 'CODYA', name: 'Penta R.E.', rate: 14 },
+            { key: 'CODYA::Penta Equity', segment: 'CODYA', name: 'Penta Equity', rate: 14 },
+            { key: 'CODYA::Artefin - Henry IF', segment: 'CODYA', name: 'Artefin - Henry IF', rate: 8.5 },
+            { key: 'CODYA::FČKD', segment: 'CODYA', name: 'FČKD', rate: 7.5 },
+            { key: 'AVANT::r2p invest', segment: 'AVANT', name: 'r2p invest', rate: 8.5 },
+            { key: 'AVANT::Gartal', segment: 'AVANT', name: 'Gartal', rate: 7 },
+            { key: 'AVANT::Realia', segment: 'AVANT', name: 'Realia', rate: 6 },
+            { key: 'AVANT::EBM', segment: 'AVANT', name: 'EBM', rate: 8 },
+            { key: 'AVANT::Wero', segment: 'AVANT', name: 'Wero', rate: 8 },
+            { key: 'AVANT::Vihorev', segment: 'AVANT', name: 'Vihorev', rate: 8.5 },
+            { key: 'AVANT::Real Luxembourg', segment: 'AVANT', name: 'Real Luxembourg', rate: 8 },
+            { key: 'AVANT::Aguila', segment: 'AVANT', name: 'Aguila', rate: 7.5 },
+            { key: 'AVANT::Spilberk', segment: 'AVANT', name: 'Spilberk', rate: 7 },
+            { key: 'AVANT::Semper', segment: 'AVANT', name: 'Semper', rate: 11 },
         ];
 
+        const getDefaultFunds = () =>
+            DEFAULT_FUND_CONFIG.map((config) =>
+                createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }),
+            );
+
+        const ensureDefaultFunds = (fundList) => {
+            const sanitized = (fundList || []).map(sanitizeFund);
+            const keyFor = (fund) => fund.defaultKey || `${fund.segment}::${fund.name}`;
+            const usedIds = new Set();
+            const result = [];
+
+            DEFAULT_FUND_CONFIG.forEach((config) => {
+                const match = sanitized.find((fund) => keyFor(fund) === config.key);
+                if (match) {
+                    result.push({ ...match, segment: config.segment, defaultKey: config.key });
+                    usedIds.add(match.id);
+                } else {
+                    result.push(createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }));
+                }
+            });
+
+            sanitized.forEach((fund) => {
+                if (!usedIds.has(fund.id)) {
+                    result.push(fund);
+                }
+            });
+
+            return result;
+        };
+
         const SEGMENT_CONFIG = [
-            { key: 'CODYA', label: 'CODYA', demo: ['PFFL', 'Fond reverzních hypoték', 'Silverline R.E.', 'Vigo Direct', 'Adax', 'Julius Meinl fond', 'Penta R.E.', 'Penta Equity', 'Artefin - Henry IF', 'FČKD'] },
-            { key: 'AVANT', label: 'AVANT', demo: ['r2p invest', 'Gartal', 'Realia', 'EBM', 'Wero', 'Vihorev', 'Real Luxembourg', 'Aguila', 'Spilberk', 'Semper'] },
+            {
+                key: 'CODYA',
+                label: 'CODYA',
+                demo: DEFAULT_FUND_CONFIG.filter((config) => config.segment === 'CODYA').map((config) => config.name),
+            },
+            {
+                key: 'AVANT',
+                label: 'AVANT',
+                demo: DEFAULT_FUND_CONFIG.filter((config) => config.segment === 'AVANT').map((config) => config.name),
+            },
         ];
 
         const useResizeObserver = (ref) => {
@@ -855,29 +895,46 @@
                 const target = ref.current;
                 if (!target) return undefined;
 
-                const measure = () => {
-                    const rect = target.getBoundingClientRect();
-                    setDimensions({ width: rect.width, height: rect.height });
+                const readDimensions = () => {
+                    const element = ref.current;
+                    if (!element) return;
+                    const rect = element.getBoundingClientRect();
+                    const width = rect.width || element.offsetWidth || element.clientWidth || 0;
+                    const height = rect.height || element.offsetHeight || element.clientHeight || 0;
+                    setDimensions({ width, height });
                 };
 
-                measure();
+                readDimensions();
+
+                let rafId = null;
+                if (typeof window !== 'undefined') {
+                    rafId = window.requestAnimationFrame(readDimensions);
+                }
+
+                let observer = null;
+                let resizeListenerAttached = false;
 
                 if (typeof ResizeObserver === 'function') {
-                    const observer = new ResizeObserver((entries) => {
-                        if (!Array.isArray(entries) || !entries[0]) return;
-                        const { width, height } = entries[0].contentRect;
-                        setDimensions({ width, height });
-                    });
+                    observer = new ResizeObserver(() => readDimensions());
                     observer.observe(target);
-                    return () => observer.disconnect();
+                } else if (typeof window !== 'undefined') {
+                    window.addEventListener('resize', readDimensions);
+                    resizeListenerAttached = true;
                 }
 
-                if (typeof window !== 'undefined') {
-                    window.addEventListener('resize', measure);
-                    return () => window.removeEventListener('resize', measure);
-                }
-
-                return undefined;
+                return () => {
+                    if (observer) {
+                        observer.disconnect();
+                    }
+                    if (typeof window !== 'undefined') {
+                        if (rafId !== null) {
+                            window.cancelAnimationFrame(rafId);
+                        }
+                        if (resizeListenerAttached) {
+                            window.removeEventListener('resize', readDimensions);
+                        }
+                    }
+                };
             }, [ref]);
             return dimensions;
         };
@@ -1154,8 +1211,13 @@
             const { timeline, markers, controlPoints } = analysis;
             const height = 340;
             const margin = { top: 32, right: 24, bottom: 56, left: 80 };
-            const rawWidth = dimensions.width || (containerRef.current ? containerRef.current.getBoundingClientRect().width : 0);
-            const width = Math.max(rawWidth, margin.left + margin.right + 1);
+            const fallbackWindowWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth || 0, 960) : 0;
+            const rawWidth =
+                dimensions.width ||
+                (containerRef.current ? containerRef.current.getBoundingClientRect().width : 0) ||
+                (svgRef.current ? svgRef.current.getBoundingClientRect().width : 0) ||
+                fallbackWindowWidth;
+            const width = Math.max(rawWidth, margin.left + margin.right + 120);
             const plotWidth = Math.max(1, width - margin.left - margin.right);
             const plotHeight = Math.max(1, height - margin.top - margin.bottom);
 
@@ -1418,7 +1480,9 @@
                     if (stored) {
                         const parsed = JSON.parse(stored);
                         if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
-                            setFunds(parsed.funds.map(sanitizeFund));
+                            setFunds(ensureDefaultFunds(parsed.funds));
+                        } else {
+                            setFunds(getDefaultFunds());
                         }
                         if (typeof parsed.clientName === 'string') {
                             setClientName(parsed.clientName);
@@ -1515,7 +1579,7 @@
                     try {
                         const parsed = JSON.parse(loadEvent.target.result);
                         if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
-                            setFunds(parsed.funds.map(sanitizeFund));
+                            setFunds(ensureDefaultFunds(parsed.funds));
                         } else {
                             setFunds(getDefaultFunds());
                         }
