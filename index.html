@@ -10,27 +10,32 @@
     <style>
         :root {
             color-scheme: light;
-            --color-bg-start: #FDFEFF;
-            --color-bg-end: #F8F9FA;
-            --color-primary: #0d2c54;
-            --color-accent: #4DB1C8;
-            --color-text: #33373D;
-            --color-muted: #888B90;
-            --color-border: #EAECEE;
-            --color-border-strong: #D0E0E8;
-            --color-card: #FFFFFF;
-            --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
-            --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
+            --bg-start: #F8FCFF;
+            --bg-end: #F3F6FA;
+            --primary: #0d2c54;
+            --accent: #4DB1C8;
+            --text: #1f2a37;
+            --muted: #6b7280;
+            --border: #E5EAF0;
+            --border-strong: #CFD9E3;
+            --surface: #ffffff;
+            --shadow: 0 16px 32px -18px rgba(13, 44, 84, 0.12);
+            --shadow-strong: 0 20px 40px -18px rgba(13, 44, 84, 0.16);
+            --danger: #b42318;
+            --danger-bg: rgba(229, 62, 62, 0.12);
+            --positive: #228b22;
         }
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
         body {
             font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
             scroll-behavior: smooth;
-            background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
-            color: var(--color-text);
+            background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text);
             min-height: 100vh;
             margin: 0;
+            font-size: 1.05rem;
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
         }
         a { color: inherit; text-decoration: none; }
@@ -45,17 +50,17 @@
             align-items: center;
             padding: 1rem 1.1rem;
             border-radius: 0.9rem;
-            border: 1px solid var(--color-border);
-            box-shadow: var(--color-shadow);
-            background: var(--color-card);
-            color: var(--color-text);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            background: var(--surface);
+            color: var(--text);
             opacity: 0;
             transform: translateX(100%);
             transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1);
         }
         .toast.show { opacity: 1; transform: translateX(0); }
-        .toast-success { border-color: rgba(77, 177, 200, 0.45); background: rgba(77, 177, 200, 0.15); color: var(--color-primary); }
-        .toast-error { border-color: rgba(229, 62, 62, 0.45); background: rgba(229, 62, 62, 0.15); color: #b42318; }
+        .toast-success { border-color: rgba(77, 177, 200, 0.45); background: rgba(77, 177, 200, 0.15); color: var(--primary); }
+        .toast-error { border-color: rgba(229, 62, 62, 0.45); background: rgba(229, 62, 62, 0.15); color: var(--danger); }
         .app-shell { max-width: 1200px; margin: 0 auto; padding: 0 1.75rem; }
         @media (max-width: 640px) { .app-shell { padding: 0 1.1rem; } }
         header.brand-header { padding: 2.75rem 0 4rem; position: relative; }
@@ -70,8 +75,8 @@
         @media (min-width: 1024px) {
             .brand-header-inner { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; }
         }
-        .brand-logo { font-weight: 700; font-size: 1.15rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--color-primary); display: inline-flex; align-items: center; gap: 0.35rem; }
-        .brand-logo span { color: var(--color-accent); }
+        .brand-logo { font-weight: 700; font-size: 1.15rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--primary); display: inline-flex; align-items: center; gap: 0.35rem; }
+        .brand-logo span { color: var(--accent); }
         .hero-kicker {
             display: inline-flex;
             align-items: center;
@@ -83,21 +88,21 @@
             font-size: 0.68rem;
             letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: var(--color-primary);
+            color: var(--primary);
             font-weight: 600;
         }
-        .hero-title { font-size: clamp(2.25rem, 5vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; margin: 1rem 0 1.25rem; color: var(--color-primary); text-transform: uppercase; }
-        .hero-description { font-size: 1rem; line-height: 1.7; max-width: 560px; color: rgba(51, 55, 61, 0.78); }
+        .hero-title { font-size: clamp(2.25rem, 5vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; margin: 1rem 0 1.25rem; color: var(--primary); text-transform: uppercase; }
+        .hero-description { font-size: 1rem; line-height: 1.7; max-width: 560px; color: var(--text); opacity: 0.78; }
         .hero-card-stack { display: grid; gap: 1.25rem; }
         .surface-card {
-            background: var(--color-card);
+            background: var(--surface);
             border-radius: 1.5rem;
-            border: 1px solid var(--color-border);
-            box-shadow: var(--color-shadow);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
             padding: 1.9rem;
             transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
         }
-        .surface-card:hover { border-color: var(--color-border-strong); box-shadow: var(--color-shadow-strong); transform: translateY(-2px); }
+        .surface-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-strong); transform: translateY(-2px); }
         .surface-card small {
             display: inline-flex;
             align-items: center;
@@ -105,86 +110,86 @@
             font-size: 0.7rem;
             letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: var(--color-primary);
+            color: var(--primary);
             font-weight: 600;
         }
-        .surface-card h3 { margin: 0.8rem 0 0.75rem; font-size: 1.1rem; font-weight: 600; color: var(--color-text); }
-        .surface-card p { margin: 0; font-size: 0.95rem; line-height: 1.6; color: rgba(51, 55, 61, 0.75); }
+        .surface-card h3 { margin: 0.8rem 0 0.75rem; font-size: 1.1rem; font-weight: 600; color: var(--text); }
+        .surface-card p { margin: 0; font-size: 0.95rem; line-height: 1.6; color: var(--text); opacity: 0.75; }
         main { margin-top: -72px; position: relative; z-index: 2; }
         @media (max-width: 768px) { main { margin-top: -48px; } }
         .content-stack { display: flex; flex-direction: column; gap: 2.5rem; padding-bottom: 4.5rem; }
-        .card-section { background: var(--color-card); border-radius: 1.5rem; border: 1px solid var(--color-border); box-shadow: var(--color-shadow); padding: clamp(1.65rem, 2.5vw, 2.5rem); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .card-section:hover { border-color: var(--color-border-strong); box-shadow: var(--color-shadow-strong); }
+        .card-section { background: var(--surface); border-radius: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); padding: clamp(1.65rem, 2.5vw, 2.5rem); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .card-section:hover { border-color: var(--border-strong); box-shadow: var(--shadow-strong); }
         .card-header { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
         @media (min-width: 768px) { .card-header { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
-        .card-header-title { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-primary); text-transform: uppercase; }
-        .card-header-sub { font-size: 0.95rem; color: rgba(51, 55, 61, 0.75); max-width: 580px; }
-        .badge-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem; border-radius: 999px; background: rgba(13, 44, 84, 0.08); border: 1px solid rgba(13, 44, 84, 0.18); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-primary); font-weight: 600; }
+        .card-header-title { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; color: var(--primary); text-transform: uppercase; }
+        .card-header-sub { font-size: 0.95rem; color: var(--text); opacity: 0.75; max-width: 580px; }
+        .badge-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem; border-radius: 999px; background: rgba(13, 44, 84, 0.08); border: 1px solid rgba(13, 44, 84, 0.18); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--primary); font-weight: 600; }
         .meta-deck { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-        .meta-card { border: 1px solid var(--color-border); background: rgba(255, 255, 255, 0.72); border-radius: 0.9rem; padding: 0.75rem 1rem; color: var(--color-primary); display: flex; flex-direction: column; gap: 0.35rem; min-width: 190px; box-shadow: var(--color-shadow); }
-        .meta-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); font-weight: 600; }
-        .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--color-primary); }
+        .meta-card { border: 1px solid var(--border); background: rgba(255, 255, 255, 0.72); border-radius: 0.9rem; padding: 0.75rem 1rem; color: var(--primary); display: flex; flex-direction: column; gap: 0.35rem; min-width: 190px; box-shadow: var(--shadow); }
+        .meta-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+        .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--primary); }
         .meta-card .input { width: 100%; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.65rem 1.35rem; border-radius: 0.9rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.01em; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
         .btn:hover { transform: translateY(-2px); }
-        .btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: #fff; box-shadow: var(--color-shadow); }
-        .btn-primary:hover { background: #0a2344; box-shadow: var(--color-shadow-strong); }
-        .btn-secondary { background: rgba(77, 177, 200, 0.12); color: var(--color-primary); border-color: rgba(77, 177, 200, 0.55); }
-        .btn-secondary:hover { background: rgba(77, 177, 200, 0.2); border-color: var(--color-accent); box-shadow: var(--color-shadow); }
-        .btn-secondary.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); box-shadow: var(--color-shadow-strong); }
-        .btn-danger { background: rgba(229, 62, 62, 0.12); color: #b42318; border-color: rgba(229, 62, 62, 0.35); }
-        .btn-danger:hover { background: rgba(229, 62, 62, 0.18); box-shadow: var(--color-shadow); }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: var(--shadow); }
+        .btn-primary:hover { background: #0a2344; box-shadow: var(--shadow-strong); }
+        .btn-secondary { background: rgba(77, 177, 200, 0.12); color: var(--primary); border-color: rgba(77, 177, 200, 0.55); }
+        .btn-secondary:hover { background: rgba(77, 177, 200, 0.2); border-color: var(--accent); box-shadow: var(--shadow); }
+        .btn-secondary.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow-strong); }
+        .btn-danger { background: var(--danger-bg); color: var(--danger); border-color: rgba(229, 62, 62, 0.35); }
+        .btn-danger:hover { background: rgba(229, 62, 62, 0.2); box-shadow: var(--shadow); }
         .control-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
-        .input, select { font-family: inherit; border-radius: 0.9rem; border: 1px solid var(--color-border); padding: 0.55rem 0.9rem; background: rgba(255, 255, 255, 0.92); transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.9rem; color: var(--color-text); }
-        .input:focus, select:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
-        .input::placeholder { color: var(--color-muted); }
+        .input, select { font-family: inherit; border-radius: 0.9rem; border: 1px solid var(--border); padding: 0.55rem 0.9rem; background: rgba(255, 255, 255, 0.92); transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.9rem; color: var(--text); }
+        .input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
+        .input::placeholder { color: var(--muted); }
         .input-ghost { background: rgba(255,255,255,0.6); }
-        .icon-button { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--color-border); background: rgba(255, 255, 255, 0.9); color: var(--color-muted); display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background-color 0.2s ease; }
-        .icon-button:hover { border-color: var(--color-border-strong); color: #b42318; background: rgba(229, 62, 62, 0.12); box-shadow: var(--color-shadow); }
+        .icon-button { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.9); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background-color 0.2s ease; }
+        .icon-button:hover { border-color: var(--border-strong); color: var(--danger); background: var(--danger-bg); box-shadow: var(--shadow); }
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted); padding: 0.75rem 0.75rem; border-bottom: 1px solid var(--color-border); background: rgba(253, 254, 255, 0.85); position: sticky; top: 0; z-index: 1; }
-        tbody td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; color: var(--color-text); }
+        thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding: 0.75rem 0.75rem; border-bottom: 1px solid var(--border); background: rgba(253, 254, 255, 0.85); position: sticky; top: 0; z-index: 1; }
+        tbody td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: var(--text); }
         tbody tr:hover { background: rgba(77, 177, 200, 0.06); }
         tbody tr:last-child td { border-bottom: none; }
         .table-actions { text-align: right; }
-        .table-input { width: 100%; border-radius: 0.85rem; border: 1px solid var(--color-border); padding: 0.55rem 0.85rem; background: rgba(255, 255, 255, 0.92); font-size: 0.9rem; color: var(--color-text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .table-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
+        .table-input { width: 100%; border-radius: 0.85rem; border: 1px solid var(--border); padding: 0.55rem 0.85rem; background: rgba(255, 255, 255, 0.92); font-size: 0.9rem; color: var(--text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .table-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
         .table-select { width: 100%; }
         .info-grid { display: grid; gap: 1.25rem; }
         @media (min-width: 768px) { .info-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-        .info-card { border: 1px solid var(--color-border); border-radius: 1.35rem; padding: 1.35rem; background: var(--color-card); box-shadow: var(--color-shadow); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .info-card:hover { border-color: var(--color-border-strong); box-shadow: var(--color-shadow-strong); }
-        .info-card-title { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); font-weight: 600; }
-        .info-card-value { font-size: 1.65rem; font-weight: 600; color: var(--color-primary); margin-top: 0.6rem; }
-        .info-card-sub { font-size: 0.75rem; color: var(--color-muted); margin-top: 0.35rem; }
-        .highlight-positive { color: #228b22; font-weight: 600; }
-        .highlight-negative { color: #b42318; font-weight: 600; }
+        .info-card { border: 1px solid var(--border); border-radius: 1.35rem; padding: 1.35rem; background: var(--surface); box-shadow: var(--shadow); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .info-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-strong); }
+        .info-card-title { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+        .info-card-value { font-size: 1.65rem; font-weight: 600; color: var(--primary); margin-top: 0.6rem; }
+        .info-card-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
+        .highlight-positive { color: var(--positive); font-weight: 600; }
+        .highlight-negative { color: var(--danger); font-weight: 600; }
         .tooltip {
             position: absolute;
             z-index: 10;
             padding: 0.6rem 0.8rem;
-            background: var(--color-card);
-            border: 1px solid var(--color-border);
-            box-shadow: var(--color-shadow);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
             border-radius: 0.75rem;
             font-size: 0.85rem;
-            color: var(--color-text);
+            color: var(--text);
             pointer-events: none;
             display: none;
         }
         .tooltip.show { display: block; }
         .chart-container { position: relative; height: 22rem; width: 100%; }
-        .chart-axis-text { fill: var(--color-muted); font-size: 0.68rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
-        .chart-grid-line { stroke: #E5E8EE; stroke-dasharray: 2 3; }
-        .chart-line-accent { stroke: var(--color-accent); stroke-width: 2.6; fill: none; }
+        .chart-axis-text { fill: var(--muted); font-size: 0.68rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
+        .chart-grid-line { stroke: var(--border); stroke-dasharray: 2 3; opacity: 0.7; }
+        .chart-line-accent { stroke: var(--primary); stroke-width: 2.6; fill: none; }
         .chart-dot { stroke: #fff; stroke-width: 2; }
         .chart-marker-hints {
             margin-top: 1.35rem;
             padding: 0.85rem 1.1rem;
             border-radius: 1rem;
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--border);
             background: rgba(255, 255, 255, 0.9);
-            box-shadow: var(--color-shadow);
+            box-shadow: var(--shadow);
             display: flex;
             flex-wrap: wrap;
             gap: 0.85rem 1.35rem;
@@ -194,7 +199,7 @@
             font-size: 0.65rem;
             letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: var(--color-primary);
+            color: var(--primary);
             font-weight: 600;
         }
         .chart-marker-hints-items {
@@ -207,7 +212,7 @@
             align-items: center;
             gap: 0.55rem;
             font-size: 0.85rem;
-            color: var(--color-text);
+            color: var(--text);
         }
         .chart-marker-icon {
             position: relative;
@@ -227,11 +232,11 @@
             position: absolute;
             inset: 0;
             border-radius: 50%;
-            background: rgba(77, 177, 200, 0.2);
-            border: 2px solid rgba(77, 177, 200, 0.55);
+            background: rgba(77, 177, 200, 0.18);
+            border: 2px solid var(--accent);
         }
         .chart-marker-icon--deposit span {
-            color: var(--color-primary);
+            color: var(--primary);
             font-size: 0.95rem;
         }
         .chart-marker-icon--crash::before {
@@ -239,12 +244,12 @@
             position: absolute;
             inset: 0.08rem;
             border-radius: 0.45rem;
-            background: rgba(229, 62, 62, 0.18);
-            border: 2px solid #b42318;
+            background: var(--danger-bg);
+            border: 2px solid var(--danger);
             transform: rotate(45deg);
         }
         .chart-marker-icon--crash span {
-            color: #b42318;
+            color: var(--danger);
             font-size: 0.85rem;
         }
         .chart-marker-icon--mixed::before {
@@ -252,8 +257,8 @@
             position: absolute;
             inset: 0.08rem;
             border-radius: 0.45rem;
-            background: rgba(229, 62, 62, 0.18);
-            border: 2px solid #b42318;
+            background: var(--danger-bg);
+            border: 2px solid var(--danger);
             transform: rotate(45deg);
         }
         .chart-marker-icon--mixed::after {
@@ -261,11 +266,11 @@
             position: absolute;
             inset: 0.25rem;
             border-radius: 50%;
-            background: rgba(77, 177, 200, 0.2);
-            border: 2px solid rgba(77, 177, 200, 0.55);
+            background: rgba(77, 177, 200, 0.18);
+            border: 2px solid var(--accent);
         }
         .chart-marker-icon--mixed .chart-marker-icon-symbol {
-            color: #b42318;
+            color: var(--danger);
             font-size: 0.8rem;
             z-index: 2;
         }
@@ -275,24 +280,24 @@
             left: 0;
             right: 0;
             text-align: center;
-            color: var(--color-primary);
+            color: var(--primary);
             font-size: 0.75rem;
             z-index: 2;
         }
-        .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--color-muted); }
+        .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
         .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
         .legend-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
         .pie-legend { display: grid; gap: 0.65rem; }
-        .pie-legend-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--color-border); border-radius: 0.9rem; padding: 0.65rem 0.85rem; background: rgba(255, 255, 255, 0.9); box-shadow: var(--color-shadow); }
-        .pie-legend-name { font-weight: 600; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .pie-legend-value { color: var(--color-primary); font-weight: 600; }
+        .pie-legend-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: 0.9rem; padding: 0.65rem 0.85rem; background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow); }
+        .pie-legend-name { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pie-legend-value { color: var(--primary); font-weight: 600; }
         .pie-segment { cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; transform-origin: center center; }
         .pie-segment:hover { transform: scale(1.04); filter: drop-shadow(0 10px 16px rgba(13, 44, 84, 0.18)); }
         .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        .note-block { border: 1px solid var(--color-border); border-radius: 1.2rem; padding: 1.25rem; background: var(--color-card); box-shadow: var(--color-shadow); font-size: 0.9rem; color: rgba(51, 55, 61, 0.85); }
-        .note-block.alert { border-color: rgba(229, 62, 62, 0.35); background: rgba(229, 62, 62, 0.08); color: #9b2c2c; }
-        footer { padding: 3rem 0; color: var(--color-muted); font-size: 0.75rem; text-align: center; }
+        .note-block { border: 1px solid var(--border); border-radius: 1.2rem; padding: 1.25rem; background: var(--surface); box-shadow: var(--shadow); font-size: 0.9rem; color: var(--text); opacity: 0.85; }
+        .note-block.alert { border-color: rgba(229, 62, 62, 0.35); background: rgba(229, 62, 62, 0.08); color: var(--danger); }
+        footer { padding: 3rem 0; color: var(--muted); font-size: 0.75rem; text-align: center; }
         @media (max-width: 768px) {
             .hero-description { font-size: 0.95rem; }
             .card-header { gap: 0.5rem; }
@@ -1153,9 +1158,9 @@
                                     <span className="meta-label">Aktuální hodnota</span>
                                     <span className="meta-value tabular-nums">{currentValue}</span>
                                     <span className="meta-label">Investováno celkem</span>
-                                    <span className="meta-value tabular-nums" style={{ fontSize: '0.85rem', color: 'var(--color-muted)', fontWeight: 600 }}>{totalInvested}</span>
+                                    <span className="meta-value tabular-nums" style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600 }}>{totalInvested}</span>
                                     <span className="meta-label">Kumulativní P/L</span>
-                                    <span className="meta-value tabular-nums" style={{ color: analysis?.pl >= 0 ? '#228b22' : '#b42318' }}>{pl}</span>
+                                    <span className="meta-value tabular-nums" style={{ color: analysis?.pl >= 0 ? 'var(--positive)' : 'var(--danger)' }}>{pl}</span>
                                 </div>
                             </div>
                         </div>
@@ -1207,7 +1212,7 @@
                                 <span className="meta-label">Aktuální hodnota</span>
                                 <span className="meta-value tabular-nums">{formatCurrency(analysis.currentValue)}</span>
                                 <span className="meta-label">Kumulativní P/L</span>
-                                <span className="meta-value tabular-nums" style={{ color: analysis.pl >= 0 ? '#228b22' : '#b42318' }}>{formatCurrency(analysis.pl)}</span>
+                                <span className="meta-value tabular-nums" style={{ color: analysis.pl >= 0 ? 'var(--positive)' : 'var(--danger)' }}>{formatCurrency(analysis.pl)}</span>
                             </div>
                             <div className="meta-card">
                                 <span className="meta-label">XIRR scénáře</span>
@@ -1270,7 +1275,7 @@
                             <tbody>
                                 {funds.length === 0 && (
                                     <tr>
-                                        <td colSpan="8" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--color-muted)' }}>
+                                        <td colSpan="8" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
                                             Přidejte fond pro tento segment.
                                         </td>
                                     </tr>
@@ -1346,7 +1351,7 @@
                             <div className="meta-card">
                                 <span className="meta-label">Krizové události</span>
                                 <span className="meta-value">{analysis.crashSummary}</span>
-                                {analysis.totalCrashLoss > 0 && <span className="meta-label" style={{ color: '#b42318', textTransform: 'none' }}>Dopad {formatCurrency(-analysis.totalCrashLoss)}</span>}
+                                {analysis.totalCrashLoss > 0 && <span className="meta-label" style={{ color: 'var(--danger)', textTransform: 'none' }}>Dopad {formatCurrency(-analysis.totalCrashLoss)}</span>}
                             </div>
                             <div className="meta-card">
                                 <span className="meta-label">Časové rozpětí</span>
@@ -1571,41 +1576,41 @@
                             ))}
                             <path d={createPath(pathPoints)} className="chart-line-accent" />
                             {pathPoints.length > 0 && (
-                                <circle className="chart-dot" r="5" fill="#4DB1C8" cx={pathPoints[0].x} cy={pathPoints[0].y} />
+                                <circle className="chart-dot" r="5" fill="var(--accent)" cx={pathPoints[0].x} cy={pathPoints[0].y} />
                             )}
                             {markerPoints.map((marker) => (
                                 <g key={marker.key} transform={`translate(${marker.x}, ${marker.y})`} onMouseEnter={() => handleMarkerEnter(marker)} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }}>
                                     {marker.kind === 'deposit' && (
                                         <>
-                                            <circle r="9" fill="rgba(77, 177, 200, 0.2)" stroke="var(--color-accent)" strokeWidth="2" />
-                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--color-primary)">+</text>
+                                            <circle r="9" fill="rgba(77, 177, 200, 0.2)" stroke="var(--accent)" strokeWidth="2" />
+                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--primary)">+</text>
                                         </>
                                     )}
                                     {marker.kind === 'crash' && (
                                         <>
-                                            <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="rgba(229, 62, 62, 0.18)" stroke="#b42318" strokeWidth="2" />
-                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="#b42318">⚠︎</text>
+                                            <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="var(--danger-bg)" stroke="var(--danger)" strokeWidth="2" />
+                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--danger)">⚠︎</text>
                                         </>
                                     )}
                                     {marker.kind === 'mixed' && (
                                         <>
-                                            <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="rgba(229, 62, 62, 0.18)" stroke="#b42318" strokeWidth="2" />
-                                            <circle r="9" fill="rgba(77, 177, 200, 0.22)" stroke="var(--color-accent)" strokeWidth="2" />
-                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="#b42318">⚠︎</text>
-                                            <text textAnchor="middle" y="-8" fontSize="10" fontWeight="600" fill="var(--color-primary)">+</text>
+                                            <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="var(--danger-bg)" stroke="var(--danger)" strokeWidth="2" />
+                                            <circle r="9" fill="rgba(77, 177, 200, 0.22)" stroke="var(--accent)" strokeWidth="2" />
+                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--danger)">⚠︎</text>
+                                            <text textAnchor="middle" y="-8" fontSize="10" fontWeight="600" fill="var(--primary)">+</text>
                                         </>
                                     )}
                                 </g>
                             ))}
                             {controlGraphic.map((point) => (
                                 <g key={point.key} transform={`translate(${point.x}, ${point.y})`}>
-                                    <circle r="5" fill="#0d2c54" stroke="#fff" strokeWidth="2" />
+                                    <circle r="5" fill="var(--primary)" stroke="#fff" strokeWidth="2" />
                                 </g>
                             ))}
                             {tooltip && (
                                 <>
                                     <line x1={tooltip.x} x2={tooltip.x} y1={margin.top} y2={height - margin.bottom} stroke="rgba(13, 44, 84, 0.12)" strokeDasharray="4 4" />
-                                    <circle className="chart-dot" r="6" fill="#4DB1C8" cx={tooltip.x} cy={tooltip.y} />
+                                    <circle className="chart-dot" r="6" fill="var(--accent)" cx={tooltip.x} cy={tooltip.y} />
                                 </>
                             )}
                         </svg>
@@ -1632,12 +1637,12 @@
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.depositTotal > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.6rem', color: 'var(--color-primary)' }}>
+                                    <div className="info-card-sub" style={{ marginTop: '0.6rem', color: 'var(--primary)' }}>
                                         Součet dokupů: +{formatCurrency(tooltip.depositTotal)}
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.crashTotalLoss > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.45rem', color: '#b42318' }}>
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem', color: 'var(--danger)' }}>
                                         Ztráta v události: −{formatCurrency(tooltip.crashTotalLoss)}
                                     </div>
                                 )}
@@ -1654,8 +1659,8 @@
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.crashes && tooltip.crashes.length > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.75rem' : '0.6rem', color: '#b42318' }}>
-                                        <strong style={{ color: '#b42318' }}>Krachy</strong>
+                                    <div className="info-card-sub" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.75rem' : '0.6rem', color: 'var(--danger)' }}>
+                                        <strong style={{ color: 'var(--danger)' }}>Krachy</strong>
                                         <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
                                             {tooltip.crashes.map((crash, index) => (
                                                 <li key={`crash-${index}`} style={{ marginBottom: '0.25rem' }}>
