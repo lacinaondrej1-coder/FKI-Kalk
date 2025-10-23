@@ -728,6 +728,8 @@
             sortedEntries.forEach((entry, index) => {
                 const entryDeposits = [];
                 const entryCrashes = [];
+                let entryDepositTotal = 0;
+                let entryCrashTotalLoss = 0;
                 if (index > 0 && lastDate) {
                     applyGrowth(lastDate, entry.date);
                 }
@@ -758,6 +760,7 @@
                 };
 
                 pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents);
+                let portfolioValueAfterDeposits = valueBeforeEvents;
 
                 if (entry.deposits.length > 0) {
                     entry.deposits.forEach((deposit) => {
@@ -769,6 +772,7 @@
                         state.hadDeposit = true;
                         state.value += deposit.amount;
                         investedSoFar += deposit.amount;
+                        entryDepositTotal += deposit.amount;
                         entryDeposits.push({
                             fundId: state.id,
                             fundName: state.name,
@@ -778,12 +782,14 @@
                         });
                     });
 
-                    const valueAfterDeposits = sumPortfolioValue();
+                    portfolioValueAfterDeposits = sumPortfolioValue();
                     const snapshotAfterDeposits = snapshotStates();
-                    pushPoint(valueAfterDeposits, investedSoFar, snapshotAfterDeposits);
+                    pushPoint(portfolioValueAfterDeposits, investedSoFar, snapshotAfterDeposits);
                 }
 
+                let portfolioValueBeforeCrashes = portfolioValueAfterDeposits;
                 if (entry.crashes.length > 0) {
+                    portfolioValueBeforeCrashes = sumPortfolioValue();
                     entry.crashes.forEach((crash) => {
                         const state = fundStates.get(crash.fundId);
                         if (!state || !state.hadDeposit) return;
@@ -798,7 +804,10 @@
                         }
                         const after = state.value;
                         const loss = Math.max(0, before - after);
-                        if (loss > 0) totalCrashLoss += loss;
+                        if (loss > 0) {
+                            totalCrashLoss += loss;
+                            entryCrashTotalLoss += loss;
+                        }
                         entryCrashes.push({
                             fundId: state.id,
                             fundName: state.name,
@@ -810,6 +819,14 @@
                 }
 
                 const totalValue = sumPortfolioValue();
+                if (entry.crashes.length > 0) {
+                    const aggregateLoss = Math.max(0, portfolioValueBeforeCrashes - totalValue);
+                    if (aggregateLoss > entryCrashTotalLoss + EPSILON) {
+                        const adjustment = aggregateLoss - entryCrashTotalLoss;
+                        totalCrashLoss += adjustment;
+                        entryCrashTotalLoss += adjustment;
+                    }
+                }
                 const snapshot = snapshotStates();
                 if (entry.crashes.length > 0 || entry.deposits.length === 0) {
                     pushPoint(totalValue, investedSoFar, snapshot);
@@ -824,6 +841,12 @@
                         deposits: entryDeposits,
                         crashes: entryCrashes,
                         kind,
+                        valueBeforeEvents,
+                        valueAfterDeposits: portfolioValueAfterDeposits,
+                        valueBeforeCrashes: entry.crashes.length > 0 ? portfolioValueBeforeCrashes : null,
+                        valueAfterCrashes: entry.crashes.length > 0 ? totalValue : null,
+                        depositTotal: entryDepositTotal,
+                        crashTotalLoss: entryCrashTotalLoss,
                     });
                 }
 
@@ -1406,6 +1429,14 @@
 
             const showMarkerTooltip = (marker) => {
                 if (!marker) return;
+                const hasCrash = marker.crashes && marker.crashes.length > 0;
+                const hasDeposit = marker.deposits && marker.deposits.length > 0;
+                const preValue = hasCrash
+                    ? marker.valueBeforeCrashes ?? marker.valueAfterDeposits ?? marker.valueBeforeEvents ?? marker.totalValue
+                    : marker.valueBeforeEvents ?? marker.totalValue;
+                const postValue = hasCrash
+                    ? marker.valueAfterCrashes ?? marker.totalValue
+                    : marker.valueAfterDeposits ?? marker.totalValue;
                 setTooltip({
                     type: 'marker',
                     kind: marker.kind,
@@ -1416,6 +1447,10 @@
                     invested: marker.investedToDate,
                     deposits: marker.deposits || [],
                     crashes: marker.crashes || [],
+                    valueBefore: preValue,
+                    valueAfter: postValue,
+                    depositTotal: hasDeposit ? marker.depositTotal || 0 : 0,
+                    crashTotalLoss: hasCrash ? marker.crashTotalLoss || 0 : 0,
                 });
             };
 
@@ -1582,7 +1617,29 @@
                                     <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}</div>
                                 )}
                                 {tooltip.type === 'marker' && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}</div>
+                                    <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>
+                                        Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.valueBefore !== undefined && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem' }}>
+                                        Hodnota před událostí: {formatCurrency(tooltip.valueBefore)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.valueAfter !== undefined && tooltip.valueAfter !== tooltip.valueBefore && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem' }}>
+                                        Hodnota po události: {formatCurrency(tooltip.valueAfter)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.depositTotal > 0 && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.6rem', color: 'var(--color-primary)' }}>
+                                        Součet dokupů: +{formatCurrency(tooltip.depositTotal)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.crashTotalLoss > 0 && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem', color: '#b42318' }}>
+                                        Ztráta v události: −{formatCurrency(tooltip.crashTotalLoss)}
+                                    </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.deposits && tooltip.deposits.length > 0 && (
                                     <div className="info-card-sub" style={{ marginTop: '0.6rem' }}>
