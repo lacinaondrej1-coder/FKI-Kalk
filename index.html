@@ -607,6 +607,16 @@
                 return total;
             };
 
+            const snapshotStates = () =>
+                Array.from(fundStates.values()).map((state) => ({
+                    id: state.id,
+                    value: state.value,
+                    rate: state.rate,
+                    status: state.status,
+                }));
+
+            const EPSILON = 0.005;
+
             let lastDate = sortedEntries[0]?.date;
             let investedSoFar = 0;
             let totalCrashLoss = 0;
@@ -623,6 +633,31 @@
                 lastDate = entry.date;
 
                 // Same-day events follow the mandated order: growth → deposits → crashes.
+                const valueBeforeEvents = sumPortfolioValue();
+                const snapshotBeforeEvents = snapshotStates();
+
+                const pushPoint = (value, invested, snapshotOverride) => {
+                    const finalSnapshot = snapshotOverride || snapshotStates();
+                    const lastPoint = timeline[timeline.length - 1];
+                    if (
+                        lastPoint &&
+                        lastPoint.date.getTime() === entry.date.getTime() &&
+                        Math.abs(lastPoint.totalValue - value) < EPSILON
+                    ) {
+                        lastPoint.investedToDate = invested;
+                        lastPoint.snapshot = finalSnapshot;
+                        return;
+                    }
+                    timeline.push({
+                        date: entry.date,
+                        totalValue: value,
+                        investedToDate: invested,
+                        snapshot: finalSnapshot,
+                    });
+                };
+
+                pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents);
+
                 if (entry.deposits.length > 0) {
                     entry.deposits.forEach((deposit) => {
                         const state = fundStates.get(deposit.fundId);
@@ -641,6 +676,10 @@
                             investedToDate: investedSoFar,
                         });
                     });
+
+                    const valueAfterDeposits = sumPortfolioValue();
+                    const snapshotAfterDeposits = snapshotStates();
+                    pushPoint(valueAfterDeposits, investedSoFar, snapshotAfterDeposits);
                 }
 
                 if (entry.crashes.length > 0) {
@@ -670,13 +709,10 @@
                 }
 
                 const totalValue = sumPortfolioValue();
-                const snapshot = Array.from(fundStates.values()).map((state) => ({
-                    id: state.id,
-                    value: state.value,
-                    rate: state.rate,
-                    status: state.status,
-                }));
-                timeline.push({ date: entry.date, totalValue, investedToDate: investedSoFar, snapshot });
+                const snapshot = snapshotStates();
+                if (entry.crashes.length > 0 || entry.deposits.length === 0) {
+                    pushPoint(totalValue, investedSoFar, snapshot);
+                }
 
                 if (entryDeposits.length > 0 || entryCrashes.length > 0) {
                     const kind = entryCrashes.length > 0 ? (entryDeposits.length > 0 ? 'mixed' : 'crash') : 'deposit';
