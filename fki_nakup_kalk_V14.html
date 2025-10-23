@@ -93,23 +93,32 @@
         }
         .brand-logo {
             font-weight: 700;
-            font-size: 0.75rem;
-            letter-spacing: 0.24em;
+            font-size: 1.1rem;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: var(--muted);
+            color: var(--primary);
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 0.45rem;
         }
-        .brand-logo span { color: var(--primary); }
+        .brand-logo::before {
+            content: '';
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, rgba(13, 44, 84, 0.75) 55%, var(--accent) 100%);
+            box-shadow: 0 10px 18px -12px rgba(13, 44, 84, 0.45);
+        }
+        .brand-logo span { color: var(--accent); }
         .hero-kicker {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.45rem 0.9rem;
+            padding: 0.5rem 1.1rem;
             border-radius: 999px;
-            background: rgba(77, 177, 200, 0.12);
-            border: 1px solid rgba(77, 177, 200, 0.35);
+            background: rgba(13, 44, 84, 0.06);
+            border: 1px solid rgba(13, 44, 84, 0.1);
             font-size: 0.75rem;
             letter-spacing: 0.2em;
             text-transform: uppercase;
@@ -117,12 +126,13 @@
             font-weight: 600;
         }
         .hero-title {
-            font-size: clamp(2.1rem, 4.8vw, 3.4rem);
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
             font-weight: 700;
-            letter-spacing: -0.02em;
-            margin: 1.1rem 0 1.4rem;
+            letter-spacing: -0.025em;
+            margin: 1.2rem 0 1.4rem;
             color: var(--primary);
         }
+        .hero-title-upper { text-transform: uppercase; }
         .hero-description {
             font-size: 1rem;
             line-height: 1.75;
@@ -154,6 +164,15 @@
         }
         .surface-card h3 { margin: 0.8rem 0 0.75rem; font-size: 1.1rem; font-weight: 600; color: var(--primary); }
         .surface-card p { margin: 0; font-size: 0.95rem; line-height: 1.6; color: var(--muted); }
+        .hero-disclaimer {
+            margin-top: 2.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .hero-disclaimer strong { color: var(--primary); font-weight: 600; }
         main { margin-top: -48px; position: relative; z-index: 2; }
         @media (max-width: 768px) { main { margin-top: -32px; } }
         .content-stack { display: flex; flex-direction: column; gap: 2.5rem; padding-bottom: 4.5rem; }
@@ -1490,11 +1509,16 @@
                     <div className="app-shell brand-header-inner">
                         <div>
                             <div className="brand-logo">Fair<span>Life</span></div>
-                            <h1 className="hero-title">Investiční kalkulačka</h1>
+                            <div className="hero-kicker">Report investičního portfolia</div>
+                            <h1 className="hero-title hero-title-upper">Přehled vašeho finančního světa</h1>
                             <p className="hero-description">
-                                Vytvářejte kompletní scénáře nákupu fondů: počáteční alokace, plánované dokupy i krizové události v jednom sjednoceném reportovacím vizuálu.
+                                Sledujte výkonnost fondů, analyzujte cashflow a připravte pro klienty precizní výstupy v jednom elegantním rozhraní.
                             </p>
-                            <div className="meta-deck" style={{ marginTop: '1.75rem' }}>
+                            <div className="hero-disclaimer">
+                                <span><strong>© 2025 Ondřej Lacina</strong></span>
+                                <span>Toto dílo je chráněno autorským právem se záznamem u 121/2000 Sb.</span>
+                            </div>
+                            <div className="meta-deck" style={{ marginTop: '2rem' }}>
                                 <label className="meta-card">
                                     <span className="meta-label">Jméno klienta</span>
                                     <input className="input input-ghost" value={clientName} onChange={(event) => onClientNameChange(event.target.value)} placeholder="Např. Jana Nováková" />
@@ -1503,17 +1527,17 @@
                         </div>
                         <div className="hero-card-stack">
                             <div className="surface-card">
-                                <small>Správa portfolia</small>
-                                <h3>Sdílejte scénáře v jednotném vizuálu</h3>
+                                <small>Interaktivní řízení</small>
+                                <h3>Import, export i řízení v reálném čase</h3>
                                 <p>
-                                    Automatické ukládání, exporty s křivkou a markery i reset scénáře pomáhají udržet konzistenci mezi týmy i klienty.
+                                    Uchovávejte scénáře bezpečně, sdílejte je s klienty a synchronizujte zásadní změny bez složitého přepisování.
                                 </p>
                             </div>
                             <div className="surface-card">
-                                <small>Časová osa</small>
-                                <h3>Jedna křivka pro všechny události</h3>
+                                <small>Pokročilé analýzy</small>
+                                <h3>XIRR, projekce i vizualizace v jednom místě</h3>
                                 <p>
-                                    Počáteční vklady, dokupy i propady se promítnou do jedné čáry s kompozitním zhodnocením a vizuálními značkami událostí.
+                                    Koláčové alokace, timeline s propady a roční vývoj vám umožní komunikovat výsledky přehledně.
                                 </p>
                             </div>
                         </div>
