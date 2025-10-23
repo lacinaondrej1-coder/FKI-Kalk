@@ -212,6 +212,11 @@
         const { useState, useMemo, useEffect, useRef, Fragment } = React;
 
         const BASE_CURRENCY = 'CZK';
+        const Y = 15;
+        const randomId = () =>
+            (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                ? crypto.randomUUID()
+                : `id-${Math.random().toString(36).slice(2, 11)}-${Date.now().toString(36)}`);
         const currencyFormatter = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: BASE_CURRENCY, maximumFractionDigits: 0 });
         const percentFormatter = new Intl.NumberFormat('cs-CZ', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const shortPercentFormatter = new Intl.NumberFormat('cs-CZ', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -354,7 +359,7 @@
         );
 
         const createFund = (name = 'Nový fond', rate = 5, segment = 'CODYA', startDate = toInputDate(startOfToday())) => ({
-            id: crypto.randomUUID(),
+            id: randomId(),
             name,
             currency: BASE_CURRENCY,
             amountStr: '0',
@@ -366,7 +371,7 @@
         });
 
         const sanitizeFund = (fund) => ({
-            id: fund?.id || crypto.randomUUID(),
+            id: fund?.id || randomId(),
             name: fund?.name || 'Fond',
             currency: fund?.currency || BASE_CURRENCY,
             amountStr: String(fund?.amountStr ?? '0'),
@@ -378,7 +383,7 @@
         });
 
         const sanitizeTopUp = (topUp) => ({
-            id: topUp?.id || crypto.randomUUID(),
+            id: topUp?.id || randomId(),
             fundId: topUp?.fundId || '',
             date: topUp?.date || toInputDate(startOfToday()),
             amountStr: String(topUp?.amountStr ?? '0'),
@@ -387,7 +392,7 @@
         const sanitizeCrash = (crash) => {
             const mode = crash?.mode === 'haircut' ? 'haircut' : 'zero';
             return {
-                id: crash?.id || crypto.randomUUID(),
+                id: crash?.id || randomId(),
                 fundId: crash?.fundId || '',
                 date: crash?.date || toInputDate(startOfToday()),
                 mode,
