@@ -418,6 +418,36 @@
         .pie-segment:hover { transform: scale(1.03); filter: drop-shadow(0 12px 28px rgba(13, 44, 84, 0.25)); }
         .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .card-subheading { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
+        .pie-summary-table { margin-top: 2.75rem; display: flex; flex-direction: column; gap: 1.15rem; }
+        .summary-table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            background: var(--surface);
+        }
+        .summary-table { width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 0; }
+        .summary-table thead th {
+            font-size: 0.72rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+            padding: 0.85rem 1.1rem;
+            text-align: left;
+            background: rgba(77, 177, 200, 0.1);
+            border-bottom: 1px solid var(--border);
+        }
+        .summary-table tbody td {
+            padding: 0.95rem 1.1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+        .summary-table tbody tr:last-child td { border-bottom: none; }
+        .summary-table tbody tr:hover { background: rgba(77, 177, 200, 0.06); }
+        .text-right { text-align: right; }
         .pie-total {
             margin-top: 0.75rem;
             padding: 1rem 1.2rem;
@@ -1784,7 +1814,7 @@
                         snappedMarker = marker;
                     }
                 });
-                const markerSnapThreshold = Math.min(24, Math.max(12, plotWidth * 0.04));
+                const markerSnapThreshold = Math.max(4, Math.min(10, plotWidth * 0.02));
                 if (snappedMarker && smallestDistance <= markerSnapThreshold) {
                     showMarkerTooltip(snappedMarker);
                     return;
@@ -2035,6 +2065,43 @@
             const outerRadius = 46;
             const innerRadius = 28;
             const degToRad = (value) => (value * Math.PI) / 180;
+            const yearlyRows = useMemo(() => {
+                if (!Array.isArray(analysis?.timeline) || analysis.timeline.length === 0) {
+                    return [];
+                }
+                const yearlyMap = new Map();
+                analysis.timeline.forEach((point) => {
+                    if (!(point?.date instanceof Date)) return;
+                    const year = point.date.getFullYear();
+                    const existing = yearlyMap.get(year);
+                    if (!existing) {
+                        yearlyMap.set(year, {
+                            year,
+                            startDate: point.date,
+                            endDate: point.date,
+                            startValue: point.totalValue || 0,
+                            endValue: point.totalValue || 0,
+                        });
+                        return;
+                    }
+                    if (point.date < existing.startDate) {
+                        existing.startDate = point.date;
+                        existing.startValue = point.totalValue || 0;
+                    }
+                    if (point.date > existing.endDate) {
+                        existing.endDate = point.date;
+                        existing.endValue = point.totalValue || 0;
+                    }
+                });
+                return Array.from(yearlyMap.values())
+                    .sort((a, b) => a.year - b.year)
+                    .map((row) => ({
+                        year: row.year,
+                        startValue: row.startValue,
+                        endValue: row.endValue,
+                        gain: (row.endValue || 0) - (row.startValue || 0),
+                    }));
+            }, [analysis]);
 
             let angle = -90;
             const segments = data.map((item, index) => {
@@ -2173,6 +2240,33 @@
                             ))}
                         </div>
                     </div>
+                    {yearlyRows.length > 0 && (
+                        <div className="pie-summary-table">
+                            <h3 className="card-subheading">Roční vývoj portfolia</h3>
+                            <div className="summary-table-container">
+                                <table className="summary-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Rok</th>
+                                            <th scope="col" className="text-right">Začátek roku</th>
+                                            <th scope="col" className="text-right">Konec roku</th>
+                                            <th scope="col" className="text-right">Výnos v roce</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {yearlyRows.map((row) => (
+                                            <tr key={row.year}>
+                                                <td>{row.year}</td>
+                                                <td className="tabular-nums text-right">{formatCurrency(row.startValue)}</td>
+                                                <td className="tabular-nums text-right">{formatCurrency(row.endValue)}</td>
+                                                <td className="tabular-nums text-right">{formatCurrency(row.gain)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </section>
             );
         };
