@@ -419,7 +419,6 @@
         .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .card-subheading { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
-        .pie-summary-table { margin-top: 2.75rem; display: flex; flex-direction: column; gap: 1.15rem; }
         .summary-table-container {
             overflow-x: auto;
             border: 1px solid var(--border);
@@ -456,6 +455,13 @@
         .summary-table tbody tr:last-child td { border-bottom: none; }
         .summary-table tbody tr:hover { background: rgba(77, 177, 200, 0.06); }
         .text-right { text-align: right; }
+        .table-col-name { min-width: 220px; width: 26%; }
+        .table-col-return { min-width: 110px; width: 110px; }
+        .table-col-amount { min-width: 150px; }
+        .table-col-default { min-width: 130px; }
+        .table-col-mode { min-width: 140px; }
+        .table-col-drop { min-width: 140px; }
+        .table-col-portfolio { min-width: 150px; }
         .pie-total {
             margin-top: 0.75rem;
             padding: 1rem 1.2rem;
@@ -1191,7 +1197,7 @@
                 ? 'Bez defaultu'
                 : [
                     crashModeBreakdown.zero ? `${crashModeBreakdown.zero}× na 0 %` : null,
-                    crashModeBreakdown.haircut ? `${crashModeBreakdown.haircut}× haircut` : null,
+                    crashModeBreakdown.haircut ? `${crashModeBreakdown.haircut}× propad` : null,
                 ].filter(Boolean).join(' · ');
 
             const finalAllocations = [];
@@ -1570,7 +1576,7 @@
                         <div>
                             <span className="badge-pill">{segment.label}</span>
                             <h2 className="card-header-title">Segment {segment.label}</h2>
-                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default či haircut.</p>
+                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default či propad.</p>
                         </div>
                         <div className="control-bar">
                             <button className="btn btn-secondary" onClick={onDemoSegment}>Ukázka</button>
@@ -1582,45 +1588,43 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Fond</th>
-                                    <th style={{ minWidth: '120px' }}>Výnos p.a.</th>
-                                    <th style={{ minWidth: '140px' }}>Počáteční vklad</th>
-                                    <th style={{ minWidth: '140px' }}>Dokup po 1. roce</th>
-                                    <th style={{ minWidth: '120px' }}>Default (rok)</th>
-                                    <th style={{ minWidth: '130px' }}>Typ defaultu</th>
-                                    <th style={{ minWidth: '120px' }}>Haircut</th>
-                                    <th style={{ minWidth: '130px' }}>Podíl ve skupině</th>
-                                    <th style={{ minWidth: '130px' }}>Podíl v portfoliu</th>
+                                    <th className="table-col-name">Fond</th>
+                                    <th className="table-col-return">Výnos p.a.</th>
+                                    <th className="table-col-amount">Počáteční vklad</th>
+                                    <th className="table-col-amount">Dokup po 1. roce</th>
+                                    <th className="table-col-default">Default (rok)</th>
+                                    <th className="table-col-mode">Typ defaultu</th>
+                                    <th className="table-col-drop">Propad</th>
+                                    <th className="table-col-portfolio">Podíl v portfoliu</th>
                                     <th style={{ width: '56px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {funds.length === 0 && (
                                     <tr>
-                                        <td colSpan="10" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
+                                        <td colSpan="9" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
                                             Přidejte fond pro tento segment.
                                         </td>
                                     </tr>
                                 )}
                                 {funds.map((fund) => {
                                     const amount = parseMoney(fund.amountStr);
-                                    const segmentShare = segmentTotal > 0 ? amount / segmentTotal : 0;
                                     const portfolioShare = portfolioTotal > 0 ? amount / portfolioTotal : 0;
                                     return (
                                         <tr key={fund.id}>
-                                            <td>
+                                            <td className="table-col-name">
                                                 <input className="table-input" value={fund.name} onChange={(event) => onUpdateFund(fund.id, { name: event.target.value })} />
                                             </td>
-                                            <td>
+                                            <td className="table-col-return">
                                                 <PercentInput value={fund.returnStr} onChange={(value) => onUpdateFund(fund.id, { returnStr: value })} />
                                             </td>
-                                            <td>
+                                            <td className="table-col-amount">
                                                 <MoneyInput value={fund.amountStr} onChange={(value) => onUpdateFund(fund.id, { amountStr: value })} />
                                             </td>
-                                            <td>
+                                            <td className="table-col-amount">
                                                 <MoneyInput value={fund.topUpStr} onChange={(value) => onUpdateFund(fund.id, { topUpStr: value })} />
                                             </td>
-                                            <td>
+                                            <td className="table-col-default">
                                                 <select className="table-select" value={fund.crashYear} onChange={(event) => onUpdateFund(fund.id, { crashYear: event.target.value })}>
                                                     <option value="0">Nikdy</option>
                                                     {Array.from({ length: Y }, (_, index) => index + 1).map((year) => (
@@ -1628,7 +1632,7 @@
                                                     ))}
                                                 </select>
                                             </td>
-                                            <td>
+                                            <td className="table-col-mode">
                                                 <select
                                                     className="table-select"
                                                     value={fund.crashMode}
@@ -1636,10 +1640,10 @@
                                                     disabled={fund.crashYear === '0'}
                                                 >
                                                     <option value="zero">Na 0 %</option>
-                                                    <option value="haircut">Haircut</option>
+                                                    <option value="haircut">Propad</option>
                                                 </select>
                                             </td>
-                                            <td>
+                                            <td className="table-col-drop">
                                                 {fund.crashMode === 'haircut' && fund.crashYear !== '0' ? (
                                                     <PercentInput
                                                         value={fund.haircutStr}
@@ -1655,8 +1659,7 @@
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="tabular-nums">{formatPercent(segmentShare)}</td>
-                                            <td className="tabular-nums">{formatPercent(portfolioShare)}</td>
+                                            <td className="tabular-nums table-col-portfolio">{formatPercent(portfolioShare)}</td>
                                             <td className="table-actions">
                                                 <button className="icon-button" onClick={() => onRemoveFund(fund.id)} title="Odebrat fond">×</button>
                                             </td>
@@ -2002,7 +2005,7 @@
                                         <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
                                             {tooltip.crashes.map((crash, index) => (
                                                 <li key={`crash-${index}`} style={{ marginBottom: '0.25rem' }}>
-                                                    {crash.fundName}: −{formatCurrency(crash.loss || 0)}{crash.mode === 'haircut' && typeof crash.haircut === 'number' ? ` · Haircut ${formatPercent(crash.haircut)}` : ' · Na 0 %'}
+                                                    {crash.fundName}: −{formatCurrency(crash.loss || 0)}{crash.mode === 'haircut' && typeof crash.haircut === 'number' ? ` · Propad ${formatPercent(crash.haircut)}` : ' · Na 0 %'}
                                                 </li>
                                             ))}
                                         </ul>
@@ -2020,7 +2023,7 @@
                             </span>
                             <span className="chart-marker-hint">
                                 <span className="chart-marker-icon chart-marker-icon--default"><span>⚠︎</span></span>
-                                <span>Default na 0 % nebo haircut</span>
+                                <span>Default na 0 % nebo propad</span>
                             </span>
                             <span className="chart-marker-hint">
                                 <span className="chart-marker-icon chart-marker-icon--mixed">
@@ -2230,12 +2233,13 @@
             const hasAllocations = total > 0 && segments.length > 0;
 
             return (
-                <section className="card-section">
-                    <div className="card-header">
-                        <div>
-                            <span className="badge-pill">Alokace</span>
-                            <h2 className="card-header-title">Rozložení portfolia</h2>
-                            <p className="card-header-sub">
+                <Fragment>
+                    <section className="card-section">
+                        <div className="card-header">
+                            <div>
+                                <span className="badge-pill">Alokace</span>
+                                <h2 className="card-header-title">Rozložení portfolia</h2>
+                                <p className="card-header-sub">
                                 Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
                             </p>
                         </div>
@@ -2308,11 +2312,18 @@
                                     </div>
                                 </div>
                             ))}
+                            </div>
                         </div>
-                    </div>
+                    </section>
                     {yearlyRows.length > 0 && (
-                        <div className="pie-summary-table">
-                            <h3 className="card-subheading">Roční vývoj portfolia</h3>
+                        <section className="card-section">
+                            <div className="card-header">
+                                <div>
+                                    <span className="badge-pill">Roční vývoj</span>
+                                    <h2 className="card-header-title">Roční vývoj portfolia</h2>
+                                    <p className="card-header-sub">Přehled zůstatků na začátku a na konci každého roku.</p>
+                                </div>
+                            </div>
                             <div className="summary-table-container">
                                 <table className="summary-table">
                                     <thead>
@@ -2335,9 +2346,9 @@
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
+                        </section>
                     )}
-                </section>
+                </Fragment>
             );
         };
 
