@@ -459,9 +459,19 @@
         .table-col-return { min-width: 110px; width: 110px; }
         .table-col-amount { min-width: 150px; }
         .table-col-default { min-width: 130px; }
-        .table-col-mode { min-width: 140px; }
-        .table-col-drop { min-width: 140px; }
+        .table-col-drop { min-width: 160px; }
         .table-col-portfolio { min-width: 150px; }
+        .propad-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .propad-control .table-select { width: 100%; }
+        .propad-note {
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
         .pie-total {
             margin-top: 0.75rem;
             padding: 1rem 1.2rem;
@@ -1593,7 +1603,6 @@
                                     <th className="table-col-amount">Počáteční vklad</th>
                                     <th className="table-col-amount">Dokup po 1. roce</th>
                                     <th className="table-col-default">Default (rok)</th>
-                                    <th className="table-col-mode">Typ defaultu</th>
                                     <th className="table-col-drop">Propad</th>
                                     <th className="table-col-portfolio">Podíl v portfoliu</th>
                                     <th style={{ width: '56px' }}></th>
@@ -1602,7 +1611,7 @@
                             <tbody>
                                 {funds.length === 0 && (
                                     <tr>
-                                        <td colSpan="9" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
+                                        <td colSpan="8" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
                                             Přidejte fond pro tento segment.
                                         </td>
                                     </tr>
@@ -1632,31 +1641,29 @@
                                                     ))}
                                                 </select>
                                             </td>
-                                            <td className="table-col-mode">
-                                                <select
-                                                    className="table-select"
-                                                    value={fund.crashMode}
-                                                    onChange={(event) => onUpdateFund(fund.id, { crashMode: event.target.value })}
-                                                    disabled={fund.crashYear === '0'}
-                                                >
-                                                    <option value="zero">Na 0 %</option>
-                                                    <option value="haircut">Propad</option>
-                                                </select>
-                                            </td>
                                             <td className="table-col-drop">
-                                                {fund.crashMode === 'haircut' && fund.crashYear !== '0' ? (
-                                                    <PercentInput
-                                                        value={fund.haircutStr}
-                                                        onChange={(value) => onUpdateFund(fund.id, { haircutStr: value })}
-                                                        placeholder="50"
-                                                    />
+                                                {fund.crashYear === '0' ? (
+                                                    <span className="meta-label" style={{ color: 'var(--muted)', display: 'inline-block', minWidth: '3ch', textAlign: 'right' }}>—</span>
                                                 ) : (
-                                                    <span
-                                                        className="meta-label"
-                                                        style={{ color: 'var(--muted)', display: 'inline-block', minWidth: '3ch', textAlign: 'right' }}
-                                                    >
-                                                        —
-                                                    </span>
+                                                    <div className="propad-control">
+                                                        <select
+                                                            className="table-select"
+                                                            value={fund.crashMode}
+                                                            onChange={(event) => onUpdateFund(fund.id, { crashMode: event.target.value })}
+                                                        >
+                                                            <option value="zero">Na 0 %</option>
+                                                            <option value="haircut">Propad</option>
+                                                        </select>
+                                                        {fund.crashMode === 'haircut' ? (
+                                                            <PercentInput
+                                                                value={fund.haircutStr}
+                                                                onChange={(value) => onUpdateFund(fund.id, { haircutStr: value })}
+                                                                placeholder="50"
+                                                            />
+                                                        ) : (
+                                                            <span className="propad-note">Propad na 0 % zůstatku.</span>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td className="tabular-nums table-col-portfolio">{formatPercent(portfolioShare)}</td>
