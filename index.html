@@ -173,7 +173,7 @@
             display: none;
         }
         .tooltip.show { display: block; }
-        .chart-container { position: relative; height: 22rem; }
+        .chart-container { position: relative; height: 22rem; width: 100%; }
         .chart-axis-text { fill: var(--color-muted); font-size: 0.68rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
         .chart-grid-line { stroke: #E5E8EE; stroke-dasharray: 2 3; }
         .chart-line-accent { stroke: var(--color-accent); stroke-width: 2.6; fill: none; }
@@ -618,6 +618,7 @@
                 }
                 lastDate = entry.date;
 
+                // Same-day events follow the mandated order: growth → deposits → crashes.
                 if (entry.deposits.length > 0) {
                     entry.deposits.forEach((deposit) => {
                         const state = fundStates.get(deposit.fundId);
@@ -824,7 +825,7 @@
             createFund('PFFL', 7.5, 'CODYA'),
             createFund('Fond reverzních hypoték', 6.65, 'CODYA'),
             createFund('Silverline R.E.', 10, 'CODYA'),
-            createFund('Vigo Direct', 10, 'CODYA'),
+            createFund('Vigo Direct', 8, 'CODYA'),
             createFund('Adax', 20, 'CODYA'),
             createFund('Julius Meinl fond', 10, 'CODYA'),
             createFund('Penta R.E.', 10, 'CODYA'),
@@ -834,11 +835,11 @@
             createFund('r2p invest', 8.5, 'AVANT'),
             createFund('Gartal', 7, 'AVANT'),
             createFund('Realia', 6, 'AVANT'),
-            createFund('EBM', 8, 'AVANT'),
+            createFund('EBM', 9, 'AVANT'),
             createFund('Wero', 8, 'AVANT'),
             createFund('Vihorev', 9, 'AVANT'),
             createFund('Real Luxembourg', 8, 'AVANT'),
-            createFund('Aguila', 8, 'AVANT'),
+            createFund('Aguila', 7.5, 'AVANT'),
             createFund('Spilberk', 7, 'AVANT'),
             createFund('Semper', 11, 'AVANT'),
         ];
@@ -851,20 +852,32 @@
         const useResizeObserver = (ref) => {
             const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
             useEffect(() => {
-                const observeTarget = ref.current;
-                if (!observeTarget) return undefined;
-                const observer = new ResizeObserver((entries) => {
-                    if (!Array.isArray(entries)) return;
-                    const entry = entries[0];
-                    if (entry) {
-                        setDimensions({
-                            width: entry.contentRect.width,
-                            height: entry.contentRect.height,
-                        });
-                    }
-                });
-                observer.observe(observeTarget);
-                return () => observer.disconnect();
+                const target = ref.current;
+                if (!target) return undefined;
+
+                const measure = () => {
+                    const rect = target.getBoundingClientRect();
+                    setDimensions({ width: rect.width, height: rect.height });
+                };
+
+                measure();
+
+                if (typeof ResizeObserver === 'function') {
+                    const observer = new ResizeObserver((entries) => {
+                        if (!Array.isArray(entries) || !entries[0]) return;
+                        const { width, height } = entries[0].contentRect;
+                        setDimensions({ width, height });
+                    });
+                    observer.observe(target);
+                    return () => observer.disconnect();
+                }
+
+                if (typeof window !== 'undefined') {
+                    window.addEventListener('resize', measure);
+                    return () => window.removeEventListener('resize', measure);
+                }
+
+                return undefined;
             }, [ref]);
             return dimensions;
         };
@@ -1139,9 +1152,10 @@
             }
 
             const { timeline, markers, controlPoints } = analysis;
-            const width = dimensions.width || 0;
             const height = 340;
             const margin = { top: 32, right: 24, bottom: 56, left: 80 };
+            const rawWidth = dimensions.width || (containerRef.current ? containerRef.current.getBoundingClientRect().width : 0);
+            const width = Math.max(rawWidth, margin.left + margin.right + 1);
             const plotWidth = Math.max(1, width - margin.left - margin.right);
             const plotHeight = Math.max(1, height - margin.top - margin.bottom);
 
