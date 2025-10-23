@@ -459,18 +459,18 @@
         .table-col-return { min-width: 110px; width: 110px; }
         .table-col-amount { min-width: 150px; }
         .table-col-default { min-width: 130px; }
-        .table-col-drop { min-width: 160px; }
+        .table-col-drop { min-width: 140px; }
         .table-col-portfolio { min-width: 150px; }
         .propad-control {
             display: flex;
             flex-direction: column;
             gap: 0.4rem;
         }
-        .propad-control .table-select { width: 100%; }
         .propad-note {
             color: var(--muted);
             font-size: 0.85rem;
             line-height: 1.3;
+            text-align: right;
         }
         .pie-total {
             margin-top: 0.75rem;
@@ -699,7 +699,7 @@
             segment,
             topUpStr: '0',
             crashYear: '0',
-            crashMode: 'zero',
+            crashMode: 'haircut',
             haircutStr: '50',
             defaultKey: options.defaultKey || null,
         });
@@ -712,6 +712,8 @@
                 return trimmed === '' ? '50' : trimmed;
             })();
 
+            const legacyZeroDrop = fund?.crashMode === 'zero';
+
             return {
                 id: fund?.id || randomId(),
                 name: fund?.name || 'Fond',
@@ -722,8 +724,8 @@
                 segment: fund?.segment || 'CODYA',
                 topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
                 crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
-                crashMode: fund?.crashMode === 'haircut' ? 'haircut' : 'zero',
-                haircutStr: normalizedHaircut,
+                crashMode: 'haircut',
+                haircutStr: legacyZeroDrop ? '100' : normalizedHaircut,
                 defaultKey: fund?.defaultKey || null,
             };
         };
@@ -736,13 +738,15 @@
         });
 
         const sanitizeCrash = (crash) => {
-            const mode = crash?.mode === 'haircut' ? 'haircut' : 'zero';
             return {
                 id: crash?.id || randomId(),
                 fundId: crash?.fundId || '',
                 date: crash?.date || toInputDate(startOfToday()),
-                mode,
-                haircutStr: String(crash?.haircutStr ?? (mode === 'haircut' ? '50' : '100')),
+                mode: 'haircut',
+                haircutStr: String(
+                    crash?.haircutStr
+                        ?? (crash?.mode === 'zero' ? '100' : '50')
+                ),
             };
         };
 
@@ -775,13 +779,12 @@
                 const crashYear = parseInt(fund.crashYear, 10);
                 if (Number.isFinite(crashYear) && crashYear > 0) {
                     const crashDate = addYears(startDate, crashYear);
-                    const crashMode = fund.crashMode === 'haircut' ? 'haircut' : 'zero';
                     crashes.push({
                         id: `${fund.id}-crash`,
                         fundId: fund.id,
                         date: toInputDate(crashDate),
-                        mode: crashMode,
-                        haircutStr: crashMode === 'haircut' ? String(fund.haircutStr ?? '50') : '100',
+                        mode: 'haircut',
+                        haircutStr: String(fund.haircutStr ?? '50'),
                     });
                 }
             });
@@ -814,7 +817,7 @@
             let latestDate = null;
             let topUpCount = 0;
             let crashCount = 0;
-            const crashModeBreakdown = { zero: 0, haircut: 0 };
+            const crashBreakdown = { propad: 0 };
 
             fundMap.forEach((fund) => {
                 const initialAmount = parseMoney(fund.amountStr);
@@ -859,19 +862,18 @@
                 if (!fund || !date) return;
                 if (fund.startDate instanceof Date && date < fund.startDate) return;
                 const entry = ensureEntry(date);
-                const mode = crash.mode === 'haircut' ? 'haircut' : 'zero';
-                const haircut = mode === 'haircut' ? clamp(parsePercentValue(crash.haircutStr), 0, 0.9999) : 1;
+                const haircut = clamp(parsePercentValue(crash.haircutStr), 0, 1);
                 entry.crashes.push({
                     type: 'default',
                     fundId: fund.id,
-                    mode,
+                    mode: 'haircut',
                     haircut,
                     fundName: fund.name,
                 });
                 earliestDate = earliestDate ? (date < earliestDate ? date : earliestDate) : date;
                 latestDate = latestDate ? (date > latestDate ? date : latestDate) : date;
                 crashCount += 1;
-                crashModeBreakdown[mode] = (crashModeBreakdown[mode] || 0) + 1;
+                crashBreakdown.propad = (crashBreakdown.propad || 0) + 1;
             });
 
             if (!earliestDate || eventMap.size === 0) {
@@ -1069,13 +1071,8 @@
                         if (!state || !state.hadDeposit) return;
                         const before = state.value;
                         if (before <= 0) return;
-                        if (crash.mode === 'zero') {
-                            state.value = 0;
-                            state.status = 'zeroed';
-                        } else {
-                            state.value = state.value * (1 - crash.haircut);
-                            state.status = 'frozen';
-                        }
+                        state.value = state.value * (1 - clamp(crash.haircut, 0, 1));
+                        state.status = state.value <= EPSILON ? 'zeroed' : 'frozen';
                         const after = state.value;
                         const loss = Math.max(0, before - after);
                         if (loss > 0) {
@@ -1204,11 +1201,8 @@
             const plPercent = totalInvested > 0 ? pl / totalInvested : 0;
             const durationYears = scenarioStart ? diffInYears(scenarioStart, scenarioEnd) : 0;
             const crashSummary = crashCount === 0
-                ? 'Bez defaultu'
-                : [
-                    crashModeBreakdown.zero ? `${crashModeBreakdown.zero}× na 0 %` : null,
-                    crashModeBreakdown.haircut ? `${crashModeBreakdown.haircut}× propad` : null,
-                ].filter(Boolean).join(' · ');
+                ? 'Bez propadů'
+                : `${crashBreakdown.propad || crashCount}× propad`;
 
             const finalAllocations = [];
             fundStates.forEach((state) => {
@@ -1512,7 +1506,7 @@
                                 <small>Časová osa</small>
                                 <h3>Jedna křivka pro všechny události</h3>
                                 <p>
-                                    Počáteční vklady, dokupy i defaulty se promítnou do jedné čáry s kompozitním zhodnocením a vizuálními značkami událostí.
+                                    Počáteční vklady, dokupy i propady se promítnou do jedné čáry s kompozitním zhodnocením a vizuálními značkami událostí.
                                 </p>
                             </div>
                         </div>
@@ -1553,7 +1547,7 @@
                             <div className="meta-card">
                                 <span className="meta-label">XIRR scénáře</span>
                                 <span className="meta-value tabular-nums">{analysis.xirr !== null ? formatShortPercent(analysis.xirr) : '—'}</span>
-                                <span className="meta-label">Počet dokupů / defaultů</span>
+                                <span className="meta-label">Počet dokupů / propadů</span>
                                 <span className="meta-value">{analysis.depositCount} · {analysis.crashCount}</span>
                             </div>
                         </div>
@@ -1586,7 +1580,7 @@
                         <div>
                             <span className="badge-pill">{segment.label}</span>
                             <h2 className="card-header-title">Segment {segment.label}</h2>
-                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default či propad.</p>
+                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální propad.</p>
                         </div>
                         <div className="control-bar">
                             <button className="btn btn-secondary" onClick={onDemoSegment}>Ukázka</button>
@@ -1602,7 +1596,7 @@
                                     <th className="table-col-return">Výnos p.a.</th>
                                     <th className="table-col-amount">Počáteční vklad</th>
                                     <th className="table-col-amount">Dokup po 1. roce</th>
-                                    <th className="table-col-default">Default (rok)</th>
+                                    <th className="table-col-default">Propad (rok)</th>
                                     <th className="table-col-drop">Propad</th>
                                     <th className="table-col-portfolio">Podíl v portfoliu</th>
                                     <th style={{ width: '56px' }}></th>
@@ -1646,23 +1640,12 @@
                                                     <span className="meta-label" style={{ color: 'var(--muted)', display: 'inline-block', minWidth: '3ch', textAlign: 'right' }}>—</span>
                                                 ) : (
                                                     <div className="propad-control">
-                                                        <select
-                                                            className="table-select"
-                                                            value={fund.crashMode}
-                                                            onChange={(event) => onUpdateFund(fund.id, { crashMode: event.target.value })}
-                                                        >
-                                                            <option value="zero">Na 0 %</option>
-                                                            <option value="haircut">Propad</option>
-                                                        </select>
-                                                        {fund.crashMode === 'haircut' ? (
-                                                            <PercentInput
-                                                                value={fund.haircutStr}
-                                                                onChange={(value) => onUpdateFund(fund.id, { haircutStr: value })}
-                                                                placeholder="50"
-                                                            />
-                                                        ) : (
-                                                            <span className="propad-note">Propad na 0 % zůstatku.</span>
-                                                        )}
+                                                        <PercentInput
+                                                            value={fund.haircutStr}
+                                                            onChange={(value) => onUpdateFund(fund.id, { haircutStr: value, crashMode: 'haircut' })}
+                                                            placeholder="50"
+                                                        />
+                                                        <span className="propad-note">100 % = propad na nulu.</span>
                                                     </div>
                                                 )}
                                             </td>
@@ -1899,7 +1882,7 @@
                         <div>
                             <span className="badge-pill">Časová osa</span>
                             <h2 className="card-header-title">Vývoj portfolia v čase</h2>
-                            <p className="card-header-sub">Zohledňuje všechny vklady, dokupy i defaulty v chronologickém pořadí s denním složeným úročením.</p>
+                            <p className="card-header-sub">Zohledňuje všechny vklady, dokupy i propady v chronologickém pořadí s denním složeným úročením.</p>
                         </div>
                         <div className="meta-deck">
                             <div className="meta-card">
@@ -1911,7 +1894,7 @@
                                 <span className="meta-value">{analysis.depositCount}</span>
                             </div>
                             <div className="meta-card">
-                                <span className="meta-label">Defaulty</span>
+                                <span className="meta-label">Propady</span>
                                 <span className="meta-value">{analysis.crashSummary}</span>
                             </div>
                         </div>
@@ -2008,11 +1991,11 @@
                                 )}
                                 {tooltip.type === 'marker' && tooltip.crashes && tooltip.crashes.length > 0 && (
                                     <div className="info-card-sub" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.75rem' : '0.6rem', color: 'var(--danger)' }}>
-                                        <strong style={{ color: 'var(--danger)' }}>Defaulty</strong>
+                                        <strong style={{ color: 'var(--danger)' }}>Propady</strong>
                                         <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
                                             {tooltip.crashes.map((crash, index) => (
                                                 <li key={`crash-${index}`} style={{ marginBottom: '0.25rem' }}>
-                                                    {crash.fundName}: −{formatCurrency(crash.loss || 0)}{crash.mode === 'haircut' && typeof crash.haircut === 'number' ? ` · Propad ${formatPercent(crash.haircut)}` : ' · Na 0 %'}
+                                                    {crash.fundName}: −{formatCurrency(crash.loss || 0)}{typeof crash.haircut === 'number' ? ` · Propad ${formatPercent(crash.haircut)}` : ''}
                                                 </li>
                                             ))}
                                         </ul>
@@ -2030,14 +2013,14 @@
                             </span>
                             <span className="chart-marker-hint">
                                 <span className="chart-marker-icon chart-marker-icon--default"><span>⚠︎</span></span>
-                                <span>Default na 0 % nebo propad</span>
+                                <span>Propad portfolia</span>
                             </span>
                             <span className="chart-marker-hint">
                                 <span className="chart-marker-icon chart-marker-icon--mixed">
                                     <span className="chart-marker-icon-symbol">⚠︎</span>
                                     <span className="chart-marker-icon-plus">+</span>
                                 </span>
-                                <span>Současně dokup i default</span>
+                                <span>Současně dokup i propad</span>
                             </span>
                         </div>
                     </div>
@@ -2368,10 +2351,10 @@
                     </div>
                 </div>
                 <div className="note-block">
-                    <strong>Pořadí událostí:</strong> Vždy se nejprve dopočítá růst mezi uzly, poté se aplikují dokupy a nakonec případné defaulty. Události ve stejný den respektují pořadí: dokup → default.
+                    <strong>Pořadí událostí:</strong> Vždy se nejprve dopočítá růst mezi uzly, poté se aplikují dokupy a nakonec případné propady. Události ve stejný den respektují pořadí: dokup → propad.
                 </div>
                 <div className="note-block" style={{ marginTop: '1rem' }}>
-                    <strong>XIRR:</strong> Výkonnost vychází z peněžních toků všech vkladů a aktuální hodnoty na konci scénáře. Default se projeví až zůstatkem, nikoli okamžitým cash-flow.
+                    <strong>XIRR:</strong> Výkonnost vychází z peněžních toků všech vkladů a aktuální hodnoty na konci scénáře. Propad se projeví až zůstatkem, nikoli okamžitým cash-flow.
                 </div>
                 <div className="note-block alert" style={{ marginTop: '1rem' }}>
                     <strong>Upozornění:</strong> Scénář je ilustrativní a nezohledňuje poplatky, daně ani kurzové riziko. Výpočty předpokládají konstantní roční zhodnocení mezi událostmi.
@@ -2441,7 +2424,7 @@
                 setFunds((prev) =>
                     prev.map((fund) =>
                         fund.segment === segment
-                            ? { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'zero', haircutStr: '50' }
+                            ? { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'haircut', haircutStr: '50' }
                             : fund,
                     ),
                 );
@@ -2454,9 +2437,9 @@
                     prev.map((fund) => {
                         if (fund.segment !== segment) return fund;
                         if (config.demo.includes(fund.name)) {
-                            return { ...fund, amountStr: '250000', topUpStr: '0', crashYear: '0', crashMode: 'zero', haircutStr: '50' };
+                            return { ...fund, amountStr: '250000', topUpStr: '0', crashYear: '0', crashMode: 'haircut', haircutStr: '50' };
                         }
-                        return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'zero', haircutStr: '50' };
+                        return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'haircut', haircutStr: '50' };
                     }),
                 );
                 showToast('Segment byl naplněn ukázkovými hodnotami.');
