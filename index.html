@@ -353,28 +353,16 @@
             />
         );
 
-        const createFund = (name = 'Nový fond', rate = 5, startDate = toInputDate(startOfToday())) => ({
+        const createFund = (name = 'Nový fond', rate = 5, segment = 'CODYA', startDate = toInputDate(startOfToday())) => ({
             id: crypto.randomUUID(),
             name,
             currency: BASE_CURRENCY,
             amountStr: '0',
             returnStr: String(rate),
             startDate,
-        });
-
-        const createTopUp = () => ({
-            id: crypto.randomUUID(),
-            fundId: '',
-            date: toInputDate(startOfToday()),
-            amountStr: '0',
-        });
-
-        const createCrash = () => ({
-            id: crypto.randomUUID(),
-            fundId: '',
-            date: toInputDate(startOfToday()),
-            mode: 'zero',
-            haircutStr: '50',
+            segment,
+            topUpStr: '0',
+            crashYear: '0',
         });
 
         const sanitizeFund = (fund) => ({
@@ -384,6 +372,9 @@
             amountStr: String(fund?.amountStr ?? '0'),
             returnStr: String(fund?.returnStr ?? '0'),
             startDate: fund?.startDate || toInputDate(startOfToday()),
+            segment: fund?.segment || 'CODYA',
+            topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
+            crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
         });
 
         const sanitizeTopUp = (topUp) => ({
@@ -402,6 +393,47 @@
                 mode,
                 haircutStr: String(crash?.haircutStr ?? (mode === 'haircut' ? '50' : '100')),
             };
+        };
+
+        const prepareScenarioInput = (funds) => {
+            const today = startOfToday();
+            const preparedFunds = [];
+            const topUps = [];
+            const crashes = [];
+            (funds || []).map(sanitizeFund).forEach((fund) => {
+                const startDate = parseISODate(fund.startDate) || today;
+                const startDateStr = toInputDate(startDate);
+                preparedFunds.push({
+                    id: fund.id,
+                    name: fund.name,
+                    currency: fund.currency || BASE_CURRENCY,
+                    amountStr: String(fund.amountStr ?? '0'),
+                    returnStr: String(fund.returnStr ?? '0'),
+                    startDate: startDateStr,
+                });
+                const topUpAmount = parseMoney(fund.topUpStr);
+                if (topUpAmount > 0) {
+                    const topUpDate = addYears(startDate, 1);
+                    topUps.push({
+                        id: `${fund.id}-topup`,
+                        fundId: fund.id,
+                        date: toInputDate(topUpDate),
+                        amountStr: String(topUpAmount),
+                    });
+                }
+                const crashYear = parseInt(fund.crashYear, 10);
+                if (Number.isFinite(crashYear) && crashYear > 0) {
+                    const crashDate = addYears(startDate, crashYear);
+                    crashes.push({
+                        id: `${fund.id}-crash`,
+                        fundId: fund.id,
+                        date: toInputDate(crashDate),
+                        mode: 'zero',
+                        haircutStr: '100',
+                    });
+                }
+            });
+            return { funds: preparedFunds, topUps, crashes };
         };
 
         const STORAGE_KEY = 'fkiPurchaseScenarioState';
@@ -775,14 +807,32 @@
             return Math.abs(finalValue) < 1e-4 ? mid : null;
         }
         const getDefaultFunds = () => [
-            createFund('PFFL', 7.5),
-            createFund('Silverline R.E.', 10),
-            createFund('Adax', 12),
-            createFund('Penta R.E.', 14),
-            createFund('r2p invest', 8.5),
+            createFund('PFFL', 7.5, 'CODYA'),
+            createFund('Fond reverzních hypoték', 6.65, 'CODYA'),
+            createFund('Silverline R.E.', 10, 'CODYA'),
+            createFund('Vigo Direct', 8, 'CODYA'),
+            createFund('Adax', 12, 'CODYA'),
+            createFund('Julius Meinl fond', 14.5, 'CODYA'),
+            createFund('Penta R.E.', 14, 'CODYA'),
+            createFund('Penta Equity', 14, 'CODYA'),
+            createFund('Artefin - Henry IF', 8.5, 'CODYA'),
+            createFund('FČKD', 7.5, 'CODYA'),
+            createFund('r2p invest', 8.5, 'AVANT'),
+            createFund('Gartal', 7, 'AVANT'),
+            createFund('Realia', 6, 'AVANT'),
+            createFund('EBM', 8, 'AVANT'),
+            createFund('Wero', 8, 'AVANT'),
+            createFund('Vihorev', 8.5, 'AVANT'),
+            createFund('Real Luxembourg', 8, 'AVANT'),
+            createFund('Aguila', 7.5, 'AVANT'),
+            createFund('Spilberk', 7, 'AVANT'),
+            createFund('Semper', 11, 'AVANT'),
         ];
 
-        const CURRENCIES = ['CZK', 'EUR', 'USD'];
+        const SEGMENT_CONFIG = [
+            { key: 'CODYA', label: 'CODYA', demo: ['PFFL', 'Fond reverzních hypoték', 'Silverline R.E.', 'Vigo Direct', 'Adax', 'Julius Meinl fond', 'Penta R.E.', 'Penta Equity', 'Artefin - Henry IF', 'FČKD'] },
+            { key: 'AVANT', label: 'AVANT', demo: ['r2p invest', 'Gartal', 'Realia', 'EBM', 'Wero', 'Vihorev', 'Real Luxembourg', 'Aguila', 'Spilberk', 'Semper'] },
+        ];
 
         const useResizeObserver = (ref) => {
             const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -912,210 +962,103 @@
                 </section>
             );
         };
-        const FundsSection = ({ funds, onAddFund, onUpdateFund, onRemoveFund }) => (
-            <section className="card-section">
-                <div className="card-header">
-                    <div>
-                        <span className="badge-pill">Fondy</span>
-                        <h2 className="card-header-title">Počáteční alokace</h2>
-                        <p className="card-header-sub">Zadejte startovní vklady, sazbu zhodnocení a datum startu pro každý fond ve scénáři.</p>
-                    </div>
-                    <div className="control-bar">
-                        <button className="btn btn-secondary" onClick={onAddFund}>Přidat fond</button>
-                    </div>
+        const SegmentSummary = ({ segment, total, weightedReturn }) => (
+            <div className="meta-deck" style={{ marginTop: '1.25rem' }}>
+                <div className="meta-card">
+                    <span className="meta-label">Investováno v {segment.label}</span>
+                    <span className="meta-value tabular-nums">{formatCurrency(total)}</span>
                 </div>
-                <div className="overflow-x-auto">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fond</th>
-                                <th style={{ minWidth: '120px' }}>Měna</th>
-                                <th style={{ minWidth: '140px' }}>Datum startu</th>
-                                <th style={{ minWidth: '160px' }}>Počáteční vklad</th>
-                                <th style={{ minWidth: '140px' }}>Výnos p.a.</th>
-                                <th style={{ width: '60px' }}></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {funds.length === 0 && (
-                                <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--color-muted)' }}>
-                                        Přidejte alespoň jeden fond pro vytvoření scénáře.
-                                    </td>
-                                </tr>
-                            )}
-                            {funds.map((fund) => (
-                                <tr key={fund.id}>
-                                    <td>
-                                        <input className="table-input" value={fund.name} onChange={(event) => onUpdateFund(fund.id, { name: event.target.value })} />
-                                    </td>
-                                    <td>
-                                        <select className="table-select" value={fund.currency} onChange={(event) => onUpdateFund(fund.id, { currency: event.target.value })}>
-                                            {CURRENCIES.map((currency) => (
-                                                <option key={currency} value={currency}>{currency}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="date" className="table-input" value={fund.startDate} onChange={(event) => onUpdateFund(fund.id, { startDate: event.target.value })} />
-                                    </td>
-                                    <td>
-                                        <MoneyInput value={fund.amountStr} onChange={(amount) => onUpdateFund(fund.id, { amountStr: amount })} />
-                                    </td>
-                                    <td>
-                                        <PercentInput value={fund.returnStr} onChange={(value) => onUpdateFund(fund.id, { returnStr: value })} />
-                                    </td>
-                                    <td className="table-actions">
-                                        <button className="icon-button" onClick={() => onRemoveFund(fund.id)} title="Odebrat fond">×</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="meta-card">
+                    <span className="meta-label">Vážené zhodnocení</span>
+                    <span className="meta-value tabular-nums">{formatPercent(weightedReturn)}</span>
                 </div>
-            </section>
+            </div>
         );
 
-        const TopUpsSection = ({ topUps, funds, onAddTopUp, onUpdateTopUp, onRemoveTopUp }) => {
-            const hasFunds = funds.length > 0;
+        const SegmentTable = ({ segment, funds, onAddFund, onUpdateFund, onRemoveFund, onResetSegment, onDemoSegment, portfolioTotal }) => {
+            const segmentTotal = funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0);
+            const weightedReturn = segmentTotal > 0
+                ? funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr) * parseRate(fund.returnStr), 0) / segmentTotal
+                : 0;
+
             return (
                 <section className="card-section">
                     <div className="card-header">
                         <div>
-                            <span className="badge-pill">Dokupy</span>
-                            <h2 className="card-header-title">Plánované dodatečné vklady</h2>
-                            <p className="card-header-sub">Dokupy se promítnou do křivky v den události a od tohoto okamžiku se úročí sazbou příslušného fondu.</p>
+                            <span className="badge-pill">{segment.label}</span>
+                            <h2 className="card-header-title">Segment {segment.label}</h2>
+                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální krach.</p>
                         </div>
                         <div className="control-bar">
-                            <button className="btn btn-secondary" onClick={onAddTopUp} disabled={!hasFunds}>Přidat dokup</button>
+                            <button className="btn btn-secondary" onClick={onDemoSegment}>Ukázka</button>
+                            <button className="btn btn-secondary" onClick={onResetSegment}>Vynulovat</button>
+                            <button className="btn btn-secondary" onClick={onAddFund}>Přidat fond</button>
                         </div>
                     </div>
-                    {!hasFunds && (
-                        <div className="note-block" style={{ marginBottom: '1.5rem' }}>
-                            Nejprve přidejte alespoň jeden fond, aby bylo možné plánovat dokupy.
-                        </div>
-                    )}
                     <div className="overflow-x-auto">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Fond</th>
-                                    <th style={{ minWidth: '140px' }}>Datum</th>
-                                    <th style={{ minWidth: '160px' }}>Částka</th>
+                                    <th style={{ minWidth: '140px' }}>Výnos p.a.</th>
+                                    <th style={{ minWidth: '160px' }}>Počáteční vklad</th>
+                                    <th style={{ minWidth: '160px' }}>Dokup po 1. roce</th>
+                                    <th style={{ minWidth: '140px' }}>Krach (rok)</th>
+                                    <th style={{ minWidth: '140px' }}>Podíl ve skupině</th>
+                                    <th style={{ minWidth: '140px' }}>Podíl v portfoliu</th>
                                     <th style={{ width: '60px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {topUps.length === 0 && (
+                                {funds.length === 0 && (
                                     <tr>
-                                        <td colSpan="4" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--color-muted)' }}>
-                                            {hasFunds ? 'Zatím nebyly přidány žádné dokupy.' : 'Přidejte fond pro definování dokupů.'}
+                                        <td colSpan="8" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--color-muted)' }}>
+                                            Přidejte fond pro tento segment.
                                         </td>
                                     </tr>
                                 )}
-                                {topUps.map((topUp) => (
-                                    <tr key={topUp.id}>
-                                        <td>
-                                            <select className="table-select" value={topUp.fundId} onChange={(event) => onUpdateTopUp(topUp.id, { fundId: event.target.value })}>
-                                                <option value="">Vyberte fond</option>
-                                                {funds.map((fund) => (
-                                                    <option key={fund.id} value={fund.id}>{fund.name}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="date" className="table-input" value={topUp.date} onChange={(event) => onUpdateTopUp(topUp.id, { date: event.target.value })} />
-                                        </td>
-                                        <td>
-                                            <MoneyInput value={topUp.amountStr} onChange={(amount) => onUpdateTopUp(topUp.id, { amountStr: amount })} />
-                                        </td>
-                                        <td className="table-actions">
-                                            <button className="icon-button" onClick={() => onRemoveTopUp(topUp.id)} title="Odebrat dokup">×</button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {funds.map((fund) => {
+                                    const amount = parseMoney(fund.amountStr);
+                                    const segmentShare = segmentTotal > 0 ? amount / segmentTotal : 0;
+                                    const portfolioShare = portfolioTotal > 0 ? amount / portfolioTotal : 0;
+                                    return (
+                                        <tr key={fund.id}>
+                                            <td>
+                                                <input className="table-input" value={fund.name} onChange={(event) => onUpdateFund(fund.id, { name: event.target.value })} />
+                                            </td>
+                                            <td>
+                                                <PercentInput value={fund.returnStr} onChange={(value) => onUpdateFund(fund.id, { returnStr: value })} />
+                                            </td>
+                                            <td>
+                                                <MoneyInput value={fund.amountStr} onChange={(value) => onUpdateFund(fund.id, { amountStr: value })} />
+                                            </td>
+                                            <td>
+                                                <MoneyInput value={fund.topUpStr} onChange={(value) => onUpdateFund(fund.id, { topUpStr: value })} />
+                                            </td>
+                                            <td>
+                                                <select className="table-select" value={fund.crashYear} onChange={(event) => onUpdateFund(fund.id, { crashYear: event.target.value })}>
+                                                    <option value="0">Nikdy</option>
+                                                    {Array.from({ length: Y }, (_, index) => index + 1).map((year) => (
+                                                        <option key={year} value={String(year)}>Po {year}. roce</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                            <td className="tabular-nums">{formatPercent(segmentShare)}</td>
+                                            <td className="tabular-nums">{formatPercent(portfolioShare)}</td>
+                                            <td className="table-actions">
+                                                <button className="icon-button" onClick={() => onRemoveFund(fund.id)} title="Odebrat fond">×</button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
+                    {segmentTotal > 0 && <SegmentSummary segment={segment} total={segmentTotal} weightedReturn={weightedReturn} />}
                 </section>
             );
         };
 
-        const CrashesSection = ({ crashes, funds, onAddCrash, onUpdateCrash, onRemoveCrash }) => {
-            const hasFunds = funds.length > 0;
-            return (
-                <section className="card-section">
-                    <div className="card-header">
-                        <div>
-                            <span className="badge-pill">Krizové scénáře</span>
-                            <h2 className="card-header-title">Krachy a haircuty</h2>
-                            <p className="card-header-sub">Určete datum a dopad krachu. Po aplikaci "na 0 %" fond přestává růst, haircut sníží hodnotu o X % a zmrazí další zhodnocení.</p>
-                        </div>
-                        <div className="control-bar">
-                            <button className="btn btn-secondary" onClick={onAddCrash} disabled={!hasFunds}>Přidat krach</button>
-                        </div>
-                    </div>
-                    {!hasFunds && (
-                        <div className="note-block" style={{ marginBottom: '1.5rem' }}>
-                            Nejprve přidejte fond, aby bylo možné simulovat krach nebo haircut.
-                        </div>
-                    )}
-                    <div className="overflow-x-auto">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Fond</th>
-                                    <th style={{ minWidth: '140px' }}>Datum</th>
-                                    <th style={{ minWidth: '140px' }}>Typ dopadu</th>
-                                    <th style={{ minWidth: '140px' }}>Haircut (%)</th>
-                                    <th style={{ width: '60px' }}></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {crashes.length === 0 && (
-                                    <tr>
-                                        <td colSpan="5" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--color-muted)' }}>
-                                            {hasFunds ? 'Zatím nebyly definovány žádné krizové události.' : 'Přidejte fond pro simulaci krachu.'}
-                                        </td>
-                                    </tr>
-                                )}
-                                {crashes.map((crash) => (
-                                    <tr key={crash.id}>
-                                        <td>
-                                            <select className="table-select" value={crash.fundId} onChange={(event) => onUpdateCrash(crash.id, { fundId: event.target.value })}>
-                                                <option value="">Vyberte fond</option>
-                                                {funds.map((fund) => (
-                                                    <option key={fund.id} value={fund.id}>{fund.name}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="date" className="table-input" value={crash.date} onChange={(event) => onUpdateCrash(crash.id, { date: event.target.value })} />
-                                        </td>
-                                        <td>
-                                            <select className="table-select" value={crash.mode} onChange={(event) => onUpdateCrash(crash.id, { mode: event.target.value })}>
-                                                <option value="zero">Na 0 %</option>
-                                                <option value="haircut">Haircut</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            {crash.mode === 'haircut' ? (
-                                                <PercentInput value={crash.haircutStr} onChange={(value) => onUpdateCrash(crash.id, { haircutStr: value })} />
-                                            ) : (
-                                                <span className="meta-label" style={{ display: 'block', textTransform: 'none' }}>—</span>
-                                            )}
-                                        </td>
-                                        <td className="table-actions">
-                                            <button className="icon-button" onClick={() => onRemoveCrash(crash.id)} title="Odebrat krach">×</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            );
-        };
         const ScenarioSummary = ({ analysis }) => (
             <section className="card-section">
                 <div className="card-header">
@@ -1433,12 +1376,11 @@
                 </div>
             </section>
         );
+
         function App() {
             const [lastSaved, setLastSaved] = useState(null);
             const [clientName, setClientName] = useState('');
             const [funds, setFunds] = useState(() => getDefaultFunds());
-            const [topUps, setTopUps] = useState([]);
-            const [crashes, setCrashes] = useState([]);
 
             const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
 
@@ -1447,14 +1389,12 @@
                     const stored = localStorage.getItem(STORAGE_KEY);
                     if (stored) {
                         const parsed = JSON.parse(stored);
-                        const importedFunds = Array.isArray(parsed.funds) && parsed.funds.length > 0 ? parsed.funds.map(sanitizeFund) : getDefaultFunds();
-                        const fundIds = new Set(importedFunds.map((fund) => fund.id));
-                        const importedTopUps = Array.isArray(parsed.topUps) ? parsed.topUps.map(sanitizeTopUp).filter((topUp) => fundIds.has(topUp.fundId)) : [];
-                        const importedCrashes = Array.isArray(parsed.crashes) ? parsed.crashes.map(sanitizeCrash).filter((crash) => fundIds.has(crash.fundId)) : [];
-                        setFunds(importedFunds);
-                        setTopUps(importedTopUps);
-                        setCrashes(importedCrashes);
-                        if (typeof parsed.clientName === 'string') setClientName(parsed.clientName);
+                        if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
+                            setFunds(parsed.funds.map(sanitizeFund));
+                        }
+                        if (typeof parsed.clientName === 'string') {
+                            setClientName(parsed.clientName);
+                        }
                         showToast('Data byla úspěšně načtena.');
                     }
                     setLastSaved(getTimeString());
@@ -1466,40 +1406,60 @@
 
             useEffect(() => {
                 try {
-                    const snapshot = { clientName, funds, topUps, crashes };
+                    const snapshot = { clientName, funds };
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
                     setLastSaved(getTimeString());
                 } catch (error) {
                     console.error(error);
                 }
-            }, [clientName, funds, topUps, crashes]);
+            }, [clientName, funds]);
 
-            const analysis = useMemo(() => analyzeScenario(funds, topUps, crashes), [funds, topUps, crashes]);
+            const analysis = useMemo(() => {
+                const prepared = prepareScenarioInput(funds);
+                return analyzeScenario(prepared.funds, prepared.topUps, prepared.crashes);
+            }, [funds]);
 
-            const addFund = () => setFunds((prev) => [...prev, createFund()]);
-            const updateFund = (id, patch) => setFunds((prev) => prev.map((fund) => (fund.id === id ? { ...fund, ...patch } : fund)));
-            const removeFund = (id) => {
-                setFunds((prev) => prev.filter((fund) => fund.id !== id));
-                setTopUps((prev) => prev.filter((topUp) => topUp.fundId !== id));
-                setCrashes((prev) => prev.filter((crash) => crash.fundId !== id));
+            const totalInitial = useMemo(() => funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0), [funds]);
+
+            const addFund = (segment) => {
+                setFunds((prev) => [...prev, createFund('Nový fond', 5, segment)]);
             };
 
-            const addTopUp = () => setTopUps((prev) => [...prev, createTopUp()]);
-            const updateTopUp = (id, patch) => setTopUps((prev) => prev.map((topUp) => (topUp.id === id ? { ...topUp, ...patch } : topUp)));
-            const removeTopUp = (id) => setTopUps((prev) => prev.filter((topUp) => topUp.id !== id));
+            const updateFund = (id, patch) => {
+                setFunds((prev) => prev.map((fund) => (fund.id === id ? { ...fund, ...patch } : fund)));
+            };
 
-            const addCrash = () => setCrashes((prev) => [...prev, createCrash()]);
-            const updateCrash = (id, patch) => setCrashes((prev) => prev.map((crash) => (crash.id === id ? { ...crash, ...patch } : crash)));
-            const removeCrash = (id) => setCrashes((prev) => prev.filter((crash) => crash.id !== id));
+            const removeFund = (id) => {
+                setFunds((prev) => prev.filter((fund) => fund.id !== id));
+            };
+
+            const resetSegment = (segment) => {
+                setFunds((prev) => prev.map((fund) => (fund.segment === segment ? { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0' } : fund)));
+            };
+
+            const demoSegment = (segment) => {
+                const config = SEGMENT_CONFIG.find((item) => item.key === segment);
+                if (!config) return;
+                setFunds((prev) =>
+                    prev.map((fund) => {
+                        if (fund.segment !== segment) return fund;
+                        if (config.demo.includes(fund.name)) {
+                            return { ...fund, amountStr: '250000', topUpStr: '0', crashYear: '0' };
+                        }
+                        return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0' };
+                    }),
+                );
+                showToast('Segment byl naplněn ukázkovými hodnotami.');
+            };
 
             const exportState = () => {
                 try {
+                    const prepared = prepareScenarioInput(funds);
                     const exportPayload = {
                         clientName,
                         generatedAt: new Date().toISOString(),
                         funds,
-                        topUps,
-                        crashes,
+                        scenarioInputs: prepared,
                         scenario: analysis?.hasData ? analysis.exportSnapshot : null,
                     };
                     const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
@@ -1526,13 +1486,11 @@
                 reader.onload = (loadEvent) => {
                     try {
                         const parsed = JSON.parse(loadEvent.target.result);
-                        const importedFunds = Array.isArray(parsed.funds) && parsed.funds.length > 0 ? parsed.funds.map(sanitizeFund) : getDefaultFunds();
-                        const fundIds = new Set(importedFunds.map((fund) => fund.id));
-                        const importedTopUps = Array.isArray(parsed.topUps) ? parsed.topUps.map(sanitizeTopUp).filter((topUp) => fundIds.has(topUp.fundId)) : [];
-                        const importedCrashes = Array.isArray(parsed.crashes) ? parsed.crashes.map(sanitizeCrash).filter((crash) => fundIds.has(crash.fundId)) : [];
-                        setFunds(importedFunds);
-                        setTopUps(importedTopUps);
-                        setCrashes(importedCrashes);
+                        if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
+                            setFunds(parsed.funds.map(sanitizeFund));
+                        } else {
+                            setFunds(getDefaultFunds());
+                        }
                         setClientName(typeof parsed.clientName === 'string' ? parsed.clientName : '');
                         showToast('Scénář byl importován.');
                     } catch (error) {
@@ -1546,8 +1504,6 @@
 
             const resetAll = () => {
                 setFunds(getDefaultFunds());
-                setTopUps([]);
-                setCrashes([]);
                 setClientName('');
                 showToast('Scénář byl resetován.');
             };
@@ -1558,9 +1514,19 @@
                     <main>
                         <div className="app-shell content-stack">
                             <DataManagement onExport={exportState} onImport={importState} onReset={resetAll} analysis={analysis} />
-                            <FundsSection funds={funds} onAddFund={addFund} onUpdateFund={updateFund} onRemoveFund={removeFund} />
-                            <TopUpsSection topUps={topUps} funds={funds} onAddTopUp={addTopUp} onUpdateTopUp={updateTopUp} onRemoveTopUp={removeTopUp} />
-                            <CrashesSection crashes={crashes} funds={funds} onAddCrash={addCrash} onUpdateCrash={updateCrash} onRemoveCrash={removeCrash} />
+                            {SEGMENT_CONFIG.map((segment) => (
+                                <SegmentTable
+                                    key={segment.key}
+                                    segment={segment}
+                                    funds={funds.filter((fund) => fund.segment === segment.key)}
+                                    onAddFund={() => addFund(segment.key)}
+                                    onUpdateFund={updateFund}
+                                    onRemoveFund={removeFund}
+                                    onResetSegment={() => resetSegment(segment.key)}
+                                    onDemoSegment={() => demoSegment(segment.key)}
+                                    portfolioTotal={totalInitial}
+                                />
+                            ))}
                             <ScenarioSummary analysis={analysis} />
                             <ScenarioChart analysis={analysis} />
                             <AllocationPie analysis={analysis} />
