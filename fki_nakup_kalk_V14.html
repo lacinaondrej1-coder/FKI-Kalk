@@ -485,7 +485,7 @@
             );
         };
 
-        const PercentInput = ({ value, onChange, placeholder }) => (
+        const PercentInput = ({ value, onChange, placeholder, disabled = false }) => (
             <input
                 type="text"
                 inputMode="decimal"
@@ -493,11 +493,18 @@
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
+                disabled={disabled}
                 style={{ textAlign: 'right' }}
             />
         );
 
-        const createFund = (name = 'Nový fond', rate = 5, segment = 'CODYA', startDate = toInputDate(startOfToday()), options = {}) => ({
+        const createFund = (
+            name = 'Nový fond',
+            rate = 5,
+            segment = 'CODYA',
+            startDate = toInputDate(startOfToday()),
+            options = {},
+        ) => ({
             id: randomId(),
             name,
             currency: BASE_CURRENCY,
@@ -507,21 +514,34 @@
             segment,
             topUpStr: '0',
             crashYear: '0',
+            crashMode: 'zero',
+            haircutStr: '50',
             defaultKey: options.defaultKey || null,
         });
 
-        const sanitizeFund = (fund) => ({
-            id: fund?.id || randomId(),
-            name: fund?.name || 'Fond',
-            currency: fund?.currency || BASE_CURRENCY,
-            amountStr: String(fund?.amountStr ?? '0'),
-            returnStr: String(fund?.returnStr ?? '0'),
-            startDate: fund?.startDate || toInputDate(startOfToday()),
-            segment: fund?.segment || 'CODYA',
-            topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
-            crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
-            defaultKey: fund?.defaultKey || null,
-        });
+        const sanitizeFund = (fund) => {
+            const rawHaircut = fund?.haircutStr;
+            const normalizedHaircut = (() => {
+                if (rawHaircut === undefined || rawHaircut === null) return '50';
+                const trimmed = String(rawHaircut).trim();
+                return trimmed === '' ? '50' : trimmed;
+            })();
+
+            return {
+                id: fund?.id || randomId(),
+                name: fund?.name || 'Fond',
+                currency: fund?.currency || BASE_CURRENCY,
+                amountStr: String(fund?.amountStr ?? '0'),
+                returnStr: String(fund?.returnStr ?? '0'),
+                startDate: fund?.startDate || toInputDate(startOfToday()),
+                segment: fund?.segment || 'CODYA',
+                topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
+                crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
+                crashMode: fund?.crashMode === 'haircut' ? 'haircut' : 'zero',
+                haircutStr: normalizedHaircut,
+                defaultKey: fund?.defaultKey || null,
+            };
+        };
 
         const sanitizeTopUp = (topUp) => ({
             id: topUp?.id || randomId(),
@@ -570,12 +590,13 @@
                 const crashYear = parseInt(fund.crashYear, 10);
                 if (Number.isFinite(crashYear) && crashYear > 0) {
                     const crashDate = addYears(startDate, crashYear);
+                    const crashMode = fund.crashMode === 'haircut' ? 'haircut' : 'zero';
                     crashes.push({
                         id: `${fund.id}-crash`,
                         fundId: fund.id,
                         date: toInputDate(crashDate),
-                        mode: 'zero',
-                        haircutStr: '100',
+                        mode: crashMode,
+                        haircutStr: crashMode === 'haircut' ? String(fund.haircutStr ?? '50') : '100',
                     });
                 }
             });
@@ -1380,7 +1401,7 @@
                         <div>
                             <span className="badge-pill">{segment.label}</span>
                             <h2 className="card-header-title">Segment {segment.label}</h2>
-                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default.</p>
+                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default či haircut.</p>
                         </div>
                         <div className="control-bar">
                             <button className="btn btn-secondary" onClick={onDemoSegment}>Ukázka</button>
@@ -1397,6 +1418,8 @@
                                     <th style={{ minWidth: '160px' }}>Počáteční vklad</th>
                                     <th style={{ minWidth: '160px' }}>Dokup po 1. roce</th>
                                     <th style={{ minWidth: '140px' }}>Default (rok)</th>
+                                    <th style={{ minWidth: '150px' }}>Typ defaultu</th>
+                                    <th style={{ minWidth: '150px' }}>Haircut</th>
                                     <th style={{ minWidth: '140px' }}>Podíl ve skupině</th>
                                     <th style={{ minWidth: '140px' }}>Podíl v portfoliu</th>
                                     <th style={{ width: '60px' }}></th>
@@ -1405,7 +1428,7 @@
                             <tbody>
                                 {funds.length === 0 && (
                                     <tr>
-                                        <td colSpan="8" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
+                                        <td colSpan="10" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
                                             Přidejte fond pro tento segment.
                                         </td>
                                     </tr>
@@ -1435,6 +1458,33 @@
                                                         <option key={year} value={String(year)}>Po {year}. roce</option>
                                                     ))}
                                                 </select>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    className="table-select"
+                                                    value={fund.crashMode}
+                                                    onChange={(event) => onUpdateFund(fund.id, { crashMode: event.target.value })}
+                                                    disabled={fund.crashYear === '0'}
+                                                >
+                                                    <option value="zero">Na 0 %</option>
+                                                    <option value="haircut">Haircut</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                {fund.crashMode === 'haircut' && fund.crashYear !== '0' ? (
+                                                    <PercentInput
+                                                        value={fund.haircutStr}
+                                                        onChange={(value) => onUpdateFund(fund.id, { haircutStr: value })}
+                                                        placeholder="50"
+                                                    />
+                                                ) : (
+                                                    <span
+                                                        className="meta-label"
+                                                        style={{ color: 'var(--muted)', display: 'inline-block', minWidth: '3ch', textAlign: 'right' }}
+                                                    >
+                                                        —
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="tabular-nums">{formatPercent(segmentShare)}</td>
                                             <td className="tabular-nums">{formatPercent(portfolioShare)}</td>
@@ -2070,7 +2120,13 @@
             };
 
             const resetSegment = (segment) => {
-                setFunds((prev) => prev.map((fund) => (fund.segment === segment ? { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0' } : fund)));
+                setFunds((prev) =>
+                    prev.map((fund) =>
+                        fund.segment === segment
+                            ? { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'zero', haircutStr: '50' }
+                            : fund,
+                    ),
+                );
             };
 
             const demoSegment = (segment) => {
@@ -2080,9 +2136,9 @@
                     prev.map((fund) => {
                         if (fund.segment !== segment) return fund;
                         if (config.demo.includes(fund.name)) {
-                            return { ...fund, amountStr: '250000', topUpStr: '0', crashYear: '0' };
+                            return { ...fund, amountStr: '250000', topUpStr: '0', crashYear: '0', crashMode: 'zero', haircutStr: '50' };
                         }
-                        return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0' };
+                        return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'zero', haircutStr: '50' };
                     }),
                 );
                 showToast('Segment byl naplněn ukázkovými hodnotami.');
