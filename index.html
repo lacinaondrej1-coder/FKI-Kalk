@@ -10,8 +10,8 @@
     <style>
         :root {
             color-scheme: light;
-            --bg-start: #F8FCFF;
-            --bg-end: #F3F6FA;
+            --bg-start: #f9fcff;
+            --bg-end: #eef3f9;
             --primary: #0d2c54;
             --accent: #4DB1C8;
             --text: #1f2a37;
@@ -19,8 +19,10 @@
             --border: #E5EAF0;
             --border-strong: #CFD9E3;
             --surface: #ffffff;
-            --shadow: 0 16px 32px -18px rgba(13, 44, 84, 0.12);
-            --shadow-strong: 0 20px 40px -18px rgba(13, 44, 84, 0.16);
+            --surface-tint: rgba(255, 255, 255, 0.94);
+            --shadow: 0 28px 48px -32px rgba(13, 44, 84, 0.35);
+            --shadow-soft: 0 18px 34px -28px rgba(13, 44, 84, 0.2);
+            --shadow-strong: 0 24px 46px -24px rgba(13, 44, 84, 0.32);
             --danger: #b42318;
             --danger-bg: rgba(229, 62, 62, 0.12);
             --positive: #228b22;
@@ -30,7 +32,7 @@
         body {
             font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
             scroll-behavior: smooth;
-            background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 55%, #ffffff 100%);
             color: var(--text);
             min-height: 100vh;
             margin: 0;
@@ -40,6 +42,14 @@
         }
         a { color: inherit; text-decoration: none; }
         .tabular-nums { font-variant-numeric: tabular-nums; }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
         details > summary { list-style: none; cursor: pointer; }
         details > summary::-webkit-details-marker { display: none; }
         details > summary .summary-arrow { transition: transform 0.2s ease; }
@@ -67,9 +77,9 @@
         .brand-backdrop {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(13, 44, 84, 0.08) 0%, rgba(13, 44, 84, 0) 75%);
-            border-bottom-left-radius: 56px;
-            border-bottom-right-radius: 56px;
+            background: linear-gradient(180deg, rgba(13, 44, 84, 0.05) 0%, rgba(13, 44, 84, 0) 90%);
+            border-bottom-left-radius: 64px;
+            border-bottom-right-radius: 64px;
         }
         .brand-header-inner { position: relative; z-index: 1; display: grid; gap: 2.5rem; }
         @media (min-width: 1024px) {
@@ -95,14 +105,14 @@
         .hero-description { font-size: 1rem; line-height: 1.7; max-width: 560px; color: var(--text); opacity: 0.78; }
         .hero-card-stack { display: grid; gap: 1.25rem; }
         .surface-card {
-            background: var(--surface);
-            border-radius: 1.5rem;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
+            border-radius: 1.6rem;
+            border: 1px solid rgba(207, 217, 227, 0.65);
+            box-shadow: var(--shadow-soft);
             padding: 1.9rem;
             transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
         }
-        .surface-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-strong); transform: translateY(-2px); }
+        .surface-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-3px); }
         .surface-card small {
             display: inline-flex;
             align-items: center;
@@ -118,38 +128,39 @@
         main { margin-top: -72px; position: relative; z-index: 2; }
         @media (max-width: 768px) { main { margin-top: -48px; } }
         .content-stack { display: flex; flex-direction: column; gap: 2.5rem; padding-bottom: 4.5rem; }
-        .card-section { background: var(--surface); border-radius: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); padding: clamp(1.65rem, 2.5vw, 2.5rem); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .card-section:hover { border-color: var(--border-strong); box-shadow: var(--shadow-strong); }
+        .card-section { background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.9) 100%); border-radius: 1.6rem; border: 1px solid var(--border); box-shadow: var(--shadow-soft); padding: clamp(1.65rem, 2.5vw, 2.5rem); transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+        .card-section:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
         .card-header { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
         @media (min-width: 768px) { .card-header { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
         .card-header-title { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; color: var(--primary); text-transform: uppercase; }
         .card-header-sub { font-size: 0.95rem; color: var(--text); opacity: 0.75; max-width: 580px; }
-        .badge-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem; border-radius: 999px; background: rgba(13, 44, 84, 0.08); border: 1px solid rgba(13, 44, 84, 0.18); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--primary); font-weight: 600; }
+        .badge-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.95rem; border-radius: 999px; background: rgba(13, 44, 84, 0.08); border: 1px solid rgba(13, 44, 84, 0.16); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--primary); font-weight: 600; }
         .meta-deck { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-        .meta-card { border: 1px solid var(--border); background: rgba(255, 255, 255, 0.72); border-radius: 0.9rem; padding: 0.75rem 1rem; color: var(--primary); display: flex; flex-direction: column; gap: 0.35rem; min-width: 190px; box-shadow: var(--shadow); }
+        .meta-card { border: 1px solid rgba(207, 217, 227, 0.8); background: rgba(255, 255, 255, 0.78); border-radius: 1rem; padding: 0.85rem 1.1rem; color: var(--primary); display: flex; flex-direction: column; gap: 0.35rem; min-width: 190px; box-shadow: var(--shadow-soft); backdrop-filter: saturate(140%) blur(6px); }
         .meta-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
         .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--primary); }
         .meta-card .input { width: 100%; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.65rem 1.35rem; border-radius: 0.9rem; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.01em; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.68rem 1.45rem; border-radius: 0.95rem; font-weight: 600; font-size: 0.86rem; letter-spacing: 0.04em; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
         .btn:hover { transform: translateY(-2px); }
         .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: var(--shadow); }
         .btn-primary:hover { background: #0a2344; box-shadow: var(--shadow-strong); }
-        .btn-secondary { background: rgba(77, 177, 200, 0.12); color: var(--primary); border-color: rgba(77, 177, 200, 0.55); }
-        .btn-secondary:hover { background: rgba(77, 177, 200, 0.2); border-color: var(--accent); box-shadow: var(--shadow); }
-        .btn-secondary.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow-strong); }
-        .btn-danger { background: var(--danger-bg); color: var(--danger); border-color: rgba(229, 62, 62, 0.35); }
-        .btn-danger:hover { background: rgba(229, 62, 62, 0.2); box-shadow: var(--shadow); }
+        .btn-secondary { background: rgba(77, 177, 200, 0.12); color: var(--primary); border-color: rgba(77, 177, 200, 0.42); box-shadow: none; }
+        .btn-secondary:hover { background: rgba(77, 177, 200, 0.18); border-color: var(--accent); box-shadow: var(--shadow-soft); }
+        .btn-secondary.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow); }
+        .btn-danger { background: rgba(251, 214, 214, 0.55); color: var(--danger); border-color: rgba(229, 62, 62, 0.35); }
+        .btn-danger:hover { background: rgba(229, 62, 62, 0.2); box-shadow: var(--shadow-soft); }
         .control-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
-        .input, select { font-family: inherit; border-radius: 0.9rem; border: 1px solid var(--border); padding: 0.55rem 0.9rem; background: rgba(255, 255, 255, 0.92); transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.9rem; color: var(--text); }
+        .input, select { font-family: inherit; border-radius: 1rem; border: 1px solid var(--border); padding: 0.6rem 0.95rem; background: rgba(255, 255, 255, 0.92); transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.92rem; color: var(--text); }
         .input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
         .input::placeholder { color: var(--muted); }
         .input-ghost { background: rgba(255,255,255,0.6); }
         .icon-button { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.9); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background-color 0.2s ease; }
         .icon-button:hover { border-color: var(--border-strong); color: var(--danger); background: var(--danger-bg); box-shadow: var(--shadow); }
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding: 0.75rem 0.75rem; border-bottom: 1px solid var(--border); background: rgba(253, 254, 255, 0.85); position: sticky; top: 0; z-index: 1; }
-        tbody td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: var(--text); }
-        tbody tr:hover { background: rgba(77, 177, 200, 0.06); }
+        thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0.75rem 0.75rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(248, 252, 255, 0.95) 0%, rgba(238, 243, 249, 0.7) 100%); position: sticky; top: 0; z-index: 1; }
+        tbody td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: var(--text); background: rgba(255, 255, 255, 0.85); }
+        tbody tr:nth-child(even) td { background: rgba(248, 252, 255, 0.9); }
+        tbody tr:hover td { background: rgba(77, 177, 200, 0.08); }
         tbody tr:last-child td { border-bottom: none; }
         .table-actions { text-align: right; }
         .table-input { width: 100%; border-radius: 0.85rem; border: 1px solid var(--border); padding: 0.55rem 0.85rem; background: rgba(255, 255, 255, 0.92); font-size: 0.9rem; color: var(--text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
@@ -157,8 +168,8 @@
         .table-select { width: 100%; }
         .info-grid { display: grid; gap: 1.25rem; }
         @media (min-width: 768px) { .info-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-        .info-card { border: 1px solid var(--border); border-radius: 1.35rem; padding: 1.35rem; background: var(--surface); box-shadow: var(--shadow); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .info-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-strong); }
+        .info-card { border: 1px solid rgba(207, 217, 227, 0.8); border-radius: 1.4rem; padding: 1.45rem; background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.9) 100%); box-shadow: var(--shadow-soft); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .info-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
         .info-card-title { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
         .info-card-value { font-size: 1.65rem; font-weight: 600; color: var(--primary); margin-top: 0.6rem; }
         .info-card-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
@@ -180,9 +191,9 @@
         .tooltip.show { display: block; }
         .chart-container { position: relative; height: 22rem; width: 100%; }
         .chart-axis-text { fill: var(--muted); font-size: 0.68rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
-        .chart-grid-line { stroke: var(--border); stroke-dasharray: 2 3; opacity: 0.7; }
-        .chart-line-accent { stroke: var(--primary); stroke-width: 2.6; fill: none; }
-        .chart-dot { stroke: #fff; stroke-width: 2; }
+        .chart-grid-line { stroke: rgba(207, 217, 227, 0.7); stroke-dasharray: 2 3; }
+        .chart-line-accent { stroke: var(--accent); stroke-width: 3; fill: none; }
+        .chart-dot { stroke: #fff; stroke-width: 2; fill: var(--accent); }
         .chart-marker-hints {
             margin-top: 1.35rem;
             padding: 0.85rem 1.1rem;
@@ -287,15 +298,21 @@
         .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
         .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
         .legend-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
-        .pie-legend { display: grid; gap: 0.65rem; }
-        .pie-legend-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: 0.9rem; padding: 0.65rem 0.85rem; background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow); }
-        .pie-legend-name { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pie-legend { display: grid; gap: 0.75rem; }
+        .pie-legend-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(207, 217, 227, 0.8); border-radius: 1rem; padding: 0.75rem 0.95rem; background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%); box-shadow: var(--shadow-soft); }
+        .pie-legend-name { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 0.55rem; }
         .pie-legend-value { color: var(--primary); font-weight: 600; }
-        .pie-segment { cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; transform-origin: center center; }
-        .pie-segment:hover { transform: scale(1.04); filter: drop-shadow(0 10px 16px rgba(13, 44, 84, 0.18)); }
+        .pie-legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
+        .pie-segment { cursor: pointer; transition: transform 0.25s ease, filter 0.25s ease; transform-origin: center center; filter: drop-shadow(0 8px 16px rgba(13, 44, 84, 0.18)); }
+        .pie-segment:hover { transform: scale(1.03); filter: drop-shadow(0 12px 24px rgba(13, 44, 84, 0.25)); }
+        .pie-timeline { position: relative; height: 6px; border-radius: 999px; background: linear-gradient(90deg, rgba(13, 44, 84, 0.12) 0%, rgba(77, 177, 200, 0.4) 50%, rgba(77, 177, 200, 0.25) 100%); margin-top: 1.35rem; }
+        .pie-timeline-point { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--accent); background: #fff; box-shadow: 0 6px 10px rgba(13, 44, 84, 0.2); transform: translate(-50%, -50%); }
+        .pie-timeline-point--mid { background: var(--accent); border-color: rgba(77, 177, 200, 0.8); box-shadow: 0 8px 16px rgba(77, 177, 200, 0.35); }
+        .pie-timeline-point--end { border-color: var(--primary); }
+        .pie-timeline-meta { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-top: 0.65rem; letter-spacing: 0.04em; text-transform: uppercase; }
         .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        .note-block { border: 1px solid var(--border); border-radius: 1.2rem; padding: 1.25rem; background: var(--surface); box-shadow: var(--shadow); font-size: 0.9rem; color: var(--text); opacity: 0.85; }
+        .note-block { border: 1px solid rgba(207, 217, 227, 0.75); border-radius: 1.2rem; padding: 1.25rem; background: rgba(255, 255, 255, 0.95); box-shadow: var(--shadow-soft); font-size: 0.9rem; color: var(--text); opacity: 0.85; }
         .note-block.alert { border-color: rgba(229, 62, 62, 0.35); background: rgba(229, 62, 62, 0.08); color: var(--danger); }
         footer { padding: 3rem 0; color: var(--muted); font-size: 0.75rem; text-align: center; }
         @media (max-width: 768px) {
@@ -1604,12 +1621,12 @@
                             ))}
                             {controlGraphic.map((point) => (
                                 <g key={point.key} transform={`translate(${point.x}, ${point.y})`}>
-                                    <circle r="5" fill="var(--primary)" stroke="#fff" strokeWidth="2" />
+                                    <circle r="5" fill="var(--accent)" stroke="#fff" strokeWidth="2" />
                                 </g>
                             ))}
                             {tooltip && (
                                 <>
-                                    <line x1={tooltip.x} x2={tooltip.x} y1={margin.top} y2={height - margin.bottom} stroke="rgba(13, 44, 84, 0.12)" strokeDasharray="4 4" />
+                                    <line x1={tooltip.x} x2={tooltip.x} y1={margin.top} y2={height - margin.bottom} stroke="rgba(77, 177, 200, 0.45)" strokeDasharray="4 4" />
                                     <circle className="chart-dot" r="6" fill="var(--accent)" cx={tooltip.x} cy={tooltip.y} />
                                 </>
                             )}
@@ -1701,23 +1718,42 @@
             if (!analysis?.hasData || data.length === 0) return null;
             const total = data.reduce((sum, item) => sum + item.value, 0);
             if (total === 0) return null;
-            const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#70a6d9', '#95d0dc', '#f4b183', '#ffd166', '#6bcba0', '#bb86fc'];
+            const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#6fa8dc', '#7ec4cf', '#8cc7a1', '#ffd166', '#f4b183', '#bb86fc'];
+            const outerRadius = 46;
+            const innerRadius = 28;
             let angle = -90;
+            const degToRad = (value) => (value * Math.PI) / 180;
+            const startLabel = analysis?.startDate ? formatDate(analysis.startDate) : '—';
+            const endLabel = analysis?.endDate ? formatDate(analysis.endDate) : '—';
+            const controlPoints = Array.isArray(analysis?.controlPoints) ? analysis.controlPoints : [];
+            const middlePoint = controlPoints.length > 2 ? controlPoints[Math.floor(controlPoints.length / 2)] : null;
+            const showMidPoint = Boolean(middlePoint && middlePoint.date);
+            const midLabel = showMidPoint ? formatDate(middlePoint.date) : '—';
             const segments = data.map((item, index) => {
                 const share = item.value / total;
                 const startAngle = angle;
                 const endAngle = angle + share * 360;
                 const largeArc = share > 0.5 ? 1 : 0;
-                const startX = 50 + 45 * Math.cos((startAngle * Math.PI) / 180);
-                const startY = 50 + 45 * Math.sin((startAngle * Math.PI) / 180);
-                const endX = 50 + 45 * Math.cos((endAngle * Math.PI) / 180);
-                const endY = 50 + 45 * Math.sin((endAngle * Math.PI) / 180);
+                const outerStartX = 50 + outerRadius * Math.cos(degToRad(startAngle));
+                const outerStartY = 50 + outerRadius * Math.sin(degToRad(startAngle));
+                const outerEndX = 50 + outerRadius * Math.cos(degToRad(endAngle));
+                const outerEndY = 50 + outerRadius * Math.sin(degToRad(endAngle));
+                const innerEndX = 50 + innerRadius * Math.cos(degToRad(endAngle));
+                const innerEndY = 50 + innerRadius * Math.sin(degToRad(endAngle));
+                const innerStartX = 50 + innerRadius * Math.cos(degToRad(startAngle));
+                const innerStartY = 50 + innerRadius * Math.sin(degToRad(startAngle));
                 angle = endAngle;
                 return {
                     ...item,
                     share,
                     color: CHART_COLORS[index % CHART_COLORS.length],
-                    path: `M50,50 L${startX},${startY} A45,45 0 ${largeArc},1 ${endX},${endY} Z`,
+                    path: [
+                        `M ${outerStartX},${outerStartY}`,
+                        `A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${outerEndX},${outerEndY}`,
+                        `L ${innerEndX},${innerEndY}`,
+                        `A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${innerStartX},${innerStartY}`,
+                        'Z',
+                    ].join(' '),
                 };
             });
             return (
@@ -1732,16 +1768,39 @@
                     <div className="responsive-grid-two">
                         <div className="w-full" style={{ maxWidth: '320px', margin: '0 auto' }}>
                             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
-                                {segments.map((segment, index) => (
-                                    <path key={segment.id} d={segment.path} fill={segment.color} stroke="#fff" strokeWidth="0.8" className="pie-segment" />
+                                <circle cx="50" cy="50" r="43" fill="rgba(77, 177, 200, 0.08)" stroke="rgba(77, 177, 200, 0.18)" strokeWidth="1.5" />
+                                {segments.map((segment) => (
+                                    <path
+                                        key={segment.id}
+                                        d={segment.path}
+                                        fill={segment.color}
+                                        stroke="#fff"
+                                        strokeWidth="0.8"
+                                        className="pie-segment"
+                                    />
                                 ))}
+                                <circle cx="50" cy="50" r="23" fill="#fff" stroke="rgba(207, 217, 227, 0.8)" strokeWidth="1.4" />
+                                <text x="50" y="46" textAnchor="middle" style={{ fontSize: '8px', fill: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Celkem</text>
+                                <text x="50" y="59" textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: 'var(--primary)' }} className="tabular-nums">
+                                    {formatCurrency(total)}
+                                </text>
                             </svg>
+                            <div className="pie-timeline">
+                                <span className="pie-timeline-point" style={{ left: '3%' }}></span>
+                                {showMidPoint && <span className="pie-timeline-point pie-timeline-point--mid" style={{ left: '50%' }}></span>}
+                                <span className="pie-timeline-point pie-timeline-point--end" style={{ left: '97%' }}></span>
+                            </div>
+                            <div className="pie-timeline-meta">
+                                <span>{startLabel}</span>
+                                {showMidPoint && <span>{midLabel}</span>}
+                                <span>{endLabel}</span>
+                            </div>
                         </div>
                         <div className="pie-legend">
                             {segments.map((segment) => (
                                 <div className="pie-legend-item" key={segment.id}>
                                     <div className="pie-legend-name">
-                                        <span className="legend-dot" style={{ background: segment.color, border: '1px solid rgba(0,0,0,0.08)', display: 'inline-block', marginRight: '0.5rem' }}></span>
+                                        <span className="pie-legend-dot" style={{ background: segment.color }}></span>
                                         {segment.name}
                                     </div>
                                     <div className="pie-legend-value tabular-nums">{formatPercent(segment.share)}</div>
