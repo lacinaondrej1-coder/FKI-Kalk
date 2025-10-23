@@ -250,7 +250,7 @@
             color: var(--primary);
             font-size: 0.95rem;
         }
-        .chart-marker-icon--crash::before {
+        .chart-marker-icon--default::before {
             content: '';
             position: absolute;
             inset: 0.08rem;
@@ -259,7 +259,7 @@
             border: 2px solid var(--danger);
             transform: rotate(45deg);
         }
-        .chart-marker-icon--crash span {
+        .chart-marker-icon--default span {
             color: var(--danger);
             font-size: 0.85rem;
         }
@@ -298,6 +298,10 @@
         .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
         .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
         .legend-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
+        .pie-stage-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .pie-stage-controls .btn { padding-inline: 1.1rem; font-size: 0.8rem; }
+        .pie-stage-controls .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+        .pie-chart-wrapper { position: relative; width: 100%; max-width: 320px; margin: 0 auto; }
         .pie-legend { display: grid; gap: 0.75rem; }
         .pie-legend-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(207, 217, 227, 0.8); border-radius: 1rem; padding: 0.75rem 0.95rem; background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%); box-shadow: var(--shadow-soft); }
         .pie-legend-name { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 0.55rem; }
@@ -305,11 +309,6 @@
         .pie-legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
         .pie-segment { cursor: pointer; transition: transform 0.25s ease, filter 0.25s ease; transform-origin: center center; filter: drop-shadow(0 8px 16px rgba(13, 44, 84, 0.18)); }
         .pie-segment:hover { transform: scale(1.03); filter: drop-shadow(0 12px 24px rgba(13, 44, 84, 0.25)); }
-        .pie-timeline { position: relative; height: 6px; border-radius: 999px; background: linear-gradient(90deg, rgba(13, 44, 84, 0.12) 0%, rgba(77, 177, 200, 0.4) 50%, rgba(77, 177, 200, 0.25) 100%); margin-top: 1.35rem; }
-        .pie-timeline-point { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--accent); background: #fff; box-shadow: 0 6px 10px rgba(13, 44, 84, 0.2); transform: translate(-50%, -50%); }
-        .pie-timeline-point--mid { background: var(--accent); border-color: rgba(77, 177, 200, 0.8); box-shadow: 0 8px 16px rgba(77, 177, 200, 0.35); }
-        .pie-timeline-point--end { border-color: var(--primary); }
-        .pie-timeline-meta { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-top: 0.65rem; letter-spacing: 0.04em; text-transform: uppercase; }
         .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .note-block { border: 1px solid rgba(207, 217, 227, 0.75); border-radius: 1.2rem; padding: 1.25rem; background: rgba(255, 255, 255, 0.95); box-shadow: var(--shadow-soft); font-size: 0.9rem; color: var(--text); opacity: 0.85; }
@@ -640,7 +639,7 @@
                 const mode = crash.mode === 'haircut' ? 'haircut' : 'zero';
                 const haircut = mode === 'haircut' ? clamp(parsePercentValue(crash.haircutStr), 0, 0.9999) : 1;
                 entry.crashes.push({
-                    type: 'crash',
+                    type: 'default',
                     fundId: fund.id,
                     mode,
                     haircut,
@@ -678,11 +677,41 @@
             if (horizonDate) finalDateCandidates.push(horizonDate);
             const finalDate = new Date(Math.max(...finalDateCandidates.map((date) => date.getTime())));
             ensureEntry(finalDate).control = true;
+
+            const stageDefinitions = [];
+
             if (earliestDate) {
                 ensureEntry(earliestDate).control = true;
+                stageDefinitions.push({
+                    key: 'start',
+                    label: 'První nákup',
+                    buttonLabel: '1. nákup',
+                    targetDate: earliestDate,
+                });
             }
             if (horizonDate) {
                 ensureEntry(horizonDate).control = true;
+            }
+
+            if (earliestDate) {
+                const stageOffsets = [
+                    { key: 'afterTopUp', years: 1, label: 'Po roce (po dokupu)', buttonLabel: 'Po roce' },
+                    { key: 'year5', years: 5, label: '5. rok', buttonLabel: '5. rok' },
+                    { key: 'year10', years: 10, label: '10. rok', buttonLabel: '10. rok' },
+                    { key: 'year15', years: 15, label: '15. rok', buttonLabel: '15. rok' },
+                ];
+                stageOffsets.forEach((stage) => {
+                    const target = addYears(earliestDate, stage.years);
+                    if (target && target <= finalDate) {
+                        ensureEntry(target).control = true;
+                        stageDefinitions.push({
+                            key: stage.key,
+                            label: stage.label,
+                            buttonLabel: stage.buttonLabel,
+                            targetDate: target,
+                        });
+                    }
+                });
             }
 
             let controlCandidate = addYears(earliestDate, 3);
@@ -855,7 +884,7 @@
                 }
 
                 if (entryDeposits.length > 0 || entryCrashes.length > 0) {
-                    const kind = entryCrashes.length > 0 ? (entryDeposits.length > 0 ? 'mixed' : 'crash') : 'deposit';
+                    const kind = entryCrashes.length > 0 ? (entryDeposits.length > 0 ? 'mixed' : 'default') : 'deposit';
                     markers.push({
                         date: entry.date,
                         totalValue,
@@ -883,6 +912,60 @@
                 }
             });
 
+            const getPointForTarget = (targetDate) => {
+                if (!timeline.length) return null;
+                if (!(targetDate instanceof Date)) {
+                    return timeline[timeline.length - 1];
+                }
+                const targetTime = targetDate.getTime();
+                let candidate = timeline[0];
+                for (let i = 0; i < timeline.length; i += 1) {
+                    const point = timeline[i];
+                    if (point.date.getTime() <= targetTime + 1) {
+                        candidate = point;
+                    } else {
+                        break;
+                    }
+                }
+                return candidate;
+            };
+
+            const allocationStages = stageDefinitions.map((stage) => {
+                const point = getPointForTarget(stage.targetDate);
+                if (!point) {
+                    return {
+                        ...stage,
+                        available: false,
+                        date: null,
+                        totalValue: 0,
+                        allocations: [],
+                    };
+                }
+                const totalValueAtStage = point.totalValue;
+                const allocations = (point.snapshot || [])
+                    .map((state) => {
+                        const fund = fundMap.get(state.id);
+                        return {
+                            id: state.id,
+                            name: fund ? fund.name : 'Fond',
+                            value: state.value,
+                        };
+                    })
+                    .filter((item) => item.value > 0.01)
+                    .map((item) => ({
+                        ...item,
+                        share: totalValueAtStage > 0 ? item.value / totalValueAtStage : 0,
+                    }))
+                    .sort((a, b) => b.value - a.value);
+                return {
+                    ...stage,
+                    available: true,
+                    date: point.date,
+                    totalValue: totalValueAtStage,
+                    allocations,
+                };
+            });
+
             const totalInvested = investedSoFar;
             const finalEntry = timeline[timeline.length - 1];
             const finalValue = finalEntry ? finalEntry.totalValue : 0;
@@ -898,7 +981,7 @@
             const plPercent = totalInvested > 0 ? pl / totalInvested : 0;
             const durationYears = scenarioStart ? diffInYears(scenarioStart, scenarioEnd) : 0;
             const crashSummary = crashCount === 0
-                ? 'Bez krachu'
+                ? 'Bez defaultu'
                 : [
                     crashModeBreakdown.zero ? `${crashModeBreakdown.zero}× na 0 %` : null,
                     crashModeBreakdown.haircut ? `${crashModeBreakdown.haircut}× haircut` : null,
@@ -945,6 +1028,18 @@
                     value: item.value,
                     share: item.share,
                 })),
+                allocationStages: allocationStages.map((stage) => ({
+                    key: stage.key,
+                    label: stage.label,
+                    buttonLabel: stage.buttonLabel,
+                    date: stage.date instanceof Date ? stage.date.toISOString() : null,
+                    totalValue: stage.totalValue,
+                    allocations: (stage.allocations || []).map((item) => ({
+                        name: item.name,
+                        value: item.value,
+                        share: item.share,
+                    })),
+                })),
                 startDate: scenarioStart ? scenarioStart.toISOString() : null,
                 endDate: scenarioEnd ? scenarioEnd.toISOString() : null,
             };
@@ -968,6 +1063,7 @@
                 durationYears,
                 finalAllocations,
                 exportSnapshot,
+                allocationStages,
             };
         }
 
@@ -1193,7 +1289,7 @@
                                 <small>Časová osa</small>
                                 <h3>Jedna křivka pro všechny události</h3>
                                 <p>
-                                    Počáteční vklady, dokupy i krachy se promítnou do jedné čáry s kompozitním zhodnocením a vizuálními značkami událostí.
+                                    Počáteční vklady, dokupy i defaulty se promítnou do jedné čáry s kompozitním zhodnocením a vizuálními značkami událostí.
                                 </p>
                             </div>
                         </div>
@@ -1234,7 +1330,7 @@
                             <div className="meta-card">
                                 <span className="meta-label">XIRR scénáře</span>
                                 <span className="meta-value tabular-nums">{analysis.xirr !== null ? formatShortPercent(analysis.xirr) : '—'}</span>
-                                <span className="meta-label">Počet dokupů / krachů</span>
+                                <span className="meta-label">Počet dokupů / defaultů</span>
                                 <span className="meta-value">{analysis.depositCount} · {analysis.crashCount}</span>
                             </div>
                         </div>
@@ -1267,7 +1363,7 @@
                         <div>
                             <span className="badge-pill">{segment.label}</span>
                             <h2 className="card-header-title">Segment {segment.label}</h2>
-                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální krach.</p>
+                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default.</p>
                         </div>
                         <div className="control-bar">
                             <button className="btn btn-secondary" onClick={onDemoSegment}>Ukázka</button>
@@ -1283,7 +1379,7 @@
                                     <th style={{ minWidth: '140px' }}>Výnos p.a.</th>
                                     <th style={{ minWidth: '160px' }}>Počáteční vklad</th>
                                     <th style={{ minWidth: '160px' }}>Dokup po 1. roce</th>
-                                    <th style={{ minWidth: '140px' }}>Krach (rok)</th>
+                                    <th style={{ minWidth: '140px' }}>Default (rok)</th>
                                     <th style={{ minWidth: '140px' }}>Podíl ve skupině</th>
                                     <th style={{ minWidth: '140px' }}>Podíl v portfoliu</th>
                                     <th style={{ width: '60px' }}></th>
@@ -1439,7 +1535,7 @@
                     (marker.crashes && marker.crashes.length > 0
                         ? marker.deposits && marker.deposits.length > 0
                             ? 'mixed'
-                            : 'crash'
+                            : 'default'
                         : 'deposit'),
             }));
             const controlGraphic = controlPoints.map((point, index) => ({
@@ -1563,7 +1659,7 @@
                         <div>
                             <span className="badge-pill">Časová osa</span>
                             <h2 className="card-header-title">Vývoj portfolia v čase</h2>
-                            <p className="card-header-sub">Zohledňuje všechny vklady, dokupy i krachy v chronologickém pořadí s denním složeným úročením.</p>
+                            <p className="card-header-sub">Zohledňuje všechny vklady, dokupy i defaulty v chronologickém pořadí s denním složeným úročením.</p>
                         </div>
                         <div className="meta-deck">
                             <div className="meta-card">
@@ -1575,7 +1671,7 @@
                                 <span className="meta-value">{analysis.depositCount}</span>
                             </div>
                             <div className="meta-card">
-                                <span className="meta-label">Krachy</span>
+                                <span className="meta-label">Defaulty</span>
                                 <span className="meta-value">{analysis.crashSummary}</span>
                             </div>
                         </div>
@@ -1603,7 +1699,7 @@
                                             <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--primary)">+</text>
                                         </>
                                     )}
-                                    {marker.kind === 'crash' && (
+                                    {marker.kind === 'default' && (
                                         <>
                                             <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="var(--danger-bg)" stroke="var(--danger)" strokeWidth="2" />
                                             <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--danger)">⚠︎</text>
@@ -1677,7 +1773,7 @@
                                 )}
                                 {tooltip.type === 'marker' && tooltip.crashes && tooltip.crashes.length > 0 && (
                                     <div className="info-card-sub" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.75rem' : '0.6rem', color: 'var(--danger)' }}>
-                                        <strong style={{ color: 'var(--danger)' }}>Krachy</strong>
+                                        <strong style={{ color: 'var(--danger)' }}>Defaulty</strong>
                                         <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
                                             {tooltip.crashes.map((crash, index) => (
                                                 <li key={`crash-${index}`} style={{ marginBottom: '0.25rem' }}>
@@ -1698,15 +1794,15 @@
                                 <span>Počáteční vklad / dokup</span>
                             </span>
                             <span className="chart-marker-hint">
-                                <span className="chart-marker-icon chart-marker-icon--crash"><span>⚠︎</span></span>
-                                <span>Krach na 0 % nebo haircut</span>
+                                <span className="chart-marker-icon chart-marker-icon--default"><span>⚠︎</span></span>
+                                <span>Default na 0 % nebo haircut</span>
                             </span>
                             <span className="chart-marker-hint">
                                 <span className="chart-marker-icon chart-marker-icon--mixed">
                                     <span className="chart-marker-icon-symbol">⚠︎</span>
                                     <span className="chart-marker-icon-plus">+</span>
                                 </span>
-                                <span>Současně dokup i krach</span>
+                                <span>Současně dokup i default</span>
                             </span>
                         </div>
                     </div>
@@ -1714,23 +1810,39 @@
             );
         };
         const AllocationPie = ({ analysis }) => {
-            const data = analysis?.finalAllocations || [];
-            if (!analysis?.hasData || data.length === 0) return null;
-            const total = data.reduce((sum, item) => sum + item.value, 0);
-            if (total === 0) return null;
+            const stages = Array.isArray(analysis?.allocationStages) ? analysis.allocationStages : [];
+            const availableStages = stages.filter((stage) => stage && stage.available);
+            const fallbackKey = availableStages.length > 0 ? availableStages[availableStages.length - 1].key : null;
+            const [view, setView] = useState(fallbackKey);
+            useEffect(() => {
+                if (!availableStages.length) return;
+                if (!view || !availableStages.some((stage) => stage.key === view)) {
+                    setView(availableStages[availableStages.length - 1].key);
+                }
+            }, [availableStages, view]);
+
+            if (!analysis?.hasData || availableStages.length === 0) {
+                return null;
+            }
+
+            const activeStage = availableStages.find((stage) => stage.key === view) || availableStages[availableStages.length - 1];
+            const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
+            const total = Number(activeStage?.totalValue) || 0;
+            const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
             const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#6fa8dc', '#7ec4cf', '#8cc7a1', '#ffd166', '#f4b183', '#bb86fc'];
             const outerRadius = 46;
             const innerRadius = 28;
-            let angle = -90;
             const degToRad = (value) => (value * Math.PI) / 180;
-            const startLabel = analysis?.startDate ? formatDate(analysis.startDate) : '—';
-            const endLabel = analysis?.endDate ? formatDate(analysis.endDate) : '—';
-            const controlPoints = Array.isArray(analysis?.controlPoints) ? analysis.controlPoints : [];
-            const middlePoint = controlPoints.length > 2 ? controlPoints[Math.floor(controlPoints.length / 2)] : null;
-            const showMidPoint = Boolean(middlePoint && middlePoint.date);
-            const midLabel = showMidPoint ? formatDate(middlePoint.date) : '—';
+            const containerRef = useRef(null);
+            const [tooltip, setTooltip] = useState(null);
+
+            useEffect(() => {
+                setTooltip(null);
+            }, [view]);
+
+            let angle = -90;
             const segments = data.map((item, index) => {
-                const share = item.value / total;
+                const share = total > 0 ? item.value / total : 0;
                 const startAngle = angle;
                 const endAngle = angle + share * 360;
                 const largeArc = share > 0.5 ? 1 : 0;
@@ -1756,45 +1868,93 @@
                     ].join(' '),
                 };
             });
+
+            const handleSegmentMove = (event, segment) => {
+                if (!containerRef.current) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                setTooltip({
+                    name: segment.name,
+                    value: segment.value,
+                    share: segment.share,
+                    x,
+                    y,
+                    width: rect.width,
+                    height: rect.height,
+                });
+            };
+
+            const handleSegmentLeave = () => setTooltip(null);
+
+            const tooltipStyle = tooltip
+                ? {
+                      left: Math.min(Math.max(tooltip.x + 16, 0), Math.max((tooltip.width || 0) - 180, 0)),
+                      top: Math.min(Math.max(tooltip.y + 16, 0), Math.max((tooltip.height || 0) - 120, 0)),
+                  }
+                : {};
+
+            const hasAllocations = total > 0 && segments.length > 0;
+
             return (
                 <section className="card-section">
                     <div className="card-header">
                         <div>
                             <span className="badge-pill">Alokace</span>
-                            <h2 className="card-header-title">Rozložení portfolia k závěrečnému datu</h2>
-                            <p className="card-header-sub">Zobrazuje pouze fondy s nenulovou hodnotou po všech událostech scénáře.</p>
+                            <h2 className="card-header-title">Rozložení portfolia</h2>
+                            <p className="card-header-sub">
+                                Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
+                            </p>
+                        </div>
+                        <div className="pie-stage-controls">
+                            {availableStages.map((stage) => (
+                                <button
+                                    key={stage.key}
+                                    className={`btn btn-secondary ${stage.key === activeStage?.key ? 'active' : ''}`}
+                                    onClick={() => setView(stage.key)}
+                                    type="button"
+                                >
+                                    {stage.buttonLabel}
+                                </button>
+                            ))}
                         </div>
                     </div>
                     <div className="responsive-grid-two">
-                        <div className="w-full" style={{ maxWidth: '320px', margin: '0 auto' }}>
+                        <div className="pie-chart-wrapper" ref={containerRef}>
                             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
                                 <circle cx="50" cy="50" r="43" fill="rgba(77, 177, 200, 0.08)" stroke="rgba(77, 177, 200, 0.18)" strokeWidth="1.5" />
-                                {segments.map((segment) => (
-                                    <path
-                                        key={segment.id}
-                                        d={segment.path}
-                                        fill={segment.color}
-                                        stroke="#fff"
-                                        strokeWidth="0.8"
-                                        className="pie-segment"
-                                    />
-                                ))}
+                                {hasAllocations &&
+                                    segments.map((segment) => (
+                                        <path
+                                            key={segment.id}
+                                            d={segment.path}
+                                            fill={segment.color}
+                                            stroke="#fff"
+                                            strokeWidth="0.8"
+                                            className="pie-segment"
+                                            onMouseMove={(event) => handleSegmentMove(event, segment)}
+                                            onMouseLeave={handleSegmentLeave}
+                                        />
+                                    ))}
                                 <circle cx="50" cy="50" r="23" fill="#fff" stroke="rgba(207, 217, 227, 0.8)" strokeWidth="1.4" />
                                 <text x="50" y="46" textAnchor="middle" style={{ fontSize: '8px', fill: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Celkem</text>
                                 <text x="50" y="59" textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: 'var(--primary)' }} className="tabular-nums">
                                     {formatCurrency(total)}
                                 </text>
                             </svg>
-                            <div className="pie-timeline">
-                                <span className="pie-timeline-point" style={{ left: '3%' }}></span>
-                                {showMidPoint && <span className="pie-timeline-point pie-timeline-point--mid" style={{ left: '50%' }}></span>}
-                                <span className="pie-timeline-point pie-timeline-point--end" style={{ left: '97%' }}></span>
-                            </div>
-                            <div className="pie-timeline-meta">
-                                <span>{startLabel}</span>
-                                {showMidPoint && <span>{midLabel}</span>}
-                                <span>{endLabel}</span>
-                            </div>
+                            {tooltip && (
+                                <div className="tooltip show" style={tooltipStyle}>
+                                    <div className="meta-value" style={{ fontWeight: 600 }}>{tooltip.name}</div>
+                                    <div className="info-card-sub" style={{ marginTop: '0.35rem', color: 'var(--text)' }}>
+                                        {formatCurrency(tooltip.value)} · {formatPercent(tooltip.share)}
+                                    </div>
+                                </div>
+                            )}
+                            {!hasAllocations && (
+                                <div className="info-card-sub" style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                    Žádné aktivní fondy pro zvolený okamžik.
+                                </div>
+                            )}
                         </div>
                         <div className="pie-legend">
                             {segments.map((segment) => (
@@ -1803,7 +1963,9 @@
                                         <span className="pie-legend-dot" style={{ background: segment.color }}></span>
                                         {segment.name}
                                     </div>
-                                    <div className="pie-legend-value tabular-nums">{formatPercent(segment.share)}</div>
+                                    <div className="pie-legend-value tabular-nums">
+                                        {formatPercent(segment.share)}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1821,10 +1983,10 @@
                     </div>
                 </div>
                 <div className="note-block">
-                    <strong>Pořadí událostí:</strong> Vždy se nejprve dopočítá růst mezi uzly, poté se aplikují dokupy a nakonec případné krachy. Události ve stejný den respektují pořadí: dokup → krach.
+                    <strong>Pořadí událostí:</strong> Vždy se nejprve dopočítá růst mezi uzly, poté se aplikují dokupy a nakonec případné defaulty. Události ve stejný den respektují pořadí: dokup → default.
                 </div>
                 <div className="note-block" style={{ marginTop: '1rem' }}>
-                    <strong>XIRR:</strong> Výkonnost vychází z peněžních toků všech vkladů a aktuální hodnoty na konci scénáře. Krach se projeví až zůstatkem, nikoli okamžitým cash-flow.
+                    <strong>XIRR:</strong> Výkonnost vychází z peněžních toků všech vkladů a aktuální hodnoty na konci scénáře. Default se projeví až zůstatkem, nikoli okamžitým cash-flow.
                 </div>
                 <div className="note-block alert" style={{ marginTop: '1rem' }}>
                     <strong>Upozornění:</strong> Scénář je ilustrativní a nezohledňuje poplatky, daně ani kurzové riziko. Výpočty předpokládají konstantní roční zhodnocení mezi událostmi.
