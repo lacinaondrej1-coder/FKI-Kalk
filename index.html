@@ -8,6 +8,8 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
         :root {
             color-scheme: light;
             --bg-start: #f9fcff;
@@ -27,7 +29,6 @@
             --danger-bg: rgba(229, 62, 62, 0.12);
             --positive: #228b22;
         }
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
         body {
             font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
@@ -314,6 +315,18 @@
         .note-block { border: 1px solid rgba(207, 217, 227, 0.75); border-radius: 1.2rem; padding: 1.25rem; background: rgba(255, 255, 255, 0.95); box-shadow: var(--shadow-soft); font-size: 0.9rem; color: var(--text); opacity: 0.85; }
         .note-block.alert { border-color: rgba(229, 62, 62, 0.35); background: rgba(229, 62, 62, 0.08); color: var(--danger); }
         footer { padding: 3rem 0; color: var(--muted); font-size: 0.75rem; text-align: center; }
+        .app-error {
+            max-width: 560px;
+            margin: 4rem auto;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            box-shadow: var(--shadow-soft);
+            text-align: center;
+            color: var(--danger);
+            font-weight: 600;
+        }
         @media (max-width: 768px) {
             .hero-description { font-size: 0.95rem; }
             .card-header { gap: 0.5rem; }
@@ -330,7 +343,11 @@
     <div id="root"></div>
     <div id="toast-container"></div>
 
-    <script type="text/babel">
+    <script
+        type="text/babel"
+        data-presets="env,react"
+        data-plugins="proposal-class-properties,proposal-object-rest-spread,proposal-optional-chaining,proposal-nullish-coalescing-operator"
+    >
         const { useState, useMemo, useEffect, useRef, Fragment } = React;
 
         const BASE_CURRENCY = 'CZK';
@@ -2157,7 +2174,17 @@
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const rootElement = document.getElementById('root');
+        if (!rootElement) {
+            throw new Error('Chybí kořenový prvek pro React aplikaci.');
+        }
+
+        try {
+            ReactDOM.createRoot(rootElement).render(<App />);
+        } catch (error) {
+            console.error('Nepodařilo se inicializovat aplikaci.', error);
+            rootElement.innerHTML = '<div class="app-error">Nepodařilo se načíst kalkulačku. Zkuste obnovit stránku nebo kontaktujte podporu.</div>';
+        }
     </script>
 </body>
 </html>
