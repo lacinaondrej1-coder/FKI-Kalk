@@ -217,6 +217,7 @@
         .input-ghost { background: var(--surface-alt); }
         .icon-button { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background-color 0.2s ease; }
         .icon-button:hover { border-color: var(--border-strong); color: var(--primary); background: var(--surface-alt); box-shadow: var(--shadow); }
+        .overflow-x-auto { overflow-x: auto; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
         thead th {
             font-size: 0.75rem;
@@ -396,7 +397,7 @@
         .pie-stage-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .pie-stage-controls .btn { padding-inline: 1.1rem; font-size: 0.8rem; }
         .pie-stage-controls .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
-        .pie-chart-wrapper { position: relative; width: 100%; max-width: 320px; margin: 0 auto; }
+        .pie-chart-wrapper { position: relative; width: 100%; max-width: 320px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
         .pie-legend { display: grid; gap: 0.85rem; }
         .pie-legend-item {
             display: flex;
@@ -413,10 +414,25 @@
         .pie-legend-name { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 0.55rem; }
         .pie-legend-value { color: var(--accent); font-weight: 600; }
         .pie-legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); }
-        .pie-segment { cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; transform-origin: center center; filter: drop-shadow(0 8px 18px rgba(13, 44, 84, 0.18)); }
+        .pie-segment { cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; transform-origin: center center; filter: none; }
         .pie-segment:hover { transform: scale(1.03); filter: drop-shadow(0 12px 28px rgba(13, 44, 84, 0.25)); }
         .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .pie-total {
+            margin-top: 0.75rem;
+            padding: 1rem 1.2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            display: inline-flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            align-items: flex-start;
+            align-self: center;
+        }
+        .pie-total-label { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+        .pie-total-value { font-size: 1.1rem; font-weight: 600; color: var(--primary-strong); }
         .note-block {
             border: 1px solid var(--border);
             border-radius: 1.2rem;
@@ -1529,15 +1545,15 @@
                             <thead>
                                 <tr>
                                     <th>Fond</th>
-                                    <th style={{ minWidth: '140px' }}>Výnos p.a.</th>
-                                    <th style={{ minWidth: '160px' }}>Počáteční vklad</th>
-                                    <th style={{ minWidth: '160px' }}>Dokup po 1. roce</th>
-                                    <th style={{ minWidth: '140px' }}>Default (rok)</th>
-                                    <th style={{ minWidth: '150px' }}>Typ defaultu</th>
-                                    <th style={{ minWidth: '150px' }}>Haircut</th>
-                                    <th style={{ minWidth: '140px' }}>Podíl ve skupině</th>
-                                    <th style={{ minWidth: '140px' }}>Podíl v portfoliu</th>
-                                    <th style={{ width: '60px' }}></th>
+                                    <th style={{ minWidth: '120px' }}>Výnos p.a.</th>
+                                    <th style={{ minWidth: '140px' }}>Počáteční vklad</th>
+                                    <th style={{ minWidth: '140px' }}>Dokup po 1. roce</th>
+                                    <th style={{ minWidth: '120px' }}>Default (rok)</th>
+                                    <th style={{ minWidth: '130px' }}>Typ defaultu</th>
+                                    <th style={{ minWidth: '120px' }}>Haircut</th>
+                                    <th style={{ minWidth: '130px' }}>Podíl ve skupině</th>
+                                    <th style={{ minWidth: '130px' }}>Podíl v portfoliu</th>
+                                    <th style={{ width: '56px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1682,7 +1698,7 @@
                 );
             }
 
-            const { timeline, markers, controlPoints } = analysis;
+            const { timeline, markers } = analysis;
             const height = 340;
             const margin = { top: 32, right: 24, bottom: 56, left: 80 };
             const fallbackWindowWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth || 0, 960) : 0;
@@ -1719,12 +1735,6 @@
                             ? 'mixed'
                             : 'default'
                         : 'deposit'),
-            }));
-            const controlGraphic = controlPoints.map((point, index) => ({
-                ...point,
-                key: `control-${index}`,
-                x: xScale(point.date),
-                y: yScale(point.totalValue),
             }));
 
             const showMarkerTooltip = (marker) => {
@@ -1895,11 +1905,6 @@
                                             <text textAnchor="middle" y="-8" fontSize="10" fontWeight="600" fill="var(--primary-strong)">+</text>
                                         </>
                                     )}
-                                </g>
-                            ))}
-                            {controlGraphic.map((point) => (
-                                <g key={point.key} transform={`translate(${point.x}, ${point.y})`}>
-                                    <circle r="5" fill="#fff" stroke="var(--accent)" strokeWidth="2" />
                                 </g>
                             ))}
                             {tooltip && (
@@ -2135,10 +2140,6 @@
                                         />
                                     ))}
                                 <circle cx="50" cy="50" r="23" fill="#ffffff" stroke="#EAECEE" strokeWidth="1.4" />
-                                <text x="50" y="46" textAnchor="middle" style={{ fontSize: '8px', fill: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Celkem</text>
-                                <text x="50" y="59" textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: 'var(--primary-strong)' }} className="tabular-nums">
-                                    {formatCurrency(total)}
-                                </text>
                             </svg>
                             {tooltip && (
                                 <div className="tooltip show" style={tooltipStyle}>
@@ -2153,6 +2154,10 @@
                                     Žádné aktivní fondy pro zvolený okamžik.
                                 </div>
                             )}
+                            <div className="pie-total">
+                                <span className="pie-total-label">Celkem</span>
+                                <span className="pie-total-value tabular-nums">{formatCurrency(total)}</span>
+                            </div>
                         </div>
                         <div className="pie-legend">
                             {segments.map((segment) => (
