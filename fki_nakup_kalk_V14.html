@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investiční Kalkulačka</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+        :root {
+            color-scheme: light;
+            --bg-start: #f9fcff;
+            --bg-end: #eef3f9;
+            --primary: #0d2c54;
+            --accent: #4DB1C8;
+            --text: #1f2a37;
+            --muted: #6b7280;
+            --border: #E5EAF0;
+            --border-strong: #CFD9E3;
+            --surface: #ffffff;
+            --surface-tint: rgba(255, 255, 255, 0.94);
+            --shadow: 0 28px 48px -32px rgba(13, 44, 84, 0.35);
+            --shadow-soft: 0 18px 34px -28px rgba(13, 44, 84, 0.2);
+            --shadow-strong: 0 24px 46px -24px rgba(13, 44, 84, 0.32);
+            --danger: #b42318;
+            --danger-bg: rgba(229, 62, 62, 0.12);
+            --positive: #228b22;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
+            scroll-behavior: smooth;
+            background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 55%, #ffffff 100%);
+            color: var(--text);
+            min-height: 100vh;
+            margin: 0;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: inherit; text-decoration: none; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        details > summary { list-style: none; cursor: pointer; }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary .summary-arrow { transition: transform 0.2s ease; }
+        details[open] > summary .summary-arrow { transform: rotate(90deg); }
+        #toast-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.1rem;
+            border-radius: 0.9rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            background: var(--surface);
+            color: var(--text);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.21, 1.02, 0.73, 1);
+        }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast-success { border-color: rgba(77, 177, 200, 0.45); background: rgba(77, 177, 200, 0.15); color: var(--primary); }
+        .toast-error { border-color: rgba(229, 62, 62, 0.45); background: rgba(229, 62, 62, 0.15); color: var(--danger); }
+        .app-shell { max-width: 1200px; margin: 0 auto; padding: 0 1.75rem; }
+        @media (max-width: 640px) { .app-shell { padding: 0 1.1rem; } }
+        header.brand-header { padding: 2.75rem 0 4rem; position: relative; }
+        .brand-backdrop {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(13, 44, 84, 0.05) 0%, rgba(13, 44, 84, 0) 90%);
+            border-bottom-left-radius: 64px;
+            border-bottom-right-radius: 64px;
+        }
+        .brand-header-inner { position: relative; z-index: 1; display: grid; gap: 2.5rem; }
+        @media (min-width: 1024px) {
+            .brand-header-inner { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; }
+        }
+        .brand-logo { font-weight: 700; font-size: 1.15rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--primary); display: inline-flex; align-items: center; gap: 0.35rem; }
+        .brand-logo span { color: var(--accent); }
+        .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 1rem;
+            border-radius: 999px;
+            background: rgba(13, 44, 84, 0.08);
+            border: 1px solid rgba(13, 44, 84, 0.18);
+            font-size: 0.68rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .hero-title { font-size: clamp(2.25rem, 5vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; margin: 1rem 0 1.25rem; color: var(--primary); text-transform: uppercase; }
+        .hero-description { font-size: 1rem; line-height: 1.7; max-width: 560px; color: var(--text); opacity: 0.78; }
+        .hero-card-stack { display: grid; gap: 1.25rem; }
+        .surface-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
+            border-radius: 1.6rem;
+            border: 1px solid rgba(207, 217, 227, 0.65);
+            box-shadow: var(--shadow-soft);
+            padding: 1.9rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .surface-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-3px); }
+        .surface-card small {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .surface-card h3 { margin: 0.8rem 0 0.75rem; font-size: 1.1rem; font-weight: 600; color: var(--text); }
+        .surface-card p { margin: 0; font-size: 0.95rem; line-height: 1.6; color: var(--text); opacity: 0.75; }
+        main { margin-top: -72px; position: relative; z-index: 2; }
+        @media (max-width: 768px) { main { margin-top: -48px; } }
+        .content-stack { display: flex; flex-direction: column; gap: 2.5rem; padding-bottom: 4.5rem; }
+        .card-section { background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.9) 100%); border-radius: 1.6rem; border: 1px solid var(--border); box-shadow: var(--shadow-soft); padding: clamp(1.65rem, 2.5vw, 2.5rem); transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+        .card-section:hover { border-color: var(--border-strong); box-shadow: var(--shadow); transform: translateY(-2px); }
+        .card-header { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+        @media (min-width: 768px) { .card-header { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
+        .card-header-title { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; color: var(--primary); text-transform: uppercase; }
+        .card-header-sub { font-size: 0.95rem; color: var(--text); opacity: 0.75; max-width: 580px; }
+        .badge-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.95rem; border-radius: 999px; background: rgba(13, 44, 84, 0.08); border: 1px solid rgba(13, 44, 84, 0.16); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--primary); font-weight: 600; }
+        .meta-deck { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+        .meta-card { border: 1px solid rgba(207, 217, 227, 0.8); background: rgba(255, 255, 255, 0.78); border-radius: 1rem; padding: 0.85rem 1.1rem; color: var(--primary); display: flex; flex-direction: column; gap: 0.35rem; min-width: 190px; box-shadow: var(--shadow-soft); backdrop-filter: saturate(140%) blur(6px); }
+        .meta-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+        .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--primary); }
+        .meta-card .input { width: 100%; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.68rem 1.45rem; border-radius: 0.95rem; font-weight: 600; font-size: 0.86rem; letter-spacing: 0.04em; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: var(--shadow); }
+        .btn-primary:hover { background: #0a2344; box-shadow: var(--shadow-strong); }
+        .btn-secondary { background: rgba(77, 177, 200, 0.12); color: var(--primary); border-color: rgba(77, 177, 200, 0.42); box-shadow: none; }
+        .btn-secondary:hover { background: rgba(77, 177, 200, 0.18); border-color: var(--accent); box-shadow: var(--shadow-soft); }
+        .btn-secondary.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow); }
+        .btn-danger { background: rgba(251, 214, 214, 0.55); color: var(--danger); border-color: rgba(229, 62, 62, 0.35); }
+        .btn-danger:hover { background: rgba(229, 62, 62, 0.2); box-shadow: var(--shadow-soft); }
+        .control-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+        .input, select { font-family: inherit; border-radius: 1rem; border: 1px solid var(--border); padding: 0.6rem 0.95rem; background: rgba(255, 255, 255, 0.92); transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.92rem; color: var(--text); }
+        .input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
+        .input::placeholder { color: var(--muted); }
+        .input-ghost { background: rgba(255,255,255,0.6); }
+        .icon-button { width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.9); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background-color 0.2s ease; }
+        .icon-button:hover { border-color: var(--border-strong); color: var(--danger); background: var(--danger-bg); box-shadow: var(--shadow); }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        thead th { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0.75rem 0.75rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(248, 252, 255, 0.95) 0%, rgba(238, 243, 249, 0.7) 100%); position: sticky; top: 0; z-index: 1; }
+        tbody td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: var(--text); background: rgba(255, 255, 255, 0.85); }
+        tbody tr:nth-child(even) td { background: rgba(248, 252, 255, 0.9); }
+        tbody tr:hover td { background: rgba(77, 177, 200, 0.08); }
+        tbody tr:last-child td { border-bottom: none; }
+        .table-actions { text-align: right; }
+        .table-input { width: 100%; border-radius: 0.85rem; border: 1px solid var(--border); padding: 0.55rem 0.85rem; background: rgba(255, 255, 255, 0.92); font-size: 0.9rem; color: var(--text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .table-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.25); }
+        .table-select { width: 100%; }
+        .info-grid { display: grid; gap: 1.25rem; }
+        @media (min-width: 768px) { .info-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .info-card { border: 1px solid rgba(207, 217, 227, 0.8); border-radius: 1.4rem; padding: 1.45rem; background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.9) 100%); box-shadow: var(--shadow-soft); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .info-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+        .info-card-title { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+        .info-card-value { font-size: 1.65rem; font-weight: 600; color: var(--primary); margin-top: 0.6rem; }
+        .info-card-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
+        .highlight-positive { color: var(--positive); font-weight: 600; }
+        .highlight-negative { color: var(--danger); font-weight: 600; }
+        .tooltip {
+            position: absolute;
+            z-index: 10;
+            padding: 0.6rem 0.8rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text);
+            pointer-events: none;
+            display: none;
+        }
+        .tooltip.show { display: block; }
+        .chart-container { position: relative; height: 22rem; width: 100%; }
+        .chart-axis-text { fill: var(--muted); font-size: 0.68rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
+        .chart-grid-line { stroke: rgba(207, 217, 227, 0.7); stroke-dasharray: 2 3; }
+        .chart-line-accent { stroke: var(--accent); stroke-width: 3; fill: none; }
+        .chart-dot { stroke: #fff; stroke-width: 2; fill: var(--accent); }
+        .chart-marker-hints {
+            margin-top: 1.35rem;
+            padding: 0.85rem 1.1rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem 1.35rem;
+            align-items: center;
+        }
+        .chart-marker-hints-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .chart-marker-hints-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.1rem;
+        }
+        .chart-marker-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+        .chart-marker-icon {
+            position: relative;
+            width: 1.75rem;
+            height: 1.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-marker-icon span {
+            position: relative;
+            z-index: 1;
+            font-weight: 600;
+        }
+        .chart-marker-icon--deposit::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(77, 177, 200, 0.18);
+            border: 2px solid var(--accent);
+        }
+        .chart-marker-icon--deposit span {
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+        .chart-marker-icon--default::before {
+            content: '';
+            position: absolute;
+            inset: 0.08rem;
+            border-radius: 0.45rem;
+            background: var(--danger-bg);
+            border: 2px solid var(--danger);
+            transform: rotate(45deg);
+        }
+        .chart-marker-icon--default span {
+            color: var(--danger);
+            font-size: 0.85rem;
+        }
+        .chart-marker-icon--mixed::before {
+            content: '';
+            position: absolute;
+            inset: 0.08rem;
+            border-radius: 0.45rem;
+            background: var(--danger-bg);
+            border: 2px solid var(--danger);
+            transform: rotate(45deg);
+        }
+        .chart-marker-icon--mixed::after {
+            content: '';
+            position: absolute;
+            inset: 0.25rem;
+            border-radius: 50%;
+            background: rgba(77, 177, 200, 0.18);
+            border: 2px solid var(--accent);
+        }
+        .chart-marker-icon--mixed .chart-marker-icon-symbol {
+            color: var(--danger);
+            font-size: 0.8rem;
+            z-index: 2;
+        }
+        .chart-marker-icon--mixed .chart-marker-icon-plus {
+            position: absolute;
+            top: 0.25rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: var(--primary);
+            font-size: 0.75rem;
+            z-index: 2;
+        }
+        .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
+        .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .legend-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
+        .pie-stage-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .pie-stage-controls .btn { padding-inline: 1.1rem; font-size: 0.8rem; }
+        .pie-stage-controls .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+        .pie-chart-wrapper { position: relative; width: 100%; max-width: 320px; margin: 0 auto; }
+        .pie-legend { display: grid; gap: 0.75rem; }
+        .pie-legend-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(207, 217, 227, 0.8); border-radius: 1rem; padding: 0.75rem 0.95rem; background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 100%); box-shadow: var(--shadow-soft); }
+        .pie-legend-name { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 0.55rem; }
+        .pie-legend-value { color: var(--primary); font-weight: 600; }
+        .pie-legend-dot { width: 0.85rem; height: 0.85rem; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
+        .pie-segment { cursor: pointer; transition: transform 0.25s ease, filter 0.25s ease; transform-origin: center center; filter: drop-shadow(0 8px 16px rgba(13, 44, 84, 0.18)); }
+        .pie-segment:hover { transform: scale(1.03); filter: drop-shadow(0 12px 24px rgba(13, 44, 84, 0.25)); }
+        .responsive-grid-two { display: grid; gap: 2.5rem; align-items: center; }
+        @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .note-block { border: 1px solid rgba(207, 217, 227, 0.75); border-radius: 1.2rem; padding: 1.25rem; background: rgba(255, 255, 255, 0.95); box-shadow: var(--shadow-soft); font-size: 0.9rem; color: var(--text); opacity: 0.85; }
+        .note-block.alert { border-color: rgba(229, 62, 62, 0.35); background: rgba(229, 62, 62, 0.08); color: var(--danger); }
+        footer { padding: 3rem 0; color: var(--muted); font-size: 0.75rem; text-align: center; }
+        .app-error {
+            max-width: 560px;
+            margin: 4rem auto;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            box-shadow: var(--shadow-soft);
+            text-align: center;
+            color: var(--danger);
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .hero-description { font-size: 0.95rem; }
+            .card-header { gap: 0.5rem; }
+        }
+        @media print {
+            body { background: #fff; }
+            .card-section, .surface-card, .info-card, .pie-legend-item, .note-block { box-shadow: none !important; }
+            #toast-container, .tooltip { display: none !important; }
+            .btn { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="toast-container"></div>
+
+    <script
+        type="text/babel"
+        data-presets="env,react"
+        data-plugins="proposal-class-properties,proposal-object-rest-spread,proposal-optional-chaining,proposal-nullish-coalescing-operator"
+    >
+        const { useState, useMemo, useEffect, useRef, Fragment } = React;
+
+        const BASE_CURRENCY = 'CZK';
+        const Y = 15;
+        const randomId = () =>
+            (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                ? crypto.randomUUID()
+                : `id-${Math.random().toString(36).slice(2, 11)}-${Date.now().toString(36)}`);
+        const currencyFormatter = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: BASE_CURRENCY, maximumFractionDigits: 0 });
+        const percentFormatter = new Intl.NumberFormat('cs-CZ', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const shortPercentFormatter = new Intl.NumberFormat('cs-CZ', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        const dateFormatter = new Intl.DateTimeFormat('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const monthYearFormatter = new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' });
+
+        const parseMoney = (value) => {
+            if (typeof value === 'number') return value;
+            if (!value) return 0;
+            const normalized = String(value).replace(/\s+/g, '').replace(/[^\d,.-]/g, '').replace(',', '.');
+            const parsed = Number(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const parsePercentValue = (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            if (typeof value === 'number') return value / 100;
+            const normalized = String(value).replace(/%/g, '').replace(',', '.');
+            const parsed = Number(normalized);
+            return Number.isFinite(parsed) ? parsed / 100 : 0;
+        };
+
+        const parseRate = (value) => {
+            if (typeof value === 'number') return value / 100;
+            return parsePercentValue(value);
+        };
+
+        const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+        const parseISODate = (value) => {
+            if (!value) return null;
+            const [year, month, day] = value.split('-').map(Number);
+            if (!year || !month || !day) return null;
+            return new Date(Date.UTC(year, month - 1, day));
+        };
+
+        const toInputDate = (date) => {
+            if (!(date instanceof Date)) return '';
+            return date.toISOString().slice(0, 10);
+        };
+
+        const startOfToday = () => {
+            const now = new Date();
+            return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        };
+
+        const diffInYears = (start, end) => {
+            if (!(start instanceof Date) || !(end instanceof Date)) return 0;
+            return (end.getTime() - start.getTime()) / (365.2425 * 24 * 60 * 60 * 1000);
+        };
+
+        const addYears = (date, count) => {
+            if (!(date instanceof Date)) return null;
+            return new Date(Date.UTC(date.getUTCFullYear() + count, date.getUTCMonth(), date.getUTCDate()));
+        };
+
+        const formatCurrency = (value) => currencyFormatter.format(Math.round(value));
+        const formatPercent = (value) => value === null || value === undefined ? '—' : percentFormatter.format(value);
+        const formatShortPercent = (value) => value === null || value === undefined ? '—' : shortPercentFormatter.format(value);
+        const formatDate = (date) => date instanceof Date ? dateFormatter.format(date) : '—';
+        const formatMonthYear = (date) => date instanceof Date ? monthYearFormatter.format(date) : '—';
+
+        const formatDuration = (years) => {
+            if (!Number.isFinite(years) || years <= 0) return '0 let';
+            const totalMonths = Math.round(years * 12);
+            const fullYears = Math.floor(totalMonths / 12);
+            const months = totalMonths % 12;
+            const segments = [];
+            if (fullYears > 0) segments.push(`${fullYears} ${fullYears === 1 ? 'rok' : fullYears < 5 ? 'roky' : 'let'}`);
+            if (months > 0) segments.push(`${months} ${months === 1 ? 'měsíc' : months < 5 ? 'měsíce' : 'měsíců'}`);
+            return segments.join(' ');
+        };
+
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        };
+
+        const MoneyInput = ({ value, onChange, placeholder }) => {
+            const [displayValue, setDisplayValue] = useState(value);
+            const inputRef = useRef(null);
+
+            useEffect(() => {
+                if (document.activeElement !== inputRef.current) {
+                    const numericValue = parseMoney(value);
+                    setDisplayValue(numericValue > 0 ? currencyFormatter.format(numericValue) : '');
+                }
+            }, [value]);
+
+            const handleFocus = (event) => {
+                const numericValue = parseMoney(event.target.value);
+                setDisplayValue(numericValue === 0 ? '' : numericValue);
+            };
+
+            const handleBlur = (event) => {
+                const numericValue = parseMoney(event.target.value);
+                onChange(String(numericValue));
+                setDisplayValue(numericValue > 0 ? currencyFormatter.format(numericValue) : '');
+            };
+
+            const handleChange = (event) => {
+                setDisplayValue(event.target.value);
+            };
+
+            return (
+                <input
+                    ref={inputRef}
+                    type="text"
+                    inputMode="numeric"
+                    className="table-input tabular-nums"
+                    value={displayValue}
+                    placeholder={placeholder}
+                    onChange={handleChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    autoComplete="off"
+                    style={{ textAlign: 'right' }}
+                />
+            );
+        };
+
+        const PercentInput = ({ value, onChange, placeholder }) => (
+            <input
+                type="text"
+                inputMode="decimal"
+                className="table-input tabular-nums"
+                value={value}
+                placeholder={placeholder}
+                onChange={(event) => onChange(event.target.value)}
+                style={{ textAlign: 'right' }}
+            />
+        );
+
+        const createFund = (name = 'Nový fond', rate = 5, segment = 'CODYA', startDate = toInputDate(startOfToday()), options = {}) => ({
+            id: randomId(),
+            name,
+            currency: BASE_CURRENCY,
+            amountStr: '0',
+            returnStr: String(rate),
+            startDate,
+            segment,
+            topUpStr: '0',
+            crashYear: '0',
+            defaultKey: options.defaultKey || null,
+        });
+
+        const sanitizeFund = (fund) => ({
+            id: fund?.id || randomId(),
+            name: fund?.name || 'Fond',
+            currency: fund?.currency || BASE_CURRENCY,
+            amountStr: String(fund?.amountStr ?? '0'),
+            returnStr: String(fund?.returnStr ?? '0'),
+            startDate: fund?.startDate || toInputDate(startOfToday()),
+            segment: fund?.segment || 'CODYA',
+            topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
+            crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
+            defaultKey: fund?.defaultKey || null,
+        });
+
+        const sanitizeTopUp = (topUp) => ({
+            id: topUp?.id || randomId(),
+            fundId: topUp?.fundId || '',
+            date: topUp?.date || toInputDate(startOfToday()),
+            amountStr: String(topUp?.amountStr ?? '0'),
+        });
+
+        const sanitizeCrash = (crash) => {
+            const mode = crash?.mode === 'haircut' ? 'haircut' : 'zero';
+            return {
+                id: crash?.id || randomId(),
+                fundId: crash?.fundId || '',
+                date: crash?.date || toInputDate(startOfToday()),
+                mode,
+                haircutStr: String(crash?.haircutStr ?? (mode === 'haircut' ? '50' : '100')),
+            };
+        };
+
+        const prepareScenarioInput = (funds) => {
+            const today = startOfToday();
+            const preparedFunds = [];
+            const topUps = [];
+            const crashes = [];
+            (funds || []).map(sanitizeFund).forEach((fund) => {
+                const startDate = parseISODate(fund.startDate) || today;
+                const startDateStr = toInputDate(startDate);
+                preparedFunds.push({
+                    id: fund.id,
+                    name: fund.name,
+                    currency: fund.currency || BASE_CURRENCY,
+                    amountStr: String(fund.amountStr ?? '0'),
+                    returnStr: String(fund.returnStr ?? '0'),
+                    startDate: startDateStr,
+                });
+                const topUpAmount = parseMoney(fund.topUpStr);
+                if (topUpAmount > 0) {
+                    const topUpDate = addYears(startDate, 1);
+                    topUps.push({
+                        id: `${fund.id}-topup`,
+                        fundId: fund.id,
+                        date: toInputDate(topUpDate),
+                        amountStr: String(topUpAmount),
+                    });
+                }
+                const crashYear = parseInt(fund.crashYear, 10);
+                if (Number.isFinite(crashYear) && crashYear > 0) {
+                    const crashDate = addYears(startDate, crashYear);
+                    crashes.push({
+                        id: `${fund.id}-crash`,
+                        fundId: fund.id,
+                        date: toInputDate(crashDate),
+                        mode: 'zero',
+                        haircutStr: '100',
+                    });
+                }
+            });
+            return { funds: preparedFunds, topUps, crashes };
+        };
+
+        const STORAGE_KEY = 'fkiPurchaseScenarioState';
+        function analyzeScenario(funds, topUps, crashes) {
+            const parsedFunds = (funds || []).map(sanitizeFund);
+            const fundMap = new Map();
+            parsedFunds.forEach((fund) => {
+                fundMap.set(fund.id, {
+                    ...fund,
+                    rate: parseRate(fund.returnStr),
+                    startDate: parseISODate(fund.startDate),
+                });
+            });
+
+            const eventMap = new Map();
+            const ensureEntry = (date) => {
+                const time = date.getTime();
+                if (!eventMap.has(time)) {
+                    eventMap.set(time, { date, deposits: [], crashes: [], control: false });
+                }
+                return eventMap.get(time);
+            };
+
+            const cashFlows = [];
+            let earliestDate = null;
+            let latestDate = null;
+            let topUpCount = 0;
+            let crashCount = 0;
+            const crashModeBreakdown = { zero: 0, haircut: 0 };
+
+            fundMap.forEach((fund) => {
+                const initialAmount = parseMoney(fund.amountStr);
+                if (initialAmount > 0 && fund.startDate instanceof Date) {
+                    const entry = ensureEntry(fund.startDate);
+                    entry.deposits.push({
+                        type: 'start',
+                        fundId: fund.id,
+                        amount: initialAmount,
+                        label: 'Počáteční vklad',
+                        fundName: fund.name,
+                    });
+                    cashFlows.push({ amount: -initialAmount, date: fund.startDate });
+                    earliestDate = earliestDate ? (fund.startDate < earliestDate ? fund.startDate : earliestDate) : fund.startDate;
+                    latestDate = latestDate ? (fund.startDate > latestDate ? fund.startDate : latestDate) : fund.startDate;
+                }
+            });
+
+            (topUps || []).map(sanitizeTopUp).forEach((topUp) => {
+                const fund = fundMap.get(topUp.fundId);
+                const amount = parseMoney(topUp.amountStr);
+                const date = parseISODate(topUp.date);
+                if (!fund || !date || amount <= 0) return;
+                if (fund.startDate instanceof Date && date < fund.startDate) return;
+                const entry = ensureEntry(date);
+                entry.deposits.push({
+                    type: 'topup',
+                    fundId: fund.id,
+                    amount,
+                    label: 'Dokup',
+                    fundName: fund.name,
+                });
+                cashFlows.push({ amount: -amount, date });
+                earliestDate = earliestDate ? (date < earliestDate ? date : earliestDate) : date;
+                latestDate = latestDate ? (date > latestDate ? date : latestDate) : date;
+                topUpCount += 1;
+            });
+
+            (crashes || []).map(sanitizeCrash).forEach((crash) => {
+                const fund = fundMap.get(crash.fundId);
+                const date = parseISODate(crash.date);
+                if (!fund || !date) return;
+                if (fund.startDate instanceof Date && date < fund.startDate) return;
+                const entry = ensureEntry(date);
+                const mode = crash.mode === 'haircut' ? 'haircut' : 'zero';
+                const haircut = mode === 'haircut' ? clamp(parsePercentValue(crash.haircutStr), 0, 0.9999) : 1;
+                entry.crashes.push({
+                    type: 'default',
+                    fundId: fund.id,
+                    mode,
+                    haircut,
+                    fundName: fund.name,
+                });
+                earliestDate = earliestDate ? (date < earliestDate ? date : earliestDate) : date;
+                latestDate = latestDate ? (date > latestDate ? date : latestDate) : date;
+                crashCount += 1;
+                crashModeBreakdown[mode] = (crashModeBreakdown[mode] || 0) + 1;
+            });
+
+            if (!earliestDate || eventMap.size === 0) {
+                return {
+                    hasData: false,
+                    totalInvested: 0,
+                    currentValue: 0,
+                    pl: 0,
+                    plPercent: 0,
+                    xirr: null,
+                    depositCount: topUpCount,
+                    crashCount,
+                    crashSummary: crashCount ? 'Bez aktivních vkladů' : 'Bez dat',
+                    controlPoints: [],
+                    markers: [],
+                    timeline: [],
+                    finalAllocations: [],
+                    totalCrashLoss: 0,
+                };
+            }
+
+            const today = startOfToday();
+            const horizonDate = earliestDate ? addYears(earliestDate, Y) : null;
+            const finalDateCandidates = [today];
+            if (latestDate) finalDateCandidates.push(latestDate);
+            if (horizonDate) finalDateCandidates.push(horizonDate);
+            const finalDate = new Date(Math.max(...finalDateCandidates.map((date) => date.getTime())));
+            ensureEntry(finalDate).control = true;
+
+            const stageDefinitions = [];
+
+            if (earliestDate) {
+                ensureEntry(earliestDate).control = true;
+                stageDefinitions.push({
+                    key: 'start',
+                    label: 'První nákup',
+                    buttonLabel: '1. nákup',
+                    targetDate: earliestDate,
+                });
+            }
+            if (horizonDate) {
+                ensureEntry(horizonDate).control = true;
+            }
+
+            if (earliestDate) {
+                const stageOffsets = [
+                    { key: 'afterTopUp', years: 1, label: 'Po roce (po dokupu)', buttonLabel: 'Po roce' },
+                    { key: 'year5', years: 5, label: '5. rok', buttonLabel: '5. rok' },
+                    { key: 'year10', years: 10, label: '10. rok', buttonLabel: '10. rok' },
+                    { key: 'year15', years: 15, label: '15. rok', buttonLabel: '15. rok' },
+                ];
+                stageOffsets.forEach((stage) => {
+                    const target = addYears(earliestDate, stage.years);
+                    if (target && target <= finalDate) {
+                        ensureEntry(target).control = true;
+                        stageDefinitions.push({
+                            key: stage.key,
+                            label: stage.label,
+                            buttonLabel: stage.buttonLabel,
+                            targetDate: target,
+                        });
+                    }
+                });
+            }
+
+            let controlCandidate = addYears(earliestDate, 3);
+            while (controlCandidate && controlCandidate < finalDate) {
+                ensureEntry(controlCandidate).control = true;
+                controlCandidate = addYears(controlCandidate, 3);
+            }
+
+            const sortedEntries = Array.from(eventMap.values()).sort((a, b) => a.date - b.date);
+            sortedEntries.forEach((entry) => {
+                entry.deposits.sort((a, b) => {
+                    if (a.type === b.type) return a.fundName.localeCompare(b.fundName);
+                    return a.type === 'start' ? -1 : 1;
+                });
+            });
+
+            const fundStates = new Map();
+            fundMap.forEach((fund) => {
+                fundStates.set(fund.id, {
+                    id: fund.id,
+                    name: fund.name,
+                    rate: Number.isFinite(fund.rate) ? fund.rate : 0,
+                    value: 0,
+                    status: 'pending',
+                    hadDeposit: false,
+                });
+            });
+
+            const applyGrowth = (from, to) => {
+                if (!(from instanceof Date) || !(to instanceof Date)) return;
+                const years = diffInYears(from, to);
+                if (years <= 0) return;
+                fundStates.forEach((state) => {
+                    if (state.status === 'active') {
+                        state.value *= Math.pow(1 + state.rate, years);
+                    }
+                });
+            };
+
+            const sumPortfolioValue = () => {
+                let total = 0;
+                fundStates.forEach((state) => {
+                    total += state.value;
+                });
+                return total;
+            };
+
+            const snapshotStates = () =>
+                Array.from(fundStates.values()).map((state) => ({
+                    id: state.id,
+                    value: state.value,
+                    rate: state.rate,
+                    status: state.status,
+                }));
+
+            const EPSILON = 0.005;
+
+            let lastDate = sortedEntries[0]?.date;
+            let investedSoFar = 0;
+            let totalCrashLoss = 0;
+            const timeline = [];
+            const markers = [];
+            const controlPoints = [];
+
+            sortedEntries.forEach((entry, index) => {
+                const entryDeposits = [];
+                const entryCrashes = [];
+                let entryDepositTotal = 0;
+                let entryCrashTotalLoss = 0;
+                if (index > 0 && lastDate) {
+                    applyGrowth(lastDate, entry.date);
+                }
+                lastDate = entry.date;
+
+                // Same-day events follow the mandated order: growth → deposits → crashes.
+                const valueBeforeEvents = sumPortfolioValue();
+                const snapshotBeforeEvents = snapshotStates();
+
+                const pushPoint = (value, invested, snapshotOverride) => {
+                    const finalSnapshot = snapshotOverride || snapshotStates();
+                    const lastPoint = timeline[timeline.length - 1];
+                    if (
+                        lastPoint &&
+                        lastPoint.date.getTime() === entry.date.getTime() &&
+                        Math.abs(lastPoint.totalValue - value) < EPSILON
+                    ) {
+                        lastPoint.investedToDate = invested;
+                        lastPoint.snapshot = finalSnapshot;
+                        return;
+                    }
+                    timeline.push({
+                        date: entry.date,
+                        totalValue: value,
+                        investedToDate: invested,
+                        snapshot: finalSnapshot,
+                    });
+                };
+
+                pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents);
+                let portfolioValueAfterDeposits = valueBeforeEvents;
+
+                if (entry.deposits.length > 0) {
+                    entry.deposits.forEach((deposit) => {
+                        const state = fundStates.get(deposit.fundId);
+                        if (!state) return;
+                        if (state.status !== 'frozen' && state.status !== 'zeroed') {
+                            state.status = 'active';
+                        }
+                        state.hadDeposit = true;
+                        state.value += deposit.amount;
+                        investedSoFar += deposit.amount;
+                        entryDepositTotal += deposit.amount;
+                        entryDeposits.push({
+                            fundId: state.id,
+                            fundName: state.name,
+                            amount: deposit.amount,
+                            label: deposit.label,
+                            investedToDate: investedSoFar,
+                        });
+                    });
+
+                    portfolioValueAfterDeposits = sumPortfolioValue();
+                    const snapshotAfterDeposits = snapshotStates();
+                    pushPoint(portfolioValueAfterDeposits, investedSoFar, snapshotAfterDeposits);
+                }
+
+                let portfolioValueBeforeCrashes = portfolioValueAfterDeposits;
+                if (entry.crashes.length > 0) {
+                    portfolioValueBeforeCrashes = sumPortfolioValue();
+                    entry.crashes.forEach((crash) => {
+                        const state = fundStates.get(crash.fundId);
+                        if (!state || !state.hadDeposit) return;
+                        const before = state.value;
+                        if (before <= 0) return;
+                        if (crash.mode === 'zero') {
+                            state.value = 0;
+                            state.status = 'zeroed';
+                        } else {
+                            state.value = state.value * (1 - crash.haircut);
+                            state.status = 'frozen';
+                        }
+                        const after = state.value;
+                        const loss = Math.max(0, before - after);
+                        if (loss > 0) {
+                            totalCrashLoss += loss;
+                            entryCrashTotalLoss += loss;
+                        }
+                        entryCrashes.push({
+                            fundId: state.id,
+                            fundName: state.name,
+                            mode: crash.mode,
+                            haircut: crash.haircut,
+                            loss,
+                        });
+                    });
+                }
+
+                const totalValue = sumPortfolioValue();
+                if (entry.crashes.length > 0) {
+                    const aggregateLoss = Math.max(0, portfolioValueBeforeCrashes - totalValue);
+                    if (aggregateLoss > entryCrashTotalLoss + EPSILON) {
+                        const adjustment = aggregateLoss - entryCrashTotalLoss;
+                        totalCrashLoss += adjustment;
+                        entryCrashTotalLoss += adjustment;
+                    }
+                }
+                const snapshot = snapshotStates();
+                if (entry.crashes.length > 0 || entry.deposits.length === 0) {
+                    pushPoint(totalValue, investedSoFar, snapshot);
+                }
+
+                if (entryDeposits.length > 0 || entryCrashes.length > 0) {
+                    const kind = entryCrashes.length > 0 ? (entryDeposits.length > 0 ? 'mixed' : 'default') : 'deposit';
+                    markers.push({
+                        date: entry.date,
+                        totalValue,
+                        investedToDate: investedSoFar,
+                        deposits: entryDeposits,
+                        crashes: entryCrashes,
+                        kind,
+                        valueBeforeEvents,
+                        valueAfterDeposits: portfolioValueAfterDeposits,
+                        valueBeforeCrashes: entry.crashes.length > 0 ? portfolioValueBeforeCrashes : null,
+                        valueAfterCrashes: entry.crashes.length > 0 ? totalValue : null,
+                        depositTotal: entryDepositTotal,
+                        crashTotalLoss: entryCrashTotalLoss,
+                    });
+                }
+
+                if (entry.control || index === sortedEntries.length - 1) {
+                    const pl = totalValue - investedSoFar;
+                    controlPoints.push({
+                        date: entry.date,
+                        totalValue,
+                        invested: investedSoFar,
+                        pl,
+                    });
+                }
+            });
+
+            const getPointForTarget = (targetDate) => {
+                if (!timeline.length) return null;
+                if (!(targetDate instanceof Date)) {
+                    return timeline[timeline.length - 1];
+                }
+                const targetTime = targetDate.getTime();
+                let candidate = timeline[0];
+                for (let i = 0; i < timeline.length; i += 1) {
+                    const point = timeline[i];
+                    if (point.date.getTime() <= targetTime + 1) {
+                        candidate = point;
+                    } else {
+                        break;
+                    }
+                }
+                return candidate;
+            };
+
+            const allocationStages = stageDefinitions.map((stage) => {
+                const point = getPointForTarget(stage.targetDate);
+                if (!point) {
+                    return {
+                        ...stage,
+                        available: false,
+                        date: null,
+                        totalValue: 0,
+                        allocations: [],
+                    };
+                }
+                const totalValueAtStage = point.totalValue;
+                const allocations = (point.snapshot || [])
+                    .map((state) => {
+                        const fund = fundMap.get(state.id);
+                        return {
+                            id: state.id,
+                            name: fund ? fund.name : 'Fond',
+                            value: state.value,
+                        };
+                    })
+                    .filter((item) => item.value > 0.01)
+                    .map((item) => ({
+                        ...item,
+                        share: totalValueAtStage > 0 ? item.value / totalValueAtStage : 0,
+                    }))
+                    .sort((a, b) => b.value - a.value);
+                return {
+                    ...stage,
+                    available: true,
+                    date: point.date,
+                    totalValue: totalValueAtStage,
+                    allocations,
+                };
+            });
+
+            const totalInvested = investedSoFar;
+            const finalEntry = timeline[timeline.length - 1];
+            const finalValue = finalEntry ? finalEntry.totalValue : 0;
+            const scenarioEnd = finalEntry ? finalEntry.date : finalDate;
+            const scenarioStart = timeline[0]?.date;
+
+            if (finalValue !== 0 && scenarioEnd) {
+                cashFlows.push({ amount: finalValue, date: scenarioEnd });
+            }
+
+            const xirr = calculateXIRR(cashFlows);
+            const pl = finalValue - totalInvested;
+            const plPercent = totalInvested > 0 ? pl / totalInvested : 0;
+            const durationYears = scenarioStart ? diffInYears(scenarioStart, scenarioEnd) : 0;
+            const crashSummary = crashCount === 0
+                ? 'Bez defaultu'
+                : [
+                    crashModeBreakdown.zero ? `${crashModeBreakdown.zero}× na 0 %` : null,
+                    crashModeBreakdown.haircut ? `${crashModeBreakdown.haircut}× haircut` : null,
+                ].filter(Boolean).join(' · ');
+
+            const finalAllocations = [];
+            fundStates.forEach((state) => {
+                if (state.value > 0.01) {
+                    finalAllocations.push({
+                        id: state.id,
+                        name: state.name,
+                        value: state.value,
+                        share: finalValue > 0 ? state.value / finalValue : 0,
+                    });
+                }
+            });
+            finalAllocations.sort((a, b) => b.value - a.value);
+
+            const exportSnapshot = {
+                totals: {
+                    totalInvested,
+                    currentValue: finalValue,
+                    pl,
+                    plPercent,
+                    xirr,
+                },
+                timeline: timeline.map((point) => ({
+                    date: point.date.toISOString(),
+                    totalValue: point.totalValue,
+                    investedToDate: point.investedToDate,
+                })),
+                markers: markers.map((marker) => ({
+                    ...marker,
+                    date: marker.date.toISOString(),
+                })),
+                controlPoints: controlPoints.map((point) => ({
+                    date: point.date.toISOString(),
+                    totalValue: point.totalValue,
+                    invested: point.invested,
+                    pl: point.pl,
+                })),
+                finalAllocations: finalAllocations.map((item) => ({
+                    name: item.name,
+                    value: item.value,
+                    share: item.share,
+                })),
+                allocationStages: allocationStages.map((stage) => ({
+                    key: stage.key,
+                    label: stage.label,
+                    buttonLabel: stage.buttonLabel,
+                    date: stage.date instanceof Date ? stage.date.toISOString() : null,
+                    totalValue: stage.totalValue,
+                    allocations: (stage.allocations || []).map((item) => ({
+                        name: item.name,
+                        value: item.value,
+                        share: item.share,
+                    })),
+                })),
+                startDate: scenarioStart ? scenarioStart.toISOString() : null,
+                endDate: scenarioEnd ? scenarioEnd.toISOString() : null,
+            };
+
+            return {
+                hasData: true,
+                timeline,
+                markers,
+                controlPoints,
+                totalInvested,
+                currentValue: finalValue,
+                pl,
+                plPercent,
+                xirr,
+                depositCount: topUpCount,
+                crashCount,
+                crashSummary,
+                totalCrashLoss,
+                startDate: scenarioStart,
+                endDate: scenarioEnd,
+                durationYears,
+                finalAllocations,
+                exportSnapshot,
+                allocationStages,
+            };
+        }
+
+        function calculateXIRR(cashFlows) {
+            if (!Array.isArray(cashFlows)) return null;
+            const flows = cashFlows
+                .filter((cf) => cf && cf.date instanceof Date && Number.isFinite(cf.amount) && cf.amount !== 0)
+                .sort((a, b) => a.date - b.date);
+            if (flows.length < 2) return null;
+            const hasPositive = flows.some((cf) => cf.amount > 0);
+            const hasNegative = flows.some((cf) => cf.amount < 0);
+            if (!hasPositive || !hasNegative) return null;
+
+            const baseDate = flows[0].date;
+            const npv = (rate) => flows.reduce((acc, cf) => {
+                const t = diffInYears(baseDate, cf.date);
+                return acc + cf.amount / Math.pow(1 + rate, t);
+            }, 0);
+            const derivative = (rate) => flows.reduce((acc, cf) => {
+                const t = diffInYears(baseDate, cf.date);
+                return acc - (t * cf.amount) / Math.pow(1 + rate, t + 1);
+            }, 0);
+
+            let rate = 0.1;
+            const epsilon = 1e-7;
+            for (let i = 0; i < 100; i += 1) {
+                const value = npv(rate);
+                if (Math.abs(value) < epsilon) return rate;
+                const deriv = derivative(rate);
+                if (Math.abs(deriv) < epsilon) break;
+                const nextRate = rate - value / deriv;
+                if (!Number.isFinite(nextRate) || nextRate <= -0.9999) break;
+                rate = nextRate;
+            }
+
+            let low = -0.9999;
+            let high = 5;
+            let mid = rate;
+            for (let i = 0; i < 200; i += 1) {
+                mid = (low + high) / 2;
+                const value = npv(mid);
+                if (Math.abs(value) < epsilon) return mid;
+                if (value > 0) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+            const finalValue = npv(mid);
+            return Math.abs(finalValue) < 1e-4 ? mid : null;
+        }
+        const DEFAULT_FUND_CONFIG = [
+            { key: 'CODYA::PFFL', segment: 'CODYA', name: 'PFFL', rate: 7.5 },
+            { key: 'CODYA::Fond reverzních hypoték', segment: 'CODYA', name: 'Fond reverzních hypoték', rate: 6.65 },
+            { key: 'CODYA::Silverline R.E.', segment: 'CODYA', name: 'Silverline R.E.', rate: 10 },
+            { key: 'CODYA::Vigo Direct', segment: 'CODYA', name: 'Vigo Direct', rate: 8 },
+            { key: 'CODYA::Adax', segment: 'CODYA', name: 'Adax', rate: 12 },
+            { key: 'CODYA::Julius Meinl fond', segment: 'CODYA', name: 'Julius Meinl fond', rate: 14.5 },
+            { key: 'CODYA::Penta R.E.', segment: 'CODYA', name: 'Penta R.E.', rate: 14 },
+            { key: 'CODYA::Penta Equity', segment: 'CODYA', name: 'Penta Equity', rate: 14 },
+            { key: 'CODYA::Artefin - Henry IF', segment: 'CODYA', name: 'Artefin - Henry IF', rate: 8.5 },
+            { key: 'CODYA::FČKD', segment: 'CODYA', name: 'FČKD', rate: 7.5 },
+            { key: 'AVANT::r2p invest', segment: 'AVANT', name: 'r2p invest', rate: 8.5 },
+            { key: 'AVANT::Gartal', segment: 'AVANT', name: 'Gartal', rate: 7 },
+            { key: 'AVANT::Realia', segment: 'AVANT', name: 'Realia', rate: 6 },
+            { key: 'AVANT::EBM', segment: 'AVANT', name: 'EBM', rate: 8 },
+            { key: 'AVANT::Wero', segment: 'AVANT', name: 'Wero', rate: 8 },
+            { key: 'AVANT::Vihorev', segment: 'AVANT', name: 'Vihorev', rate: 8.5 },
+            { key: 'AVANT::Real Luxembourg', segment: 'AVANT', name: 'Real Luxembourg', rate: 8 },
+            { key: 'AVANT::Aguila', segment: 'AVANT', name: 'Aguila', rate: 7.5 },
+            { key: 'AVANT::Spilberk', segment: 'AVANT', name: 'Spilberk', rate: 7 },
+            { key: 'AVANT::Semper', segment: 'AVANT', name: 'Semper', rate: 11 },
+        ];
+
+        const getDefaultFunds = () =>
+            DEFAULT_FUND_CONFIG.map((config) =>
+                createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }),
+            );
+
+        const ensureDefaultFunds = (fundList) => {
+            const sanitized = (fundList || []).map(sanitizeFund);
+            const keyFor = (fund) => fund.defaultKey || `${fund.segment}::${fund.name}`;
+            const usedIds = new Set();
+            const result = [];
+
+            DEFAULT_FUND_CONFIG.forEach((config) => {
+                const match = sanitized.find((fund) => keyFor(fund) === config.key);
+                if (match) {
+                    result.push({ ...match, segment: config.segment, defaultKey: config.key });
+                    usedIds.add(match.id);
+                } else {
+                    result.push(createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }));
+                }
+            });
+
+            sanitized.forEach((fund) => {
+                if (!usedIds.has(fund.id)) {
+                    result.push(fund);
+                }
+            });
+
+            return result;
+        };
+
+        const SEGMENT_CONFIG = [
+            {
+                key: 'CODYA',
+                label: 'CODYA',
+                demo: DEFAULT_FUND_CONFIG.filter((config) => config.segment === 'CODYA').map((config) => config.name),
+            },
+            {
+                key: 'AVANT',
+                label: 'AVANT',
+                demo: DEFAULT_FUND_CONFIG.filter((config) => config.segment === 'AVANT').map((config) => config.name),
+            },
+        ];
+
+        const useResizeObserver = (ref) => {
+            const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+            useEffect(() => {
+                const target = ref.current;
+                if (!target) return undefined;
+
+                const readDimensions = () => {
+                    const element = ref.current;
+                    if (!element) return;
+                    const rect = element.getBoundingClientRect();
+                    const width = rect.width || element.offsetWidth || element.clientWidth || 0;
+                    const height = rect.height || element.offsetHeight || element.clientHeight || 0;
+                    setDimensions({ width, height });
+                };
+
+                readDimensions();
+
+                let rafId = null;
+                if (typeof window !== 'undefined') {
+                    rafId = window.requestAnimationFrame(readDimensions);
+                }
+
+                let observer = null;
+                let resizeListenerAttached = false;
+
+                if (typeof ResizeObserver === 'function') {
+                    observer = new ResizeObserver(() => readDimensions());
+                    observer.observe(target);
+                } else if (typeof window !== 'undefined') {
+                    window.addEventListener('resize', readDimensions);
+                    resizeListenerAttached = true;
+                }
+
+                return () => {
+                    if (observer) {
+                        observer.disconnect();
+                    }
+                    if (typeof window !== 'undefined') {
+                        if (rafId !== null) {
+                            window.cancelAnimationFrame(rafId);
+                        }
+                        if (resizeListenerAttached) {
+                            window.removeEventListener('resize', readDimensions);
+                        }
+                    }
+                };
+            }, [ref]);
+            return dimensions;
+        };
+
+        const createPath = (points) => {
+            if (!points || points.length < 2) return '';
+            return `M ${points.map((point) => `${point.x},${point.y}`).join(' L ')}`;
+        };
+        const InfoCard = ({ title, value, subValue }) => (
+            <div className="info-card">
+                <div className="info-card-title">{title}</div>
+                <div className="info-card-value tabular-nums">{value}</div>
+                {subValue && <div className="info-card-sub">{subValue}</div>}
+            </div>
+        );
+
+        const ReportHero = ({ lastSaved, clientName, onClientNameChange, analysis }) => {
+            const currentValue = analysis?.hasData ? formatCurrency(analysis.currentValue) : '—';
+            const totalInvested = analysis?.hasData ? formatCurrency(analysis.totalInvested) : '—';
+            const pl = analysis?.hasData ? formatCurrency(analysis.pl) : '—';
+            return (
+                <header className="brand-header">
+                    <div className="brand-backdrop"></div>
+                    <div className="app-shell brand-header-inner">
+                        <div>
+                            <div className="brand-logo">Fair<span>Life</span></div>
+                            <span className="hero-kicker">FKI Nákup · Scénář</span>
+                            <h1 className="hero-title">Investiční kalkulačka</h1>
+                            <p className="hero-description">
+                                Vytvářejte kompletní scénáře nákupu fondů: počáteční alokace, plánované dokupy i krizové události v jednom sjednoceném reportovacím vizuálu.
+                            </p>
+                            <div className="meta-deck" style={{ marginTop: '1.75rem' }}>
+                                <label className="meta-card">
+                                    <span className="meta-label">Jméno klienta</span>
+                                    <input className="input input-ghost" value={clientName} onChange={(event) => onClientNameChange(event.target.value)} placeholder="Např. Jana Nováková" />
+                                </label>
+                                <div className="meta-card">
+                                    <span className="meta-label">Naposledy uloženo</span>
+                                    <span className="meta-value">{lastSaved ? `Dnes ${lastSaved}` : '—'}</span>
+                                </div>
+                                <div className="meta-card">
+                                    <span className="meta-label">Aktuální hodnota</span>
+                                    <span className="meta-value tabular-nums">{currentValue}</span>
+                                    <span className="meta-label">Investováno celkem</span>
+                                    <span className="meta-value tabular-nums" style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600 }}>{totalInvested}</span>
+                                    <span className="meta-label">Kumulativní P/L</span>
+                                    <span className="meta-value tabular-nums" style={{ color: analysis?.pl >= 0 ? 'var(--positive)' : 'var(--danger)' }}>{pl}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="hero-card-stack">
+                            <div className="surface-card">
+                                <small>Správa portfolia</small>
+                                <h3>Sdílejte scénáře v jednotném vizuálu</h3>
+                                <p>
+                                    Automatické ukládání, exporty s křivkou a markery i reset scénáře pomáhají udržet konzistenci mezi týmy i klienty.
+                                </p>
+                            </div>
+                            <div className="surface-card">
+                                <small>Časová osa</small>
+                                <h3>Jedna křivka pro všechny události</h3>
+                                <p>
+                                    Počáteční vklady, dokupy i defaulty se promítnou do jedné čáry s kompozitním zhodnocením a vizuálními značkami událostí.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+            );
+        };
+
+        const DataManagement = ({ onExport, onImport, onReset, analysis }) => {
+            const fileInputRef = useRef(null);
+            return (
+                <section className="card-section">
+                    <input type="file" ref={fileInputRef} onChange={onImport} accept=".json" style={{ display: 'none' }} />
+                    <div className="card-header">
+                        <div>
+                            <span className="badge-pill">Správa dat</span>
+                            <h2 className="card-header-title">Export a import scénáře</h2>
+                            <p className="card-header-sub">Soubor .json uchová veškeré vstupy včetně výsledné křivky, markerů i kontrolních bodů.</p>
+                        </div>
+                        <div className="control-bar">
+                            <button className="btn btn-secondary" onClick={onExport}>Exportovat do .json</button>
+                            <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>Importovat z .json</button>
+                            <button className="btn btn-danger" onClick={onReset}>Resetovat scénář</button>
+                        </div>
+                    </div>
+                    {analysis?.hasData && (
+                        <div className="meta-deck">
+                            <div className="meta-card">
+                                <span className="meta-label">Investováno celkem</span>
+                                <span className="meta-value tabular-nums">{formatCurrency(analysis.totalInvested)}</span>
+                            </div>
+                            <div className="meta-card">
+                                <span className="meta-label">Aktuální hodnota</span>
+                                <span className="meta-value tabular-nums">{formatCurrency(analysis.currentValue)}</span>
+                                <span className="meta-label">Kumulativní P/L</span>
+                                <span className="meta-value tabular-nums" style={{ color: analysis.pl >= 0 ? 'var(--positive)' : 'var(--danger)' }}>{formatCurrency(analysis.pl)}</span>
+                            </div>
+                            <div className="meta-card">
+                                <span className="meta-label">XIRR scénáře</span>
+                                <span className="meta-value tabular-nums">{analysis.xirr !== null ? formatShortPercent(analysis.xirr) : '—'}</span>
+                                <span className="meta-label">Počet dokupů / defaultů</span>
+                                <span className="meta-value">{analysis.depositCount} · {analysis.crashCount}</span>
+                            </div>
+                        </div>
+                    )}
+                </section>
+            );
+        };
+        const SegmentSummary = ({ segment, total, weightedReturn }) => (
+            <div className="meta-deck" style={{ marginTop: '1.25rem' }}>
+                <div className="meta-card">
+                    <span className="meta-label">Investováno v {segment.label}</span>
+                    <span className="meta-value tabular-nums">{formatCurrency(total)}</span>
+                </div>
+                <div className="meta-card">
+                    <span className="meta-label">Vážené zhodnocení</span>
+                    <span className="meta-value tabular-nums">{formatPercent(weightedReturn)}</span>
+                </div>
+            </div>
+        );
+
+        const SegmentTable = ({ segment, funds, onAddFund, onUpdateFund, onRemoveFund, onResetSegment, onDemoSegment, portfolioTotal }) => {
+            const segmentTotal = funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0);
+            const weightedReturn = segmentTotal > 0
+                ? funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr) * parseRate(fund.returnStr), 0) / segmentTotal
+                : 0;
+
+            return (
+                <section className="card-section">
+                    <div className="card-header">
+                        <div>
+                            <span className="badge-pill">{segment.label}</span>
+                            <h2 className="card-header-title">Segment {segment.label}</h2>
+                            <p className="card-header-sub">Upravte předdefinované fondy, dokup po 1. roce a potenciální default.</p>
+                        </div>
+                        <div className="control-bar">
+                            <button className="btn btn-secondary" onClick={onDemoSegment}>Ukázka</button>
+                            <button className="btn btn-secondary" onClick={onResetSegment}>Vynulovat</button>
+                            <button className="btn btn-secondary" onClick={onAddFund}>Přidat fond</button>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fond</th>
+                                    <th style={{ minWidth: '140px' }}>Výnos p.a.</th>
+                                    <th style={{ minWidth: '160px' }}>Počáteční vklad</th>
+                                    <th style={{ minWidth: '160px' }}>Dokup po 1. roce</th>
+                                    <th style={{ minWidth: '140px' }}>Default (rok)</th>
+                                    <th style={{ minWidth: '140px' }}>Podíl ve skupině</th>
+                                    <th style={{ minWidth: '140px' }}>Podíl v portfoliu</th>
+                                    <th style={{ width: '60px' }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {funds.length === 0 && (
+                                    <tr>
+                                        <td colSpan="8" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--muted)' }}>
+                                            Přidejte fond pro tento segment.
+                                        </td>
+                                    </tr>
+                                )}
+                                {funds.map((fund) => {
+                                    const amount = parseMoney(fund.amountStr);
+                                    const segmentShare = segmentTotal > 0 ? amount / segmentTotal : 0;
+                                    const portfolioShare = portfolioTotal > 0 ? amount / portfolioTotal : 0;
+                                    return (
+                                        <tr key={fund.id}>
+                                            <td>
+                                                <input className="table-input" value={fund.name} onChange={(event) => onUpdateFund(fund.id, { name: event.target.value })} />
+                                            </td>
+                                            <td>
+                                                <PercentInput value={fund.returnStr} onChange={(value) => onUpdateFund(fund.id, { returnStr: value })} />
+                                            </td>
+                                            <td>
+                                                <MoneyInput value={fund.amountStr} onChange={(value) => onUpdateFund(fund.id, { amountStr: value })} />
+                                            </td>
+                                            <td>
+                                                <MoneyInput value={fund.topUpStr} onChange={(value) => onUpdateFund(fund.id, { topUpStr: value })} />
+                                            </td>
+                                            <td>
+                                                <select className="table-select" value={fund.crashYear} onChange={(event) => onUpdateFund(fund.id, { crashYear: event.target.value })}>
+                                                    <option value="0">Nikdy</option>
+                                                    {Array.from({ length: Y }, (_, index) => index + 1).map((year) => (
+                                                        <option key={year} value={String(year)}>Po {year}. roce</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                            <td className="tabular-nums">{formatPercent(segmentShare)}</td>
+                                            <td className="tabular-nums">{formatPercent(portfolioShare)}</td>
+                                            <td className="table-actions">
+                                                <button className="icon-button" onClick={() => onRemoveFund(fund.id)} title="Odebrat fond">×</button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    {segmentTotal > 0 && <SegmentSummary segment={segment} total={segmentTotal} weightedReturn={weightedReturn} />}
+                </section>
+            );
+        };
+
+        const ScenarioSummary = ({ analysis }) => (
+            <section className="card-section">
+                <div className="card-header">
+                    <div>
+                        <span className="badge-pill">Souhrn scénáře</span>
+                        <h2 className="card-header-title">Klíčové metriky</h2>
+                        <p className="card-header-sub">Výsledky reflektují jedinou kompozitní křivku se všemi vklady, dokupy i krizovými událostmi.</p>
+                    </div>
+                </div>
+                {analysis?.hasData ? (
+                    <Fragment>
+                        <div className="info-grid">
+                            <InfoCard title="Investováno celkem" value={formatCurrency(analysis.totalInvested)} />
+                            <InfoCard title="Aktuální hodnota" value={formatCurrency(analysis.currentValue)} />
+                            <InfoCard
+                                title="Kumulativní P/L"
+                                value={<span className={analysis.pl >= 0 ? 'highlight-positive' : 'highlight-negative'}>{formatCurrency(analysis.pl)}</span>}
+                                subValue={`(${formatPercent(analysis.plPercent)})`}
+                            />
+                            <InfoCard title="XIRR" value={analysis.xirr !== null ? formatPercent(analysis.xirr) : '—'} subValue={analysis.durationYears > 0 ? `Délka scénáře ${formatDuration(analysis.durationYears)}` : 'Čekáme na data'} />
+                        </div>
+                        <div className="meta-deck" style={{ marginTop: '1.75rem' }}>
+                            <div className="meta-card">
+                                <span className="meta-label">Počet dokupů</span>
+                                <span className="meta-value">{analysis.depositCount}</span>
+                            </div>
+                            <div className="meta-card">
+                                <span className="meta-label">Krizové události</span>
+                                <span className="meta-value">{analysis.crashSummary}</span>
+                                {analysis.totalCrashLoss > 0 && <span className="meta-label" style={{ color: 'var(--danger)', textTransform: 'none' }}>Dopad {formatCurrency(-analysis.totalCrashLoss)}</span>}
+                            </div>
+                            <div className="meta-card">
+                                <span className="meta-label">Časové rozpětí</span>
+                                <span className="meta-value">{analysis.startDate && analysis.endDate ? `${formatDate(analysis.startDate)} – ${formatDate(analysis.endDate)}` : '—'}</span>
+                            </div>
+                        </div>
+                    </Fragment>
+                ) : (
+                    <div className="note-block" style={{ marginTop: '1rem' }}>
+                        Zadejte alespoň jeden počáteční vklad nebo dokup, aby bylo možné spočítat scénář.
+                    </div>
+                )}
+            </section>
+        );
+        const ScenarioChart = ({ analysis }) => {
+            const containerRef = useRef(null);
+            const svgRef = useRef(null);
+            const dimensions = useResizeObserver(containerRef);
+            const [tooltip, setTooltip] = useState(null);
+
+            if (!analysis?.hasData) {
+                return (
+                    <section className="card-section">
+                        <div className="card-header">
+                            <div>
+                                <span className="badge-pill">Časová osa</span>
+                                <h2 className="card-header-title">Vývoj scénáře</h2>
+                                <p className="card-header-sub">Po zadání investic a událostí se zde zobrazí jediná křivka se všemi dopady.</p>
+                            </div>
+                        </div>
+                        <div className="note-block">Zadejte fondy, dokupy nebo krize, aby bylo možné vykreslit scénář.</div>
+                    </section>
+                );
+            }
+
+            const { timeline, markers, controlPoints } = analysis;
+            const height = 340;
+            const margin = { top: 32, right: 24, bottom: 56, left: 80 };
+            const fallbackWindowWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth || 0, 960) : 0;
+            const rawWidth =
+                dimensions.width ||
+                (containerRef.current ? containerRef.current.getBoundingClientRect().width : 0) ||
+                (svgRef.current ? svgRef.current.getBoundingClientRect().width : 0) ||
+                fallbackWindowWidth;
+            const width = Math.max(rawWidth, margin.left + margin.right + 120);
+            const plotWidth = Math.max(1, width - margin.left - margin.right);
+            const plotHeight = Math.max(1, height - margin.top - margin.bottom);
+
+            const startDate = timeline[0].date;
+            const endDate = timeline[timeline.length - 1].date;
+            const startTime = startDate.getTime();
+            const endTime = endDate.getTime();
+            const xRange = Math.max(1, endTime - startTime);
+            const xScale = (date) => margin.left + ((date.getTime() - startTime) / xRange) * plotWidth;
+
+            const values = timeline.map((point) => point.totalValue);
+            const maxValue = Math.max(...values, analysis.totalInvested) * 1.1 || 1;
+            const yScale = (value) => margin.top + plotHeight - (value / maxValue) * plotHeight;
+
+            const pathPoints = timeline.map((point) => ({ x: xScale(point.date), y: yScale(point.totalValue) }));
+            const markerPoints = markers.map((marker, index) => ({
+                ...marker,
+                key: `marker-${index}`,
+                x: xScale(marker.date),
+                y: yScale(marker.totalValue),
+                kind:
+                    marker.kind ||
+                    (marker.crashes && marker.crashes.length > 0
+                        ? marker.deposits && marker.deposits.length > 0
+                            ? 'mixed'
+                            : 'default'
+                        : 'deposit'),
+            }));
+            const controlGraphic = controlPoints.map((point, index) => ({
+                ...point,
+                key: `control-${index}`,
+                x: xScale(point.date),
+                y: yScale(point.totalValue),
+            }));
+
+            const showMarkerTooltip = (marker) => {
+                if (!marker) return;
+                const hasCrash = marker.crashes && marker.crashes.length > 0;
+                const hasDeposit = marker.deposits && marker.deposits.length > 0;
+                const preValue = hasCrash
+                    ? marker.valueBeforeCrashes ?? marker.valueAfterDeposits ?? marker.valueBeforeEvents ?? marker.totalValue
+                    : marker.valueBeforeEvents ?? marker.totalValue;
+                const postValue = hasCrash
+                    ? marker.valueAfterCrashes ?? marker.totalValue
+                    : marker.valueAfterDeposits ?? marker.totalValue;
+                setTooltip({
+                    type: 'marker',
+                    kind: marker.kind,
+                    x: marker.x,
+                    y: marker.y,
+                    date: marker.date,
+                    value: marker.totalValue,
+                    invested: marker.investedToDate,
+                    deposits: marker.deposits || [],
+                    crashes: marker.crashes || [],
+                    valueBefore: preValue,
+                    valueAfter: postValue,
+                    depositTotal: hasDeposit ? marker.depositTotal || 0 : 0,
+                    crashTotalLoss: hasCrash ? marker.crashTotalLoss || 0 : 0,
+                });
+            };
+
+            const yTicks = Array.from({ length: 5 }, (_, index) => (maxValue / 4) * index);
+            const xTicks = timeline.length <= 1
+                ? [startDate]
+                : timeline.filter((_, index) => index === 0 || index === timeline.length - 1 || index % Math.ceil(timeline.length / 4) === 0).map((point) => point.date);
+
+            const handleMouseMove = (event) => {
+                if (!svgRef.current) return;
+                const rect = svgRef.current.getBoundingClientRect();
+                const relativeX = event.clientX - rect.left;
+                const pointerX = Math.min(Math.max(relativeX, margin.left), width - margin.right);
+
+                let snappedMarker = null;
+                let smallestDistance = Infinity;
+                markerPoints.forEach((marker) => {
+                    const distance = Math.abs(marker.x - pointerX);
+                    if (distance < smallestDistance) {
+                        smallestDistance = distance;
+                        snappedMarker = marker;
+                    }
+                });
+                const markerSnapThreshold = Math.min(24, Math.max(12, plotWidth * 0.04));
+                if (snappedMarker && smallestDistance <= markerSnapThreshold) {
+                    showMarkerTooltip(snappedMarker);
+                    return;
+                }
+
+                const ratio = Math.min(Math.max((pointerX - margin.left) / plotWidth, 0), 1);
+                const targetTime = Math.min(Math.max(startTime + ratio * xRange, startTime), endTime);
+                let baseIndex = 0;
+                for (let i = 0; i < timeline.length; i += 1) {
+                    if (timeline[i].date.getTime() <= targetTime) {
+                        baseIndex = i;
+                    } else {
+                        break;
+                    }
+                }
+                const basePoint = timeline[baseIndex];
+                const nextPoint = timeline[Math.min(baseIndex + 1, timeline.length - 1)];
+                const targetDate = new Date(targetTime);
+
+                let value = basePoint.totalValue;
+                if (nextPoint && nextPoint !== basePoint && basePoint.snapshot) {
+                    const spanMs = nextPoint.date.getTime() - basePoint.date.getTime();
+                    if (spanMs > 0) {
+                        const clampedTime = Math.min(Math.max(targetTime, basePoint.date.getTime()), nextPoint.date.getTime());
+                        const years = diffInYears(basePoint.date, new Date(clampedTime));
+                        value = basePoint.snapshot.reduce((sum, state) => {
+                            if (state.status === 'active') {
+                                return sum + state.value * Math.pow(1 + state.rate, years);
+                            }
+                            return sum + state.value;
+                        }, 0);
+                    }
+                } else if (nextPoint && nextPoint !== basePoint) {
+                    const span = nextPoint.date.getTime() - basePoint.date.getTime();
+                    const clampedTime = Math.min(Math.max(targetTime, basePoint.date.getTime()), nextPoint.date.getTime());
+                    const interp = span > 0 ? (clampedTime - basePoint.date.getTime()) / span : 0;
+                    value = basePoint.totalValue + (nextPoint.totalValue - basePoint.totalValue) * interp;
+                }
+
+                setTooltip({
+                    type: 'line',
+                    x: xScale(targetDate),
+                    y: yScale(value),
+                    date: targetDate,
+                    value,
+                    invested: basePoint.investedToDate,
+                });
+            };
+
+            const handleMouseLeave = () => setTooltip(null);
+
+            const handleMarkerEnter = (marker) => {
+                showMarkerTooltip(marker);
+            };
+
+            const tooltipStyle = tooltip ? {
+                left: `${Math.min(width - 220, Math.max(margin.left, tooltip.x + 16))}px`,
+                top: `${Math.max(margin.top, tooltip.y + 16)}px`,
+            } : {};
+
+            return (
+                <section className="card-section">
+                    <div className="card-header">
+                        <div>
+                            <span className="badge-pill">Časová osa</span>
+                            <h2 className="card-header-title">Vývoj portfolia v čase</h2>
+                            <p className="card-header-sub">Zohledňuje všechny vklady, dokupy i defaulty v chronologickém pořadí s denním složeným úročením.</p>
+                        </div>
+                        <div className="meta-deck">
+                            <div className="meta-card">
+                                <span className="meta-label">Výnos p.a. (XIRR)</span>
+                                <span className="meta-value tabular-nums">{analysis.xirr !== null ? formatShortPercent(analysis.xirr) : '—'}</span>
+                            </div>
+                            <div className="meta-card">
+                                <span className="meta-label">Počet dokupů</span>
+                                <span className="meta-value">{analysis.depositCount}</span>
+                            </div>
+                            <div className="meta-card">
+                                <span className="meta-label">Defaulty</span>
+                                <span className="meta-value">{analysis.crashSummary}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="chart-container" ref={containerRef}>
+                        <svg ref={svgRef} width="100%" height={height} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+                            {yTicks.map((value) => (
+                                <g key={`y-${value}`}>
+                                    <line className="chart-grid-line" x1={margin.left} x2={width - margin.right} y1={yScale(value)} y2={yScale(value)} />
+                                    <text className="chart-axis-text" x={margin.left - 10} y={yScale(value) + 4} textAnchor="end">{formatCurrency(value)}</text>
+                                </g>
+                            ))}
+                            {xTicks.map((date) => (
+                                <text key={`x-${date.getTime()}`} className="chart-axis-text" x={xScale(date)} y={height - margin.bottom + 24} textAnchor="middle">{formatMonthYear(date)}</text>
+                            ))}
+                            <path d={createPath(pathPoints)} className="chart-line-accent" />
+                            {pathPoints.length > 0 && (
+                                <circle className="chart-dot" r="5" fill="var(--accent)" cx={pathPoints[0].x} cy={pathPoints[0].y} />
+                            )}
+                            {markerPoints.map((marker) => (
+                                <g key={marker.key} transform={`translate(${marker.x}, ${marker.y})`} onMouseEnter={() => handleMarkerEnter(marker)} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }}>
+                                    {marker.kind === 'deposit' && (
+                                        <>
+                                            <circle r="9" fill="rgba(77, 177, 200, 0.2)" stroke="var(--accent)" strokeWidth="2" />
+                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--primary)">+</text>
+                                        </>
+                                    )}
+                                    {marker.kind === 'default' && (
+                                        <>
+                                            <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="var(--danger-bg)" stroke="var(--danger)" strokeWidth="2" />
+                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--danger)">⚠︎</text>
+                                        </>
+                                    )}
+                                    {marker.kind === 'mixed' && (
+                                        <>
+                                            <rect x="-9" y="-9" width="18" height="18" transform="rotate(45)" fill="var(--danger-bg)" stroke="var(--danger)" strokeWidth="2" />
+                                            <circle r="9" fill="rgba(77, 177, 200, 0.22)" stroke="var(--accent)" strokeWidth="2" />
+                                            <text textAnchor="middle" y="4" fontSize="11" fontWeight="600" fill="var(--danger)">⚠︎</text>
+                                            <text textAnchor="middle" y="-8" fontSize="10" fontWeight="600" fill="var(--primary)">+</text>
+                                        </>
+                                    )}
+                                </g>
+                            ))}
+                            {controlGraphic.map((point) => (
+                                <g key={point.key} transform={`translate(${point.x}, ${point.y})`}>
+                                    <circle r="5" fill="var(--accent)" stroke="#fff" strokeWidth="2" />
+                                </g>
+                            ))}
+                            {tooltip && (
+                                <>
+                                    <line x1={tooltip.x} x2={tooltip.x} y1={margin.top} y2={height - margin.bottom} stroke="rgba(77, 177, 200, 0.45)" strokeDasharray="4 4" />
+                                    <circle className="chart-dot" r="6" fill="var(--accent)" cx={tooltip.x} cy={tooltip.y} />
+                                </>
+                            )}
+                        </svg>
+                        {tooltip && (
+                            <div className="tooltip show" style={tooltipStyle}>
+                                <div className="meta-label" style={{ textTransform: 'none', fontWeight: 600 }}>{formatDate(tooltip.date)}</div>
+                                <div className="meta-value" style={{ fontSize: '0.95rem' }}>{formatCurrency(tooltip.value)}</div>
+                                {tooltip.type === 'line' && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}</div>
+                                )}
+                                {tooltip.type === 'marker' && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>
+                                        Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.valueBefore !== undefined && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem' }}>
+                                        Hodnota před událostí: {formatCurrency(tooltip.valueBefore)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.valueAfter !== undefined && tooltip.valueAfter !== tooltip.valueBefore && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem' }}>
+                                        Hodnota po události: {formatCurrency(tooltip.valueAfter)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.depositTotal > 0 && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.6rem', color: 'var(--primary)' }}>
+                                        Součet dokupů: +{formatCurrency(tooltip.depositTotal)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.crashTotalLoss > 0 && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.45rem', color: 'var(--danger)' }}>
+                                        Ztráta v události: −{formatCurrency(tooltip.crashTotalLoss)}
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.deposits && tooltip.deposits.length > 0 && (
+                                    <div className="info-card-sub" style={{ marginTop: '0.6rem' }}>
+                                        <strong>Dokupy</strong>
+                                        <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
+                                            {tooltip.deposits.map((deposit, index) => (
+                                                <li key={`deposit-${index}`} style={{ marginBottom: '0.25rem' }}>
+                                                    {deposit.fundName}: {formatCurrency(deposit.amount)}{deposit.label ? ` · ${deposit.label}` : ''}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                {tooltip.type === 'marker' && tooltip.crashes && tooltip.crashes.length > 0 && (
+                                    <div className="info-card-sub" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.75rem' : '0.6rem', color: 'var(--danger)' }}>
+                                        <strong style={{ color: 'var(--danger)' }}>Defaulty</strong>
+                                        <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
+                                            {tooltip.crashes.map((crash, index) => (
+                                                <li key={`crash-${index}`} style={{ marginBottom: '0.25rem' }}>
+                                                    {crash.fundName}: −{formatCurrency(crash.loss || 0)}{crash.mode === 'haircut' && typeof crash.haircut === 'number' ? ` · Haircut ${formatPercent(crash.haircut)}` : ' · Na 0 %'}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    <div className="chart-marker-hints" role="note">
+                        <span className="chart-marker-hints-label">Legenda událostí</span>
+                        <div className="chart-marker-hints-items">
+                            <span className="chart-marker-hint">
+                                <span className="chart-marker-icon chart-marker-icon--deposit"><span>+</span></span>
+                                <span>Počáteční vklad / dokup</span>
+                            </span>
+                            <span className="chart-marker-hint">
+                                <span className="chart-marker-icon chart-marker-icon--default"><span>⚠︎</span></span>
+                                <span>Default na 0 % nebo haircut</span>
+                            </span>
+                            <span className="chart-marker-hint">
+                                <span className="chart-marker-icon chart-marker-icon--mixed">
+                                    <span className="chart-marker-icon-symbol">⚠︎</span>
+                                    <span className="chart-marker-icon-plus">+</span>
+                                </span>
+                                <span>Současně dokup i default</span>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        const AllocationPie = ({ analysis }) => {
+            const stages = Array.isArray(analysis?.allocationStages) ? analysis.allocationStages : [];
+            const availableStages = stages.filter((stage) => stage && stage.available);
+            const fallbackKey = availableStages.length > 0 ? availableStages[availableStages.length - 1].key : null;
+            const [view, setView] = useState(fallbackKey);
+            useEffect(() => {
+                if (!availableStages.length) return;
+                if (!view || !availableStages.some((stage) => stage.key === view)) {
+                    setView(availableStages[availableStages.length - 1].key);
+                }
+            }, [availableStages, view]);
+
+            if (!analysis?.hasData || availableStages.length === 0) {
+                return null;
+            }
+
+            const activeStage = availableStages.find((stage) => stage.key === view) || availableStages[availableStages.length - 1];
+            const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
+            const total = Number(activeStage?.totalValue) || 0;
+            const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
+            const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#6fa8dc', '#7ec4cf', '#8cc7a1', '#ffd166', '#f4b183', '#bb86fc'];
+            const outerRadius = 46;
+            const innerRadius = 28;
+            const degToRad = (value) => (value * Math.PI) / 180;
+            const containerRef = useRef(null);
+            const [tooltip, setTooltip] = useState(null);
+
+            useEffect(() => {
+                setTooltip(null);
+            }, [view]);
+
+            let angle = -90;
+            const segments = data.map((item, index) => {
+                const share = total > 0 ? item.value / total : 0;
+                const startAngle = angle;
+                const endAngle = angle + share * 360;
+                const largeArc = share > 0.5 ? 1 : 0;
+                const outerStartX = 50 + outerRadius * Math.cos(degToRad(startAngle));
+                const outerStartY = 50 + outerRadius * Math.sin(degToRad(startAngle));
+                const outerEndX = 50 + outerRadius * Math.cos(degToRad(endAngle));
+                const outerEndY = 50 + outerRadius * Math.sin(degToRad(endAngle));
+                const innerEndX = 50 + innerRadius * Math.cos(degToRad(endAngle));
+                const innerEndY = 50 + innerRadius * Math.sin(degToRad(endAngle));
+                const innerStartX = 50 + innerRadius * Math.cos(degToRad(startAngle));
+                const innerStartY = 50 + innerRadius * Math.sin(degToRad(startAngle));
+                angle = endAngle;
+                return {
+                    ...item,
+                    share,
+                    color: CHART_COLORS[index % CHART_COLORS.length],
+                    path: [
+                        `M ${outerStartX},${outerStartY}`,
+                        `A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${outerEndX},${outerEndY}`,
+                        `L ${innerEndX},${innerEndY}`,
+                        `A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${innerStartX},${innerStartY}`,
+                        'Z',
+                    ].join(' '),
+                };
+            });
+
+            const handleSegmentMove = (event, segment) => {
+                if (!containerRef.current) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                setTooltip({
+                    name: segment.name,
+                    value: segment.value,
+                    share: segment.share,
+                    x,
+                    y,
+                    width: rect.width,
+                    height: rect.height,
+                });
+            };
+
+            const handleSegmentLeave = () => setTooltip(null);
+
+            const tooltipStyle = tooltip
+                ? {
+                      left: Math.min(Math.max(tooltip.x + 16, 0), Math.max((tooltip.width || 0) - 180, 0)),
+                      top: Math.min(Math.max(tooltip.y + 16, 0), Math.max((tooltip.height || 0) - 120, 0)),
+                  }
+                : {};
+
+            const hasAllocations = total > 0 && segments.length > 0;
+
+            return (
+                <section className="card-section">
+                    <div className="card-header">
+                        <div>
+                            <span className="badge-pill">Alokace</span>
+                            <h2 className="card-header-title">Rozložení portfolia</h2>
+                            <p className="card-header-sub">
+                                Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
+                            </p>
+                        </div>
+                        <div className="pie-stage-controls">
+                            {availableStages.map((stage) => (
+                                <button
+                                    key={stage.key}
+                                    className={`btn btn-secondary ${stage.key === activeStage?.key ? 'active' : ''}`}
+                                    onClick={() => setView(stage.key)}
+                                    type="button"
+                                >
+                                    {stage.buttonLabel}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="responsive-grid-two">
+                        <div className="pie-chart-wrapper" ref={containerRef}>
+                            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
+                                <circle cx="50" cy="50" r="43" fill="rgba(77, 177, 200, 0.08)" stroke="rgba(77, 177, 200, 0.18)" strokeWidth="1.5" />
+                                {hasAllocations &&
+                                    segments.map((segment) => (
+                                        <path
+                                            key={segment.id}
+                                            d={segment.path}
+                                            fill={segment.color}
+                                            stroke="#fff"
+                                            strokeWidth="0.8"
+                                            className="pie-segment"
+                                            onMouseMove={(event) => handleSegmentMove(event, segment)}
+                                            onMouseLeave={handleSegmentLeave}
+                                        />
+                                    ))}
+                                <circle cx="50" cy="50" r="23" fill="#fff" stroke="rgba(207, 217, 227, 0.8)" strokeWidth="1.4" />
+                                <text x="50" y="46" textAnchor="middle" style={{ fontSize: '8px', fill: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Celkem</text>
+                                <text x="50" y="59" textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: 'var(--primary)' }} className="tabular-nums">
+                                    {formatCurrency(total)}
+                                </text>
+                            </svg>
+                            {tooltip && (
+                                <div className="tooltip show" style={tooltipStyle}>
+                                    <div className="meta-value" style={{ fontWeight: 600 }}>{tooltip.name}</div>
+                                    <div className="info-card-sub" style={{ marginTop: '0.35rem', color: 'var(--text)' }}>
+                                        {formatCurrency(tooltip.value)} · {formatPercent(tooltip.share)}
+                                    </div>
+                                </div>
+                            )}
+                            {!hasAllocations && (
+                                <div className="info-card-sub" style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                    Žádné aktivní fondy pro zvolený okamžik.
+                                </div>
+                            )}
+                        </div>
+                        <div className="pie-legend">
+                            {segments.map((segment) => (
+                                <div className="pie-legend-item" key={segment.id}>
+                                    <div className="pie-legend-name">
+                                        <span className="pie-legend-dot" style={{ background: segment.color }}></span>
+                                        {segment.name}
+                                    </div>
+                                    <div className="pie-legend-value tabular-nums">
+                                        {formatPercent(segment.share)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Notes = () => (
+            <section className="card-section">
+                <div className="card-header">
+                    <div>
+                        <span className="badge-pill">Poznámky</span>
+                        <h2 className="card-header-title">Vysvětlivky a doporučení</h2>
+                    </div>
+                </div>
+                <div className="note-block">
+                    <strong>Pořadí událostí:</strong> Vždy se nejprve dopočítá růst mezi uzly, poté se aplikují dokupy a nakonec případné defaulty. Události ve stejný den respektují pořadí: dokup → default.
+                </div>
+                <div className="note-block" style={{ marginTop: '1rem' }}>
+                    <strong>XIRR:</strong> Výkonnost vychází z peněžních toků všech vkladů a aktuální hodnoty na konci scénáře. Default se projeví až zůstatkem, nikoli okamžitým cash-flow.
+                </div>
+                <div className="note-block alert" style={{ marginTop: '1rem' }}>
+                    <strong>Upozornění:</strong> Scénář je ilustrativní a nezohledňuje poplatky, daně ani kurzové riziko. Výpočty předpokládají konstantní roční zhodnocení mezi událostmi.
+                </div>
+            </section>
+        );
+
+        function App() {
+            const [lastSaved, setLastSaved] = useState(null);
+            const [clientName, setClientName] = useState('');
+            const [funds, setFunds] = useState(() => getDefaultFunds());
+
+            const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+            useEffect(() => {
+                try {
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
+                            setFunds(ensureDefaultFunds(parsed.funds));
+                        } else {
+                            setFunds(getDefaultFunds());
+                        }
+                        if (typeof parsed.clientName === 'string') {
+                            setClientName(parsed.clientName);
+                        }
+                        showToast('Data byla úspěšně načtena.');
+                    }
+                    setLastSaved(getTimeString());
+                } catch (error) {
+                    console.error(error);
+                    showToast('Nepodařilo se načíst uložená data.', 'error');
+                }
+            }, []);
+
+            useEffect(() => {
+                try {
+                    const snapshot = { clientName, funds };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+                    setLastSaved(getTimeString());
+                } catch (error) {
+                    console.error(error);
+                }
+            }, [clientName, funds]);
+
+            const analysis = useMemo(() => {
+                const prepared = prepareScenarioInput(funds);
+                return analyzeScenario(prepared.funds, prepared.topUps, prepared.crashes);
+            }, [funds]);
+
+            const totalInitial = useMemo(() => funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0), [funds]);
+
+            const addFund = (segment) => {
+                setFunds((prev) => [...prev, createFund('Nový fond', 5, segment)]);
+            };
+
+            const updateFund = (id, patch) => {
+                setFunds((prev) => prev.map((fund) => (fund.id === id ? { ...fund, ...patch } : fund)));
+            };
+
+            const removeFund = (id) => {
+                setFunds((prev) => prev.filter((fund) => fund.id !== id));
+            };
+
+            const resetSegment = (segment) => {
+                setFunds((prev) => prev.map((fund) => (fund.segment === segment ? { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0' } : fund)));
+            };
+
+            const demoSegment = (segment) => {
+                const config = SEGMENT_CONFIG.find((item) => item.key === segment);
+                if (!config) return;
+                setFunds((prev) =>
+                    prev.map((fund) => {
+                        if (fund.segment !== segment) return fund;
+                        if (config.demo.includes(fund.name)) {
+                            return { ...fund, amountStr: '250000', topUpStr: '0', crashYear: '0' };
+                        }
+                        return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0' };
+                    }),
+                );
+                showToast('Segment byl naplněn ukázkovými hodnotami.');
+            };
+
+            const exportState = () => {
+                try {
+                    const prepared = prepareScenarioInput(funds);
+                    const exportPayload = {
+                        clientName,
+                        generatedAt: new Date().toISOString(),
+                        funds,
+                        scenarioInputs: prepared,
+                        scenario: analysis?.hasData ? analysis.exportSnapshot : null,
+                    };
+                    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const element = document.createElement('a');
+                    const sanitizedName = clientName.trim().replace(/\s+/g, '-').replace(/[^\w-]/g, '').toLowerCase();
+                    element.href = url;
+                    element.download = `${sanitizedName || 'scenario'}-${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    URL.revokeObjectURL(url);
+                    showToast('Scénář byl exportován.');
+                } catch (error) {
+                    console.error(error);
+                    showToast('Chyba při exportu souboru.', 'error');
+                }
+            };
+
+            const importState = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (loadEvent) => {
+                    try {
+                        const parsed = JSON.parse(loadEvent.target.result);
+                        if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
+                            setFunds(ensureDefaultFunds(parsed.funds));
+                        } else {
+                            setFunds(getDefaultFunds());
+                        }
+                        setClientName(typeof parsed.clientName === 'string' ? parsed.clientName : '');
+                        showToast('Scénář byl importován.');
+                    } catch (error) {
+                        console.error(error);
+                        showToast('Chyba při importu souboru.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            };
+
+            const resetAll = () => {
+                setFunds(getDefaultFunds());
+                setClientName('');
+                showToast('Scénář byl resetován.');
+            };
+
+            return (
+                <Fragment>
+                    <ReportHero lastSaved={lastSaved} clientName={clientName} onClientNameChange={setClientName} analysis={analysis} />
+                    <main>
+                        <div className="app-shell content-stack">
+                            <DataManagement onExport={exportState} onImport={importState} onReset={resetAll} analysis={analysis} />
+                            {SEGMENT_CONFIG.map((segment) => (
+                                <SegmentTable
+                                    key={segment.key}
+                                    segment={segment}
+                                    funds={funds.filter((fund) => fund.segment === segment.key)}
+                                    onAddFund={() => addFund(segment.key)}
+                                    onUpdateFund={updateFund}
+                                    onRemoveFund={removeFund}
+                                    onResetSegment={() => resetSegment(segment.key)}
+                                    onDemoSegment={() => demoSegment(segment.key)}
+                                    portfolioTotal={totalInitial}
+                                />
+                            ))}
+                            <ScenarioSummary analysis={analysis} />
+                            <ScenarioChart analysis={analysis} />
+                            <AllocationPie analysis={analysis} />
+                            <Notes />
+                        </div>
+                    </main>
+                    <footer>© {new Date().getFullYear()} FairLife · Scénář slouží pro interní účely a ilustrativní prezentace.</footer>
+                </Fragment>
+            );
+        }
+
+        const rootElement = document.getElementById('root');
+        if (!rootElement) {
+            throw new Error('Chybí kořenový prvek pro React aplikaci.');
+        }
+
+        try {
+            ReactDOM.createRoot(rootElement).render(<App />);
+        } catch (error) {
+            console.error('Nepodařilo se inicializovat aplikaci.', error);
+            rootElement.innerHTML = '<div class="app-error">Nepodařilo se načíst kalkulačku. Zkuste obnovit stránku nebo kontaktujte podporu.</div>';
+        }
+    </script>
+</body>
+</html>
