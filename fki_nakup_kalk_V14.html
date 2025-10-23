@@ -427,7 +427,13 @@
             box-shadow: var(--shadow);
             background: var(--surface);
         }
-        .summary-table { width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 0; }
+        .summary-table {
+            width: 100%;
+            min-width: 520px;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-variant-numeric: tabular-nums;
+        }
         .summary-table thead th {
             font-size: 0.72rem;
             letter-spacing: 0.18em;
@@ -444,7 +450,9 @@
             border-bottom: 1px solid var(--border);
             font-size: 0.95rem;
             color: var(--text);
+            vertical-align: middle;
         }
+        .summary-table tbody td.tabular-nums { white-space: nowrap; }
         .summary-table tbody tr:last-child td { border-bottom: none; }
         .summary-table tbody tr:hover { background: rgba(77, 177, 200, 0.06); }
         .text-right { text-align: right; }
@@ -2037,41 +2045,103 @@
             const containerRef = useRef(null);
             const [tooltip, setTooltip] = useState(null);
             const yearlyRows = useMemo(() => {
-                if (!Array.isArray(analysis?.timeline) || analysis.timeline.length === 0) {
+                if (!analysis?.hasData) {
                     return [];
                 }
-                const yearlyMap = new Map();
-                analysis.timeline.forEach((point) => {
-                    if (!(point?.date instanceof Date)) return;
-                    const year = point.date.getFullYear();
-                    const existing = yearlyMap.get(year);
-                    if (!existing) {
-                        yearlyMap.set(year, {
-                            year,
-                            startDate: point.date,
-                            endDate: point.date,
-                            startValue: point.totalValue || 0,
-                            endValue: point.totalValue || 0,
-                        });
-                        return;
+                const rawTimeline = Array.isArray(analysis.timeline) ? analysis.timeline : [];
+                const timeline = rawTimeline
+                    .filter((point) => point && point.date instanceof Date)
+                    .sort((a, b) => a.date - b.date);
+                if (timeline.length === 0) {
+                    return [];
+                }
+
+                const scenarioStart =
+                    analysis.startDate instanceof Date ? analysis.startDate : timeline[0].date;
+                const scenarioEnd =
+                    analysis.endDate instanceof Date
+                        ? analysis.endDate
+                        : timeline[timeline.length - 1].date;
+                if (!(scenarioStart instanceof Date) || !(scenarioEnd instanceof Date)) {
+                    return [];
+                }
+
+                const projectFromPoint = (point, targetDate) => {
+                    if (!point || !(point.date instanceof Date)) {
+                        return 0;
                     }
-                    if (point.date < existing.startDate) {
-                        existing.startDate = point.date;
-                        existing.startValue = point.totalValue || 0;
+                    const baseValue = Number(point.totalValue) || 0;
+                    const targetTime = targetDate.getTime();
+                    const baseTime = point.date.getTime();
+                    if (!Number.isFinite(targetTime) || targetTime <= baseTime) {
+                        return baseValue;
                     }
-                    if (point.date > existing.endDate) {
-                        existing.endDate = point.date;
-                        existing.endValue = point.totalValue || 0;
+                    const years = diffInYears(point.date, targetDate);
+                    if (!Number.isFinite(years) || years <= 0) {
+                        return baseValue;
                     }
-                });
-                return Array.from(yearlyMap.values())
-                    .sort((a, b) => a.year - b.year)
-                    .map((row) => ({
-                        year: row.year,
-                        startValue: row.startValue,
-                        endValue: row.endValue,
-                        gain: (row.endValue || 0) - (row.startValue || 0),
-                    }));
+                    const snapshot = Array.isArray(point.snapshot) ? point.snapshot : [];
+                    if (snapshot.length === 0) {
+                        return baseValue;
+                    }
+                    let total = 0;
+                    snapshot.forEach((state) => {
+                        const value = Number(state?.value) || 0;
+                        if (value <= 0) return;
+                        const status = state?.status;
+                        if (status === 'active') {
+                            const rate = Number(state?.rate) || 0;
+                            total += value * Math.pow(1 + rate, years);
+                        } else {
+                            total += value;
+                        }
+                    });
+                    return total;
+                };
+
+                const computeValueAt = (targetDate) => {
+                    if (!(targetDate instanceof Date)) {
+                        return 0;
+                    }
+                    const targetTime = targetDate.getTime();
+                    let basePoint = timeline[0];
+                    for (let i = 0; i < timeline.length; i += 1) {
+                        const point = timeline[i];
+                        if (point.date.getTime() <= targetTime + 1) {
+                            basePoint = point;
+                        } else {
+                            break;
+                        }
+                    }
+                    return projectFromPoint(basePoint, targetDate);
+                };
+
+                const firstYear = scenarioStart.getFullYear();
+                const finalYear = Math.max(scenarioEnd.getFullYear(), firstYear + Y - 1);
+                const rows = [];
+                for (let year = firstYear; year <= finalYear; year += 1) {
+                    const yearStart = year === firstYear ? scenarioStart : new Date(year, 0, 1);
+                    if (yearStart.getTime() > scenarioEnd.getTime()) {
+                        break;
+                    }
+                    const nextYearStart = new Date(year + 1, 0, 1);
+                    const yearEnd =
+                        year === finalYear || nextYearStart.getTime() > scenarioEnd.getTime()
+                            ? scenarioEnd
+                            : nextYearStart;
+                    if (yearEnd.getTime() <= yearStart.getTime()) {
+                        continue;
+                    }
+                    const startValue = computeValueAt(yearStart);
+                    const endValue = computeValueAt(yearEnd);
+                    rows.push({
+                        year,
+                        startValue,
+                        endValue,
+                        gain: endValue - startValue,
+                    });
+                }
+                return rows;
             }, [analysis]);
 
             useEffect(() => {
