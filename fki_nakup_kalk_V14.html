@@ -431,6 +431,7 @@
 
         const showToast = (message, type = 'success') => {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             toast.innerHTML = `<span>${message}</span>`;
@@ -438,7 +439,8 @@
             requestAnimationFrame(() => toast.classList.add('show'));
             setTimeout(() => {
                 toast.classList.remove('show');
-                toast.addEventListener('transitionend', () => toast.remove());
+                const removeToast = () => toast.remove();
+                toast.addEventListener('transitionend', removeToast, { once: true });
             }, 3000);
         };
 
@@ -1878,15 +1880,30 @@
         };
         const AllocationPie = ({ analysis }) => {
             const stages = Array.isArray(analysis?.allocationStages) ? analysis.allocationStages : [];
-            const availableStages = stages.filter((stage) => stage && stage.available);
+            const availableStages = useMemo(
+                () => stages.filter((stage) => stage && stage.available),
+                [stages],
+            );
             const fallbackKey = availableStages.length > 0 ? availableStages[availableStages.length - 1].key : null;
             const [view, setView] = useState(fallbackKey);
+            const containerRef = useRef(null);
+            const [tooltip, setTooltip] = useState(null);
+
             useEffect(() => {
-                if (!availableStages.length) return;
+                if (!availableStages.length) {
+                    if (view !== null) {
+                        setView(null);
+                    }
+                    return;
+                }
                 if (!view || !availableStages.some((stage) => stage.key === view)) {
                     setView(availableStages[availableStages.length - 1].key);
                 }
             }, [availableStages, view]);
+
+            useEffect(() => {
+                setTooltip(null);
+            }, [view, availableStages.length]);
 
             if (!analysis?.hasData || availableStages.length === 0) {
                 return null;
@@ -1900,12 +1917,6 @@
             const outerRadius = 46;
             const innerRadius = 28;
             const degToRad = (value) => (value * Math.PI) / 180;
-            const containerRef = useRef(null);
-            const [tooltip, setTooltip] = useState(null);
-
-            useEffect(() => {
-                setTooltip(null);
-            }, [view]);
 
             let angle = -90;
             const segments = data.map((item, index) => {
