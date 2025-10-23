@@ -1460,17 +1460,13 @@
             </div>
         );
 
-        const ReportHero = ({ lastSaved, clientName, onClientNameChange, analysis }) => {
-            const currentValue = analysis?.hasData ? formatCurrency(analysis.currentValue) : '—';
-            const totalInvested = analysis?.hasData ? formatCurrency(analysis.totalInvested) : '—';
-            const pl = analysis?.hasData ? formatCurrency(analysis.pl) : '—';
+        const ReportHero = ({ lastSaved, clientName, onClientNameChange }) => {
             return (
                 <header className="brand-header">
                     <div className="brand-backdrop"></div>
                     <div className="app-shell brand-header-inner">
                         <div>
                             <div className="brand-logo">Fair<span>Life</span></div>
-                            <span className="hero-kicker">FKI Nákup · Scénář</span>
                             <h1 className="hero-title">Investiční kalkulačka</h1>
                             <p className="hero-description">
                                 Vytvářejte kompletní scénáře nákupu fondů: počáteční alokace, plánované dokupy i krizové události v jednom sjednoceném reportovacím vizuálu.
@@ -1480,18 +1476,6 @@
                                     <span className="meta-label">Jméno klienta</span>
                                     <input className="input input-ghost" value={clientName} onChange={(event) => onClientNameChange(event.target.value)} placeholder="Např. Jana Nováková" />
                                 </label>
-                                <div className="meta-card">
-                                    <span className="meta-label">Naposledy uloženo</span>
-                                    <span className="meta-value">{lastSaved ? `Dnes ${lastSaved}` : '—'}</span>
-                                </div>
-                                <div className="meta-card">
-                                    <span className="meta-label">Aktuální hodnota</span>
-                                    <span className="meta-value tabular-nums">{currentValue}</span>
-                                    <span className="meta-label">Investováno celkem</span>
-                                    <span className="meta-value tabular-nums" style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600 }}>{totalInvested}</span>
-                                    <span className="meta-label">Kumulativní P/L</span>
-                                    <span className="meta-value tabular-nums" style={{ color: analysis?.pl >= 0 ? 'var(--positive)' : 'var(--danger)' }}>{pl}</span>
-                                </div>
                             </div>
                         </div>
                         <div className="hero-card-stack">
@@ -1515,7 +1499,7 @@
             );
         };
 
-        const DataManagement = ({ onExport, onImport, onReset, analysis }) => {
+        const DataManagement = ({ onExport, onImport, onReset }) => {
             const fileInputRef = useRef(null);
             return (
                 <section className="card-section">
@@ -1532,26 +1516,6 @@
                             <button className="btn btn-danger" onClick={onReset}>Resetovat scénář</button>
                         </div>
                     </div>
-                    {analysis?.hasData && (
-                        <div className="meta-deck">
-                            <div className="meta-card">
-                                <span className="meta-label">Investováno celkem</span>
-                                <span className="meta-value tabular-nums">{formatCurrency(analysis.totalInvested)}</span>
-                            </div>
-                            <div className="meta-card">
-                                <span className="meta-label">Aktuální hodnota</span>
-                                <span className="meta-value tabular-nums">{formatCurrency(analysis.currentValue)}</span>
-                                <span className="meta-label">Kumulativní P/L</span>
-                                <span className="meta-value tabular-nums" style={{ color: analysis.pl >= 0 ? 'var(--positive)' : 'var(--danger)' }}>{formatCurrency(analysis.pl)}</span>
-                            </div>
-                            <div className="meta-card">
-                                <span className="meta-label">XIRR scénáře</span>
-                                <span className="meta-value tabular-nums">{analysis.xirr !== null ? formatShortPercent(analysis.xirr) : '—'}</span>
-                                <span className="meta-label">Počet dokupů / propadů</span>
-                                <span className="meta-value">{analysis.depositCount} · {analysis.crashCount}</span>
-                            </div>
-                        </div>
-                    )}
                 </section>
             );
         };
