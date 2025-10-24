@@ -326,6 +326,203 @@
             flex-wrap: wrap;
             gap: 0.75rem 1.1rem;
         }
+        .chart-scrubber {
+            margin-top: 1.8rem;
+            padding: 1.4rem 1.6rem;
+            border-radius: 1.2rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .scrubber-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .scrubber-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .scrubber-title {
+            margin-top: 0.35rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+        .scrubber-date {
+            font-size: 0.9rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+        .scrubber-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .scrubber-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .scrubber-range {
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(207, 217, 227, 0.9);
+            transition: box-shadow 0.2s ease;
+        }
+        .scrubber-range:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
+        }
+        .scrubber-range::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 10px rgba(13, 44, 84, 0.18);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .scrubber-range::-webkit-slider-thumb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(13, 44, 84, 0.22);
+        }
+        .scrubber-range::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 10px rgba(13, 44, 84, 0.18);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .scrubber-range::-moz-range-thumb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(13, 44, 84, 0.22);
+        }
+        .scrubber-range::-moz-range-track {
+            background: transparent;
+            border: none;
+        }
+        .scrubber-range::-moz-range-progress {
+            background: var(--accent);
+            height: 6px;
+            border-radius: 999px;
+        }
+        .scrubber-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        .scrubber-scale span {
+            white-space: nowrap;
+        }
+        .scrubber-metrics {
+            display: grid;
+            gap: 1rem;
+        }
+        @media (min-width: 560px) {
+            .scrubber-metrics {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+        }
+        .scrubber-metric {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .scrubber-metric-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .scrubber-metric-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .scrubber-metric-sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .scrubber-events {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .scrubber-events-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .scrubber-event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .scrubber-event {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.9rem;
+            padding: 0.7rem 0.85rem;
+            border-radius: 0.9rem;
+            border: 1px solid var(--border);
+            background: #fff;
+            font-size: 0.85rem;
+        }
+        .scrubber-event-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .scrubber-event-primary {
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .scrubber-event-secondary {
+            font-size: 0.78rem;
+            color: inherit;
+        }
+        .scrubber-event-date {
+            font-size: 0.76rem;
+            color: var(--muted);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .scrubber-event--deposit {
+            border-color: rgba(77, 177, 200, 0.32);
+            background: rgba(77, 177, 200, 0.12);
+            color: var(--primary);
+        }
+        .scrubber-event--crash {
+            border-color: rgba(217, 75, 75, 0.35);
+            background: rgba(217, 75, 75, 0.16);
+            color: var(--danger);
+        }
         .chart-marker-hint {
             display: inline-flex;
             align-items: center;
@@ -635,6 +832,18 @@
         const formatShortPercent = (value) => value === null || value === undefined ? '—' : shortPercentFormatter.format(value);
         const formatDate = (date) => date instanceof Date ? dateFormatter.format(date) : '—';
         const formatMonthYear = (date) => date instanceof Date ? monthYearFormatter.format(date) : '—';
+        const formatSignedCurrency = (value) => {
+            if (!Number.isFinite(value)) return '—';
+            if (value === 0) return formatCurrency(0);
+            const absolute = formatCurrency(Math.abs(value));
+            return `${value > 0 ? '+' : '−'}${absolute}`;
+        };
+        const formatSignedPercent = (value) => {
+            if (!Number.isFinite(value)) return '—';
+            if (Math.abs(value) < 1e-8) return '0 %';
+            const absolute = formatShortPercent(Math.abs(value));
+            return `${value > 0 ? '+' : '−'}${absolute}`;
+        };
 
         const formatDuration = (years) => {
             if (!Number.isFinite(years) || years <= 0) return '0 let';
@@ -1742,6 +1951,27 @@
 
             const startDate = timeline[0].date;
             const endDate = timeline[timeline.length - 1].date;
+            const [scrubberYears, setScrubberYears] = useState(0);
+            const scenarioStartTime = startDate instanceof Date ? startDate.getTime() : null;
+            const scenarioEndTime = endDate instanceof Date ? endDate.getTime() : null;
+            const sliderMaxYears = useMemo(() => {
+                if (scenarioStartTime !== null && scenarioEndTime !== null) {
+                    const span = diffInYears(new Date(scenarioStartTime), new Date(scenarioEndTime));
+                    if (Number.isFinite(span) && span > 0) {
+                        const rounded = Math.max(1, Math.round(span));
+                        return Math.min(Y, rounded);
+                    }
+                }
+                return Y;
+            }, [scenarioStartTime, scenarioEndTime]);
+
+            useEffect(() => {
+                setScrubberYears((prev) => Math.min(prev, sliderMaxYears));
+            }, [sliderMaxYears]);
+
+            useEffect(() => {
+                setScrubberYears(0);
+            }, [scenarioStartTime]);
             const startTime = startDate.getTime();
             const endTime = endDate.getTime();
             const xRange = Math.max(1, endTime - startTime);
@@ -1765,6 +1995,199 @@
                             : 'default'
                         : 'deposit'),
             }));
+
+            const getBaseIndexForTime = (targetTime) => {
+                if (!Array.isArray(timeline) || timeline.length === 0) {
+                    return 0;
+                }
+                let baseIndex = 0;
+                for (let i = 0; i < timeline.length; i += 1) {
+                    const point = timeline[i];
+                    if (!point || !(point.date instanceof Date)) {
+                        continue;
+                    }
+                    if (point.date.getTime() <= targetTime + 1) {
+                        baseIndex = i;
+                    } else {
+                        break;
+                    }
+                }
+                return baseIndex;
+            };
+
+            const getBasePointForDate = (date) => {
+                if (!Array.isArray(timeline) || timeline.length === 0) {
+                    return null;
+                }
+                if (!(date instanceof Date)) {
+                    return timeline[0];
+                }
+                const index = getBaseIndexForTime(date.getTime());
+                return timeline[Math.min(Math.max(index, 0), timeline.length - 1)] || timeline[0];
+            };
+
+            const projectValueAt = (targetDate) => {
+                if (!(targetDate instanceof Date) || !Array.isArray(timeline) || timeline.length === 0) {
+                    return 0;
+                }
+                const targetTime = targetDate.getTime();
+                const baseIndex = getBaseIndexForTime(targetTime);
+                const basePoint = timeline[baseIndex];
+                if (!basePoint || !(basePoint.date instanceof Date)) {
+                    return 0;
+                }
+                const baseTime = basePoint.date.getTime();
+                const baseValue = Number(basePoint.totalValue) || 0;
+                if (!Number.isFinite(targetTime) || targetTime <= baseTime) {
+                    return baseValue;
+                }
+                const nextPoint = timeline[Math.min(baseIndex + 1, timeline.length - 1)];
+                if (!nextPoint || nextPoint === basePoint || !(nextPoint.date instanceof Date)) {
+                    return baseValue;
+                }
+                if (Array.isArray(basePoint.snapshot) && basePoint.snapshot.length > 0) {
+                    const clampedTime = Math.min(Math.max(targetTime, baseTime), nextPoint.date.getTime());
+                    const years = diffInYears(basePoint.date, new Date(clampedTime));
+                    if (!Number.isFinite(years) || years <= 0) {
+                        return baseValue;
+                    }
+                    return basePoint.snapshot.reduce((sum, state) => {
+                        if (!state) return sum;
+                        const value = Number(state.value) || 0;
+                        if (value <= 0) return sum;
+                        const status = state.status;
+                        const canGrow = status === 'active' && state.canGrow !== false;
+                        if (canGrow) {
+                            const rate = Number(state.rate) || 0;
+                            return sum + value * Math.pow(1 + rate, years);
+                        }
+                        return sum + value;
+                    }, 0);
+                }
+                const nextTime = nextPoint.date.getTime();
+                const span = nextTime - baseTime;
+                if (span <= 0) {
+                    return baseValue;
+                }
+                const clampedTime = Math.min(Math.max(targetTime, baseTime), nextTime);
+                const interp = (clampedTime - baseTime) / span;
+                const nextValue = Number(nextPoint.totalValue) || baseValue;
+                return baseValue + (nextValue - baseValue) * interp;
+            };
+
+            const getInvestedAt = (targetDate) => {
+                if (!(targetDate instanceof Date)) {
+                    return 0;
+                }
+                const basePoint = getBasePointForDate(targetDate);
+                return Number(basePoint?.investedToDate) || 0;
+            };
+
+            const sliderTargetDate = useMemo(() => {
+                if (scenarioStartTime === null) {
+                    return null;
+                }
+                const base = new Date(scenarioStartTime);
+                const projected = addYears(base, scrubberYears);
+                if (!(projected instanceof Date)) {
+                    return null;
+                }
+                if (scenarioEndTime !== null && projected.getTime() > scenarioEndTime) {
+                    return new Date(scenarioEndTime);
+                }
+                return projected;
+            }, [scenarioStartTime, scenarioEndTime, scrubberYears]);
+
+            const sliderRangeStart = useMemo(() => {
+                if (scenarioStartTime === null) {
+                    return null;
+                }
+                if (scrubberYears <= 0) {
+                    return null;
+                }
+                return addYears(new Date(scenarioStartTime), scrubberYears - 1);
+            }, [scenarioStartTime, scrubberYears]);
+
+            const sliderTargetTime = sliderTargetDate instanceof Date ? sliderTargetDate.getTime() : null;
+            const sliderRangeStartTime = sliderRangeStart instanceof Date ? sliderRangeStart.getTime() : null;
+
+            const sliderValue = useMemo(
+                () => (sliderTargetDate instanceof Date ? projectValueAt(sliderTargetDate) : 0),
+                [sliderTargetDate],
+            );
+            const sliderInvested = useMemo(
+                () => (sliderTargetDate instanceof Date ? getInvestedAt(sliderTargetDate) : 0),
+                [sliderTargetDate],
+            );
+            const sliderGain = sliderValue - sliderInvested;
+            const sliderGainPercent = sliderInvested > 0 ? sliderGain / sliderInvested : NaN;
+
+            const sliderScaleTicks = useMemo(() => {
+                const rawTicks = [0, 5, 10, sliderMaxYears];
+                const filtered = rawTicks.filter((tick) => tick >= 0 && tick <= sliderMaxYears);
+                const unique = Array.from(new Set(filtered));
+                unique.sort((a, b) => a - b);
+                return unique;
+            }, [sliderMaxYears]);
+
+            const sliderRangeStyle = useMemo(() => {
+                const progress = sliderMaxYears > 0 ? (scrubberYears / sliderMaxYears) * 100 : 0;
+                const clamped = Math.min(100, Math.max(0, progress));
+                const stop = clamped.toFixed(2);
+                return {
+                    background: `linear-gradient(90deg, var(--accent) 0%, var(--accent) ${stop}%, rgba(207, 217, 227, 0.9) ${stop}%, rgba(207, 217, 227, 0.9) 100%)`,
+                };
+            }, [scrubberYears, sliderMaxYears]);
+
+            const sliderDurationLabel = formatDuration(scrubberYears);
+            const sliderTitle = scrubberYears === 0 ? 'Začátek scénáře' : `Po ${scrubberYears}. roce`;
+            const sliderDateLabel = sliderTargetDate instanceof Date ? formatDate(sliderTargetDate) : '—';
+            const sliderYearLabel = sliderTargetDate instanceof Date ? sliderTargetDate.getFullYear() : '—';
+
+            const sliderEvents = useMemo(() => {
+                if (!Array.isArray(markers) || sliderTargetTime === null) {
+                    return [];
+                }
+                const items = [];
+                markers.forEach((marker, markerIndex) => {
+                    if (!marker || !(marker.date instanceof Date)) return;
+                    const markerTime = marker.date.getTime();
+                    if (markerTime > sliderTargetTime) return;
+                    if (sliderRangeStartTime !== null && markerTime <= sliderRangeStartTime) return;
+                    const dateLabel = formatDate(marker.date);
+                    (marker.deposits || []).forEach((deposit, depositIndex) => {
+                        const amount = Number(deposit?.amount) || 0;
+                        if (amount <= 0) return;
+                        const parts = [`+${formatCurrency(amount)}`];
+                        if (deposit?.label) parts.push(deposit.label);
+                        items.push({
+                            key: `slider-${markerIndex}-dep-${depositIndex}`,
+                            tone: 'deposit',
+                            primary: deposit?.fundName || 'Fond',
+                            secondary: parts.join(' · '),
+                            dateLabel,
+                        });
+                    });
+                    (marker.crashes || []).forEach((crash, crashIndex) => {
+                        if (!crash) return;
+                        const parts = [];
+                        const loss = Number(crash.loss) || 0;
+                        if (loss > 0) parts.push(`−${formatCurrency(loss)}`);
+                        const haircut = Number(crash.haircut);
+                        if (Number.isFinite(haircut) && haircut > 0) {
+                            parts.push(`Propad ${formatPercent(haircut)}`);
+                        }
+                        items.push({
+                            key: `slider-${markerIndex}-crash-${crashIndex}`,
+                            tone: 'crash',
+                            primary: crash.fundName || 'Fond',
+                            secondary: parts.length > 0 ? parts.join(' · ') : null,
+                            dateLabel,
+                        });
+                    });
+                });
+                return items;
+            }, [markers, sliderTargetTime, sliderRangeStartTime]);
 
             const showMarkerTooltip = (marker) => {
                 if (!marker) return;
@@ -1821,47 +2244,16 @@
 
                 const ratio = Math.min(Math.max((pointerX - margin.left) / plotWidth, 0), 1);
                 const targetTime = Math.min(Math.max(startTime + ratio * xRange, startTime), endTime);
-                let baseIndex = 0;
-                for (let i = 0; i < timeline.length; i += 1) {
-                    if (timeline[i].date.getTime() <= targetTime) {
-                        baseIndex = i;
-                    } else {
-                        break;
-                    }
-                }
-                const basePoint = timeline[baseIndex];
-                const nextPoint = timeline[Math.min(baseIndex + 1, timeline.length - 1)];
                 const targetDate = new Date(targetTime);
-
-                let value = basePoint.totalValue;
-                if (nextPoint && nextPoint !== basePoint && basePoint.snapshot) {
-                    const spanMs = nextPoint.date.getTime() - basePoint.date.getTime();
-                    if (spanMs > 0) {
-                        const clampedTime = Math.min(Math.max(targetTime, basePoint.date.getTime()), nextPoint.date.getTime());
-                        const years = diffInYears(basePoint.date, new Date(clampedTime));
-                        value = basePoint.snapshot.reduce((sum, state) => {
-                            if (!state) return sum;
-                            const canGrow = state.status === 'active' && state.canGrow !== false;
-                            if (canGrow) {
-                                return sum + state.value * Math.pow(1 + state.rate, years);
-                            }
-                            return sum + state.value;
-                        }, 0);
-                    }
-                } else if (nextPoint && nextPoint !== basePoint) {
-                    const span = nextPoint.date.getTime() - basePoint.date.getTime();
-                    const clampedTime = Math.min(Math.max(targetTime, basePoint.date.getTime()), nextPoint.date.getTime());
-                    const interp = span > 0 ? (clampedTime - basePoint.date.getTime()) / span : 0;
-                    value = basePoint.totalValue + (nextPoint.totalValue - basePoint.totalValue) * interp;
-                }
-
+                const value = projectValueAt(targetDate);
+                const invested = getInvestedAt(targetDate);
                 setTooltip({
                     type: 'line',
                     x: xScale(targetDate),
                     y: yScale(value),
                     date: targetDate,
                     value,
-                    invested: basePoint.investedToDate,
+                    invested,
                 });
             };
 
@@ -2001,6 +2393,88 @@
                                         </ul>
                                     </div>
                                 )}
+                            </div>
+                        )}
+                    </div>
+                    <div className="chart-scrubber">
+                        <div className="scrubber-header">
+                            <div>
+                                <span className="scrubber-label">Vybraný okamžik</span>
+                                <div className="scrubber-title">{sliderTitle}</div>
+                            </div>
+                            <div className="scrubber-date tabular-nums">{sliderDateLabel}</div>
+                        </div>
+                        <div className="scrubber-meta">
+                            <span>Čas od startu: {sliderDurationLabel}</span>
+                            <span>
+                                Rok: <span className="tabular-nums">{sliderYearLabel}</span>
+                            </span>
+                        </div>
+                        <div className="scrubber-control">
+                            <input
+                                type="range"
+                                min="0"
+                                max={sliderMaxYears}
+                                step="1"
+                                value={scrubberYears}
+                                onChange={(event) => setScrubberYears(Number(event.target.value))}
+                                className="scrubber-range"
+                                style={sliderRangeStyle}
+                                aria-label="Posuvník scénáře"
+                            />
+                            <div className="scrubber-scale">
+                                {sliderScaleTicks.map((tick) => (
+                                    <span key={`scrubber-tick-${tick}`}>{tick === 0 ? 'Start' : `${tick}. rok`}</span>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="scrubber-metrics">
+                            <div className="scrubber-metric">
+                                <div className="scrubber-metric-label">Hodnota portfolia</div>
+                                <div className="scrubber-metric-value tabular-nums">{formatCurrency(sliderValue)}</div>
+                                <div className="scrubber-metric-sub">K datu {sliderDateLabel}</div>
+                            </div>
+                            <div className="scrubber-metric">
+                                <div className="scrubber-metric-label">Investováno k datu</div>
+                                <div className="scrubber-metric-value tabular-nums">{formatCurrency(sliderInvested)}</div>
+                                <div className="scrubber-metric-sub">Celkem vloženo do té doby</div>
+                            </div>
+                            <div className="scrubber-metric">
+                                <div className="scrubber-metric-label">Zhodnocení</div>
+                                <div
+                                    className={`scrubber-metric-value tabular-nums ${
+                                        sliderGain >= 0 ? 'highlight-positive' : 'highlight-negative'
+                                    }`}
+                                >
+                                    {sliderInvested > 0 ? formatSignedPercent(sliderGainPercent) : '—'}
+                                </div>
+                                <div className="scrubber-metric-sub">
+                                    {sliderInvested > 0 ? (
+                                        <span className={sliderGain >= 0 ? 'highlight-positive' : 'highlight-negative'}>
+                                            {formatSignedCurrency(sliderGain)}
+                                        </span>
+                                    ) : (
+                                        'Bez vložených prostředků'
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        {sliderEvents.length > 0 && (
+                            <div className="scrubber-events">
+                                <div className="scrubber-events-label">Události v období</div>
+                                <ul className="scrubber-event-list">
+                                    {sliderEvents.map((event) => (
+                                        <li key={event.key} className={`scrubber-event scrubber-event--${event.tone}`}>
+                                            <div className="scrubber-event-content">
+                                                <span className="scrubber-event-primary">{event.primary}</span>
+                                                {event.secondary && (
+                                                    <span className="scrubber-event-secondary">{event.secondary}</span>
+                                                )}
+                                            </div>
+                                            <span className="scrubber-event-date tabular-nums">{event.dateLabel}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
                     </div>
