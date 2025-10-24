@@ -2019,9 +2019,29 @@
                 const crashLossTotal = Number.isFinite(analysis?.totalCrashLoss) ? analysis.totalCrashLoss : 0;
                 const crashCount = Number.isFinite(analysis?.crashCount) ? analysis.crashCount : 0;
                 const extraTopUps = Number.isFinite(analysis?.depositCount) ? analysis.depositCount : 0;
+                const capitalQualifier = extraTopUps > 0 ? ' (včetně dokupů)' : '';
 
-                const breakEvenPoint = sliderPoints.find(
-                    (point) => point.invested > 0 && point.totalValue + 0.5 >= point.invested,
+                const crashMarkers = markers
+                    .map((marker) => ({ marker, date: ensureDate(marker?.date) }))
+                    .filter((entry) =>
+                        entry.date && Array.isArray(entry.marker?.crashes) && entry.marker.crashes.length > 0,
+                    )
+                    .sort((a, b) => a.date - b.date);
+                const firstCrashMarkerEntry = crashMarkers[0] || null;
+                const firstCrashMarker = firstCrashMarkerEntry ? firstCrashMarkerEntry.marker : null;
+                const firstCrashDate = firstCrashMarkerEntry ? firstCrashMarkerEntry.date : null;
+
+                const timelinePoints = timeline
+                    .map((point) => {
+                        const date = ensureDate(point?.date);
+                        if (!date) return null;
+                        return { ...point, date };
+                    })
+                    .filter(Boolean);
+                const valueTolerance = 0.5;
+
+                const breakEvenPoint = timelinePoints.find(
+                    (point) => Number.isFinite(point?.investedToDate) && point.totalValue + valueTolerance >= point.investedToDate,
                 );
                 const finalPoint = sliderPoints[sliderPoints.length - 1];
 
@@ -2058,12 +2078,71 @@
                     lines.push('Scénář neobsahuje žádné plánované propady.');
                 }
 
-                if (breakEvenPoint && breakEvenPoint.invested > 0) {
+                let breakEvenHandled = false;
+
+                if (
+                    firstCrashMarker &&
+                    firstCrashDate &&
+                    Number.isFinite(firstCrashMarker?.investedToDate) &&
+                    Number.isFinite(
+                        firstCrashMarker?.valueAfterCrashes ?? firstCrashMarker?.totalValue,
+                    )
+                ) {
+                    const investedAtCrash = firstCrashMarker.investedToDate;
+                    const valueAfterCrash =
+                        Number(firstCrashMarker.valueAfterCrashes ?? firstCrashMarker.totalValue) || 0;
+                    const droppedBelow = valueAfterCrash + valueTolerance < investedAtCrash;
+                    if (droppedBelow) {
+                        const crashTime = firstCrashDate.getTime();
+                        let searchStart = timelinePoints.findIndex(
+                            (point) =>
+                                point.date.getTime() === crashTime &&
+                                Math.abs(point.totalValue - valueAfterCrash) <= valueTolerance * 2,
+                        );
+                        if (searchStart < 0) {
+                            searchStart = timelinePoints.findIndex((point) => point.date.getTime() >= crashTime);
+                        }
+                        const postCrashPoints = searchStart >= 0
+                            ? timelinePoints.slice(searchStart)
+                            : timelinePoints;
+                        const recoveryPoint = postCrashPoints.find(
+                            (point) =>
+                                Number.isFinite(point?.investedToDate) &&
+                                point.totalValue + valueTolerance >= point.investedToDate,
+                        );
+                        if (recoveryPoint) {
+                            const delay = describeDelay(recoveryPoint.date) || 'později';
+                            const crashPhrase = crashCount === 1 ? 'propadu fondu' : 'propadech fondů';
+                            lines.push(
+                                `Po ${crashPhrase} se portfolio na svůj vložený kapitál${capitalQualifier} vrací ${delay} (${formatDate(recoveryPoint.date)}).`,
+                            );
+                        } else {
+                            lines.push('Po propadech se portfolio do konce horizontu na vložený kapitál zatím nevrací.');
+                        }
+                        breakEvenHandled = true;
+                    } else if (crashCount > 0) {
+                        const crashPhrase = crashCount === 1 ? 'propadem fondu' : 'propady fondů';
+                        lines.push(
+                            `Díky výnosům před ${crashPhrase} zůstává hodnota portfolia i poté nad vloženým kapitálem${capitalQualifier}.`,
+                        );
+                        breakEvenHandled = true;
+                    }
+                }
+
+                if (!breakEvenHandled && breakEvenPoint && Number.isFinite(breakEvenPoint.investedToDate)) {
                     const delay = describeDelay(breakEvenPoint.date) || 'později';
                     lines.push(
-                        `Na vložený kapitál se portfolio vrací ${delay} (${formatDate(breakEvenPoint.date)}).`,
+                        `Na vložený kapitál${capitalQualifier} se portfolio vrací ${delay} (${formatDate(breakEvenPoint.date)}).`,
                     );
-                } else if (finalPoint && finalPoint.invested > 0 && finalPoint.totalValue + 0.5 < finalPoint.invested) {
+                    breakEvenHandled = true;
+                }
+
+                if (
+                    !breakEvenHandled &&
+                    finalPoint &&
+                    finalPoint.invested > 0 &&
+                    finalPoint.totalValue + valueTolerance < finalPoint.invested
+                ) {
                     lines.push('Do konce horizontu se portfolio na vložený kapitál zatím nevrací.');
                 }
 
