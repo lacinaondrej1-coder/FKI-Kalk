@@ -58,7 +58,7 @@
         details > summary::-webkit-details-marker { display: none; }
         details > summary .summary-arrow { transition: transform 0.2s ease; }
         details[open] > summary .summary-arrow { transform: rotate(90deg); }
-        #toast-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast-stack { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
         .toast {
             display: flex;
             align-items: center;
@@ -552,21 +552,20 @@
         @media print {
             body { background: #fff; }
             .card-section, .surface-card, .info-card, .pie-legend-item, .note-block { box-shadow: none !important; }
-            #toast-container, .tooltip { display: none !important; }
+            .toast-stack, .tooltip { display: none !important; }
             .btn { display: none !important; }
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    <div id="toast-container"></div>
 
     <script
         type="text/babel"
         data-presets="env,react"
         data-plugins="proposal-class-properties,proposal-object-rest-spread,proposal-optional-chaining,proposal-nullish-coalescing-operator"
     >
-        const { useState, useMemo, useEffect, useRef, Fragment } = React;
+        const { useState, useMemo, useEffect, useRef, Fragment, useCallback, useContext } = React;
 
         const BASE_CURRENCY = 'CZK';
         const Y = 15;
@@ -646,21 +645,66 @@
             if (months > 0) segments.push(`${months} ${months === 1 ? 'měsíc' : months < 5 ? 'měsíce' : 'měsíců'}`);
             return segments.join(' ');
         };
+        const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+        const ToastContext = React.createContext({ push: () => {} });
 
-        const showToast = (message, type = 'success') => {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<span>${message}</span>`;
-            container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.add('show'));
-            setTimeout(() => {
-                toast.classList.remove('show');
-                const removeToast = () => toast.remove();
-                toast.addEventListener('transitionend', removeToast, { once: true });
-            }, 3000);
+        const TOAST_DURATION_MS = 3200;
+        const TOAST_FADE_MS = 280;
+
+        const ToastProvider = ({ children }) => {
+            const [toasts, setToasts] = useState([]);
+            const timersRef = useRef(new Map());
+
+            const clearTimers = useCallback((id) => {
+                const timers = timersRef.current.get(id);
+                if (Array.isArray(timers)) {
+                    timers.forEach((handle) => clearTimeout(handle));
+                }
+                timersRef.current.delete(id);
+            }, []);
+
+            const removeToast = useCallback((id) => {
+                clearTimers(id);
+                setToasts((prev) => prev.filter((toast) => toast.id !== id));
+            }, [clearTimers]);
+
+            const push = useCallback((message, tone = 'success') => {
+                if (!message) return;
+                const id = randomId();
+                setToasts((prev) => [...prev, { id, message, tone, visible: true }]);
+                const hideTimer = setTimeout(() => {
+                    setToasts((prev) =>
+                        prev.map((toast) => (toast.id === id ? { ...toast, visible: false } : toast)),
+                    );
+                }, TOAST_DURATION_MS);
+                const removalTimer = setTimeout(() => removeToast(id), TOAST_DURATION_MS + TOAST_FADE_MS);
+                timersRef.current.set(id, [hideTimer, removalTimer]);
+            }, [removeToast]);
+
+            useEffect(() => () => {
+                timersRef.current.forEach((handles) => handles.forEach((handle) => clearTimeout(handle)));
+                timersRef.current.clear();
+            }, []);
+
+            return (
+                <ToastContext.Provider value={{ push }}>
+                    {children}
+                    <div className="toast-stack" aria-live="polite" aria-atomic="true">
+                        {toasts.map((toast) => (
+                            <div
+                                key={toast.id}
+                                className={`toast toast-${toast.tone} ${toast.visible ? 'show' : ''}`}
+                                role="status"
+                            >
+                                <span>{toast.message}</span>
+                            </div>
+                        ))}
+                    </div>
+                </ToastContext.Provider>
+            );
         };
+
+        const useToasts = () => useContext(ToastContext);
 
         const MoneyInput = ({ value, onChange, placeholder }) => {
             const [displayValue, setDisplayValue] = useState(value);
@@ -1430,6 +1474,67 @@
             });
 
             return result;
+        };
+
+        const loadScenarioFromStorage = () => {
+            if (typeof window === 'undefined' || !window.localStorage) {
+                return null;
+            }
+            const stored = window.localStorage.getItem(STORAGE_KEY);
+            if (!stored) {
+                return null;
+            }
+            const parsed = JSON.parse(stored);
+            return {
+                clientName: typeof parsed.clientName === 'string' ? parsed.clientName : '',
+                funds:
+                    Array.isArray(parsed.funds) && parsed.funds.length > 0
+                        ? ensureDefaultFunds(parsed.funds)
+                        : getDefaultFunds(),
+            };
+        };
+
+        const useScenarioState = (pushToast) => {
+            const [clientName, setClientName] = useState('');
+            const [funds, setFunds] = useState(getDefaultFunds);
+            const [lastSaved, setLastSaved] = useState(null);
+            const hydratedRef = useRef(false);
+
+            useEffect(() => {
+                if (hydratedRef.current) {
+                    return;
+                }
+                hydratedRef.current = true;
+                try {
+                    const snapshot = loadScenarioFromStorage();
+                    if (snapshot) {
+                        setClientName(snapshot.clientName);
+                        setFunds(snapshot.funds);
+                        pushToast?.('Data byla úspěšně načtena.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    pushToast?.('Nepodařilo se načíst uložená data.', 'error');
+                } finally {
+                    setLastSaved(getTimeString());
+                }
+            }, [pushToast]);
+
+            useEffect(() => {
+                try {
+                    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+                    if (!storage) {
+                        return;
+                    }
+                    const snapshot = { clientName, funds };
+                    storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+                    setLastSaved(getTimeString());
+                } catch (error) {
+                    console.error(error);
+                }
+            }, [clientName, funds]);
+
+            return { clientName, setClientName, funds, setFunds, lastSaved };
         };
 
         const SEGMENT_CONFIG = [
@@ -2392,43 +2497,8 @@
         );
 
         function App() {
-            const [lastSaved, setLastSaved] = useState(null);
-            const [clientName, setClientName] = useState('');
-            const [funds, setFunds] = useState(() => getDefaultFunds());
-
-            const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-
-            useEffect(() => {
-                try {
-                    const stored = localStorage.getItem(STORAGE_KEY);
-                    if (stored) {
-                        const parsed = JSON.parse(stored);
-                        if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
-                            setFunds(ensureDefaultFunds(parsed.funds));
-                        } else {
-                            setFunds(getDefaultFunds());
-                        }
-                        if (typeof parsed.clientName === 'string') {
-                            setClientName(parsed.clientName);
-                        }
-                        showToast('Data byla úspěšně načtena.');
-                    }
-                    setLastSaved(getTimeString());
-                } catch (error) {
-                    console.error(error);
-                    showToast('Nepodařilo se načíst uložená data.', 'error');
-                }
-            }, []);
-
-            useEffect(() => {
-                try {
-                    const snapshot = { clientName, funds };
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-                    setLastSaved(getTimeString());
-                } catch (error) {
-                    console.error(error);
-                }
-            }, [clientName, funds]);
+            const { push: pushToast } = useToasts();
+            const { clientName, setClientName, funds, setFunds, lastSaved } = useScenarioState(pushToast);
 
             const analysis = useMemo(() => {
                 const prepared = prepareScenarioInput(funds);
@@ -2437,19 +2507,19 @@
 
             const totalInitial = useMemo(() => funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0), [funds]);
 
-            const addFund = (segment) => {
+            const addFund = useCallback((segment) => {
                 setFunds((prev) => [...prev, createFund('Nový fond', 5, segment)]);
-            };
+            }, [setFunds]);
 
-            const updateFund = (id, patch) => {
+            const updateFund = useCallback((id, patch) => {
                 setFunds((prev) => prev.map((fund) => (fund.id === id ? { ...fund, ...patch } : fund)));
-            };
+            }, [setFunds]);
 
-            const removeFund = (id) => {
+            const removeFund = useCallback((id) => {
                 setFunds((prev) => prev.filter((fund) => fund.id !== id));
-            };
+            }, [setFunds]);
 
-            const resetSegment = (segment) => {
+            const resetSegment = useCallback((segment) => {
                 setFunds((prev) =>
                     prev.map((fund) =>
                         fund.segment === segment
@@ -2457,9 +2527,9 @@
                             : fund,
                     ),
                 );
-            };
+            }, [setFunds]);
 
-            const demoSegment = (segment) => {
+            const demoSegment = useCallback((segment) => {
                 const config = SEGMENT_CONFIG.find((item) => item.key === segment);
                 if (!config) return;
                 setFunds((prev) =>
@@ -2471,10 +2541,10 @@
                         return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'haircut', haircutStr: '50' };
                     }),
                 );
-                showToast('Segment byl naplněn ukázkovými hodnotami.');
-            };
+                pushToast('Segment byl naplněn ukázkovými hodnotami.');
+            }, [pushToast, setFunds]);
 
-            const exportState = () => {
+            const exportState = useCallback(() => {
                 try {
                     const prepared = prepareScenarioInput(funds);
                     const exportPayload = {
@@ -2494,14 +2564,14 @@
                     element.click();
                     document.body.removeChild(element);
                     URL.revokeObjectURL(url);
-                    showToast('Scénář byl exportován.');
+                    pushToast('Scénář byl exportován.');
                 } catch (error) {
                     console.error(error);
-                    showToast('Chyba při exportu souboru.', 'error');
+                    pushToast('Chyba při exportu souboru.', 'error');
                 }
-            };
+            }, [analysis, clientName, funds, pushToast]);
 
-            const importState = (event) => {
+            const importState = useCallback((event) => {
                 const file = event.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -2514,21 +2584,21 @@
                             setFunds(getDefaultFunds());
                         }
                         setClientName(typeof parsed.clientName === 'string' ? parsed.clientName : '');
-                        showToast('Scénář byl importován.');
+                        pushToast('Scénář byl importován.');
                     } catch (error) {
                         console.error(error);
-                        showToast('Chyba při importu souboru.', 'error');
+                        pushToast('Chyba při importu souboru.', 'error');
                     }
                 };
                 reader.readAsText(file);
                 event.target.value = '';
-            };
+            }, [pushToast, setClientName, setFunds]);
 
-            const resetAll = () => {
+            const resetAll = useCallback(() => {
                 setFunds(getDefaultFunds());
                 setClientName('');
-                showToast('Scénář byl resetován.');
-            };
+                pushToast('Scénář byl resetován.');
+            }, [pushToast, setClientName, setFunds]);
 
             return (
                 <Fragment>
@@ -2566,7 +2636,13 @@
         }
 
         try {
-            ReactDOM.createRoot(rootElement).render(<App />);
+            ReactDOM.createRoot(rootElement).render(
+                <React.StrictMode>
+                    <ToastProvider>
+                        <App />
+                    </ToastProvider>
+                </React.StrictMode>,
+            );
         } catch (error) {
             console.error('Nepodařilo se inicializovat aplikaci.', error);
             rootElement.innerHTML = '<div class="app-error">Nepodařilo se načíst kalkulačku. Zkuste obnovit stránku nebo kontaktujte podporu.</div>';
