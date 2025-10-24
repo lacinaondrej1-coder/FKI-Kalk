@@ -269,6 +269,67 @@
         .table-select { width: 100%; }
         .info-grid { display: grid; gap: 1.25rem; }
         @media (min-width: 520px) { .info-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } }
+        .timeline-slider { margin-top: 2.2rem; display: flex; flex-direction: column; gap: 1.15rem; }
+        .timeline-slider-header { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: flex-end; }
+        .timeline-slider-meta { display: flex; flex-direction: column; gap: 0.25rem; min-width: 160px; }
+        .timeline-slider-label { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+        .timeline-slider-value { font-size: 1.05rem; font-weight: 600; color: var(--primary); }
+        .timeline-slider-track {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(
+                90deg,
+                var(--accent) 0%,
+                var(--accent) var(--slider-progress, 0%),
+                rgba(13, 44, 84, 0.12) var(--slider-progress, 0%),
+                rgba(13, 44, 84, 0.12) 100%
+            );
+            outline: none;
+            cursor: pointer;
+            transition: box-shadow 0.2s ease;
+        }
+        .timeline-slider-track:focus-visible { box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.35); }
+        .timeline-slider-track:disabled { cursor: not-allowed; background: rgba(13, 44, 84, 0.12); opacity: 0.6; }
+        .timeline-slider-track::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(13, 44, 84, 0.25);
+            transition: transform 0.2s ease;
+        }
+        .timeline-slider-track::-webkit-slider-thumb:hover { transform: scale(1.08); }
+        .timeline-slider-track::-webkit-slider-thumb:active { transform: scale(1.12); }
+        .timeline-slider-track::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(13, 44, 84, 0.25);
+            transition: transform 0.2s ease;
+        }
+        .timeline-slider-track::-moz-range-thumb:hover { transform: scale(1.08); }
+        .timeline-slider-track::-moz-range-thumb:active { transform: scale(1.12); }
+        .timeline-slider-track::-moz-range-track {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(13, 44, 84, 0.12);
+        }
+        .timeline-slider-track::-moz-range-progress {
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+        .timeline-slider-scale { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); }
+        .timeline-slider-scale span { white-space: nowrap; }
+        .timeline-slider-invested { font-size: 0.88rem; color: var(--muted); }
         .info-card {
             border: 1px solid var(--border);
             border-radius: 1.25rem;
@@ -1788,29 +1849,156 @@
             );
         };
 
-        const ScenarioSummary = ({ analysis }) => (
-            <section className="card-section">
-                <div className="card-header">
-                    <div>
-                        <span className="badge-pill">Souhrn scénáře</span>
-                        <h2 className="card-header-title">Klíčové metriky</h2>
-                        <p className="card-header-sub">Průběžný přehled aktuální hodnoty a zhodnocení portfolia.</p>
-                    </div>
-                </div>
-                {analysis?.hasData ? (
-                    <Fragment>
-                        <div className="info-grid">
-                            <InfoCard title="Aktuální hodnota" value={formatCurrency(analysis.currentValue)} />
-                            <InfoCard title="XIRR" value={analysis.xirr !== null ? formatPercent(analysis.xirr) : '—'} subValue={analysis.durationYears > 0 ? `Délka scénáře ${formatDuration(analysis.durationYears)}` : 'Čekáme na data'} />
+        const ScenarioSummary = ({ analysis }) => {
+            const formatSignedCurrency = (value) => {
+                if (!Number.isFinite(value)) {
+                    return '—';
+                }
+                const absolute = Math.abs(value);
+                if (absolute < 0.5) {
+                    return formatCurrency(0);
+                }
+                const formatted = formatCurrency(absolute);
+                if (value > 0) return `+${formatted}`;
+                if (value < 0) return `−${formatted}`;
+                return formatted;
+            };
+
+            const timeline = Array.isArray(analysis?.timeline) ? analysis.timeline : [];
+            const analysisStartDate = analysis?.startDate instanceof Date ? analysis.startDate : null;
+            const baseDate = analysisStartDate || (timeline[0]?.date instanceof Date ? timeline[0].date : null);
+
+            const sliderPoints = useMemo(() => {
+                if (!timeline.length) {
+                    return [];
+                }
+                return timeline.map((point, index) => {
+                    const invested = Number.isFinite(point.investedToDate) ? point.investedToDate : 0;
+                    const totalValue = Number.isFinite(point.totalValue) ? point.totalValue : 0;
+                    const gain = totalValue - invested;
+                    const gainPercent = invested > 0 ? gain / invested : null;
+                    const elapsedYears = baseDate ? diffInYears(baseDate, point.date) : index;
+                    return {
+                        index,
+                        date: point.date,
+                        invested,
+                        totalValue,
+                        gain,
+                        gainPercent,
+                        elapsedYears,
+                    };
+                });
+            }, [timeline, baseDate]);
+
+            const firstActiveIndex = sliderPoints.findIndex((point) => point.invested > 0 || point.totalValue > 0);
+            const defaultIndex = firstActiveIndex >= 0 ? firstActiveIndex : 0;
+            const [selectedIndex, setSelectedIndex] = useState(() => defaultIndex);
+            const hasHydratedRef = useRef(false);
+
+            useEffect(() => {
+                if (!sliderPoints.length) {
+                    hasHydratedRef.current = false;
+                    setSelectedIndex(0);
+                    return;
+                }
+                setSelectedIndex((prev) => {
+                    let next = prev;
+                    if (!hasHydratedRef.current) {
+                        hasHydratedRef.current = true;
+                        next = defaultIndex;
+                    }
+                    if (!Number.isFinite(next)) {
+                        next = defaultIndex;
+                    }
+                    const clamped = Math.min(Math.max(next, 0), sliderPoints.length - 1);
+                    return clamped === prev ? prev : clamped;
+                });
+            }, [sliderPoints.length, defaultIndex]);
+
+            const hasData = Boolean(analysis?.hasData);
+            const sliderAvailable = sliderPoints.length > 0;
+            const activeIndex = sliderAvailable ? Math.min(Math.max(selectedIndex, 0), sliderPoints.length - 1) : 0;
+            const selectedPoint = sliderAvailable ? sliderPoints[activeIndex] : null;
+            const sliderDisabled = sliderPoints.length <= 1;
+            const sliderMax = Math.max(sliderPoints.length - 1, 0);
+            const sliderProgress = sliderPoints.length > 1 ? `${((activeIndex / (sliderPoints.length - 1)) * 100).toFixed(2)}%` : '100%';
+
+            const dateLabel = selectedPoint ? formatDate(selectedPoint.date) : '—';
+            const elapsedLabel = selectedPoint
+                ? selectedPoint.elapsedYears > 0.01
+                    ? formatDuration(selectedPoint.elapsedYears)
+                    : 'Začátek'
+                : '—';
+            const investedLabel = selectedPoint ? formatCurrency(selectedPoint.invested) : '—';
+            const totalValueLabel = selectedPoint ? formatCurrency(selectedPoint.totalValue) : '—';
+            const gainPercentLabel = selectedPoint && selectedPoint.gainPercent !== null ? formatPercent(selectedPoint.gainPercent) : '—';
+            const gainCurrencyLabel = selectedPoint ? formatSignedCurrency(selectedPoint.gain) : '—';
+            const startLabel = sliderAvailable ? formatDate(sliderPoints[0].date) : '—';
+            const endLabel = sliderAvailable ? formatDate(sliderPoints[sliderPoints.length - 1].date) : '—';
+
+            return (
+                <section className="card-section">
+                    <div className="card-header">
+                        <div>
+                            <span className="badge-pill">Souhrn scénáře</span>
+                            <h2 className="card-header-title">Klíčové metriky</h2>
+                            <p className="card-header-sub">Průběžný přehled aktuální hodnoty a zhodnocení portfolia.</p>
                         </div>
-                    </Fragment>
-                ) : (
-                    <div className="note-block" style={{ marginTop: '1rem' }}>
-                        Zadejte alespoň jeden počáteční vklad nebo dokup, aby bylo možné spočítat scénář.
                     </div>
-                )}
-            </section>
-        );
+                    {hasData ? (
+                        <Fragment>
+                            <div className="info-grid">
+                                <InfoCard title="Hodnota portfolia" value={totalValueLabel} subValue={`K datu ${dateLabel}`} />
+                                <InfoCard title="Zhodnocení" value={gainPercentLabel} subValue={`Zisk/ztráta ${gainCurrencyLabel}`} />
+                                <InfoCard
+                                    title="XIRR"
+                                    value={analysis.xirr !== null ? formatPercent(analysis.xirr) : '—'}
+                                    subValue={analysis.durationYears > 0 ? `Délka scénáře ${formatDuration(analysis.durationYears)}` : 'Čekáme na data'}
+                                />
+                            </div>
+                            {sliderAvailable && (
+                                <div className="timeline-slider">
+                                    <div className="timeline-slider-header">
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Datum</span>
+                                            <span className="timeline-slider-value tabular-nums">{dateLabel}</span>
+                                        </div>
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Uplynulý čas</span>
+                                            <span className="timeline-slider-value">{elapsedLabel}</span>
+                                        </div>
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Investováno k datu</span>
+                                            <span className="timeline-slider-value tabular-nums">{investedLabel}</span>
+                                        </div>
+                                    </div>
+                                    <input
+                                        className="timeline-slider-track"
+                                        type="range"
+                                        min={0}
+                                        max={sliderMax}
+                                        step={1}
+                                        value={activeIndex}
+                                        onChange={(event) => setSelectedIndex(Number(event.target.value))}
+                                        disabled={sliderDisabled}
+                                        style={{ '--slider-progress': sliderProgress }}
+                                    />
+                                    <div className="timeline-slider-scale">
+                                        <span>{startLabel}</span>
+                                        <span>{endLabel}</span>
+                                    </div>
+                                    <div className="timeline-slider-invested">Posuňte pro zobrazení vývoje portfolia v čase.</div>
+                                </div>
+                            )}
+                        </Fragment>
+                    ) : (
+                        <div className="note-block" style={{ marginTop: '1rem' }}>
+                            Zadejte alespoň jeden počáteční vklad nebo dokup, aby bylo možné spočítat scénář.
+                        </div>
+                    )}
+                </section>
+            );
+        };
         const ScenarioChart = ({ analysis }) => {
             const containerRef = useRef(null);
             const svgRef = useRef(null);
