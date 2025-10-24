@@ -853,6 +853,7 @@
             let topUpCount = 0;
             let crashCount = 0;
             const crashBreakdown = { propad: 0 };
+            const MIN_HAIRCUT = 0.0005;
 
             fundMap.forEach((fund) => {
                 const initialAmount = parseMoney(fund.amountStr);
@@ -898,6 +899,9 @@
                 if (fund.startDate instanceof Date && date < fund.startDate) return;
                 const entry = ensureEntry(date);
                 const haircut = clamp(parsePercentValue(crash.haircutStr), 0, 1);
+                if (haircut <= MIN_HAIRCUT) {
+                    return;
+                }
                 entry.crashes.push({
                     type: 'default',
                     fundId: fund.id,
@@ -996,6 +1000,7 @@
                     rate: Number.isFinite(fund.rate) ? fund.rate : 0,
                     value: 0,
                     status: 'pending',
+                    canGrow: false,
                     hadDeposit: false,
                 });
             });
@@ -1005,7 +1010,7 @@
                 const years = diffInYears(from, to);
                 if (years <= 0) return;
                 fundStates.forEach((state) => {
-                    if (state.status === 'active') {
+                    if (state.canGrow && state.status === 'active') {
                         state.value *= Math.pow(1 + state.rate, years);
                     }
                 });
@@ -1025,6 +1030,7 @@
                     value: state.value,
                     rate: state.rate,
                     status: state.status,
+                    canGrow: state.canGrow,
                 }));
 
             const EPSILON = 0.005;
@@ -1079,6 +1085,7 @@
                         if (!state) return;
                         if (state.status !== 'frozen' && state.status !== 'zeroed') {
                             state.status = 'active';
+                            state.canGrow = true;
                         }
                         state.hadDeposit = true;
                         state.value += deposit.amount;
@@ -1106,8 +1113,13 @@
                         if (!state || !state.hadDeposit) return;
                         const before = state.value;
                         if (before <= 0) return;
-                        state.value = state.value * (1 - clamp(crash.haircut, 0, 1));
+                        const haircut = clamp(crash.haircut, 0, 1);
+                        if (haircut <= MIN_HAIRCUT) {
+                            return;
+                        }
+                        state.value = state.value * (1 - haircut);
                         state.status = state.value <= EPSILON ? 'zeroed' : 'frozen';
+                        state.canGrow = false;
                         const after = state.value;
                         const loss = Math.max(0, before - after);
                         if (loss > 0) {
@@ -1828,7 +1840,9 @@
                         const clampedTime = Math.min(Math.max(targetTime, basePoint.date.getTime()), nextPoint.date.getTime());
                         const years = diffInYears(basePoint.date, new Date(clampedTime));
                         value = basePoint.snapshot.reduce((sum, state) => {
-                            if (state.status === 'active') {
+                            if (!state) return sum;
+                            const canGrow = state.status === 'active' && state.canGrow !== false;
+                            if (canGrow) {
                                 return sum + state.value * Math.pow(1 + state.rate, years);
                             }
                             return sum + state.value;
@@ -2088,7 +2102,8 @@
                         const value = Number(state?.value) || 0;
                         if (value <= 0) return;
                         const status = state?.status;
-                        if (status === 'active') {
+                        const canGrow = status === 'active' && state?.canGrow !== false;
+                        if (canGrow) {
                             const rate = Number(state?.rate) || 0;
                             total += value * Math.pow(1 + rate, years);
                         } else {
