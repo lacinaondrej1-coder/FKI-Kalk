@@ -1107,6 +1107,7 @@
                     status: 'pending',
                     canGrow: false,
                     hadDeposit: false,
+                    locked: false,
                 });
             });
 
@@ -1136,6 +1137,7 @@
                     rate: state.rate,
                     status: state.status,
                     canGrow: state.canGrow,
+                    locked: state.locked,
                 }));
 
             const EPSILON = 0.005;
@@ -1188,9 +1190,12 @@
                     entry.deposits.forEach((deposit) => {
                         const state = fundStates.get(deposit.fundId);
                         if (!state) return;
-                        if (state.status !== 'frozen' && state.status !== 'zeroed') {
+                        if (!state.locked) {
                             state.status = 'active';
                             state.canGrow = true;
+                        } else {
+                            state.status = state.value <= EPSILON ? 'zeroed' : 'frozen';
+                            state.canGrow = false;
                         }
                         state.hadDeposit = true;
                         state.value += deposit.amount;
@@ -1225,6 +1230,7 @@
                         state.value = state.value * (1 - haircut);
                         state.status = state.value <= EPSILON ? 'zeroed' : 'frozen';
                         state.canGrow = false;
+                        state.locked = true;
                         const after = state.value;
                         const loss = Math.max(0, before - after);
                         if (loss > 0) {
@@ -1348,7 +1354,8 @@
                 cashFlows.push({ amount: finalValue, date: scenarioEnd });
             }
 
-            const xirr = calculateXIRR(cashFlows);
+            const normalizedCashFlows = normalizeCashFlows(cashFlows);
+            const xirr = calculateXIRR(normalizedCashFlows);
             const pl = finalValue - totalInvested;
             const plPercent = totalInvested > 0 ? pl / totalInvested : 0;
             const durationYears = scenarioStart ? diffInYears(scenarioStart, scenarioEnd) : 0;
@@ -1433,7 +1440,15 @@
                 finalAllocations,
                 exportSnapshot,
                 allocationStages,
+                cashFlows: normalizedCashFlows,
             };
+        }
+
+        function normalizeCashFlows(cashFlows) {
+            if (!Array.isArray(cashFlows)) return [];
+            return cashFlows
+                .filter((cf) => cf && cf.date instanceof Date && Number.isFinite(cf.amount) && cf.amount !== 0)
+                .sort((a, b) => a.date - b.date);
         }
 
         function calculateXIRR(cashFlows) {
@@ -1872,23 +1887,62 @@
                 if (!timeline.length) {
                     return [];
                 }
-                return timeline.map((point, index) => {
-                    const invested = Number.isFinite(point.investedToDate) ? point.investedToDate : 0;
-                    const totalValue = Number.isFinite(point.totalValue) ? point.totalValue : 0;
+                const originDate = baseDate instanceof Date ? baseDate : timeline[0]?.date;
+                if (!(originDate instanceof Date)) {
+                    return [];
+                }
+                const finalDate = timeline[timeline.length - 1]?.date instanceof Date
+                    ? timeline[timeline.length - 1].date
+                    : originDate;
+                const totalYears = Math.max(0, Math.ceil(diffInYears(originDate, finalDate)));
+                const flows = Array.isArray(analysis?.cashFlows) ? analysis.cashFlows : [];
+                const sanitizedFlows = normalizeCashFlows(flows);
+
+                const locatePoint = (targetDate) => {
+                    let candidate = timeline[0];
+                    for (let i = 0; i < timeline.length; i += 1) {
+                        const point = timeline[i];
+                        if (!(point.date instanceof Date)) continue;
+                        if (point.date.getTime() <= targetDate.getTime()) {
+                            candidate = point;
+                        } else {
+                            break;
+                        }
+                    }
+                    return candidate;
+                };
+
+                return Array.from({ length: totalYears + 1 }, (_, year) => {
+                    const rawTarget = year === 0 ? originDate : addYears(originDate, year);
+                    const targetDate = rawTarget instanceof Date && rawTarget < finalDate ? rawTarget : finalDate;
+                    const basePoint = locatePoint(targetDate) || timeline[0];
+                    const invested = Number.isFinite(basePoint?.investedToDate) ? basePoint.investedToDate : 0;
+                    const totalValue = Number.isFinite(basePoint?.totalValue) ? basePoint.totalValue : 0;
                     const gain = totalValue - invested;
                     const gainPercent = invested > 0 ? gain / invested : null;
-                    const elapsedYears = baseDate ? diffInYears(baseDate, point.date) : index;
+                    const elapsedYears = diffInYears(originDate, targetDate);
+
+                    const flowsForPoint = sanitizedFlows.filter(
+                        (flow) => flow.date instanceof Date && flow.date.getTime() <= targetDate.getTime() && flow.amount < 0,
+                    );
+                    if (totalValue > 0) {
+                        flowsForPoint.push({ amount: totalValue, date: targetDate });
+                    }
+                    const pointXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
+
                     return {
-                        index,
-                        date: point.date,
+                        index: year,
+                        year,
+                        date: targetDate,
                         invested,
                         totalValue,
                         gain,
                         gainPercent,
                         elapsedYears,
+                        xirr: pointXirr,
                     };
                 });
-            }, [timeline, baseDate]);
+            }, [timeline, baseDate, analysis?.cashFlows]);
 
             const firstActiveIndex = sliderPoints.findIndex((point) => point.invested > 0 || point.totalValue > 0);
             const defaultIndex = firstActiveIndex >= 0 ? firstActiveIndex : 0;
@@ -1917,24 +1971,31 @@
 
             const hasData = Boolean(analysis?.hasData);
             const sliderAvailable = sliderPoints.length > 0;
-            const activeIndex = sliderAvailable ? Math.min(Math.max(selectedIndex, 0), sliderPoints.length - 1) : 0;
+            const sliderMaxIndex = sliderAvailable ? sliderPoints.length - 1 : 0;
+            const activeIndex = sliderAvailable ? Math.min(Math.max(selectedIndex, 0), sliderMaxIndex) : 0;
             const selectedPoint = sliderAvailable ? sliderPoints[activeIndex] : null;
             const sliderDisabled = sliderPoints.length <= 1;
             const sliderMax = Math.max(sliderPoints.length - 1, 0);
-            const sliderProgress = sliderPoints.length > 1 ? `${((activeIndex / (sliderPoints.length - 1)) * 100).toFixed(2)}%` : '100%';
+            const sliderProgress = sliderMax > 0 ? `${((activeIndex / sliderMax) * 100).toFixed(2)}%` : '0%';
 
             const dateLabel = selectedPoint ? formatDate(selectedPoint.date) : '—';
             const elapsedLabel = selectedPoint
-                ? selectedPoint.elapsedYears > 0.01
-                    ? formatDuration(selectedPoint.elapsedYears)
-                    : 'Začátek'
+                ? selectedPoint.year === 0
+                    ? 'Začátek'
+                    : formatDuration(selectedPoint.elapsedYears)
                 : '—';
             const investedLabel = selectedPoint ? formatCurrency(selectedPoint.invested) : '—';
             const totalValueLabel = selectedPoint ? formatCurrency(selectedPoint.totalValue) : '—';
             const gainPercentLabel = selectedPoint && selectedPoint.gainPercent !== null ? formatPercent(selectedPoint.gainPercent) : '—';
             const gainCurrencyLabel = selectedPoint ? formatSignedCurrency(selectedPoint.gain) : '—';
-            const startLabel = sliderAvailable ? formatDate(sliderPoints[0].date) : '—';
-            const endLabel = sliderAvailable ? formatDate(sliderPoints[sliderPoints.length - 1].date) : '—';
+            const startLabel = sliderAvailable ? 'Rok 0' : '—';
+            const endLabel = sliderAvailable ? `Rok ${sliderPoints[sliderPoints.length - 1].year}` : '—';
+            const xirrValue = selectedPoint?.xirr ?? null;
+            const xirrDurationLabel = selectedPoint
+                ? selectedPoint.year === 0
+                    ? 'Začátek scénáře'
+                    : `K ${formatDuration(selectedPoint.elapsedYears)}`
+                : 'Čekáme na data';
 
             return (
                 <section className="card-section">
@@ -1952,17 +2013,21 @@
                                 <InfoCard title="Zhodnocení" value={gainPercentLabel} subValue={`Zisk/ztráta ${gainCurrencyLabel}`} />
                                 <InfoCard
                                     title="XIRR"
-                                    value={analysis.xirr !== null ? formatPercent(analysis.xirr) : '—'}
-                                    subValue={analysis.durationYears > 0 ? `Délka scénáře ${formatDuration(analysis.durationYears)}` : 'Čekáme na data'}
+                                    value={xirrValue !== null ? formatPercent(xirrValue) : '—'}
+                                    subValue={xirrDurationLabel}
                                 />
                             </div>
                             {sliderAvailable && (
-                                <div className="timeline-slider">
-                                    <div className="timeline-slider-header">
-                                        <div className="timeline-slider-meta">
-                                            <span className="timeline-slider-label">Datum</span>
-                                            <span className="timeline-slider-value tabular-nums">{dateLabel}</span>
-                                        </div>
+                                    <div className="timeline-slider">
+                                        <div className="timeline-slider-header">
+                                            <div className="timeline-slider-meta">
+                                                <span className="timeline-slider-label">Rok horizontu</span>
+                                                <span className="timeline-slider-value">{selectedPoint ? selectedPoint.year : '—'}</span>
+                                            </div>
+                                            <div className="timeline-slider-meta">
+                                                <span className="timeline-slider-label">Datum</span>
+                                                <span className="timeline-slider-value tabular-nums">{dateLabel}</span>
+                                            </div>
                                         <div className="timeline-slider-meta">
                                             <span className="timeline-slider-label">Uplynulý čas</span>
                                             <span className="timeline-slider-value">{elapsedLabel}</span>
@@ -1987,7 +2052,7 @@
                                         <span>{startLabel}</span>
                                         <span>{endLabel}</span>
                                     </div>
-                                    <div className="timeline-slider-invested">Posuňte pro zobrazení vývoje portfolia v čase.</div>
+                                    <div className="timeline-slider-invested">Posuňte pro zobrazení vývoje portfolia rok po roce.</div>
                                 </div>
                             )}
                         </Fragment>
