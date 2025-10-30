@@ -1993,16 +1993,34 @@
                     const targetDate = rawTarget instanceof Date && rawTarget < finalDate ? rawTarget : finalDate;
                     const basePoint = locatePoint(targetDate) || timeline[0];
                     const invested = Number.isFinite(basePoint?.investedToDate) ? basePoint.investedToDate : 0;
-                    const totalValue = Number.isFinite(basePoint?.totalValue) ? basePoint.totalValue : 0;
-                    const gain = totalValue - invested;
-                    const gainPercent = invested > 0 ? gain / invested : null;
+                    const basePointDate = basePoint?.date instanceof Date ? basePoint.date : originDate;
                     const elapsedYears = diffInYears(originDate, targetDate);
+                    const yearsFromBase = Math.max(0, diffInYears(basePointDate, targetDate));
+                    const snapshot = Array.isArray(basePoint?.snapshot) ? basePoint.snapshot : null;
+                    let projectedTotal = Number.isFinite(basePoint?.totalValue) ? basePoint.totalValue : 0;
+
+                    if (yearsFromBase > 0 && snapshot) {
+                        projectedTotal = snapshot.reduce((accumulator, state) => {
+                            if (!state) return accumulator;
+                            const baseValue = Number.isFinite(state.value) ? state.value : 0;
+                            if (baseValue <= 0) return accumulator;
+                            const rate = Number.isFinite(state.rate) ? state.rate : 0;
+                            const canGrow = state.status === 'active' && state.canGrow !== false;
+                            const grownValue = canGrow ? baseValue * Math.pow(1 + rate, yearsFromBase) : baseValue;
+                            return accumulator + grownValue;
+                        }, 0);
+                    }
+
+                    projectedTotal = Number.isFinite(projectedTotal) ? Math.max(projectedTotal, 0) : 0;
+
+                    const gain = projectedTotal - invested;
+                    const gainPercent = invested > 0 ? gain / invested : null;
 
                     const flowsForPoint = sanitizedFlows.filter(
                         (flow) => flow.date instanceof Date && flow.date.getTime() <= targetDate.getTime() && flow.amount < 0,
                     );
-                    if (totalValue > 0) {
-                        flowsForPoint.push({ amount: totalValue, date: targetDate });
+                    if (projectedTotal > 0) {
+                        flowsForPoint.push({ amount: projectedTotal, date: targetDate });
                     }
                     const pointXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
 
@@ -2011,7 +2029,7 @@
                         year,
                         date: targetDate,
                         invested,
-                        totalValue,
+                        totalValue: projectedTotal,
                         gain,
                         gainPercent,
                         elapsedYears,
@@ -2020,286 +2038,6 @@
                 });
             }, [timeline, baseDate, analysis?.cashFlows]);
 
-            const narrativeLines = useMemo(() => {
-                if (!analysis?.hasData || sliderPoints.length === 0) {
-                    return [];
-                }
-                const origin = baseDate instanceof Date ? baseDate : sliderPoints[0]?.date;
-                if (!(origin instanceof Date)) {
-                    return [];
-                }
-
-                const ensureDate = (value) => {
-                    if (value instanceof Date) return value;
-                    const parsed = value ? new Date(value) : null;
-                    return parsed && Number.isFinite(parsed.getTime()) ? parsed : null;
-                };
-
-                const describeDelay = (target) => {
-                    const date = ensureDate(target);
-                    if (!date) return null;
-                    const years = diffInYears(origin, date);
-                    if (!Number.isFinite(years)) return null;
-                    if (years <= 0.02) return 'hned na začátku';
-                    return `za ${formatDuration(years)}`;
-                };
-
-                const describeMoment = (target) => {
-                    const date = ensureDate(target);
-                    if (!date) return null;
-                    const delay = describeDelay(date);
-                    if (!delay) return null;
-                    const dateLabel = formatDate(date);
-                    return dateLabel ? `${delay} (${dateLabel})` : delay;
-                };
-
-                const formatNameList = (names) => {
-                    const filtered = (names || []).filter(Boolean);
-                    if (filtered.length === 0) return '';
-                    if (filtered.length === 1) return filtered[0];
-                    if (filtered.length === 2) return `${filtered[0]} a ${filtered[1]}`;
-                    return `${filtered.slice(0, -1).join(', ')} a ${filtered[filtered.length - 1]}`;
-                };
-
-                const markers = Array.isArray(analysis?.markers) ? analysis.markers : [];
-                const deposits = [];
-                const crashes = [];
-
-                markers.forEach((marker) => {
-                    const markerDate = ensureDate(marker?.date);
-                    if (!markerDate) return;
-                    if (Array.isArray(marker?.deposits)) {
-                        marker.deposits.forEach((deposit) => {
-                            const amount = Number.isFinite(deposit?.amount) ? deposit.amount : 0;
-                            if (amount <= 0) return;
-                            deposits.push({
-                                type: deposit?.type || 'deposit',
-                                amount,
-                                date: markerDate,
-                                fundName: deposit?.fundName || null,
-                            });
-                        });
-                    }
-                    if (Array.isArray(marker?.crashes)) {
-                        marker.crashes.forEach((crash) => {
-                            const loss = Number.isFinite(crash?.loss) ? crash.loss : 0;
-                            crashes.push({
-                                date: markerDate,
-                                loss,
-                                fundName: crash?.fundName || null,
-                                marker,
-                            });
-                        });
-                    }
-                });
-
-                deposits.sort((a, b) => a.date - b.date);
-                crashes.sort((a, b) => a.date - b.date);
-
-                const startDeposits = deposits.filter((event) => event.type === 'start');
-                const topUpDeposits = deposits.filter((event) => event.type !== 'start');
-
-                let initialDate = null;
-                let latestInitialDate = null;
-                const initialTotal = startDeposits.reduce((sum, event) => {
-                    if (!initialDate || event.date < initialDate) {
-                        initialDate = event.date;
-                    }
-                    if (!latestInitialDate || event.date > latestInitialDate) {
-                        latestInitialDate = event.date;
-                    }
-                    return sum + event.amount;
-                }, 0);
-
-                const firstTopUp = topUpDeposits[0] || null;
-                const lastTopUp = topUpDeposits.length > 0 ? topUpDeposits[topUpDeposits.length - 1] : null;
-                const topUpTotal = topUpDeposits.reduce((sum, event) => sum + event.amount, 0);
-
-                const firstCrash = crashes.length > 0 ? crashes[0] : null;
-                const crashLossTotal = Number.isFinite(analysis?.totalCrashLoss) ? analysis.totalCrashLoss : 0;
-                const crashCount = Number.isFinite(analysis?.crashCount) ? analysis.crashCount : 0;
-                const extraTopUps = Number.isFinite(analysis?.depositCount) ? analysis.depositCount : 0;
-                const capitalQualifier = extraTopUps > 0 ? ' (včetně dokupů)' : '';
-
-                const crashMarkers = markers
-                    .map((marker) => ({ marker, date: ensureDate(marker?.date) }))
-                    .filter((entry) =>
-                        entry.date && Array.isArray(entry.marker?.crashes) && entry.marker.crashes.length > 0,
-                    )
-                    .sort((a, b) => a.date - b.date);
-                const firstCrashMarkerEntry = crashMarkers[0] || null;
-                const firstCrashMarker = firstCrashMarkerEntry ? firstCrashMarkerEntry.marker : null;
-
-                const worstCrashEntry = crashMarkers.reduce(
-                    (worst, entry) => {
-                        const totalLoss = Array.isArray(entry.marker?.crashes)
-                            ? entry.marker.crashes.reduce(
-                                (sum, crash) => sum + (Number.isFinite(crash?.loss) ? crash.loss : 0),
-                                0,
-                            )
-                            : 0;
-                        if (!worst || totalLoss > worst.totalLoss + 0.5) {
-                            return {
-                                totalLoss,
-                                date: entry.date,
-                                marker: entry.marker,
-                            };
-                        }
-                        return worst;
-                    },
-                    null,
-                );
-
-                const timelinePoints = timeline
-                    .map((point) => {
-                        const date = ensureDate(point?.date);
-                        if (!date) return null;
-                        return { ...point, date };
-                    })
-                    .filter(Boolean);
-                const valueTolerance = 0.5;
-
-                const finalPoint = sliderPoints[sliderPoints.length - 1];
-                const totalInvestedAmount = finalPoint?.invested ?? analysis?.totalInvested ?? 0;
-
-                const lowestPoint = timelinePoints.reduce((lowest, point) => {
-                    if (!point) return lowest;
-                    if (!lowest) return point;
-                    return point.totalValue < lowest.totalValue ? point : lowest;
-                }, null);
-
-                const droppedBelowInvested = timelinePoints.some(
-                    (point) =>
-                        Number.isFinite(point?.investedToDate) &&
-                        point.investedToDate > 0 &&
-                        point.totalValue + valueTolerance < point.investedToDate,
-                );
-
-                const lines = [];
-
-                if (initialTotal > 0) {
-                    const firstDateLabel = initialDate ? formatDate(initialDate) : null;
-                    let line = `Na začátku scénáře investujete ${formatCurrency(initialTotal)}`;
-                    if (firstDateLabel) {
-                        line += ` (${firstDateLabel})`;
-                    }
-                    line += '.';
-                    if (startDeposits.length > 1) {
-                        const lastDateLabel = latestInitialDate && latestInitialDate.getTime() !== initialDate?.getTime()
-                            ? ` až do ${formatDate(latestInitialDate)}`
-                            : '';
-                        line += ` Počáteční kapitál rozkládáte do ${startDeposits.length} fondů${lastDateLabel ? lastDateLabel : ''}.`;
-                    }
-                    lines.push(line);
-                } else if (topUpDeposits.length > 0) {
-                    const firstTopUpMoment = describeMoment(firstTopUp?.date) || 'později';
-                    lines.push(
-                        `Scénář začíná bez počátečního vkladu; první prostředky doplňujete ${firstTopUpMoment} ve výši ${formatCurrency(firstTopUp?.amount || 0)}.`,
-                    );
-                }
-
-                if (topUpDeposits.length > 0) {
-                    const firstTopUpMoment = describeMoment(firstTopUp?.date) || 'později';
-                    const lastTopUpMoment = lastTopUp && lastTopUp.date && lastTopUp !== firstTopUp
-                        ? describeMoment(lastTopUp.date)
-                        : null;
-                    const countLabel = topUpDeposits.length === 1
-                        ? 'v jednom dokupu'
-                        : `ve ${topUpDeposits.length} dokupech`;
-                    let line = `Během horizontu přidáváte dalších ${formatCurrency(topUpTotal)} ${countLabel}.`;
-                    line += ` První proběhne ${firstTopUpMoment}.`;
-                    if (lastTopUpMoment) {
-                        line += ` Poslední přichází ${lastTopUpMoment}.`;
-                    }
-                    line += ` Celkem tak investujete ${formatCurrency(totalInvestedAmount)}${capitalQualifier}.`;
-                    lines.push(line);
-                } else if (totalInvestedAmount > 0) {
-                    lines.push(`Další dokupy neplánujete a celková investice zůstává na ${formatCurrency(totalInvestedAmount)}.`);
-                }
-
-                if (crashCount > 0 && firstCrash) {
-                    const crashLabel = crashCount === 1 ? 'propad' : 'propady';
-                    const crashVerb = crashCount === 1 ? 'ubírá' : 'ubírají';
-                    const firstCrashMoment = describeMoment(firstCrash.date) || 'později';
-                    const firstCrashFunds = firstCrashMarker?.crashes
-                        ? formatNameList(firstCrashMarker.crashes.map((crash) => crash?.fundName))
-                        : '';
-                    const crashLossLabel = formatCurrency(crashLossTotal);
-                    let line = `Portfolio zažívá první ${crashLabel} ${firstCrashMoment}`;
-                    if (firstCrashFunds) {
-                        line += ` na fondech ${firstCrashFunds}`;
-                    }
-                    line += ` a ${crashLabel} celkově ${crashVerb} ${crashLossLabel}.`;
-                    lines.push(line);
-
-                    if (worstCrashEntry && worstCrashEntry.totalLoss > 0 && worstCrashEntry.date) {
-                        const worstMoment = describeMoment(worstCrashEntry.date) || 'později';
-                        const worstFunds = worstCrashEntry.marker?.crashes
-                            ? formatNameList(worstCrashEntry.marker.crashes.map((crash) => crash?.fundName))
-                            : '';
-                        let worstLine = `Největší propad nastává ${worstMoment}`;
-                        if (worstFunds) {
-                            worstLine += ` na fondech ${worstFunds}`;
-                        }
-                        worstLine += ` a ubírá ${formatCurrency(worstCrashEntry.totalLoss)} z hodnoty portfolia.`;
-                        lines.push(worstLine);
-                    }
-                } else if (crashCount === 0) {
-                    lines.push('Scénář neobsahuje žádné plánované propady fondů.');
-                }
-
-                if (lowestPoint && Number.isFinite(lowestPoint.investedToDate)) {
-                    const lowestDateLabel = formatDate(lowestPoint.date);
-                    const lowestDiff = lowestPoint.totalValue - lowestPoint.investedToDate;
-                    const diffLabel = formatSignedCurrency(lowestDiff);
-                    const investedLabel = formatCurrency(lowestPoint.investedToDate);
-                    let line = `Nejnižší hodnota portfolia klesá na ${formatCurrency(lowestPoint.totalValue)}`;
-                    if (lowestDateLabel) {
-                        line += ` (${lowestDateLabel})`;
-                    }
-                    line += ` při vloženém kapitálu ${investedLabel}${capitalQualifier}, což znamená ${diffLabel} vůči vloženým prostředkům.`;
-                    lines.push(line);
-                }
-
-                if (droppedBelowInvested) {
-                    const recoveryPoint = timelinePoints.find((point) =>
-                        Number.isFinite(point?.investedToDate) &&
-                        point.totalValue + valueTolerance >= point.investedToDate,
-                    );
-                    if (recoveryPoint) {
-                        const recoveryMoment = describeMoment(recoveryPoint.date) || 'později';
-                        lines.push(
-                            `Po propadech se portfolio na vložený kapitál${capitalQualifier} vrací ${recoveryMoment}.`,
-                        );
-                    } else {
-                        lines.push('Do konce horizontu se portfolio na vložený kapitál zatím nevrací.');
-                    }
-                } else if (totalInvestedAmount > 0) {
-                    if (crashCount > 0) {
-                        lines.push(
-                            `Ani propady nesrazí hodnotu portfolia pod vložený kapitál${capitalQualifier}; zůstává nad ním po celou dobu scénáře.`,
-                        );
-                    } else {
-                        lines.push(
-                            `Hodnota portfolia zůstává po celou dobu nad vloženým kapitálem${capitalQualifier}.`,
-                        );
-                    }
-                }
-
-                if (finalPoint) {
-                    const finalDateLabel = formatDate(finalPoint.date);
-                    const gainLabel = formatSignedCurrency(finalPoint.gain);
-                    const gainPercentLabel = finalPoint.gainPercent !== null ? formatPercent(finalPoint.gainPercent) : '—';
-                    const xirrLabel = finalPoint.xirr !== null ? formatPercent(finalPoint.xirr) : null;
-                    let line = `Na konci investičního horizontu (${finalDateLabel}) má portfolio hodnotu ${formatCurrency(finalPoint.totalValue)}, což představuje ${gainLabel} (${gainPercentLabel}) vůči vloženým prostředkům${capitalQualifier}.`;
-                    if (xirrLabel) {
-                        line += ` Tomu odpovídá XIRR ${xirrLabel}.`;
-                    }
-                    lines.push(line);
-                }
-
-                return lines.filter(Boolean);
-            }, [analysis, sliderPoints, baseDate, timeline]);
 
             const firstActiveIndex = sliderPoints.findIndex((point) => point.invested > 0 || point.totalValue > 0);
             const defaultIndex = firstActiveIndex >= 0 ? firstActiveIndex : 0;
@@ -2410,14 +2148,6 @@
                                         <span>{endLabel}</span>
                                     </div>
                                     <div className="timeline-slider-invested">Posuňte pro zobrazení vývoje portfolia rok po roce.</div>
-                                </div>
-                            )}
-                            {narrativeLines.length > 0 && (
-                                <div className="timeline-narrative">
-                                    <div className="timeline-narrative-title">Scénář v kostce</div>
-                                    {narrativeLines.map((line, index) => (
-                                        <p key={index} className="timeline-narrative-text">{line}</p>
-                                    ))}
                                 </div>
                             )}
                         </Fragment>
