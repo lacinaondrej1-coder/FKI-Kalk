@@ -1180,6 +1180,7 @@
                     name: fund.name,
                     rate: Number.isFinite(fund.rate) ? fund.rate : 0,
                     value: 0,
+                    invested: 0,
                     status: 'pending',
                     canGrow: false,
                     hadDeposit: false,
@@ -1210,6 +1211,7 @@
                 Array.from(fundStates.values()).map((state) => ({
                     id: state.id,
                     value: state.value,
+                    invested: state.invested,
                     rate: state.rate,
                     status: state.status,
                     canGrow: state.canGrow,
@@ -1274,6 +1276,7 @@
                             state.canGrow = false;
                         }
                         state.hadDeposit = true;
+                        state.invested += deposit.amount;
                         state.value += deposit.amount;
                         investedSoFar += deposit.amount;
                         entryDepositTotal += deposit.amount;
@@ -1533,6 +1536,8 @@
                 .filter((cf) => cf && cf.date instanceof Date && Number.isFinite(cf.amount) && cf.amount !== 0)
                 .sort((a, b) => a.date - b.date);
             if (flows.length < 2) return null;
+            const uniqueTimes = new Set(flows.map((cf) => cf.date.getTime()));
+            if (uniqueTimes.size < 2) return null;
             const hasPositive = flows.some((cf) => cf.amount > 0);
             const hasNegative = flows.some((cf) => cf.amount < 0);
             if (!hasPositive || !hasNegative) return null;
@@ -1940,6 +1945,35 @@
             );
         };
 
+        const projectSnapshotToHorizon = (snapshot, yearsForward) => {
+            if (!Array.isArray(snapshot) || snapshot.length === 0) {
+                return { total: 0, weightedRate: null };
+            }
+            const years = Number.isFinite(yearsForward) && yearsForward > 0 ? yearsForward : 0;
+            let total = 0;
+            let investedNumerator = 0;
+            let investedDenominator = 0;
+            snapshot.forEach((state) => {
+                if (!state) return;
+                const baseValue = Number.isFinite(state.value) ? state.value : 0;
+                const invested = Number.isFinite(state.invested) ? state.invested : 0;
+                if (baseValue <= 0 && invested <= 0) return;
+                const rate = Number.isFinite(state.rate) ? state.rate : 0;
+                const isActive = state.status === 'active' && state.canGrow !== false;
+                if (baseValue > 0) {
+                    const contribution = isActive ? baseValue * Math.pow(1 + rate, years) : baseValue;
+                    total += contribution;
+                }
+                if (invested > 0) {
+                    investedDenominator += invested;
+                    const effectiveRate = isActive ? rate : 0;
+                    investedNumerator += invested * effectiveRate;
+                }
+            });
+            const weightedRate = investedDenominator > 0 ? investedNumerator / investedDenominator : null;
+            return { total, weightedRate };
+        };
+
         const ScenarioSummary = ({ analysis }) => {
             const formatSignedCurrency = (value) => {
                 if (!Number.isFinite(value)) {
@@ -1994,24 +2028,27 @@
                     const basePoint = locatePoint(targetDate) || timeline[0];
                     const invested = Number.isFinite(basePoint?.investedToDate) ? basePoint.investedToDate : 0;
                     const basePointDate = basePoint?.date instanceof Date ? basePoint.date : originDate;
-                    const elapsedYears = diffInYears(originDate, targetDate);
-                    const yearsFromBase = Math.max(0, diffInYears(basePointDate, targetDate));
+                    const sliderElapsedYears = year;
+                    const rawElapsedYears = diffInYears(originDate, targetDate);
+                    const elapsedYears = Math.abs(rawElapsedYears - sliderElapsedYears) < 0.05
+                        ? sliderElapsedYears
+                        : rawElapsedYears;
+                    const rawBaseElapsedYears = diffInYears(originDate, basePointDate);
+                    const baseSliderYears = Math.round(rawBaseElapsedYears);
+                    const candidateYearsFromBase = Math.max(0, sliderElapsedYears - baseSliderYears);
+                    const rawYearsFromBase = Math.max(0, diffInYears(basePointDate, targetDate));
+                    const yearsFromBase = Math.abs(rawYearsFromBase - candidateYearsFromBase) < 0.05
+                        ? candidateYearsFromBase
+                        : rawYearsFromBase;
                     const snapshot = Array.isArray(basePoint?.snapshot) ? basePoint.snapshot : null;
-                    let projectedTotal = Number.isFinite(basePoint?.totalValue) ? basePoint.totalValue : 0;
-
-                    if (yearsFromBase > 0 && snapshot) {
-                        projectedTotal = snapshot.reduce((accumulator, state) => {
-                            if (!state) return accumulator;
-                            const baseValue = Number.isFinite(state.value) ? state.value : 0;
-                            if (baseValue <= 0) return accumulator;
-                            const rate = Number.isFinite(state.rate) ? state.rate : 0;
-                            const canGrow = state.status === 'active' && state.canGrow !== false;
-                            const grownValue = canGrow ? baseValue * Math.pow(1 + rate, yearsFromBase) : baseValue;
-                            return accumulator + grownValue;
-                        }, 0);
-                    }
-
-                    projectedTotal = Number.isFinite(projectedTotal) ? Math.max(projectedTotal, 0) : 0;
+                    const { total: projectedFromSnapshot, weightedRate } = snapshot
+                        ? projectSnapshotToHorizon(snapshot, yearsFromBase)
+                        : { total: Number.isFinite(basePoint?.totalValue) ? basePoint.totalValue : 0, weightedRate: null };
+                    let projectedTotal = Number.isFinite(projectedFromSnapshot)
+                        ? Math.max(projectedFromSnapshot, 0)
+                        : Number.isFinite(basePoint?.totalValue)
+                            ? Math.max(basePoint.totalValue, 0)
+                            : 0;
 
                     const gain = projectedTotal - invested;
                     const gainPercent = invested > 0 ? gain / invested : null;
@@ -2022,7 +2059,40 @@
                     if (projectedTotal > 0) {
                         flowsForPoint.push({ amount: projectedTotal, date: targetDate });
                     }
-                    const pointXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
+
+                    const negativeFlows = flowsForPoint.filter((flow) => flow.amount < 0);
+                    const uniqueNegativeDates = new Set(
+                        negativeFlows
+                            .map((flow) => (flow.date instanceof Date ? flow.date.getTime() : null))
+                            .filter((time) => Number.isFinite(time)),
+                    );
+                    const earliestNegativeDate = negativeFlows[0]?.date instanceof Date ? negativeFlows[0].date : null;
+                    const rawHorizonYears = earliestNegativeDate ? diffInYears(earliestNegativeDate, targetDate) : 0;
+                    const horizonYears = Math.abs(rawHorizonYears - sliderElapsedYears) < 0.05
+                        ? sliderElapsedYears
+                        : rawHorizonYears;
+                    const totalInvestedFromFlows = negativeFlows.reduce((acc, flow) => acc - flow.amount, 0);
+
+                    const simpleDepositScenario = uniqueNegativeDates.size <= 1;
+                    let pointXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
+
+                    if (simpleDepositScenario && Number.isFinite(weightedRate)) {
+                        pointXirr = weightedRate;
+                    } else if (
+                        (pointXirr === null || !Number.isFinite(pointXirr)) &&
+                        horizonYears > 1e-6 &&
+                        totalInvestedFromFlows > 0 &&
+                        projectedTotal > 0
+                    ) {
+                        const impliedRate = Math.pow(projectedTotal / totalInvestedFromFlows, 1 / Math.max(horizonYears, 1e-6)) - 1;
+                        if (Number.isFinite(impliedRate)) {
+                            pointXirr = impliedRate;
+                        }
+                    }
+
+                    if ((pointXirr === null || !Number.isFinite(pointXirr)) && Number.isFinite(weightedRate)) {
+                        pointXirr = weightedRate;
+                    }
 
                     return {
                         index: year,
@@ -2034,6 +2104,7 @@
                         gainPercent,
                         elapsedYears,
                         xirr: pointXirr,
+                        weightedRate,
                     };
                 });
             }, [timeline, baseDate, analysis?.cashFlows]);
