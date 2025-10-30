@@ -1982,6 +1982,43 @@
             return { total, weightedRate: valueWeightedRate, investedWeightedRate };
         };
 
+        const projectPointToDate = (point, targetDate, overrideYearsForward) => {
+            if (!point || !(point.date instanceof Date)) {
+                const fallbackValue = Number(point?.totalValue) || 0;
+                return {
+                    total: Math.max(fallbackValue, 0),
+                    weightedRate: null,
+                    investedWeightedRate: null,
+                    yearsForward: 0,
+                };
+            }
+            const safeTarget = targetDate instanceof Date ? targetDate : point.date;
+            const baseValue = Number(point.totalValue) || 0;
+            const snapshot = Array.isArray(point.snapshot) ? point.snapshot : [];
+            let yearsForward = Number.isFinite(overrideYearsForward)
+                ? overrideYearsForward
+                : diffInYears(point.date, safeTarget);
+            if (!Number.isFinite(yearsForward) || yearsForward <= 0) {
+                yearsForward = 0;
+            }
+            if (snapshot.length === 0) {
+                return {
+                    total: Math.max(baseValue, 0),
+                    weightedRate: null,
+                    investedWeightedRate: null,
+                    yearsForward,
+                };
+            }
+            const projection = projectSnapshotToHorizon(snapshot, yearsForward);
+            const total = Number.isFinite(projection.total) ? projection.total : baseValue;
+            return {
+                total: Math.max(total, 0),
+                weightedRate: projection.weightedRate,
+                investedWeightedRate: projection.investedWeightedRate,
+                yearsForward,
+            };
+        };
+
         const ScenarioSummary = ({ analysis }) => {
             const formatSignedCurrency = (value) => {
                 if (!Number.isFinite(value)) {
@@ -2048,23 +2085,11 @@
                     const yearsFromBase = Math.abs(rawYearsFromBase - candidateYearsFromBase) < 0.05
                         ? candidateYearsFromBase
                         : rawYearsFromBase;
-                    const snapshot = Array.isArray(basePoint?.snapshot) ? basePoint.snapshot : null;
                     const {
-                        total: projectedFromSnapshot,
+                        total: projectedTotal,
                         weightedRate,
                         investedWeightedRate,
-                    } = snapshot
-                        ? projectSnapshotToHorizon(snapshot, yearsFromBase)
-                        : {
-                            total: Number.isFinite(basePoint?.totalValue) ? basePoint.totalValue : 0,
-                            weightedRate: null,
-                            investedWeightedRate: null,
-                        };
-                    let projectedTotal = Number.isFinite(projectedFromSnapshot)
-                        ? Math.max(projectedFromSnapshot, 0)
-                        : Number.isFinite(basePoint?.totalValue)
-                            ? Math.max(basePoint.totalValue, 0)
-                            : 0;
+                    } = projectPointToDate(basePoint, targetDate, yearsFromBase);
 
                     const gain = projectedTotal - invested;
                     const gainPercent = invested > 0 ? gain / invested : null;
@@ -2633,40 +2658,6 @@
                     });
                 }
 
-                const projectFromPoint = (point, targetDate) => {
-                    if (!point || !(point.date instanceof Date)) {
-                        return 0;
-                    }
-                    const baseValue = Number(point.totalValue) || 0;
-                    const targetTime = targetDate.getTime();
-                    const baseTime = point.date.getTime();
-                    if (!Number.isFinite(targetTime) || targetTime <= baseTime) {
-                        return baseValue;
-                    }
-                    const years = diffInYears(point.date, targetDate);
-                    if (!Number.isFinite(years) || years <= 0) {
-                        return baseValue;
-                    }
-                    const snapshot = Array.isArray(point.snapshot) ? point.snapshot : [];
-                    if (snapshot.length === 0) {
-                        return baseValue;
-                    }
-                    let total = 0;
-                    snapshot.forEach((state) => {
-                        const value = Number(state?.value) || 0;
-                        if (value <= 0) return;
-                        const status = state?.status;
-                        const canGrow = status === 'active' && state?.canGrow !== false;
-                        if (canGrow) {
-                            const rate = Number(state?.rate) || 0;
-                            total += value * Math.pow(1 + rate, years);
-                        } else {
-                            total += value;
-                        }
-                    });
-                    return total;
-                };
-
                 const computeValueAt = (targetDate) => {
                     if (!(targetDate instanceof Date)) {
                         return 0;
@@ -2681,7 +2672,8 @@
                             break;
                         }
                     }
-                    return projectFromPoint(basePoint, targetDate);
+                    const { total } = projectPointToDate(basePoint, targetDate);
+                    return total;
                 };
 
                 const firstYear = scenarioStart.getFullYear();
