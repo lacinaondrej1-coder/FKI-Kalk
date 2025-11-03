@@ -1982,9 +1982,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const projectedValue = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
       projectionPoints.push({ date: nextDate, value: projectedValue });
     }
-    const width = options.isForPdf ? 800 : container.clientWidth;
     const height = 400;
     const margin = {top: 20, right: 20, bottom: 60, left: 70};
+    /* PATCH: guard against zero-width containers */
+    const baseWidth = options.isForPdf ? 800 : (container.clientWidth || 0);
+    /* PATCH */
+    const minWidth = margin.left + margin.right + 50;
+    /* PATCH */
+    const width = Math.max(baseWidth, minWidth);
     const boundedWidth = width - margin.left - margin.right;
     const boundedHeight = height - margin.top - margin.bottom;
     const maxValue = Math.max(...allPoints.map(p => p.value), ...projectionPoints.map(p => p.value));
