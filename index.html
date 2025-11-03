@@ -726,6 +726,20 @@
                   </label>
                 </div>
               </div>
+              <!-- /* PATCH */ Jazyk reportu -->
+              <div class="flex flex-col gap-2 text-sm text-body">
+                <span class="font-medium text-primary">Jazyk reportu</span>
+                <div class="flex flex-wrap items-center gap-4">
+                  <label class="inline-flex items-center gap-2">
+                    <input id="client-language-cs" type="radio" name="client-language" value="cs" class="form-radio" />
+                    <span>Čeština</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2">
+                    <input id="client-language-en" type="radio" name="client-language" value="en" class="form-radio" />
+                    <span>English</span>
+                  </label>
+                </div>
+              </div>
               <div class="flex flex-wrap gap-2">
                 <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
                 <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
@@ -872,7 +886,8 @@ document.addEventListener('DOMContentLoaded', () => {
       clientName: '',
       clientSalutation: '',
       clientTone: 'vykani',
-      /* PATCH */ clientGender: 'male'
+      /* PATCH */ clientGender: 'male',
+      /* PATCH */ clientLanguage: 'cs'
   };
   const elements = {};
   const updateToneInputs = () => {
@@ -886,6 +901,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!Array.isArray(elements.clientGenderInputs)) return;
       elements.clientGenderInputs.forEach((input) => {
           input.checked = input.value === state.clientGender;
+      });
+  };
+  /* PATCH */
+  const updateLanguageInputs = () => {
+      if (!Array.isArray(elements.clientLanguageInputs)) return;
+      elements.clientLanguageInputs.forEach((input) => {
+          input.checked = input.value === state.clientLanguage;
       });
   };
   let rowSeq = 0;
@@ -933,31 +955,41 @@ document.addEventListener('DOMContentLoaded', () => {
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
   const fmt1Decimal = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
-  const formatCurrency0 = (value, currency = 'CZK', { withUnit = false } = {}) => {
+  const formatCurrency0 = (value, currency = 'CZK', { withUnit = false, locale = 'cs-CZ' } = {}) => {
     if (!isFinite(value)) return '—';
-    const base = fmtInt.format(Math.round(value));
+    const formatter = locale === 'cs-CZ' ? fmtInt : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+    const base = formatter.format(Math.round(value));
     return withUnit ? `${base}\u00A0${currency}` : base;
   };
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
-  const formatPercent1 = (value) => {
+  const formatPercent1 = (value, { locale = 'cs-CZ' } = {}) => {
       if (!isFinite(value)) return '—';
       const perc = Math.round(value * 1000) / 10;
-      return fmt1Decimal.format(perc) + '\u202F%';
+      const formatter = locale === 'cs-CZ' ? fmt1Decimal : new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      return formatter.format(perc) + '\u202F%';
   };
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
-  const formatXirr1 = (value) => {
-      const base = formatPercent1(value);
+  const formatXirr1 = (value, options = {}) => {
+      const base = formatPercent1(value, options);
       return base === '—' ? base : base + '\u00A0p.a.';
   };
   /* PATCH: helpers – JEN formátování výstupu, ne výpočty */
-  const formatMonths0 = (value) => {
+  const formatMonths0 = (value, { locale = 'cs-CZ', language = 'cs' } = {}) => {
       if (!isFinite(value)) return '—';
-      return fmtInt.format(Math.round(value)) + '\u00A0měs.';
+      const formatter = locale === 'cs-CZ' ? fmtInt : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+      const suffix = language === 'en' ? 'months' : 'měs.';
+      return formatter.format(Math.round(value)) + '\u00A0' + suffix;
   };
   /* PATCH: pomocná funkce pro zobrazení kurzu */
   const formatFxRate = (value) => {
       if (!isFinite(value)) return '—';
       return new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(value);
+  };
+  /* PATCH */
+  const formatDateByLanguage = (date, language = 'cs') => {
+      if (!(date instanceof Date) || isNaN(date)) return '—';
+      const locale = language === 'en' ? 'en-GB' : 'cs-CZ';
+      return date.toLocaleDateString(locale);
   };
   const parseClientName = (fullName = '') => {
       const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -1039,12 +1071,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return replaceEnding(lower + 'e');
   };
   /* PATCH */
-  const formatSalutation = ({ firstName = '', lastName = '', tone = 'vykani', manualSalutation = '', gender = 'male' }) => {
+  const formatSalutation = ({ firstName = '', lastName = '', tone = 'vykani', manualSalutation = '', gender = 'male', /* PATCH */ language = 'cs' }) => {
       const manual = manualSalutation.trim();
       if (manual) return manual;
       const first = firstName.trim();
       const last = lastName.trim();
       const isFemale = gender === 'female';
+      /* PATCH */
+      if (language === 'en') {
+          if (first) {
+              return first;
+          }
+          if (last) {
+              return isFemale ? `Ms. ${last}` : `Mr. ${last}`;
+          }
+          return 'there';
+      }
       if (tone === 'vykani') {
           if (last) {
               if (isFemale) {
@@ -1100,7 +1142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveState = () => {
       try {
-          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientTone: state.clientTone, /* PATCH */ clientGender: state.clientGender }));
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientTone: state.clientTone, /* PATCH */ clientGender: state.clientGender, /* PATCH */ clientLanguage: state.clientLanguage }));
           if (elements.lastSavedIndicator) {
               elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
           }
@@ -1109,8 +1151,67 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Chyba při ukládání dat.", 'error');
       }
   };
-  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; /* PATCH */ state.clientGender = typeof savedState.clientGender === 'string' && savedState.clientGender === 'female' ? 'female' : 'male'; if (typeof savedState.clientTone === 'string') { state.clientTone = savedState.clientTone === 'tykani' ? 'tykani' : 'vykani'; } else if (Object.prototype.hasOwnProperty.call(savedState, 'clientPreferVykanie')) { state.clientTone = savedState.clientPreferVykanie ? 'vykani' : 'tykani'; } const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } updateGenderInputs(); updateToneInputs(); scheduleRecalc(); };
-  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientTone: state.clientTone, /* PATCH */ clientGender: state.clientGender }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
+  /* PATCH */
+  const loadState = () => {
+      try {
+          const savedStateJSON = localStorage.getItem('investmentCalculatorState');
+          if (savedStateJSON) {
+              const savedState = JSON.parse(savedStateJSON);
+              if (savedState && typeof savedState.rows === 'object') {
+                  Object.keys(PROVIDERS).forEach(key => {
+                      state.rows[key] = savedState.rows[key] || [];
+                  });
+                  state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : '';
+                  state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : '';
+                  state.clientTone = typeof savedState.clientTone === 'string' && savedState.clientTone === 'tykani' ? 'tykani' : 'vykani';
+                  if (Object.prototype.hasOwnProperty.call(savedState, 'clientPreferVykanie')) {
+                      state.clientTone = savedState.clientPreferVykanie ? 'vykani' : 'tykani';
+                  }
+                  state.clientGender = typeof savedState.clientGender === 'string' && savedState.clientGender === 'female' ? 'female' : 'male';
+                  state.clientLanguage = typeof savedState.clientLanguage === 'string' && savedState.clientLanguage === 'en' ? 'en' : 'cs';
+                  const allIds = Object.values(state.rows).flat().map(r => r.id);
+                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
+                  showToast('Data byla úspěšně načtena z prohlížeče.');
+              }
+          }
+      } catch (e) {
+          console.error('Failed to load state:', e);
+          showToast('Nepodařilo se načíst uložená data.', 'error');
+      }
+      renderAllInputs();
+      if (elements.clientNameInput) {
+          elements.clientNameInput.value = state.clientName;
+      }
+      if (elements.clientSalutationInput) {
+          elements.clientSalutationInput.value = state.clientSalutation;
+      }
+      updateGenderInputs();
+      updateToneInputs();
+      updateLanguageInputs();
+      scheduleRecalc();
+  };
+  /* PATCH */
+  const exportState = () => {
+      const payload = {
+          rows: state.rows,
+          clientName: state.clientName,
+          clientSalutation: state.clientSalutation,
+          clientTone: state.clientTone,
+          clientGender: state.clientGender,
+          clientLanguage: state.clientLanguage
+      };
+      const stateString = JSON.stringify(payload, null, 2);
+      const blob = new Blob([stateString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Data byla úspěšně exportována.');
+  };
   const importState = (file) => {
       if (!file) return;
       const reader = new FileReader();
@@ -1138,6 +1239,12 @@ document.addEventListener('DOMContentLoaded', () => {
                   } else {
                       state.clientGender = 'male';
                   }
+                  /* PATCH */
+                  if (typeof importedState.clientLanguage === 'string') {
+                      state.clientLanguage = importedState.clientLanguage === 'en' ? 'en' : 'cs';
+                  } else {
+                      state.clientLanguage = 'cs';
+                  }
                   const allIds = Object.values(state.rows).flat().map(r => r.id);
                   rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
                   if (elements.clientNameInput) {
@@ -1148,6 +1255,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   }
                   updateGenderInputs();
                   updateToneInputs();
+                  /* PATCH */
+                  updateLanguageInputs();
                   saveState();
                   renderAllInputs();
                   scheduleRecalc();
@@ -1404,6 +1513,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const container = providedContainer || elements.fundsContainer || document.getElementById('funds-by-card-container');
       if (!isStaticExport && !container) return '';
 
+      /* PATCH */
+      const staticCopy = isStaticExport ? (options.copy || null) : null;
+      /* PATCH */
+      const formatOptions = isStaticExport ? (options.format || {}) : {};
+      /* PATCH */
+      const currencyFormat = formatOptions.currency || {};
+      /* PATCH */
+      const percentFormat = formatOptions.percent || {};
+      /* PATCH */
+      const monthsFormat = formatOptions.months || {};
+      /* PATCH */
+      const languageOverride = isStaticExport ? (options.language || 'cs') : 'cs';
+
       const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
       const fundEntries = Object.entries(groupedFunds);
 
@@ -1412,7 +1534,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (fundEntries.length === 0) {
-          const emptyState = `<div class="card p-6 text-center muted-text">Nejsou k dispozici žádná data pro výpočet.</div>`;
+          const emptyMessage = isStaticExport && staticCopy?.noData ? staticCopy.noData : 'Nejsou k dispozici žádná data pro výpočet.';
+          const emptyState = `<div class="card p-6 text-center muted-text">${htmlEscape(emptyMessage)}</div>`;
           if (isStaticExport) {
               return emptyState;
           }
@@ -1462,19 +1585,39 @@ document.addEventListener('DOMContentLoaded', () => {
           const irrClass = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
           const safeName = htmlEscape(name);
 
-          const metrics = [
-              { label: 'Investováno', value: formatCurrency0(totalInvest, outCurr) },
-              { label: 'Aktuální hodnota', value: formatCurrency0(totalCurrent, outCurr) },
-              { label: 'Čistý výnos', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
-              { label: 'Průměrný roční výnos (XIRR)', value: formatXirr1(fundIrr), extraClass: irrClass },
-              { label: 'Průměrná doba investice', value: formatMonths0(weightedAvgMonths) }
-          ];
+          const metrics = isStaticExport && staticCopy
+              ? [
+                  { label: staticCopy.metrics.invested, value: formatCurrency0(totalInvest, outCurr, currencyFormat) },
+                  { label: staticCopy.metrics.current, value: formatCurrency0(totalCurrent, outCurr, currencyFormat) },
+                  { label: staticCopy.metrics.pnl, value: formatCurrency0(pnl, outCurr, currencyFormat), extraClass: pnlClass },
+                  { label: staticCopy.metrics.irr, value: formatXirr1(fundIrr, { ...percentFormat, language: languageOverride }), extraClass: irrClass },
+                  { label: staticCopy.metrics.months, value: formatMonths0(weightedAvgMonths, { ...monthsFormat, language: languageOverride }) }
+              ]
+              : [
+                  { label: 'Investováno', value: formatCurrency0(totalInvest, outCurr) },
+                  { label: 'Aktuální hodnota', value: formatCurrency0(totalCurrent, outCurr) },
+                  { label: 'Čistý výnos', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
+                  { label: 'Průměrný roční výnos (XIRR)', value: formatXirr1(fundIrr) , extraClass: irrClass },
+                  { label: 'Průměrná doba investice', value: formatMonths0(weightedAvgMonths) }
+              ];
 
           const transactionRows = investments.map((inv, index) => {
               const convertedCurrent = convert(inv.current, inv.curr);
               const convertedInvest = convert(inv.invest, inv.curr);
               const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
               const displayDate = inv.originalDateIn || inv.dateIn;
+              if (isStaticExport && staticCopy) {
+                  const rowLabel = index === 0 ? staticCopy.transactionFirst : staticCopy.transactionNext(index);
+                  const dateLabel = displayDate ? formatDateByLanguage(displayDate, languageOverride) : 'N/A';
+                  return `<tr>
+                <td>${htmlEscape(rowLabel)} <span class="muted">(${htmlEscape(dateLabel)})</span></td>
+                <td class="text-right">${formatCurrency0(convertedInvest, outCurr, currencyFormat)}</td>
+                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency0(convertedPnl, outCurr, currencyFormat)}</td>
+                <td class="text-right">${formatCurrency0(convertedCurrent, outCurr, currencyFormat)}</td>
+                <td class="text-right">${formatMonths0(inv.months, { ...monthsFormat, language: languageOverride })}</td>
+                <td class="text-right">${formatXirr1(inv.irr, { ...percentFormat, language: languageOverride })}</td>
+              </tr>`;
+              }
               return `<tr>
                 <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
                 <td class="text-right">${formatCurrency0(convertedInvest, outCurr)}</td>
@@ -1488,11 +1631,17 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isStaticExport) {
               const metricsHtml = buildMetrics(metrics, 'static');
               const initials = getFundInitials(name);
-              const metaChips = [
-                  `Transakcí ${investments.length}`,
-                  latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
-                  `Cílová měna ${outCurr}`
-              ].filter(Boolean).map(chip => `<span>${chip}</span>`).join('');
+              const metaChips = (staticCopy?.metaChips
+                  ? [
+                      staticCopy.metaChips.transactions(investments.length),
+                      latestDate ? staticCopy.metaChips.valuation(formatDateByLanguage(latestDate, languageOverride)) : null,
+                      staticCopy.metaChips.currency(outCurr)
+                  ]
+                  : [
+                      `Transakcí ${investments.length}`,
+                      latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
+                      `Cílová měna ${outCurr}`
+                  ]).filter(Boolean).map(chip => `<span>${htmlEscape(chip)}</span>`).join('');
 
               return `<article class="fund-export">
   <div class="fund-export__header">
@@ -1507,12 +1656,12 @@ document.addEventListener('DOMContentLoaded', () => {
     <table class="fund-export__table">
       <thead>
         <tr>
-          <th>Transakce</th>
-          <th class="text-right">Investice</th>
-          <th class="text-right">Výnos</th>
-          <th class="text-right">Aktuální hodnota</th>
-          <th class="text-right">Doba držení</th>
-          <th class="text-right">Prům. roční výnos</th>
+          <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.transaction) : 'Transakce'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.invested) : 'Investice'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.pnl) : 'Výnos'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.current) : 'Aktuální hodnota'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.months) : 'Doba držení'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.irr) : 'Prům. roční výnos'}</th>
         </tr>
       </thead>
       <tbody>${transactionRows}</tbody>
@@ -1574,6 +1723,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const { isStaticExport = false, hasMixedCurrencies = false, hasFx = true } = options;
     const tone = options.tone === 'tykani' ? 'tykani' : 'vykani';
     const summaryContainer = options.container || elements.portfolioSummary || document.getElementById('portfolio-summary-content');
+    /* PATCH */
+    const formatOptions = options.format || {};
+    /* PATCH */
+    const currencyFormat = formatOptions.currency || {};
+    /* PATCH */
+    const percentFormat = formatOptions.percent || {};
+    /* PATCH */
+    const monthsFormat = formatOptions.months || {};
+    /* PATCH */
+    const summaryLabelsOverride = options.summaryLabels;
+    /* PATCH */
+    const languageOverride = options.language || 'cs';
 
     if (!isStaticExport && elements.amountNotePortfolio) {
         elements.amountNotePortfolio.textContent = `Částky v ${outCurr}`;
@@ -1607,12 +1768,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isStaticExport) {
         /* PATCH */
         const formatted = {
-            totalInvest: formatCurrency0(totalInvestConverted, outCurr),
-            totalCurrent: formatCurrency0(totalCurrentConverted, outCurr),
-            totalPnl: formatCurrency0(totalPnl, outCurr),
-            totalRet: formatPercent1(totalRet),
-            irr: formatXirr1(portfolioIrr),
-            weightedMonths: formatMonths0(weightedAvgMonths)
+            totalInvest: formatCurrency0(totalInvestConverted, outCurr, currencyFormat),
+            totalCurrent: formatCurrency0(totalCurrentConverted, outCurr, currencyFormat),
+            totalPnl: formatCurrency0(totalPnl, outCurr, currencyFormat),
+            totalRet: formatPercent1(totalRet, percentFormat),
+            irr: formatXirr1(portfolioIrr, { ...percentFormat, language: languageOverride }),
+            weightedMonths: formatMonths0(weightedAvgMonths, { ...monthsFormat, language: languageOverride })
         };
         /* PATCH */
         if (options.formattedTotals) {
@@ -1627,7 +1788,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (options.captureFormatted && typeof options.captureFormatted === 'object') {
             Object.assign(options.captureFormatted, formatted);
         }
-        const labelSet = tone === 'tykani'
+        const labelSet = summaryLabelsOverride || (tone === 'tykani'
             ? {
                 totalInvest: 'TVÉ CELKOVÉ VKLADY',
                 totalCurrent: 'AKTUÁLNÍ HODNOTA',
@@ -1643,7 +1804,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalRet: 'CELKOVÉ ZHODNOCENÍ',
                 irr: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)',
                 weightedMonths: 'PRŮMĚRNÁ DOBA INVESTICE'
-            };
+            });
         const summaryMetrics = [
             { label: labelSet.totalInvest, value: formatted.totalInvest },
             { label: labelSet.totalCurrent, value: formatted.totalCurrent },
@@ -1739,19 +1900,43 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const renderLineChart = (container, funds, portfolioIrr, outCurr, fxRate, options = {}) => {
-    const { isStaticExport = false, conversionReady = true, formattedTodayValue: formattedTodayValueOverride = null } = options;
+    /* PATCH */
+    const {
+        isStaticExport = false,
+        conversionReady = true,
+        formattedTodayValue: formattedTodayValueOverride = null,
+        copy: lineCopy = null,
+        format = {},
+        language = 'cs'
+    } = options;
 
     if (isStaticExport) {
-        const exportChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioIrr, conversionReady, formattedTodayValueOverride);
+        const exportChart = buildLineChartForExport(
+            funds,
+            outCurr,
+            fxRate,
+            portfolioIrr,
+            conversionReady,
+            formattedTodayValueOverride,
+            /* PATCH */ { copy: lineCopy, format, language }
+        );
         if (!exportChart.available) {
+            /* PATCH */
             if (exportChart.reason === 'conversion') {
-                return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Liniový graf nelze vytvořit bez platného převodu měn.</div>`;
+                const conversionText = lineCopy?.conversion || 'Liniový graf nelze vytvořit bez platného převodu měn.';
+                return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">${htmlEscape(conversionText)}</div>`;
             }
-            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Pro liniový graf nejsou k dispozici údaje.</div>`;
+            const emptyText = lineCopy?.empty || 'Pro liniový graf nejsou k dispozici údaje.';
+            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">${htmlEscape(emptyText)}</div>`;
         }
+        /* PATCH */
+        const legendLabels = lineCopy?.legend || {};
+        const baseLegend = htmlEscape(legendLabels.contributions || 'Kumulované vklady');
+        const valueLegend = htmlEscape(legendLabels.value || 'Hodnota');
+        const projectionLegend = htmlEscape(legendLabels.projection || 'Projekce');
         const legend = exportChart.hasIrr
-            ? `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">Kumulované vklady</span><span class="legend-pill legend-pill--value" tabindex="0">Odhad hodnoty</span>${exportChart.irrPositive ? '<span class="legend-pill legend-pill--projection" tabindex="0">Projekce</span>' : ''}</div>`
-            : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">Kumulované vklady</span></div>`;
+            ? `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">${baseLegend}</span><span class="legend-pill legend-pill--value" tabindex="0">${valueLegend}</span>${exportChart.irrPositive ? `<span class="legend-pill legend-pill--projection" tabindex="0">${projectionLegend}</span>` : ''}</div>`
+            : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">${baseLegend}</span></div>`;
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
         return `<div class="line-export">${legend}<div class="line-canvas" role="img" aria-label="${ariaAttr}">${exportChart.svg}</div>${footnote}</div>`;
@@ -2073,16 +2258,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   const renderPieChart = (container, data, outCurr, options = {}) => {
-    const { isStaticExport = false } = options;
+    /* PATCH */
+    const { isStaticExport = false, copy: pieCopy = null, format = {} } = options;
+    /* PATCH */
+    const percentFormat = format.percent || {};
     const pieTotal = data.reduce((sum, d) => sum + d.totalCurrent, 0);
 
     if (isStaticExport) {
         if (!data.length || !(pieTotal > 0)) {
-            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Nejsou k dispozici data pro koláčový graf.</div>`;
+            /* PATCH */
+            const noDataLabel = pieCopy?.noData || 'Nejsou k dispozici data pro koláčový graf.';
+            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">${htmlEscape(noDataLabel)}</div>`;
         }
         const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
-        const svg = buildStaticPieChartSvg(slices, pieTotal, outCurr);
-        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent1(d.value / pieTotal)}</span></div>`).join('');
+        /* PATCH */
+        const svg = buildStaticPieChartSvg(slices, pieTotal, outCurr, { copy: pieCopy, format, language });
+        /* PATCH */
+        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent1(d.value / pieTotal, percentFormat)}</span></div>`).join('');
         return `<div class="pie-export"><div class="pie-canvas">${svg}</div><div class="pie-legend">${legend}</div></div>`;
     }
 
@@ -2147,7 +2339,9 @@ document.addEventListener('DOMContentLoaded', () => {
     container.querySelector('.pie-canvas').appendChild(svg);
   };
 
-  const buildStaticPieChartSvg = (slices, total, currency = 'CZK') => {
+  const buildStaticPieChartSvg = (slices, total, currency = 'CZK', options = {}) => {
+      /* PATCH */
+      const { copy = {}, format = {} } = options;
       if (!slices.length || !(total > 0)) return '';
       const outerRadius = 48;
       const innerRadius = 24;
@@ -2168,7 +2362,14 @@ document.addEventListener('DOMContentLoaded', () => {
           const y1Inner = 50 + innerRadius * Math.sin(startRad);
           const x2Inner = 50 + innerRadius * Math.cos(endRad);
           const y2Inner = 50 + innerRadius * Math.sin(endRad);
-          const tooltip = `${name} • ${formatCurrency0(value, currency)} (${formatPercent1(percent)})`;
+          /* PATCH */
+          const amountLabel = formatCurrency0(value, currency, format.currency || {});
+          /* PATCH */
+          const percentLabel = formatPercent1(percent, format.percent || {});
+          /* PATCH */
+          const tooltip = copy?.tooltip
+              ? copy.tooltip(name, amountLabel, percentLabel)
+              : `${name} • ${amountLabel} (${percentLabel})`;
           return `<g class="pie-slice" tabindex="0" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}">
             <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
             <title>${htmlEscape(tooltip)}</title>
@@ -2176,10 +2377,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
       const backdrop = `<circle cx="50" cy="50" r="${outerRadius}" fill="rgba(240,253,250,0.65)" />`;
       const inner = `<circle cx="50" cy="50" r="${innerRadius - 3}" fill="#ffffff" stroke="rgba(148,163,184,0.35)" stroke-width="1.5" />`;
-      return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${backdrop}${parts}${inner}</svg>`;
+      /* PATCH */
+      const ariaLabel = copy?.ariaLabel || 'Alokace portfolia';
+      return `<svg viewBox="0 0 100 100" role="img" aria-label="${htmlEscape(ariaLabel)}">${backdrop}${parts}${inner}</svg>`;
   };
 
-  const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady, formattedTodayValueOverride = null) => {
+  const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady, formattedTodayValueOverride = null, options = {}) => {
+      /* PATCH */
+      const { copy = {}, format = {}, language = 'cs' } = options;
+      /* PATCH */
+      const currencyFormat = format.currency || {};
+      /* PATCH */
+      const percentFormat = format.percent || {};
+      /* PATCH */
+      const formatDateLocal = (date) => formatDateByLanguage(date, language);
       if (!conversionReady) {
           return { available: false, reason: 'conversion' };
       }
@@ -2343,30 +2554,51 @@ document.addEventListener('DOMContentLoaded', () => {
           xLabels.push(new Date(endYear, 0, 1));
       }
 
+      /* PATCH */
+      const tooltipCopy = copy.tooltip || {};
+      /* PATCH */
+      const formatDepositTooltip = (point) => {
+          const dateLabel = formatDateLocal(point.date);
+          const amountLabel = formatCurrency0(point.amount, outCurr, currencyFormat);
+          if (point.breakdown.length > 1 && tooltipCopy.depositMulti) {
+              const breakdownList = point.breakdown
+                  .map(item => `${item.fund}: ${formatCurrency0(item.amount, outCurr, currencyFormat)}`)
+                  .join(' • ');
+              return tooltipCopy.depositMulti(dateLabel, breakdownList);
+          }
+          if (point.breakdown.length === 1 && tooltipCopy.depositSingle) {
+              const entry = point.breakdown[0];
+              return tooltipCopy.depositSingle(entry.fund, amountLabel, dateLabel);
+          }
+          if (tooltipCopy.generic) {
+              return tooltipCopy.generic(dateLabel, amountLabel);
+          }
+          return `${dateLabel} • ${amountLabel}`;
+      };
       const depositMarkers = depositPoints.map(point => {
-          const dateLabel = formatDate(point.date);
-          const amountLabel = formatCurrency0(point.amount, outCurr);
-          const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${formatCurrency0(item.amount, outCurr)})`).join(' • ');
-          const tooltip = `${dateLabel} • ${amountLabel}${breakdownText ? `\n${breakdownText}` : ''}`;
+          const tooltip = formatDepositTooltip(point);
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
-          const dateLabel = formatDate(point.date);
-          const tooltip = `Odhad ${dateLabel}: ${formatCurrency0(point.value, outCurr)}`;
+          const dateLabel = formatDateLocal(point.date);
+          const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
+          const tooltip = tooltipCopy.projection ? tooltipCopy.projection(dateLabel, valueLabel) : `Odhad ${dateLabel}: ${valueLabel}`;
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       /* PATCH */
-      const formattedTodayValue = formattedTodayValueOverride || formatCurrency0(valueAtToday, outCurr);
-      const todayTooltip = `Dnes (${formatDate(today)}): ${formattedTodayValue}`;
+      const formattedTodayValue = formattedTodayValueOverride || formatCurrency0(valueAtToday, outCurr, currencyFormat);
+      const todayTooltip = tooltipCopy.today
+          ? tooltipCopy.today(formatDateLocal(today), formattedTodayValue)
+          : `Dnes (${formatDateLocal(today)}): ${formattedTodayValue}`;
       const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
 
-      const startLabel = formatDate(firstDate);
-      const endLabel = formatDate(timelineEnd);
+      const startLabel = formatDateLocal(firstDate);
+      const endLabel = formatDateLocal(timelineEnd);
       const ariaLabel = hasIrr
-          ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(irr)}`
-          : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`;
+          ? (copy.aria?.withIrr ? copy.aria.withIrr(startLabel, endLabel, formattedTodayValue, formatXirr1(irr, percentFormat)) : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(irr, percentFormat)}`)
+          : (copy.aria?.withoutIrr ? copy.aria.withoutIrr(startLabel, endLabel, formattedTodayValue) : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`);
       const svg = `
         <svg viewBox="0 0 ${width} ${height}">
           <title>${htmlEscape(ariaLabel)}</title>
@@ -2375,8 +2607,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <rect x="${margin.left - 8}" y="${margin.top - 12}" width="${chartWidth + 16}" height="${chartHeight + 24}" rx="22" fill="rgba(255,255,255,0.78)" stroke="rgba(148,163,184,0.25)" />
           ${yTicks.map(tick => {
               const y = formatCoord(yScale(tick));
+              const tickLabel = formatCurrency0(tick, outCurr, currencyFormat);
               return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="4 4" />
-              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${formatCurrency0(tick, outCurr)}</text>`;
+              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${tickLabel}</text>`;
           }).join('')}
           ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
           ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
@@ -2392,11 +2625,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let footnote = '';
       if (!hasIrr) {
-          footnote = 'Graf zachycuje pouze kumulované vklady, protože pro portfolio zatím nelze spolehlivě určit míru XIRR.';
+          footnote = copy.footnotes?.contributionsOnly || 'Graf zachycuje pouze kumulované vklady, protože pro portfolio zatím nelze spolehlivě určit míru XIRR.';
       } else if (!irrPositive) {
-          footnote = 'Odhad aktuální hodnoty vycházejí z vypočtené XIRR, projekce nejsou zobrazeny, protože míra výnosu je nulová nebo záporná.';
+          footnote = copy.footnotes?.noProjection || 'Odhad aktuální hodnoty vycházejí z vypočtené XIRR, projekce nejsou zobrazeny, protože míra výnosu je nulová nebo záporná.';
       } else {
-          footnote = 'Projekce navazují na aktuální roční míru XIRR. Historické výsledky nejsou zárukou výnosů budoucích.';
+          footnote = copy.footnotes?.default || 'Projekce navazují na aktuální roční míru XIRR. Historické výsledky nejsou zárukou výnosů budoucích.';
       }
 
       return {
@@ -2406,6 +2639,340 @@ document.addEventListener('DOMContentLoaded', () => {
           irrPositive,
           footnote,
           ariaLabel
+      };
+  };
+
+  /* PATCH */
+  const buildExportCopy = ({ language = 'cs', tone = 'vykani', gender = 'male' }) => {
+      const isEnglish = language === 'en';
+      const isFemale = gender === 'female';
+      const numberLocale = isEnglish ? 'en-GB' : 'cs-CZ';
+      const percentLocale = numberLocale;
+      const monthsLanguage = isEnglish ? 'en' : 'cs';
+
+      if (!isEnglish) {
+          const toneIsInformal = tone === 'tykani';
+          const heroLead = toneIsInformal
+              ? (sal) => `Ahoj ${sal}, připravil jsem pro tebe tento přehledný report, kde jednoduše uvidíš, jak se daří tvým investicím. Věřím, že je vše maximálně srozumitelné, ale pokud budeš mít jakékoli otázky, dej mi prosím vědět – rád vše s tebou projdu osobně.`
+              : (sal) => `Dobrý den, ${sal}, připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl${isFemale ? 'a' : ''} na cokoliv zeptat, jsem tu pro Vás.`;
+          const summaryLabels = toneIsInformal
+              ? {
+                  totalInvest: 'TVÉ CELKOVÉ VKLADY',
+                  totalCurrent: 'AKTUÁLNÍ HODNOTA',
+                  totalPnl: 'TVŮJ ČISTÝ VÝNOS',
+                  totalRet: 'CELKOVÉ ZHODNOCENÍ',
+                  irr: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)',
+                  weightedMonths: 'PRŮMĚRNÁ DOBA INVESTICE'
+              }
+              : {
+                  totalInvest: 'VAŠE CELKOVÉ VKLADY',
+                  totalCurrent: 'AKTUÁLNÍ HODNOTA',
+                  totalPnl: 'ČISTÝ VÝNOS',
+                  totalRet: 'CELKOVÉ ZHODNOCENÍ',
+                  irr: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)',
+                  weightedMonths: 'PRŮMĚRNÁ DOBA INVESTICE'
+              };
+          return {
+              language: 'cs',
+              htmlLang: 'cs',
+              locale: { date: 'cs-CZ' },
+              format: {
+                  currency: { locale: numberLocale },
+                  percent: { locale: percentLocale },
+                  months: { locale: numberLocale, language: monthsLanguage }
+              },
+              documentTitle: (client) => `Report investičního portfolia – ${client}`,
+              hero: {
+                  badge: 'Klientský report',
+                  title: 'Report investičního portfolia',
+                  lead: heroLead,
+                  meta: {
+                      client: 'Klient',
+                      date: 'DATUM REPORTU',
+                      currency: 'Měna výstupu',
+                      funds: 'Počet fondů',
+                      fx: 'Kurz EUR/CZK'
+                  },
+                  benefits: {
+                      portfolioTitle: 'Diverzifikované portfolio',
+                      portfolioDesc: toneIsInformal
+                          ? 'Tvé investice jsou rozloženy pro optimální růst a bezpečnost.'
+                          : 'Vaše investice jsou rozloženy pro optimální růst a bezpečnost.',
+                      growthTitle: 'Dlouhodobý růst',
+                      growthDesc: toneIsInformal
+                          ? 'Strategie je nastavená s ohledem na dlouhodobé zhodnocení tvého majetku.'
+                          : 'Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.'
+                  }
+              },
+              narrative: {
+                  pill: 'ÚVOD',
+                  title: toneIsInformal ? 'Vítej ve svém reportu' : 'Vítejte ve Vašem reportu',
+                  body: toneIsInformal
+                      ? 'Na následujících stránkách najdeš klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Ber to jako takovou „mapu“ naší společné cesty za tvými finančními cíli.'
+                      : 'Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou „mapu“ naší společné cesty za Vašimi finančními cíli.'
+              },
+              summary: {
+                  pill: 'SOUHRN',
+                  title: toneIsInformal ? 'Souhrn tvého portfolia' : 'Souhrn Vašeho portfolia',
+                  body: toneIsInformal
+                      ? 'Klíčové ukazatele, které ti v kostce ukážou celkové zdraví a výkon tvých investic.'
+                      : 'Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.',
+                  metaLabel: (currency) => `Částky v ${currency}`,
+                  labels: summaryLabels
+              },
+              funds: {
+                  pill: 'DETAIL FONDŮ',
+                  title: 'Výsledky po fondech',
+                  description: 'Přehled všech sledovaných fondů včetně výkonu, ziskovosti a časové rozlohy investic.',
+                  metrics: {
+                      invested: 'Investováno',
+                      current: 'Aktuální hodnota',
+                      pnl: toneIsInformal ? 'Tvůj čistý výnos' : 'Čistý výnos',
+                      irr: 'Průměrný roční výnos (XIRR)',
+                      months: 'Průměrná doba investice'
+                  },
+                  metaChips: {
+                      transactions: (count) => `Transakcí ${count}`,
+                      valuation: (dateLabel) => `Ocenění ${dateLabel}`,
+                      currency: (currency) => `Cílová měna ${currency}`
+                  },
+                  tableHeaders: {
+                      transaction: 'Transakce',
+                      invested: 'Investice',
+                      pnl: 'Výnos',
+                      current: 'Aktuální hodnota',
+                      months: 'Doba držení',
+                      irr: 'Prům. roční výnos'
+                  },
+                  transactionFirst: 'První vklad',
+                  transactionNext: (index) => `Dokup #${index}`,
+                  showTransactions: 'Zobrazit transakce',
+                  noData: 'Nejsou k dispozici žádná data pro výpočet.'
+              },
+              pie: {
+                  pill: 'ALOKACE',
+                  title: 'Alokace portfolia',
+                  description: 'Rozložení kapitálu mezi jednotlivé fondy k datu exportu.',
+                  noData: 'Pro koláčový graf nejsou dostupná data.',
+                  /* PATCH */
+                  ariaLabel: 'Alokace portfolia',
+                  /* PATCH */
+                  tooltip: (name, amount, percent) => `${name} • ${amount} (${percent})`
+              },
+              line: {
+                  pill: 'VÝVOJ',
+                  title: 'Vývoj hodnoty portfolia',
+                  description: 'Historický vývoj a projekce při zachování aktuální míry zhodnocení portfolia.',
+                  insufficientData: 'Pro vykreslení grafu je potřeba delší časový horizont.',
+                  /* PATCH */
+                  conversion: 'Liniový graf nelze vytvořit bez platného převodu měn.',
+                  /* PATCH */
+                  empty: 'Pro liniový graf nejsou k dispozici údaje.',
+                  /* PATCH */
+                  legend: {
+                      value: 'Odhad hodnoty',
+                      projection: 'Projekce',
+                      contributions: 'Kumulované vklady'
+                  },
+                  /* PATCH */
+                  tooltip: {
+                      depositSingle: (fund, amount, date) => `Vklad (${fund}): ${amount} (${date})`,
+                      depositMulti: (date, list) => `Vklady ${date}: ${list}`,
+                      today: (date, value) => `Dnes: ${date}\nDopočítaná hodnota: ${value}`,
+                      generic: (date, value) => `${date}\n${value}`,
+                      projection: (date, value) => `Odhad ${date}: ${value}`
+                  },
+                  /* PATCH */
+                  aria: {
+                      withIrr: (start, end, todayValue, irrLabel) => `Vývoj portfolia v období ${start} – ${end}; dnešní hodnota ${todayValue}; XIRR ${irrLabel}`,
+                      withoutIrr: (start, end, todayValue) => `Vývoj portfolia v období ${start} – ${end}; dnešní hodnota ${todayValue}; XIRR není k dispozici.`
+                  },
+                  /* PATCH */
+                  footnotes: {
+                      contributionsOnly: 'Graf zachycuje pouze kumulované vklady, protože pro portfolio zatím nelze spolehlivě určit míru XIRR.',
+                      noProjection: 'Odhad aktuální hodnoty vycházejí z vypočtené XIRR, projekce nejsou zobrazeny, protože míra výnosu je nulová nebo záporná.',
+                      default: 'Projekce navazují na aktuální roční míru XIRR. Historické výsledky nejsou zárukou výnosů budoucích.'
+                  }
+              },
+              disclaimers: {
+                  pill: 'POZNÁMKY',
+                  title: 'Důležitá upozornění',
+                  intro: toneIsInformal
+                      ? 'Prosím věnuj pozornost následujícím informacím a limitům výpočtů.'
+                      : 'Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.',
+                  /* PATCH */
+                  listTitle: 'Klíčové poznámky',
+                  items: [
+                      'Historické výnosy nejsou zárukou výsledků budoucích. Projekce vycházejí z aktuálního vývoje portfolia.',
+                      'Veškeré částky platí k datu generování reportu a mohou se v čase měnit podle tržních podmínek.',
+                      'Výpočty vycházejí z dat poskytnutých poradcem; v případě neúplných nebo nepřesných údajů mohou být výsledky zkreslené.'
+                  ]
+              },
+              explanations: {
+                  pill: 'VYSVĚTLIVKY',
+                  title: 'Vysvětlivky a použité metriky',
+                  description: 'Stručná rekapitulace klíčových pojmů pro rychlou orientaci nad výsledky.',
+                  xirr: {
+                      title: 'Co je XIRR a jak funguje?',
+                      body: `Jde o klíčový ukazatel reálné výkonnosti ${toneIsInformal ? 'tvého' : 'Vašeho'} portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal${isFemale ? 'a' : ''}. Výsledné procento ${toneIsInformal ? 'ti' : 'Vám'} tak dává přesný obraz o tom, jak efektivně ${toneIsInformal ? 'tvoje' : 'Vaše'} peníze v průměru každý rok pracovaly.`
+                  },
+                  cumulative: {
+                      title: 'Co znamená kumulativní zhodnocení?',
+                      body: `Tento údaj ${toneIsInformal ? 'ti' : 'Vám'} poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje ${toneIsInformal ? 'tvůj' : 'Váš'} <strong>celkový čistý výnos jako procento ze všech ${toneIsInformal ? 'tvých' : 'Vašich'} vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.`
+                  }
+              },
+              currencyWarning: (currency) => `Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${currency}.`
+          };
+      }
+
+      const heroLead = (sal) => `Hello ${sal}, I’ve prepared this concise report so you can easily see how your investments are performing. I hope everything is perfectly clear, but if you’d like to discuss anything, I’m here for you.`;
+      return {
+          language: 'en',
+          htmlLang: 'en',
+          locale: { date: 'en-GB' },
+          format: {
+              currency: { locale: numberLocale },
+              percent: { locale: percentLocale },
+              months: { locale: numberLocale, language: monthsLanguage }
+          },
+          documentTitle: (client) => `Investment portfolio report – ${client}`,
+          hero: {
+              badge: 'Client report',
+              title: 'Investment portfolio report',
+              lead: heroLead,
+              meta: {
+                  client: 'Client',
+                  date: 'Report date',
+                  currency: 'Reporting currency',
+                  funds: 'Number of funds',
+                  fx: 'EUR/CZK rate'
+              },
+              benefits: {
+                  portfolioTitle: 'Diversified portfolio',
+                  portfolioDesc: 'Your investments are diversified for balanced growth and resilience.',
+                  growthTitle: 'Long-term growth',
+                  growthDesc: 'The strategy is designed to support the long-term appreciation of your wealth.'
+              }
+          },
+          narrative: {
+              pill: 'INTRO',
+              title: 'Welcome to your report',
+              body: 'In the following pages you’ll find key summaries, a detailed look at each fund and a forward-looking projection. Think of it as a map for our shared journey toward your financial goals.'
+          },
+          summary: {
+              pill: 'SUMMARY',
+              title: 'Your portfolio summary',
+              body: 'Key indicators that provide a concise view of the overall health and performance of your investments.',
+              metaLabel: (currency) => `Amounts in ${currency}`,
+              labels: {
+                  totalInvest: 'YOUR TOTAL CONTRIBUTIONS',
+                  totalCurrent: 'CURRENT VALUE',
+                  totalPnl: 'NET GAIN',
+                  totalRet: 'TOTAL RETURN',
+                  irr: 'AVERAGE ANNUAL RETURN (XIRR)',
+                  weightedMonths: 'AVERAGE TIME INVESTED'
+              }
+          },
+          funds: {
+              pill: 'FUND DETAILS',
+              title: 'Fund results',
+              description: 'Overview of each tracked fund including performance, profitability and time in the market.',
+              metrics: {
+                  invested: 'Invested',
+                  current: 'Current value',
+                  pnl: 'Net gain',
+                  irr: 'Average annual return (XIRR)',
+                  months: 'Average holding period'
+              },
+              metaChips: {
+                  transactions: (count) => `Transactions ${count}`,
+                  valuation: (dateLabel) => `Valuation ${dateLabel}`,
+                  currency: (currency) => `Reporting currency ${currency}`
+              },
+              tableHeaders: {
+                  transaction: 'Transaction',
+                  invested: 'Contribution',
+                  pnl: 'Return',
+                  current: 'Current value',
+                  months: 'Holding period',
+                  irr: 'Avg. annual return'
+              },
+              transactionFirst: 'Initial contribution',
+              transactionNext: (index) => `Top-up #${index}`,
+              showTransactions: 'Show transactions',
+              noData: 'No data available for calculation.'
+          },
+          pie: {
+              pill: 'ALLOCATION',
+              title: 'Portfolio allocation',
+              description: 'Distribution of capital across funds at the export date.',
+              noData: 'No allocation data available.',
+              /* PATCH */
+              ariaLabel: 'Portfolio allocation',
+              /* PATCH */
+              tooltip: (name, amount, percent) => `${name} • ${amount} (${percent})`
+          },
+          line: {
+              pill: 'PERFORMANCE',
+              title: 'Portfolio value over time',
+              description: 'Historical performance and a projection assuming the current return rate continues.',
+              insufficientData: 'A longer time horizon is required to draw the chart.',
+              /* PATCH */
+              conversion: 'The line chart cannot be generated without a valid currency conversion.',
+              /* PATCH */
+              empty: 'No data available for the line chart.',
+              /* PATCH */
+              legend: {
+                  value: 'Estimated value',
+                  projection: 'Projection',
+                  contributions: 'Contributions'
+              },
+              /* PATCH */
+              tooltip: {
+                  depositSingle: (fund, amount, date) => `Contribution (${fund}): ${amount} (${date})`,
+                  depositMulti: (date, list) => `Contributions on ${date}: ${list}`,
+                  today: (date, value) => `Today: ${date}\nEstimated value: ${value}`,
+                  generic: (date, value) => `${date}\n${value}`,
+                  projection: (date, value) => `Projection for ${date}: ${value}`
+              },
+              /* PATCH */
+              aria: {
+                  withIrr: (start, end, todayValue, irrLabel) => `Portfolio performance from ${start} to ${end}; today’s estimated value ${todayValue}; XIRR ${irrLabel}`,
+                  withoutIrr: (start, end, todayValue) => `Portfolio performance from ${start} to ${end}; today’s estimated value ${todayValue}; XIRR unavailable.`
+              },
+              /* PATCH */
+              footnotes: {
+                  contributionsOnly: 'The chart shows cumulative contributions only because a reliable XIRR cannot yet be determined.',
+                  noProjection: 'The estimated value is based on the calculated XIRR; projections are hidden because the return is zero or negative.',
+                  default: 'Projections extend the current annual XIRR. Past performance is not a guarantee of future results.'
+              }
+          },
+          disclaimers: {
+              pill: 'NOTES',
+              title: 'Important notes',
+              intro: 'Please review the following information and calculation limits.',
+              /* PATCH */
+              listTitle: 'Key notes',
+              items: [
+                  'Past performance is not a guarantee of future results. Projections are based on the portfolio’s current trajectory.',
+                  'All amounts are valid as of the report date and may change with market conditions.',
+                  'Calculations rely on the information provided; incomplete or inaccurate data may distort the results.'
+              ]
+          },
+          explanations: {
+              pill: 'EXPLANATIONS',
+              title: 'Glossary & metrics',
+              description: 'A quick recap of the key terms to help you navigate the results.',
+              xirr: {
+                  title: 'What is XIRR and how does it work?',
+                  body: 'It is the key measure of your portfolio’s real performance. Unlike a simple average, XIRR fairly considers <strong>when and how much</strong> you contributed. The resulting percentage shows how effectively your money worked on average each year.'
+              },
+              cumulative: {
+                  title: 'What does total return mean?',
+                  body: 'This figure gives you a quick, overall view of the portfolio’s success so far. In short, it expresses your <strong>total net gain as a percentage of all contributions</strong>. It shows the cumulative growth from the start of investing to today.'
+              }
+          },
+          currencyWarning: (currency) => `The portfolio contains multiple currencies without an exchange rate. Values cannot be reliably converted to ${currency}.`
       };
   };
 
@@ -2421,13 +2988,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const nameParts = parseClientName(clientName);
       const communicationTone = state.clientTone === 'tykani' ? 'tykani' : 'vykani';
       /* PATCH */
+      const clientLanguage = state.clientLanguage === 'en' ? 'en' : 'cs';
+      /* PATCH */
       const clientGender = state.clientGender === 'female' ? 'female' : 'male';
       const salutation = formatSalutation({
           firstName: nameParts.firstName,
           lastName: nameParts.lastName,
           tone: communicationTone,
           manualSalutation,
-          /* PATCH */ gender: clientGender
+          /* PATCH */ gender: clientGender,
+          /* PATCH */ language: clientLanguage
       });
       if (!salutation) {
           showToast('Před exportem vyplňte oslovení klienta.', 'error');
@@ -2451,44 +3021,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       /* PATCH */
-      const isFemale = clientGender === 'female';
+      const copy = buildExportCopy({ language: clientLanguage, tone: communicationTone, gender: clientGender });
       /* PATCH */
-      const toneCopy = communicationTone === 'tykani'
-          ? {
-              heroLead: (sal) => `Ahoj ${sal}, připravil jsem pro tebe tento přehledný report, kde jednoduše uvidíš, jak se daří tvým investicím. Věřím, že je vše maximálně srozumitelné, ale pokud budeš mít jakékoli otázky, dej mi prosím vědět – rád vše s tebou projdu osobně.`,
-              benefitPortfolio: 'Tvé investice jsou rozloženy pro optimální růst a bezpečnost.',
-              benefitGrowth: 'Strategie je nastavená s ohledem na dlouhodobé zhodnocení tvého majetku.',
-              narrativeTitle: 'Vítej ve svém reportu',
-              narrativeBody: 'Na následujících stránkách najdeš klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Ber to jako takovou „mapu“ naší společné cesty za tvými finančními cíli.',
-              summaryTitle: 'Souhrn tvého portfolia',
-              summaryBody: 'Klíčové ukazatele, které ti v kostce ukážou celkové zdraví a výkon tvých investic.',
-              xirrExplanation: `Jde o klíčový ukazatel reálné výkonnosti tvého portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jsi do portfolia vkládal${isFemale ? 'a' : ''}. Výsledné procento ti tak dává přesný obraz o tom, jak efektivně tvoje peníze v průměru každý rok pracovaly.`,
-              cumulativeExplanation: 'Tento údaj ti poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje tvůj <strong>celkový čistý výnos jako procento ze všech tvých vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
-              disclaimerIntro: 'Prosím věnuj pozornost následujícím informacím a limitům výpočtů.'
-          }
-          : {
-              heroLead: (sal) => `Dobrý den, ${sal}, připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl${isFemale ? 'a' : ''} na cokoliv zeptat, jsem tu pro Vás.`,
-              benefitPortfolio: 'Vaše investice jsou rozloženy pro optimální růst a bezpečnost.',
-              benefitGrowth: 'Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.',
-              narrativeTitle: 'Vítejte ve Vašem reportu',
-              narrativeBody: 'Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou „mapu“ naší společné cesty za Vašimi finančními cíli.',
-              summaryTitle: 'Souhrn Vašeho portfolia',
-              summaryBody: 'Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.',
-              xirrExplanation: `Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal${isFemale ? 'a' : ''}. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.`,
-              cumulativeExplanation: 'Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.',
-              disclaimerIntro: 'Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.'
-          };
-      /* PATCH */
-      const heroLeadText = toneCopy.heroLead(salutation);
+      const heroLeadText = copy.hero.lead(salutation);
 
       /* PATCH */
       const formattedOverrides = {
-          totalCurrent: formatCurrency0(snapshot.portfolioSummary.totalCurrentConverted, outCurr)
+          totalCurrent: formatCurrency0(snapshot.portfolioSummary.totalCurrentConverted, outCurr, copy.format.currency)
       };
       /* PATCH */
       const formattedCapture = {};
       /* PATCH */
-      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true, formattedTotals: formattedOverrides, captureFormatted: formattedCapture, tone: communicationTone });
+      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, {
+          isStaticExport: true,
+          formattedTotals: formattedOverrides,
+          captureFormatted: formattedCapture,
+          tone: communicationTone,
+          /* PATCH */ summaryLabels: copy.summary.labels,
+          /* PATCH */ format: copy.format,
+          /* PATCH */ language: copy.language
+      });
 
       /* PATCH */
       const sharedFormattedTotals = {
@@ -2502,7 +3054,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return acc;
       }, {});
 
-      const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true });
+      const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
 
       const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
       const allocationData = Object.entries(groupedFunds).map(([name, entries]) => {
@@ -2514,19 +3066,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }).filter(item => item.totalCurrent > 0);
 
       const pieBlock = allocationData.length
-          ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true })
-          : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">Pro koláčový graf nejsou dostupná data.</div>`;
+          ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true, /* PATCH */ copy: copy.pie, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language })
+          : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">${htmlEscape(copy.pie.noData)}</div>`;
 
-      const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady, formattedTodayValue: sharedFormattedTotals.totalCurrent });
+      const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady, formattedTodayValue: sharedFormattedTotals.totalCurrent, /* PATCH */ copy: copy.line, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
 
       const explanationsBlock = `<div class="export-explanations">
         <article>
-          <h3>Co je XIRR a jak funguje?</h3>
-          <p>${toneCopy.xirrExplanation}</p>
+          <h3>${htmlEscape(copy.explanations.xirr.title)}</h3>
+          <p>${copy.explanations.xirr.body}</p>
         </article>
         <article>
-          <h3>Co znamená kumulativní zhodnocení?</h3>
-          <p>${toneCopy.cumulativeExplanation}</p>
+          <h3>${htmlEscape(copy.explanations.cumulative.title)}</h3>
+          <p>${copy.explanations.cumulative.body}</p>
         </article>
       </div>`;
 
@@ -2537,76 +3089,73 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const generatedTimestamp = generatedAt.getTime();
       /* PATCH */
-      const generatedDateLabel = generatedAt.toLocaleDateString('cs-CZ');
+      const generatedDateLabel = generatedAt.toLocaleDateString(copy.locale.date);
       const fundCount = Object.keys(groupedFunds).length;
       const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
-          ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
+          ? `<div class="alert">${htmlEscape(copy.currencyWarning(outCurr))}</div>`
           : '';
 
       const narrativeSection = `<section class="narrative">
-        <h2>${htmlEscape(toneCopy.narrativeTitle)}</h2>
-        <p>${htmlEscape(toneCopy.narrativeBody)}</p>
+        <span class="pill">${htmlEscape(copy.narrative.pill)}</span>
+        <h2>${htmlEscape(copy.narrative.title)}</h2>
+        <p>${htmlEscape(copy.narrative.body)}</p>
       </section>`;
 
       const summarySection = `<section class="card">
         <div class="section-heading">
-          <span class="pill">SOUHRN</span>
-          <h2>${htmlEscape(toneCopy.summaryTitle)}</h2>
-          <p class="section-meta">Částky v ${htmlEscape(outCurr)}</p>
-          <p>${htmlEscape(toneCopy.summaryBody)}</p>
+          <span class="pill">${htmlEscape(copy.summary.pill)}</span>
+          <h2>${htmlEscape(copy.summary.title)}</h2>
+          <p class="section-meta">${htmlEscape(copy.summary.metaLabel(outCurr))}</p>
+          <p>${htmlEscape(copy.summary.body)}</p>
         </div>
         ${summaryBlock}
       </section>`;
 
       const fundsSection = `<section class="card">
         <div class="section-heading">
-          <span class="pill">DETAIL FONDŮ</span>
-          <h2>Výsledky po fondech</h2>
-          <p class="section-meta">Částky v ${htmlEscape(outCurr)}</p>
-          <p>Přehled všech sledovaných fondů včetně výkonu, ziskovosti a časové rozlohy investic.</p>
+          <span class="pill">${htmlEscape(copy.funds.pill)}</span>
+          <h2>${htmlEscape(copy.funds.title)}</h2>
+          <p class="section-meta">${htmlEscape(copy.summary.metaLabel(outCurr))}</p>
+          <p>${htmlEscape(copy.funds.description)}</p>
         </div>
         <div class="fund-export-grid">${fundsBlock}</div>
       </section>`;
 
       const pieSection = `<section class="card">
         <div class="section-heading">
-          <span class="pill">ALOKACE</span>
-          <h2>Alokace portfolia</h2>
-          <p>Rozložení kapitálu mezi jednotlivé fondy k datu exportu.</p>
+          <span class="pill">${htmlEscape(copy.pie.pill)}</span>
+          <h2>${htmlEscape(copy.pie.title)}</h2>
+          <p>${htmlEscape(copy.pie.description)}</p>
         </div>
         ${pieBlock}
       </section>`;
 
       const lineSection = `<section class="card">
         <div class="section-heading">
-          <span class="pill">VÝVOJ</span>
-          <h2>Vývoj hodnoty portfolia</h2>
-          <p>Historický vývoj a projekce při zachování aktuální míry zhodnocení portfolia.</p>
+          <span class="pill">${htmlEscape(copy.line.pill)}</span>
+          <h2>${htmlEscape(copy.line.title)}</h2>
+          <p>${htmlEscape(copy.line.description)}</p>
         </div>
         ${lineBlock}
       </section>`;
 
       const disclaimerSection = `<section class="card">
         <div class="section-heading">
-          <span class="pill">POZNÁMKY</span>
-          <h2>Důležitá upozornění</h2>
-          <p>${htmlEscape(toneCopy.disclaimerIntro)}</p>
+          <span class="pill">${htmlEscape(copy.disclaimers.pill)}</span>
+          <h2>${htmlEscape(copy.disclaimers.title)}</h2>
+          <p>${htmlEscape(copy.disclaimers.intro)}</p>
         </div>
         <div class="disclaimer-block">
-          <h3 class="disclaimer-title">Klíčové poznámky</h3>
-          <ul class="disclaimer-list">
-            <li class="disclaimer-item">Historické výnosy nejsou zárukou výsledků budoucích. Projekce vycházejí z aktuálního vývoje portfolia.</li>
-            <li class="disclaimer-item">Veškeré částky platí k datu generování reportu a mohou se v čase měnit podle tržních podmínek.</li>
-            <li class="disclaimer-item">Výpočty vycházejí z dat poskytnutých poradcem; v případě neúplných nebo nepřesných údajů mohou být výsledky zkreslené.</li>
-          </ul>
+          <h3 class="disclaimer-title">${htmlEscape(copy.disclaimers.listTitle || 'Klíčové poznámky')}</h3>
+          <ul class="disclaimer-list">${copy.disclaimers.items.map(item => `<li class="disclaimer-item">${htmlEscape(item)}</li>`).join('')}</ul>
         </div>
       </section>`;
 
       const explanationsSection = `<section class="card">
         <div class="section-heading">
-          <span class="pill">VYSVĚTLIVKY</span>
-          <h2>Vysvětlivky a použité metriky</h2>
-          <p>Stručná rekapitulace klíčových pojmů pro rychlou orientaci nad výsledky.</p>
+          <span class="pill">${htmlEscape(copy.explanations.pill)}</span>
+          <h2>${htmlEscape(copy.explanations.title)}</h2>
+          <p>${htmlEscape(copy.explanations.description)}</p>
         </div>
         ${explanationsBlock}
       </section>`;
@@ -2615,36 +3164,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const footerSection = `<footer class="export-footer"><p class="footer-note">© <span id="year"></span> Ondřej Lacina</p></footer>`;
 
       const fxMeta = Number.isFinite(fxRate) && fxRate > 0
-          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatFxRate(fxRate)}</span></div>`
+          ? `<div class="export-hero__meta-item"><span class="meta-label">${htmlEscape(copy.hero.meta.fx)}</span><span class="meta-value">${formatFxRate(fxRate)}</span></div>`
           : '';
 
       const heroSection = `<header class="export-hero">
         <div class="export-hero__layout">
           <div class="export-hero__content">
             <div class="brand-logo">Fair<span>Life</span></div>
-            <span class="export-hero__badge">Klientský report</span>
-            <h1 class="export-hero__title">Report investičního portfolia</h1>
+            <span class="export-hero__badge">${htmlEscape(copy.hero.badge)}</span>
+            <h1 class="export-hero__title">${htmlEscape(copy.hero.title)}</h1>
             <p class="export-hero__lead">${htmlEscape(heroLeadText)}</p>
             <div class="export-hero__meta">
-              <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">${htmlEscape(copy.hero.meta.client)}</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
               <!-- /* PATCH */ -->
-              <div class="export-hero__meta-item"><span class="meta-label">DATUM REPORTU</span><span class="meta-value"><span id="report-date" data-ts="${generatedTimestamp}">${htmlEscape(generatedDateLabel)}</span></span></div>
-              <div class="export-hero__meta-item"><span class="meta-label">Měna výstupu</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
-              <div class="export-hero__meta-item"><span class="meta-label">Počet fondů</span><span class="meta-value">${fundCount}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">${htmlEscape(copy.hero.meta.date)}</span><span class="meta-value"><span id="report-date" data-ts="${generatedTimestamp}" data-locale="${copy.locale.date}">${htmlEscape(generatedDateLabel)}</span></span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">${htmlEscape(copy.hero.meta.currency)}</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">${htmlEscape(copy.hero.meta.funds)}</span><span class="meta-value">${fundCount}</span></div>
               ${fxMeta}
             </div>
           </div>
           <div class="export-hero__features">
             <div class="feature-card benefit">
               <div class="feature-text">
-                <span class="feature-title benefit-title">Diverzifikované portfolio</span>
-                <span class="feature-desc benefit-desc">${htmlEscape(toneCopy.benefitPortfolio)}</span>
+                <span class="feature-title benefit-title">${htmlEscape(copy.hero.benefits.portfolioTitle)}</span>
+                <span class="feature-desc benefit-desc">${htmlEscape(copy.hero.benefits.portfolioDesc)}</span>
               </div>
             </div>
             <div class="feature-card benefit">
               <div class="feature-text">
-                <span class="feature-title benefit-title">Dlouhodobý růst</span>
-                <span class="feature-desc benefit-desc">${htmlEscape(toneCopy.benefitGrowth)}</span>
+                <span class="feature-title benefit-title">${htmlEscape(copy.hero.benefits.growthTitle)}</span>
+                <span class="feature-desc benefit-desc">${htmlEscape(copy.hero.benefits.growthDesc)}</span>
               </div>
             </div>
           </div>
@@ -2652,7 +3201,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </header>`;
 
       /* PATCH */
-      const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString('cs-CZ');})();";
+      const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var locale=el.getAttribute('data-locale')||'cs-CZ';var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString(locale);})();";
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
       const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});});`;
@@ -2660,11 +3209,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 
       const html = `<!doctype html>
-<html lang="cs">
+<html lang="${copy.htmlLang}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Report portfolia – ${htmlEscape(clientName)}</title>
+  <title>${htmlEscape(copy.documentTitle(clientName))}</title>
   <style>${styleContent}</style>
 </head>
 <body>
@@ -2850,6 +3399,8 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.clientToneInputs = Array.from(document.querySelectorAll('input[name="client-tone"]'));
     /* PATCH */
     elements.clientGenderInputs = Array.from(document.querySelectorAll('input[name="client-gender"]'));
+    /* PATCH */
+    elements.clientLanguageInputs = Array.from(document.querySelectorAll('input[name="client-language"]'));
     if (elements.clientNameInput) {
         elements.clientNameInput.value = state.clientName;
     }
@@ -2859,6 +3410,8 @@ document.addEventListener('DOMContentLoaded', () => {
     /* PATCH */
     updateGenderInputs();
     updateToneInputs();
+    /* PATCH */
+    updateLanguageInputs();
     const currentYearEl = document.getElementById('current-year');
     if (currentYearEl) {
         currentYearEl.textContent = new Date().getFullYear();
@@ -2930,6 +3483,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!e.target.checked) return;
             state.clientGender = e.target.value === 'female' ? 'female' : 'male';
             updateGenderInputs();
+            saveState();
+        });
+    });
+    /* PATCH */
+    elements.clientLanguageInputs.forEach((input) => {
+        input.addEventListener('change', (e) => {
+            if (!e.target.checked) return;
+            state.clientLanguage = e.target.value === 'en' ? 'en' : 'cs';
+            updateLanguageInputs();
             saveState();
         });
     });

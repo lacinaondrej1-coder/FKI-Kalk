@@ -14,7 +14,8 @@ Interaktivní webová kalkulačka pro správu investičního portfolia.
 1. Vyplňte všechna potřebná data ve fondech a zkontrolujte výsledky.
 2. V části *Správa dat* zadejte jméno a příjmení klienta (1. pád) a připravte si také oslovení v 5. pádě (např. "Pepo", "paní Nováková"). Obojí je povinné pro export.
 3. Zvolte pohlaví klienta a preferovanou formu komunikace (**tykání** nebo **vykání**). Všechny texty v exportu se podle kombinace voleb automaticky přizpůsobí.
-4. Volitelně doplňte směnný kurz, pokud pracujete s více měnami.
-5. Klikněte na tlačítko **„Exportovat report pro klienta (.html)”** – stáhne se samostatný soubor s interaktivní prezentací grafů a tabulek.
+4. Vyberte jazyk reportu (čeština nebo angličtina). Anglická varianta automaticky přepne slovosled, gramatiku i formátování čísel.
+5. Volitelně doplňte směnný kurz, pokud pracujete s více měnami.
+6. Klikněte na tlačítko **„Exportovat report pro klienta (.html)”** – stáhne se samostatný soubor s interaktivní prezentací grafů a tabulek.
 
 Exportovaný HTML soubor je plně statický, nevyžaduje připojení k internetu a zachovává vzhled i aktuální čísla z kalkulačky v okamžiku exportu.
