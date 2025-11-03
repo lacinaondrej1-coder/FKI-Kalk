@@ -1417,19 +1417,27 @@ document.addEventListener('DOMContentLoaded', () => {
               if (!isFinite(invest) && isFinite(p.qty) && isFinite(p.issueNav) && p.issueNav > 0) invest = p.qty * p.issueNav;
               if (!isFinite(current) && isFinite(qty) && isFinite(p.currNav) && p.currNav > 0) current = qty * p.currNav;
               if (!isFinite(invest) || !isFinite(current) || !effectiveDateIn || !p.currDate) return;
-              const months = utils.monthsDiff(effectiveDateIn, p.currDate);
-              const ret = (isFinite(invest) && invest > 0 && isFinite(current)) ? (current / invest - 1) : NaN;
-              const irr = (isFinite(invest) && isFinite(current) && effectiveDateIn && p.currDate) ? finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: p.currDate, amount: current }]) : NaN;
-              processedFunds.push({
-                  ...p,
-                  invest, qty, current,
-                  pnl: isFinite(invest) && isFinite(current) ? current - invest : NaN,
-                  ret, months, irr,
-                  dateIn: effectiveDateIn,
-                  originalDateIn: p.dateIn
-              });
-          });
-      });
+            /* PATCH */
+            const valuationDate = p.currDate;
+            /* PATCH */
+            const hasValidValuation = !!(effectiveDateIn && valuationDate && valuationDate >= effectiveDateIn);
+            const months = utils.monthsDiff(effectiveDateIn, valuationDate);
+            const ret = (isFinite(invest) && invest > 0 && isFinite(current)) ? (current / invest - 1) : NaN;
+            /* PATCH */
+            const irr = (hasValidValuation && isFinite(invest) && invest > 0 && isFinite(current))
+                ? finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: valuationDate, amount: current }])
+                : NaN;
+            processedFunds.push({
+                ...p,
+                invest, qty, current,
+                pnl: isFinite(invest) && isFinite(current) ? current - invest : NaN,
+                ret, months, irr,
+                dateIn: effectiveDateIn,
+                originalDateIn: p.dateIn,
+                /* PATCH */ hasValidValuation
+            });
+        });
+    });
       const { funds, hasMixedCurrencies: hasMixed } = { funds: processedFunds, hasMixedCurrencies: allCurrencies.size > 1 };
       const outCurr = elements.outCurrency?.value || 'CZK';
       const fxRate = utils.numCZ(elements.fxRate?.value);
@@ -1469,7 +1477,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     let totalInvestConverted = 0, totalCurrentConverted = 0;
     let cfsForIrr = [];
-    let latestDate = null;
+    /* PATCH */
+    let latestIrrDate = null;
+    /* PATCH */
+    let irrCurrentTotal = 0;
     let weightedDurationSum = 0;
     let minValuationDate = null;
     let maxValuationDate = null;
@@ -1478,28 +1489,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const convertedCurrent = convert(r.current, r.curr);
         if (isFinite(convertedInvest)) {
             totalInvestConverted += convertedInvest;
-            cfsForIrr.push({ date: r.dateIn, amount: -convertedInvest });
+            /* PATCH */
+            if (r.hasValidValuation) {
+                cfsForIrr.push({ date: r.dateIn, amount: -convertedInvest });
+            }
             if (isFinite(r.months)) {
                 weightedDurationSum += convertedInvest * r.months;
             }
         }
         if (isFinite(convertedCurrent)) {
             totalCurrentConverted += convertedCurrent;
+            /* PATCH */
+            if (r.hasValidValuation) {
+                irrCurrentTotal += convertedCurrent;
+            }
         }
         if (r.currDate) {
             if (!minValuationDate || r.currDate < minValuationDate) minValuationDate = r.currDate;
             if (!maxValuationDate || r.currDate > maxValuationDate) maxValuationDate = r.currDate;
         }
-        if (r.currDate && (!latestDate || r.currDate > latestDate)) {
-            latestDate = r.currDate;
+        /* PATCH */
+        if (r.hasValidValuation && r.currDate && (!latestIrrDate || r.currDate > latestIrrDate)) {
+            latestIrrDate = r.currDate;
         }
     });
-    if (isFinite(totalCurrentConverted) && latestDate) {
-        cfsForIrr.push({ date: latestDate, amount: totalCurrentConverted });
+    /* PATCH */
+    if (cfsForIrr.length > 0 && isFinite(irrCurrentTotal) && latestIrrDate) {
+        cfsForIrr.push({ date: latestIrrDate, amount: irrCurrentTotal });
     }
     const totalPnl = totalCurrentConverted - totalInvestConverted;
     const totalRet = totalInvestConverted > 0 ? (totalPnl / totalInvestConverted) : NaN;
-    const portfolioIrr = finance.xirr(cfsForIrr);
+    /* PATCH */
+    const portfolioIrr = cfsForIrr.length > 1 ? finance.xirr(cfsForIrr) : NaN;
     const weightedAvgMonths = totalInvestConverted > 0 ? weightedDurationSum / totalInvestConverted : NaN;
     return {
         totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths,
@@ -1555,29 +1576,48 @@ document.addEventListener('DOMContentLoaded', () => {
           let totalInvest = 0;
           let totalCurrent = 0;
           let weightedDurationSum = 0;
+          /* PATCH */
           const cfs = [];
+          /* PATCH */
+          let irrCurrentTotal = 0;
 
           investments.forEach(inv => {
               const invConverted = convert(inv.invest, inv.curr);
               const currConverted = convert(inv.current, inv.curr);
               if (isFinite(invConverted)) {
                   totalInvest += invConverted;
-                  cfs.push({ date: inv.dateIn, amount: -invConverted });
+                  /* PATCH */
+                  if (inv.hasValidValuation) {
+                      cfs.push({ date: inv.dateIn, amount: -invConverted });
+                  }
                   if (isFinite(inv.months)) {
                       weightedDurationSum += invConverted * inv.months;
                   }
               }
               if (isFinite(currConverted)) {
                   totalCurrent += currConverted;
+                  /* PATCH */
+                  if (inv.hasValidValuation) {
+                      irrCurrentTotal += currConverted;
+                  }
               }
           });
 
           const latestDate = investments.reduce((max, entry) => (entry.currDate && entry.currDate > max ? entry.currDate : max), new Date(0));
-          if (isFinite(totalCurrent) && investments.length > 0 && latestDate.getTime() > 0) {
-              cfs.push({ date: latestDate, amount: totalCurrent });
+          /* PATCH */
+          const latestValidDate = investments.reduce((max, entry) => {
+              if (entry.hasValidValuation && entry.currDate && (!max || entry.currDate > max)) {
+                  return entry.currDate;
+              }
+              return max;
+          }, null);
+          /* PATCH */
+          if (cfs.length > 0 && latestValidDate) {
+              cfs.push({ date: latestValidDate, amount: irrCurrentTotal });
           }
 
-          const fundIrr = finance.xirr(cfs);
+          /* PATCH */
+          const fundIrr = cfs.length > 1 ? finance.xirr(cfs) : NaN;
           const pnl = totalCurrent - totalInvest;
           const weightedAvgMonths = totalInvest > 0 ? weightedDurationSum / totalInvest : NaN;
           const fundColor = getColor(name);
@@ -1757,12 +1797,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const irrClassInteractive = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
     const irrClassExport = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
     let dateDisclaimer = '';
+    /* PATCH */
+    const dateLocale = languageOverride === 'en' ? 'en-GB' : 'cs-CZ';
     if (minValuationDate && maxValuationDate) {
-        const minStr = minValuationDate.toLocaleDateString('cs-CZ');
-        const maxStr = maxValuationDate.toLocaleDateString('cs-CZ');
-        dateDisclaimer = minStr === maxStr
-            ? `Hodnoty jsou platné k ${maxStr}.`
-            : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`;
+        const minStr = minValuationDate.toLocaleDateString(dateLocale);
+        const maxStr = maxValuationDate.toLocaleDateString(dateLocale);
+        if (languageOverride === 'en') {
+            dateDisclaimer = minStr === maxStr
+                ? `Values are current as of ${maxStr}.`
+                : `Values are current as of the latest available dates between ${minStr} and ${maxStr}.`;
+        } else {
+            dateDisclaimer = minStr === maxStr
+                ? `Hodnoty jsou platné k ${maxStr}.`
+                : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`;
+        }
     }
 
     if (isStaticExport) {
