@@ -2259,7 +2259,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const renderPieChart = (container, data, outCurr, options = {}) => {
     /* PATCH */
-    const { isStaticExport = false, copy: pieCopy = null, format = {} } = options;
+    const { isStaticExport = false, copy: pieCopy = null, format = {}, /* PATCH */ language = 'cs' } = options;
     /* PATCH */
     const percentFormat = format.percent || {};
     const pieTotal = data.reduce((sum, d) => sum + d.totalCurrent, 0);
@@ -2272,7 +2272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
         /* PATCH */
-        const svg = buildStaticPieChartSvg(slices, pieTotal, outCurr, { copy: pieCopy, format, language });
+        const svg = buildStaticPieChartSvg(slices, pieTotal, outCurr, { copy: pieCopy, format, /* PATCH */ language });
         /* PATCH */
         const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent1(d.value / pieTotal, percentFormat)}</span></div>`).join('');
         return `<div class="pie-export"><div class="pie-canvas">${svg}</div><div class="pie-legend">${legend}</div></div>`;
