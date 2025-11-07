@@ -905,22 +905,38 @@
             segment = 'CODYA',
             startDate = toInputDate(startOfToday()),
             options = {},
-        ) => ({
-            id: randomId(),
-            name,
-            currency: BASE_CURRENCY,
-            amountStr: '0',
-            returnStr: String(rate),
-            startDate,
-            segment,
-            topUpStr: '0',
-            crashYear: '0',
-            crashMode: 'haircut',
-            haircutStr: '50',
-            defaultKey: options.defaultKey || null,
-        });
+        ) => {
+            const normalizedStartDate = (() => {
+                if (startDate instanceof Date) {
+                    return toInputDate(startDate);
+                }
+                if (typeof startDate === 'string' && startDate) {
+                    const parsed = parseISODate(startDate);
+                    return parsed ? toInputDate(parsed) : startDate;
+                }
+                return toInputDate(startOfToday());
+            })();
 
-        const sanitizeFund = (fund) => {
+            return {
+                id: randomId(),
+                name,
+                currency: BASE_CURRENCY,
+                amountStr: '0',
+                returnStr: String(rate),
+                startDate: normalizedStartDate,
+                segment,
+                topUpStr: '0',
+                crashYear: '0',
+                crashMode: 'haircut',
+                haircutStr: '50',
+                defaultKey: options.defaultKey || null,
+            };
+        };
+
+        const sanitizeFund = (fund, fallbackStartDate) => {
+            const fallback = fallbackStartDate instanceof Date ? fallbackStartDate : startOfToday();
+            const startDateInstance = parseISODate(fund?.startDate) || fallback;
+            const startDateStr = toInputDate(startDateInstance);
             const rawHaircut = fund?.haircutStr;
             const normalizedHaircut = (() => {
                 if (rawHaircut === undefined || rawHaircut === null) return '50';
@@ -936,7 +952,7 @@
                 currency: fund?.currency || BASE_CURRENCY,
                 amountStr: String(fund?.amountStr ?? '0'),
                 returnStr: String(fund?.returnStr ?? '0'),
-                startDate: fund?.startDate || toInputDate(startOfToday()),
+                startDate: startDateStr,
                 segment: fund?.segment || 'CODYA',
                 topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
                 crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
@@ -966,13 +982,31 @@
             };
         };
 
+        const deriveScenarioStartDate = (fundList) => {
+            let earliest = null;
+            if (Array.isArray(fundList)) {
+                fundList.forEach((fund) => {
+                    const parsed = parseISODate(fund?.startDate);
+                    if (parsed instanceof Date) {
+                        if (!earliest || parsed < earliest) {
+                            earliest = parsed;
+                        }
+                    }
+                });
+            }
+            return earliest || startOfToday();
+        };
+
         const prepareScenarioInput = (funds) => {
             const today = startOfToday();
+            const scenarioStart = deriveScenarioStartDate(funds);
             const preparedFunds = [];
             const topUps = [];
             const crashes = [];
-            (funds || []).map(sanitizeFund).forEach((fund) => {
-                const startDate = parseISODate(fund.startDate) || today;
+            (funds || [])
+                .map((fund) => sanitizeFund(fund, scenarioStart))
+                .forEach((fund) => {
+                    const startDate = parseISODate(fund.startDate) || scenarioStart || today;
                 const startDateStr = toInputDate(startDate);
                 preparedFunds.push({
                     id: fund.id,
@@ -992,24 +1026,25 @@
                         amountStr: String(topUpAmount),
                     });
                 }
-                const crashYear = parseInt(fund.crashYear, 10);
-                if (Number.isFinite(crashYear) && crashYear > 0) {
-                    const crashDate = addYears(startDate, crashYear);
-                    crashes.push({
-                        id: `${fund.id}-crash`,
-                        fundId: fund.id,
-                        date: toInputDate(crashDate),
-                        mode: 'haircut',
-                        haircutStr: String(fund.haircutStr ?? '50'),
-                    });
-                }
-            });
+                    const crashYear = parseInt(fund.crashYear, 10);
+                    if (Number.isFinite(crashYear) && crashYear > 0) {
+                        const crashDate = addYears(startDate, crashYear);
+                        crashes.push({
+                            id: `${fund.id}-crash`,
+                            fundId: fund.id,
+                            date: toInputDate(crashDate),
+                            mode: 'haircut',
+                            haircutStr: String(fund.haircutStr ?? '50'),
+                        });
+                    }
+                });
             return { funds: preparedFunds, topUps, crashes };
         };
 
         const STORAGE_KEY = 'fkiPurchaseScenarioState';
         function analyzeScenario(funds, topUps, crashes) {
-            const parsedFunds = (funds || []).map(sanitizeFund);
+            const scenarioStart = deriveScenarioStartDate(funds);
+            const parsedFunds = (funds || []).map((fund) => sanitizeFund(fund, scenarioStart));
             const fundMap = new Map();
             parsedFunds.forEach((fund) => {
                 fundMap.set(fund.id, {
@@ -1603,13 +1638,17 @@
             { key: 'AVANT::Semper', segment: 'AVANT', name: 'Semper', rate: 11 },
         ];
 
-        const getDefaultFunds = () =>
-            DEFAULT_FUND_CONFIG.map((config) =>
-                createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }),
+        const getDefaultFunds = () => {
+            const startDateStr = toInputDate(startOfToday());
+            return DEFAULT_FUND_CONFIG.map((config) =>
+                createFund(config.name, config.rate, config.segment, startDateStr, { defaultKey: config.key }),
             );
+        };
 
         const ensureDefaultFunds = (fundList) => {
-            const sanitized = (fundList || []).map(sanitizeFund);
+            const scenarioStartDate = deriveScenarioStartDate(fundList);
+            const startDateStr = toInputDate(scenarioStartDate);
+            const sanitized = (fundList || []).map((fund) => sanitizeFund(fund, scenarioStartDate));
             const keyFor = (fund) => fund.defaultKey || `${fund.segment}::${fund.name}`;
             const usedIds = new Set();
             const result = [];
@@ -1620,7 +1659,7 @@
                     result.push({ ...match, segment: config.segment, defaultKey: config.key });
                     usedIds.add(match.id);
                 } else {
-                    result.push(createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }));
+                    result.push(createFund(config.name, config.rate, config.segment, startDateStr, { defaultKey: config.key }));
                 }
             });
 
@@ -2996,7 +3035,11 @@
             const totalInitial = useMemo(() => funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0), [funds]);
 
             const addFund = useCallback((segment) => {
-                setFunds((prev) => [...prev, createFund('Nový fond', 5, segment)]);
+                setFunds((prev) => {
+                    const scenarioStart = deriveScenarioStartDate(prev);
+                    const startDateStr = toInputDate(scenarioStart);
+                    return [...prev, createFund('Nový fond', 5, segment, startDateStr)];
+                });
             }, [setFunds]);
 
             const updateFund = useCallback((id, patch) => {
