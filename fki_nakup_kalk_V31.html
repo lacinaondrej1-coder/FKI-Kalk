@@ -1990,7 +1990,17 @@
 
         const projectSnapshotToHorizon = (snapshot, yearsForward) => {
             if (!Array.isArray(snapshot) || snapshot.length === 0) {
-                return { total: 0, weightedRate: null, investedWeightedRate: null };
+                return {
+                    total: 0,
+                    weightedRate: null,
+                    investedWeightedRate: null,
+                    activeWeightedRate: null,
+                    activeValue: 0,
+                    activeInvested: 0,
+                    lockedValue: 0,
+                    lockedInvested: 0,
+                    lockedShortfall: 0,
+                };
             }
             const years = Number.isFinite(yearsForward) && yearsForward > 0 ? yearsForward : 0;
             let total = 0;
@@ -1998,6 +2008,11 @@
             let investedDenominator = 0;
             let valueNumerator = 0;
             let valueDenominator = 0;
+            let activeValueTotal = 0;
+            let activeInvestedTotal = 0;
+            let activeValueNumerator = 0;
+            let lockedValueTotal = 0;
+            let lockedInvestedTotal = 0;
             snapshot.forEach((state) => {
                 if (!state) return;
                 const baseValue = Number.isFinite(state.value) ? state.value : 0;
@@ -2015,15 +2030,38 @@
                 if (invested > 0) {
                     investedDenominator += invested;
                     investedNumerator += invested * effectiveRate;
+                    if (canAccrue) {
+                        activeInvestedTotal += invested;
+                    } else {
+                        lockedInvestedTotal += invested;
+                    }
                 }
                 if (projectedValue > 0) {
                     valueDenominator += projectedValue;
                     valueNumerator += projectedValue * effectiveRate;
+                    if (canAccrue) {
+                        activeValueTotal += projectedValue;
+                        activeValueNumerator += projectedValue * rate;
+                    } else {
+                        lockedValueTotal += projectedValue;
+                    }
                 }
             });
             const investedWeightedRate = investedDenominator > 0 ? investedNumerator / investedDenominator : null;
             const valueWeightedRate = valueDenominator > 0 ? valueNumerator / valueDenominator : investedWeightedRate;
-            return { total, weightedRate: valueWeightedRate, investedWeightedRate };
+            const activeWeightedRate = activeValueTotal > 0 ? activeValueNumerator / activeValueTotal : null;
+            const lockedShortfall = Math.max(0, lockedInvestedTotal - lockedValueTotal);
+            return {
+                total,
+                weightedRate: valueWeightedRate,
+                investedWeightedRate,
+                activeWeightedRate,
+                activeValue: activeValueTotal,
+                activeInvested: activeInvestedTotal,
+                lockedValue: lockedValueTotal,
+                lockedInvested: lockedInvestedTotal,
+                lockedShortfall,
+            };
         };
 
         const projectPointToDate = (point, targetDate, overrideYearsForward) => {
@@ -2033,6 +2071,12 @@
                     total: Math.max(fallbackValue, 0),
                     weightedRate: null,
                     investedWeightedRate: null,
+                    activeWeightedRate: null,
+                    activeValue: 0,
+                    activeInvested: 0,
+                    lockedValue: 0,
+                    lockedInvested: 0,
+                    lockedShortfall: 0,
                     yearsForward: 0,
                 };
             }
@@ -2050,6 +2094,12 @@
                     total: Math.max(baseValue, 0),
                     weightedRate: null,
                     investedWeightedRate: null,
+                    activeWeightedRate: null,
+                    activeValue: 0,
+                    activeInvested: 0,
+                    lockedValue: 0,
+                    lockedInvested: 0,
+                    lockedShortfall: 0,
                     yearsForward,
                 };
             }
@@ -2059,6 +2109,12 @@
                 total: Math.max(total, 0),
                 weightedRate: projection.weightedRate,
                 investedWeightedRate: projection.investedWeightedRate,
+                activeWeightedRate: projection.activeWeightedRate,
+                activeValue: projection.activeValue,
+                activeInvested: projection.activeInvested,
+                lockedValue: projection.lockedValue,
+                lockedInvested: projection.lockedInvested,
+                lockedShortfall: projection.lockedShortfall,
                 yearsForward,
             };
         };
@@ -2140,29 +2196,66 @@
                 const rawHorizonYears = earliestNegativeDate ? diffInYears(earliestNegativeDate, safeTarget) : 0;
                 const horizonYears = Math.abs(rawHorizonYears - elapsedHint) < 0.05 ? elapsedHint : rawHorizonYears;
                 const totalInvestedFromFlows = negativeFlows.reduce((acc, flow) => acc - flow.amount, 0);
+                const lockedValue = Number.isFinite(projection.lockedValue) ? projection.lockedValue : 0;
+                const lockedInvested = Number.isFinite(projection.lockedInvested) ? projection.lockedInvested : 0;
+                const lockedShortfall = Number.isFinite(projection.lockedShortfall)
+                    ? projection.lockedShortfall
+                    : Math.max(0, lockedInvested - lockedValue);
+                const activeValue = Number.isFinite(projection.activeValue)
+                    ? projection.activeValue
+                    : Math.max(0, totalValue - lockedValue);
+                const activeInvested = Number.isFinite(projection.activeInvested)
+                    ? projection.activeInvested
+                    : Math.max(0, invested - lockedInvested);
 
-                let pointXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
+                let portfolioXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
 
                 if (
-                    (pointXirr === null || !Number.isFinite(pointXirr)) &&
+                    (portfolioXirr === null || !Number.isFinite(portfolioXirr)) &&
                     horizonYears > 1e-6 &&
                     totalInvestedFromFlows > 0 &&
                     totalValue > 0
                 ) {
                     const impliedRate = Math.pow(totalValue / totalInvestedFromFlows, 1 / Math.max(horizonYears, 1e-6)) - 1;
                     if (Number.isFinite(impliedRate)) {
-                        pointXirr = impliedRate;
+                        portfolioXirr = impliedRate;
                     }
                 }
 
                 if (
-                    (pointXirr === null || !Number.isFinite(pointXirr)) &&
+                    (portfolioXirr === null || !Number.isFinite(portfolioXirr)) &&
                     (Number.isFinite(projection.weightedRate) || Number.isFinite(projection.investedWeightedRate))
                 ) {
-                    pointXirr = Number.isFinite(projection.weightedRate)
+                    portfolioXirr = Number.isFinite(projection.weightedRate)
                         ? projection.weightedRate
                         : projection.investedWeightedRate;
                 }
+
+                let activeXirr = null;
+                if (activeInvested > 0 && activeValue > 0 && horizonYears > 1e-6) {
+                    const ratio = activeValue / activeInvested;
+                    if (ratio > 0) {
+                        const solved = Math.pow(ratio, 1 / Math.max(horizonYears, 1e-6)) - 1;
+                        if (Number.isFinite(solved)) {
+                            activeXirr = solved;
+                        }
+                    }
+                }
+
+                if (activeXirr === null || !Number.isFinite(activeXirr)) {
+                    if (Number.isFinite(projection.activeWeightedRate)) {
+                        activeXirr = projection.activeWeightedRate;
+                    } else if (Number.isFinite(projection.weightedRate)) {
+                        activeXirr = projection.weightedRate;
+                    }
+                }
+
+                const preferActive = lockedShortfall > 1 && Number.isFinite(activeXirr);
+                let pointXirr = preferActive && Number.isFinite(activeXirr) ? activeXirr : portfolioXirr;
+                if (pointXirr === null || !Number.isFinite(pointXirr)) {
+                    pointXirr = Number.isFinite(portfolioXirr) ? portfolioXirr : activeXirr;
+                }
+                const usingActiveXirr = preferActive && Number.isFinite(pointXirr) && pointXirr === activeXirr;
 
                 return {
                     date: safeTarget,
@@ -2173,7 +2266,16 @@
                     elapsedYears,
                     weightedRate: projection.weightedRate,
                     investedWeightedRate: projection.investedWeightedRate,
+                    activeWeightedRate: projection.activeWeightedRate,
+                    activeValue,
+                    activeInvested,
+                    lockedValue,
+                    lockedInvested,
+                    lockedShortfall,
                     xirr: pointXirr,
+                    portfolioXirr: Number.isFinite(portfolioXirr) ? portfolioXirr : null,
+                    activeXirr: Number.isFinite(activeXirr) ? activeXirr : null,
+                    usingActiveXirr,
                 };
             };
 
@@ -2228,6 +2330,14 @@
                         gainPercent: projected.gainPercent,
                         elapsedYears: projected.elapsedYears,
                         xirr: projected.xirr,
+                        portfolioXirr: projected.portfolioXirr,
+                        activeXirr: projected.activeXirr,
+                        lockedShortfall: projected.lockedShortfall,
+                        lockedValue: projected.lockedValue,
+                        lockedInvested: projected.lockedInvested,
+                        activeValue: projected.activeValue,
+                        activeInvested: projected.activeInvested,
+                        usingActiveXirr: projected.usingActiveXirr,
                         weightedRate: projected.weightedRate,
                         investedWeightedRate: projected.investedWeightedRate,
                     };
@@ -2277,16 +2387,34 @@
                 : '—';
             const investedLabel = selectedPoint ? formatCurrency(selectedPoint.invested) : '—';
             const totalValueLabel = selectedPoint ? formatCurrency(selectedPoint.totalValue) : '—';
-            const gainPercentLabel = selectedPoint && selectedPoint.gainPercent !== null ? formatPercent(selectedPoint.gainPercent) : '—';
+            const gainPercentLabel =
+                selectedPoint && selectedPoint.gainPercent !== null ? formatPercent(selectedPoint.gainPercent) : '—';
             const gainCurrencyLabel = selectedPoint ? formatSignedCurrency(selectedPoint.gain) : '—';
             const startLabel = sliderAvailable ? 'Rok 0' : '—';
             const endLabel = sliderAvailable ? `Rok ${sliderPoints[sliderPoints.length - 1].year}` : '—';
-            const xirrValue = selectedPoint?.xirr ?? null;
+            const usingActiveXirr = selectedPoint?.usingActiveXirr === true;
+            const xirrValue = Number.isFinite(selectedPoint?.xirr) ? selectedPoint.xirr : null;
+            const portfolioXirrValue = Number.isFinite(selectedPoint?.portfolioXirr) ? selectedPoint.portfolioXirr : null;
             const xirrDurationLabel = selectedPoint
                 ? selectedPoint.year === 0
                     ? 'Začátek scénáře'
                     : `K ${formatDuration(selectedPoint.elapsedYears)}`
                 : 'Čekáme na data';
+            const xirrTitle = usingActiveXirr ? 'XIRR (aktivní část)' : 'XIRR';
+            const xirrDisplayValue = xirrValue !== null ? formatPercent(xirrValue) : '—';
+            const xirrSubLines = [xirrDurationLabel];
+            if (usingActiveXirr && portfolioXirrValue !== null) {
+                xirrSubLines.push(`Celé portfolio: ${formatPercent(portfolioXirrValue)}`);
+            }
+            const xirrSubValue = xirrSubLines.length
+                ? (
+                      <Fragment>
+                          {xirrSubLines.map((line, index) => (
+                              <div key={index}>{line}</div>
+                          ))}
+                      </Fragment>
+                  )
+                : null;
 
             return (
                 <section className="card-section">
@@ -2302,11 +2430,7 @@
                             <div className="info-grid">
                                 <InfoCard title="Hodnota portfolia" value={totalValueLabel} subValue={`K datu ${dateLabel}`} />
                                 <InfoCard title="Zhodnocení" value={gainPercentLabel} subValue={`Zisk/ztráta ${gainCurrencyLabel}`} />
-                                <InfoCard
-                                    title="XIRR"
-                                    value={xirrValue !== null ? formatPercent(xirrValue) : '—'}
-                                    subValue={xirrDurationLabel}
-                                />
+                                <InfoCard title={xirrTitle} value={xirrDisplayValue} subValue={xirrSubValue} />
                             </div>
                             {sliderAvailable && (
                                 <div className="timeline-slider">
