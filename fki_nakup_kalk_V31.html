@@ -496,7 +496,6 @@
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .card-subheading { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
         .summary-table-container {
-            overflow-x: auto;
             border: 1px solid var(--border);
             border-radius: 1rem;
             box-shadow: var(--shadow);
@@ -504,10 +503,13 @@
         }
         .summary-table {
             width: 100%;
-            min-width: 720px;
             border-collapse: separate;
             border-spacing: 0;
             font-variant-numeric: tabular-nums;
+        }
+        @media (max-width: 900px) {
+            .summary-table-container { overflow-x: auto; }
+            .summary-table { min-width: 640px; }
         }
         .summary-table thead th {
             font-size: 0.72rem;
@@ -520,12 +522,13 @@
             background: rgba(77, 177, 200, 0.1);
             border-bottom: 1px solid var(--border);
         }
+        .summary-table thead th.text-right { text-align: right; }
         .summary-table tbody td {
-            padding: 0.95rem 1.1rem;
+            padding: 1.1rem 1.1rem;
             border-bottom: 1px solid var(--border);
             font-size: 0.95rem;
             color: var(--text);
-            vertical-align: middle;
+            vertical-align: top;
         }
         .summary-table tbody td.tabular-nums { white-space: nowrap; }
         .summary-table tbody tr:last-child td { border-bottom: none; }
@@ -567,15 +570,32 @@
             color: var(--muted);
             letter-spacing: 0;
         }
-        .summary-table .period-label { display: flex; flex-direction: column; gap: 0.25rem; }
+        .summary-table .period-label { display: flex; flex-direction: column; gap: 0.3rem; }
         .summary-table .period-year { font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
         .summary-table .period-range { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
+        .summary-table .portfolio-lines { display: grid; gap: 0.4rem; }
+        .summary-table .portfolio-line { display: flex; justify-content: space-between; gap: 1.25rem; }
+        .summary-table .portfolio-line span:first-child {
+            font-size: 0.78rem;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .summary-table .portfolio-line span:last-child { font-weight: 600; letter-spacing: -0.01em; }
+        .summary-table .events-cell { display: grid; gap: 0.65rem; }
+        .summary-table .event-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+        .summary-table .event-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
         .summary-table .event-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
+            display: grid;
+            gap: 0.3rem;
+            justify-items: end;
+            padding: 0.4rem 0.7rem;
+            border-radius: 0.85rem;
             font-size: 0.72rem;
             font-weight: 600;
             letter-spacing: 0.12em;
@@ -3048,6 +3068,7 @@
                     const crashDetails = crashesInPeriod.length
                         ? {
                               entries: crashesInPeriod,
+                              eventCount: crashesInPeriod.length,
                               totalLoss: crashesInPeriod.reduce((acc, entry) => acc + entry.loss, 0),
                           }
                         : null;
@@ -3332,10 +3353,8 @@
                                     <thead>
                                         <tr>
                                             <th scope="col">Období</th>
-                                            <th scope="col" className="text-right">Stav na začátku</th>
-                                            <th scope="col" className="text-right">Vklady</th>
-                                            <th scope="col" className="text-right">Propady</th>
-                                            <th scope="col" className="text-right">Stav na konci</th>
+                                            <th scope="col" className="text-right">Portfolio</th>
+                                            <th scope="col">Události</th>
                                             <th scope="col" className="text-right">Výsledek roku</th>
                                         </tr>
                                     </thead>
@@ -3433,7 +3452,7 @@
                                                     )}`}
                                                 >
                                                     <span className="event-chip-count">
-                                                        {row.crashDetails.entries.length}×
+                                                        {row.crashDetails.eventCount || row.crashDetails.entries.length}×
                                                     </span>
                                                     <span className="event-chip-value">
                                                         {formatSignedValue(-row.crashDetails.totalLoss)}
@@ -3462,12 +3481,28 @@
                                                         </div>
                                                     </td>
                                                     <td className="tabular-nums text-right">
-                                                        {formatCurrency(row.startValue)}
+                                                        <div className="portfolio-lines">
+                                                            <div className="portfolio-line">
+                                                                <span>Začátek</span>
+                                                                <span>{formatCurrency(row.startValue)}</span>
+                                                            </div>
+                                                            <div className="portfolio-line">
+                                                                <span>Konec</span>
+                                                                <span>{formatCurrency(row.endValue)}</span>
+                                                            </div>
+                                                        </div>
                                                     </td>
-                                                    <td className="text-right">{depositChip}</td>
-                                                    <td className="text-right">{crashChip}</td>
-                                                    <td className="tabular-nums text-right">
-                                                        {formatCurrency(row.endValue)}
+                                                    <td>
+                                                        <div className="events-cell">
+                                                            <div className="event-row">
+                                                                <span className="event-label">Vklady</span>
+                                                                {depositChip}
+                                                            </div>
+                                                            <div className="event-row">
+                                                                <span className="event-label">Propady</span>
+                                                                {crashChip}
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td className="tabular-nums text-right">
                                                         <div className="gain-cell">
