@@ -1304,6 +1304,7 @@
             let investedSoFar = 0;
             let totalCrashLoss = 0;
             const timeline = [];
+            let timelineSequence = 0;
             const markers = [];
             const controlPoints = [];
 
@@ -1321,7 +1322,7 @@
                 const valueBeforeEvents = sumPortfolioValue();
                 const snapshotBeforeEvents = snapshotStates();
 
-                const pushPoint = (value, invested, snapshotOverride) => {
+                const pushPoint = (value, invested, snapshotOverride, phase = 'postEvents') => {
                     const finalSnapshot = snapshotOverride || snapshotStates();
                     const lastPoint = timeline[timeline.length - 1];
                     if (
@@ -1331,17 +1332,21 @@
                     ) {
                         lastPoint.investedToDate = invested;
                         lastPoint.snapshot = finalSnapshot;
+                        lastPoint.phase = phase || lastPoint.phase;
                         return;
                     }
+                    timelineSequence += 1;
                     timeline.push({
                         date: entry.date,
                         totalValue: value,
                         investedToDate: invested,
                         snapshot: finalSnapshot,
+                        phase,
+                        sequence: timelineSequence,
                     });
                 };
 
-                pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents);
+                pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents, 'preEvents');
                 let portfolioValueAfterDeposits = valueBeforeEvents;
 
                 if (entry.deposits.length > 0) {
@@ -1372,7 +1377,7 @@
 
                     portfolioValueAfterDeposits = sumPortfolioValue();
                     const snapshotAfterDeposits = snapshotStates();
-                    pushPoint(portfolioValueAfterDeposits, investedSoFar, snapshotAfterDeposits);
+                    pushPoint(portfolioValueAfterDeposits, investedSoFar, snapshotAfterDeposits, 'postDeposits');
                 }
 
                 let portfolioValueBeforeCrashes = portfolioValueAfterDeposits;
@@ -1418,7 +1423,8 @@
                 }
                 const snapshot = snapshotStates();
                 if (entry.crashes.length > 0 || entry.deposits.length === 0) {
-                    pushPoint(totalValue, investedSoFar, snapshot);
+                    const phase = entry.crashes.length > 0 ? 'postCrashes' : 'postEvents';
+                    pushPoint(totalValue, investedSoFar, snapshot, phase);
                 }
 
                 if (entryDeposits.length > 0 || entryCrashes.length > 0) {
@@ -2165,8 +2171,16 @@
             const rawTimeline = Array.isArray(analysis?.timeline) ? analysis.timeline : [];
             const timeline = rawTimeline
                 .filter((point) => point && point.date instanceof Date)
-                .map((point) => ({ ...point }))
-                .sort((a, b) => a.date - b.date);
+                .map((point) => ({
+                    ...point,
+                    phase: point.phase || 'postEvents',
+                    sequence: Number.isFinite(point.sequence) ? point.sequence : 0,
+                }))
+                .sort((a, b) => {
+                    const diff = a.date - b.date;
+                    if (diff !== 0) return diff;
+                    return a.sequence - b.sequence;
+                });
 
             if (timeline.length === 0) {
                 return {
@@ -2182,18 +2196,42 @@
             const finalDate = analysis?.endDate instanceof Date ? analysis.endDate : timeline[timeline.length - 1].date;
             const sanitizedFlows = normalizeCashFlows(analysis?.cashFlows);
 
-            const locatePoint = (targetDate) => {
-                let candidate = timeline[0];
+            const locatePoint = (targetDate, options = {}) => {
+                const position = options.eventPosition === 'before' ? 'before' : 'after';
+                const targetTime = targetDate.getTime();
+                let lastBefore = null;
+                const sameDay = [];
                 for (let i = 0; i < timeline.length; i += 1) {
                     const point = timeline[i];
                     if (!(point.date instanceof Date)) continue;
-                    if (point.date.getTime() <= targetDate.getTime()) {
-                        candidate = point;
-                    } else {
-                        break;
+                    const pointTime = point.date.getTime();
+                    if (pointTime < targetTime) {
+                        lastBefore = point;
+                        sameDay.length = 0;
+                        continue;
                     }
+                    if (pointTime === targetTime) {
+                        sameDay.push(point);
+                        continue;
+                    }
+                    break;
                 }
-                return candidate;
+                if (position === 'before') {
+                    if (sameDay.length > 0) {
+                        return (
+                            sameDay.find((p) => p.phase === 'preEvents') ||
+                            sameDay[0] ||
+                            lastBefore ||
+                            timeline[0] ||
+                            null
+                        );
+                    }
+                    return lastBefore || timeline[0] || null;
+                }
+                if (sameDay.length > 0) {
+                    return sameDay[sameDay.length - 1];
+                }
+                return lastBefore || timeline[0] || null;
             };
 
             const projectTo = (targetDate, options = {}) => {
@@ -2201,7 +2239,7 @@
                     return null;
                 }
                 const safeTarget = targetDate > finalDate ? finalDate : targetDate;
-                const basePoint = locatePoint(safeTarget) || timeline[0];
+                const basePoint = locatePoint(safeTarget, options) || timeline[0];
                 if (!basePoint) {
                     return null;
                 }
@@ -2226,9 +2264,21 @@
                 const gain = totalValue - invested;
                 const gainPercent = invested > 0 ? gain / invested : null;
 
-                const negativeFlows = sanitizedFlows.filter(
-                    (flow) => flow.date instanceof Date && flow.date.getTime() <= safeTarget.getTime() && flow.amount < 0,
-                );
+                const allowSameDayFlows = options.eventPosition !== 'before';
+                const targetTime = safeTarget.getTime();
+                const negativeFlows = sanitizedFlows.filter((flow) => {
+                    if (!(flow.date instanceof Date) || flow.amount >= 0) {
+                        return false;
+                    }
+                    const flowTime = flow.date.getTime();
+                    if (flowTime < targetTime) {
+                        return true;
+                    }
+                    if (!allowSameDayFlows) {
+                        return false;
+                    }
+                    return flowTime === targetTime;
+                });
                 const flowsForPoint = [...negativeFlows];
                 if (totalValue > 0) {
                     flowsForPoint.push({ amount: totalValue, date: safeTarget });
@@ -2890,8 +2940,14 @@
 
                     const elapsedStart = diffInYears(projectionOrigin, periodStart);
                     const elapsedEnd = diffInYears(projectionOrigin, periodEnd);
-                    const startProjection = projectionProjectTo(periodStart, { elapsedHint: elapsedStart });
-                    const endProjection = projectionProjectTo(periodEnd, { elapsedHint: elapsedEnd });
+                    const startProjection = projectionProjectTo(periodStart, {
+                        elapsedHint: elapsedStart,
+                        eventPosition: 'after',
+                    });
+                    const endProjection = projectionProjectTo(periodEnd, {
+                        elapsedHint: elapsedEnd,
+                        eventPosition: 'before',
+                    });
                     if (!startProjection || !endProjection) {
                         continue;
                     }
