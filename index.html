@@ -1528,7 +1528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderFundsByCard(groupedFunds, outCurr, fxRate);
     const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
     renderSummary(portfolioSummary, outCurr, { hasMixedCurrencies, hasFx: hasValidFx });
-    renderCharts(groupedFunds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary.portfolioIrr);
+    renderCharts(groupedFunds, funds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
   };
 
   const calculateSummary = (funds, outCurr, fxRate) => {
@@ -1587,6 +1587,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const totalPnlAll = totalCurrentAll - totalInvestAll;
     const totalPnlActive = totalCurrentActive - totalInvestActive;
+    /* PATCH */
+    const totalRetAll = totalInvestAll > 0 ? (totalPnlAll / totalInvestAll) : NaN;
+    /* PATCH */
     const totalRetActive = totalInvestActive > 0 ? (totalPnlActive / totalInvestActive) : NaN;
     const portfolioIrr = cfsForIrr.length > 1 ? finance.xirr(cfsForIrr) : NaN;
     const weightedAvgMonths = totalInvestActive > 0 ? weightedDurationSum / totalInvestActive : NaN;
@@ -1594,7 +1597,8 @@ document.addEventListener('DOMContentLoaded', () => {
         totalInvestConverted: totalInvestAll,
         totalCurrentConverted: totalCurrentAll,
         totalPnl: totalPnlAll,
-        totalRet: totalRetActive,
+        /* PATCH */
+        totalRet: totalRetAll,
         portfolioIrr,
         weightedAvgMonths,
         minValuationDate,
@@ -1606,6 +1610,8 @@ document.addEventListener('DOMContentLoaded', () => {
         totalCurrentActive,
         /* PATCH */
         totalPnlActive,
+        /* PATCH */
+        totalRetActive,
         /* PATCH */
         hasActive: totalInvestActive > 0 || totalCurrentActive > 0,
         /* PATCH */
@@ -1895,6 +1901,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
+    /* PATCH */
+    const displayRetAll = (isFinite(totalInvestConverted) && totalInvestConverted > 0)
+        ? ((totalCurrentConverted - totalInvestConverted) / totalInvestConverted)
+        : totalRet;
     const pnlClassInteractive = totalPnl >= 0 ? 'text-positive' : 'text-negative';
     const pnlClassExport = totalPnl >= 0 ? 'text-positive' : 'text-negative';
     const irrClassInteractive = isFinite(portfolioIrr) ? (portfolioIrr >= 0 ? 'text-positive' : 'text-negative') : '';
@@ -1922,7 +1932,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalInvest: formatCurrency0(totalInvestConverted, outCurr, currencyFormat),
             totalCurrent: formatCurrency0(totalCurrentConverted, outCurr, currencyFormat),
             totalPnl: formatCurrency0(totalPnl, outCurr, currencyFormat),
-            totalRet: formatPercent1(totalRet, percentFormat),
+            totalRet: formatPercent1(displayRetAll, percentFormat),
             irr: formatXirr1(portfolioIrr, { ...percentFormat, language: languageOverride }),
             weightedMonths: formatMonths0(weightedAvgMonths, { ...monthsFormat, language: languageOverride })
         };
@@ -1994,7 +2004,7 @@ document.addEventListener('DOMContentLoaded', () => {
         totalInvest: formatCurrency0(totalInvestConverted, outCurr),
         totalCurrent: formatCurrency0(totalCurrentConverted, outCurr),
         totalPnl: formatCurrency0(totalPnl, outCurr),
-        totalRet: formatPercent1(totalRet),
+        totalRet: formatPercent1(displayRetAll),
         irr: formatXirr1(portfolioIrr),
         weightedMonths: formatMonths0(weightedAvgMonths)
     };
@@ -2038,17 +2048,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const renderCharts = (groupedFunds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioIrr) => {
+  const renderCharts = (groupedFunds, funds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
     const chartsSection = elements.chartsSection || document.getElementById('charts-section');
     const lineCard = elements.lineChartCard || document.getElementById('line-chart-card');
     const pieCard = elements.pieChartCard || document.getElementById('pie-chart-card');
     /* PATCH */
     const activeDataset = Array.isArray(activeFunds) ? activeFunds : [];
-    if (activeDataset.length > 0) {
+    /* PATCH */
+    const allDataset = Array.isArray(funds) ? funds : [];
+    if (allDataset.length > 0) {
         lineCard.style.display = 'block';
         const lineContainer = elements.lineChartContainer || document.getElementById('line-chart-container');
         if (lineContainer) {
-            renderLineChart(lineContainer, activeDataset, portfolioIrr, outCurr, fxRate);
+            renderLineChart(lineContainer, allDataset, portfolioSummary.portfolioIrr, outCurr, fxRate, {
+                /* PATCH */ activeFunds: activeDataset,
+                /* PATCH */ frozenTotal: (portfolioSummary.totalCurrentConverted || 0) - (portfolioSummary.totalCurrentActive || 0)
+            });
         }
     } else {
         lineCard.style.display = 'none';
@@ -2082,7 +2097,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formattedTodayValue: formattedTodayValueOverride = null,
         copy: lineCopy = null,
         format = {},
-        language = 'cs'
+        language = 'cs',
+        /* PATCH */ activeFunds: activeFundsOption = null,
+        /* PATCH */ frozenTotal: frozenTotalOption = null
     } = options;
 
     if (isStaticExport) {
@@ -2120,42 +2137,99 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     container.innerHTML = "";
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
-    const deposits = funds.map(f => ({ date: f.dateIn, amount: convert(f.invest, f.curr), fund: f.fund })).filter(d => isFinite(d.amount)).sort((a,b) => a.date - b.date);
-    if (deposits.length === 0) return;
-    const displayIrr = isFinite(portfolioIrr) ? portfolioIrr : 0;
-    const dailyRate = Math.pow(1 + displayIrr, 1 / 365.25) - 1;
+    /* PATCH */
+    const allEvents = funds
+        .map(f => ({ date: f.dateIn, amount: convert(f.invest, f.curr), fund: f.fund, freeze: !!f.freeze }))
+        .filter(evt => evt.date instanceof Date && !isNaN(evt.date) && Number.isFinite(evt.amount) && evt.amount !== 0)
+        .sort((a, b) => a.date - b.date);
+    if (allEvents.length === 0) {
+        container.innerHTML = `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Pro liniový graf nejsou k dispozici údaje.</div>`;
+        return;
+    }
+    /* PATCH */
+    const activeSet = Array.isArray(activeFundsOption) && activeFundsOption.length ? activeFundsOption : funds.filter(f => !f.freeze);
+    /* PATCH */
+    const msPerDay = 1000 * 60 * 60 * 24;
     const today = new Date(); today.setHours(0,0,0,0);
-    const firstDate = deposits[0].date;
-    const futureEndDate = new Date('2035-12-31');
+    const firstDate = allEvents[0].date;
+    const futureEndDate = new Date(`${PROJECTION_END_YEAR}-12-31`);
     const totalTimeSpan = futureEndDate - firstDate;
     if (totalTimeSpan <= 0) {
-      container.innerHTML = `<div class="text-center py-10 text-muted">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
-      return;
+        container.innerHTML = `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
+        return;
     }
-    const allPoints = [];
-    let runningValue = 0;
-    let lastDate = firstDate;
+    /* PATCH */
+    const hasIrr = Number.isFinite(portfolioIrr) && activeSet.length > 0;
+    const displayIrr = hasIrr ? portfolioIrr : 0;
+    const dailyRate = Math.pow(1 + displayIrr, 1 / 365.25) - 1;
+    let runningActive = 0;
+    let runningFrozen = 0;
     let cumulativeContributions = 0;
-    allPoints.push({ date: firstDate, value: 0, contributions: 0 });
-    for (const deposit of deposits) {
-      const daysSinceLast = (deposit.date - lastDate) / (1000 * 60 * 60 * 24);
-      if (daysSinceLast > 0) {
-        runningValue *= Math.pow(1 + dailyRate, daysSinceLast);
-        allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
-      }
-      runningValue += deposit.amount;
-      cumulativeContributions += deposit.amount;
-      allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
-      lastDate = deposit.date;
+    let lastGrowthDate = firstDate;
+    const allPoints = [{ date: firstDate, value: 0, contributions: 0, frozenValue: 0 }];
+    const depositsByDay = new Map();
+    allEvents.forEach(evt => {
+        const daysSinceLast = (evt.date - lastGrowthDate) / msPerDay;
+        if (daysSinceLast > 0 && hasIrr && runningActive !== 0) {
+            runningActive *= Math.pow(1 + dailyRate, daysSinceLast);
+        }
+        lastGrowthDate = evt.date;
+        const valueBefore = runningActive + runningFrozen;
+        allPoints.push({ date: evt.date, value: valueBefore, contributions: cumulativeContributions, frozenValue: runningFrozen });
+        cumulativeContributions += evt.amount;
+        if (evt.freeze) {
+            runningFrozen += evt.amount;
+        } else {
+            runningActive += evt.amount;
+        }
+        const valueAfter = runningActive + runningFrozen;
+        allPoints.push({ date: evt.date, value: valueAfter, contributions: cumulativeContributions, frozenValue: runningFrozen });
+        const dayKey = evt.date.toISOString().split('T')[0];
+        const dayEntry = depositsByDay.get(dayKey) || { date: evt.date, entries: [], contributions: 0, value: 0, frozenValue: 0 };
+        dayEntry.date = evt.date;
+        dayEntry.contributions = cumulativeContributions;
+        dayEntry.value = valueAfter;
+        dayEntry.frozenValue = runningFrozen;
+        dayEntry.entries.push({ fund: evt.fund, amount: evt.amount, freeze: evt.freeze });
+        depositsByDay.set(dayKey, dayEntry);
+    });
+    const daysToToday = (today - lastGrowthDate) / msPerDay;
+    if (daysToToday > 0 && hasIrr && runningActive !== 0) {
+        runningActive *= Math.pow(1 + dailyRate, daysToToday);
     }
-    const valueAtToday = runningValue * Math.pow(1 + dailyRate, (today - lastDate) / (1000 * 60 * 60 * 24));
-    allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
+    /* PATCH */
+    const frozenCurrentTotal = Number.isFinite(frozenTotalOption)
+        ? frozenTotalOption
+        : funds.reduce((sum, f) => f.freeze ? sum + (Number.isFinite(convert(f.current, f.curr)) ? convert(f.current, f.curr) : 0) : sum, 0);
+    /* PATCH */
+    const frozenAdjustment = frozenCurrentTotal - runningFrozen;
+    if (frozenAdjustment !== 0) {
+        allPoints.forEach(point => {
+            if (point.frozenValue > 0) {
+                point.value += frozenAdjustment;
+            }
+        });
+        depositsByDay.forEach(entry => {
+            if (entry.frozenValue > 0) {
+                entry.value += frozenAdjustment;
+            }
+        });
+        runningFrozen += frozenAdjustment;
+    }
+    allPoints.sort((a, b) => a.date - b.date);
+    const valueAtToday = runningActive + runningFrozen;
+    allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions, frozenValue: runningFrozen });
     const projectionPoints = [{ date: today, value: valueAtToday }];
-    for (let year = today.getFullYear() + 1; year <= 2035; year++) {
-      const nextDate = new Date(`${year}-12-31`);
-      const daysFromToday = (nextDate - today) / (1000 * 60 * 60 * 24);
-      const projectedValue = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
-      projectionPoints.push({ date: nextDate, value: projectedValue });
+    if (hasIrr && runningActive !== 0) {
+        let projectedActive = runningActive;
+        let lastProjectionDate = today;
+        for (let year = today.getFullYear() + 1; year <= PROJECTION_END_YEAR; year++) {
+            const nextDate = new Date(`${year}-12-31`);
+            const daysFromLast = (nextDate - lastProjectionDate) / msPerDay;
+            projectedActive *= Math.pow(1 + dailyRate, daysFromLast);
+            projectionPoints.push({ date: nextDate, value: projectedActive + runningFrozen });
+            lastProjectionDate = nextDate;
+        }
     }
     const height = 400;
     const margin = {top: 20, right: 20, bottom: 60, left: 70};
@@ -2167,7 +2241,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const width = Math.max(baseWidth, minWidth);
     const boundedWidth = width - margin.left - margin.right;
     const boundedHeight = height - margin.top - margin.bottom;
-    const maxValue = Math.max(...allPoints.map(p => p.value), ...projectionPoints.map(p => p.value));
+    const maxContribution = Math.max(...allPoints.map(p => Number.isFinite(p.contributions) ? p.contributions : 0), 0);
+    const maxValue = Math.max(maxContribution, ...allPoints.map(p => p.value), ...projectionPoints.map(p => p.value));
     const yMax = Math.ceil(maxValue / 100000) * 100000 || 100000;
     const xScale = (date) => margin.left + ((date - firstDate) / totalTimeSpan) * boundedWidth;
     const yScale = (value) => margin.top + boundedHeight - (value / yMax) * boundedHeight;
@@ -2202,53 +2277,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const formattedTodayValue = formattedTodayValueOverride ?? formatCurrency0(valueAtToday, outCurr);
     const snapPoints = [{x: xToday, y: yScale(valueAtToday), date: today, value: valueAtToday, isToday: true}];
     if (!options.isForPdf) {
-        const depositsByDay = deposits.reduce((acc, deposit) => {
-            const day = deposit.date.toISOString().split('T')[0];
-            if (!acc[day]) acc[day] = { date: deposit.date, dailyDeposits: [] };
-            acc[day].dailyDeposits.push(deposit);
-            return acc;
-        }, {});
-        const sortedDays = Object.values(depositsByDay).sort((a,b) => a.date - b.date);
-        let runningValueForDots = 0;
-        let lastDateForDots = firstDate;
-        sortedDays.forEach(dayData => {
-            const daysSinceLast = (dayData.date - lastDateForDots) / (1000 * 60 * 60 * 24);
-            if(daysSinceLast > 0){
-                 runningValueForDots *= Math.pow(1 + dailyRate, daysSinceLast);
-            }
-            const totalDayInvestment = dayData.dailyDeposits.reduce((sum, d) => sum + d.amount, 0);
-            runningValueForDots += totalDayInvestment;
-            const x = xScale(dayData.date);
-            const y = yScale(runningValueForDots);
+        const dayEntries = Array.from(depositsByDay.values()).sort((a, b) => a.date - b.date);
+        dayEntries.forEach(entry => {
+            const x = xScale(entry.date);
+            const y = yScale(entry.value);
+            const dateLabel = entry.date.toLocaleDateString('cs-CZ');
             let tooltipText = '';
-            if (dayData.dailyDeposits.length > 1) {
-            tooltipText = `<div class="font-bold text-primary">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
-                    dayData.dailyDeposits.map(d => `<div class="text-sm text-body">${d.fund}: ${formatCurrency0(d.amount, outCurr)}</div>`).join('');
+            if (entry.entries.length > 1) {
+                tooltipText = `<div class="font-bold text-primary">Vklady (${dateLabel})</div>`
+                    + entry.entries.map(d => `<div class="text-sm text-body">${htmlEscape(d.fund)}: ${formatCurrency0(d.amount, outCurr)}</div>`).join('');
             } else {
-                const d = dayData.dailyDeposits[0];
-                tooltipText = `<div class="text-primary">Vklad (${d.fund}): ${formatCurrency0(d.amount, outCurr)} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
+                const d = entry.entries[0];
+                tooltipText = `<div class="text-primary">Vklad (${htmlEscape(d.fund)}): ${formatCurrency0(d.amount, outCurr)} (${dateLabel})</div>`;
             }
             const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
-            const ariaLabel = dayData.dailyDeposits.length > 1
-                ? `Vklady ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits.map(d => `${d.fund} ${formatCurrency0(d.amount, outCurr)}`).join(', ')}`
-                : `Vklad ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits[0].fund} ${formatCurrency0(dayData.dailyDeposits[0].amount, outCurr)}`;
-            const escapedAriaLabel = htmlEscape(ariaLabel);
-            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#4DB1C8" tabindex="0" aria-label="${escapedAriaLabel}" data-tooltip-text='${escapedTooltipText}'></circle>`;
+            const ariaLabel = entry.entries.length > 1
+                ? `Vklady ${dateLabel}: ${entry.entries.map(d => `${d.fund} ${formatCurrency0(d.amount, outCurr)}`).join(', ')}`
+                : `Vklad ${dateLabel}: ${entry.entries[0].fund} ${formatCurrency0(entry.entries[0].amount, outCurr)}`;
+            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#4DB1C8" tabindex="0" aria-label="${htmlEscape(ariaLabel)}" data-tooltip-text='${escapedTooltipText}'></circle>`;
             snapPoints.push({
                 x,
                 y,
-                date: dayData.date,
-                value: runningValueForDots,
+                date: entry.date,
+                value: entry.value,
                 isDeposit: true,
-                tooltipText: tooltipText
+                tooltipText
             });
-            lastDateForDots = dayData.date;
         });
     }
     innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0d2c54" stroke-width="1.5"></line>`;
     const todayLabel = `Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${formattedTodayValue}`;
     innerHTML += `<circle class="line-chart-dot line-chart-dot--today" cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0d2c54" stroke="white" stroke-width="2" tabindex="0" aria-label="${htmlEscape(todayLabel)}" data-tooltip-text="${htmlEscape(todayLabel)}"></circle>`;
     innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="rgba(51,55,61,0.55)" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
+    const projectValueAt = (targetDate) => {
+        if (!(targetDate instanceof Date) || isNaN(targetDate)) return valueAtToday;
+        if (targetDate <= today) return valueAtToday;
+        if (!hasIrr || runningActive === 0) return valueAtToday;
+        const daysAhead = (targetDate - today) / msPerDay;
+        return runningFrozen + runningActive * Math.pow(1 + dailyRate, daysAhead);
+    };
     if (options.isForPdf) {
         const fixedTooltipPoints = [ { date: today, label: 'Dnes' } ];
         const endOfYear = new Date(today.getFullYear(), 11, 31);
@@ -2262,8 +2329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         fixedTooltipPoints.forEach(point => {
-            const daysFromToday = (point.date - today) / (1000 * 60 * 60 * 24);
-            const value = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
+            const value = projectValueAt(point.date);
             const x = xScale(point.date);
             const y = yScale(value);
             innerHTML += `<g transform="translate(${x}, ${y})">
@@ -2278,7 +2344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     svg.innerHTML = innerHTML;
     const startLabel = formatDate(firstDate);
     const endLabel = formatDate(today);
-    const ariaSummary = isFinite(portfolioIrr)
+    const ariaSummary = hasIrr
         ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(portfolioIrr)}`
         : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`;
     svg.setAttribute('role', 'img');
@@ -2566,7 +2632,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady, formattedTodayValueOverride = null, options = {}) => {
       /* PATCH */
-      const { copy = {}, format = {}, language = 'cs' } = options;
+      const { copy = {}, format = {}, language = 'cs', activeFunds = [], frozenTotal = null } = options;
       /* PATCH */
       const currencyFormat = format.currency || {};
       /* PATCH */
@@ -2577,96 +2643,107 @@ document.addEventListener('DOMContentLoaded', () => {
           return { available: false, reason: 'conversion' };
       }
       const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
-      const grouped = new Map();
-      funds.forEach(fund => {
-          if (!fund.dateIn) return;
-          const amount = convert(fund.invest, fund.curr);
-          if (!Number.isFinite(amount) || amount === 0) return;
-          const date = new Date(fund.dateIn.getFullYear(), fund.dateIn.getMonth(), fund.dateIn.getDate());
-          const key = date.getTime();
-          if (!grouped.has(key)) {
-              grouped.set(key, { date, entries: [] });
-          }
-          grouped.get(key).entries.push({ amount, fund: fund.fund });
-      });
-      const groups = Array.from(grouped.values()).sort((a, b) => a.date - b.date);
-      if (!groups.length) {
+      const activeSet = Array.isArray(activeFunds) && activeFunds.length ? activeFunds : funds.filter(f => !f.freeze);
+      const events = funds
+          .map(fund => ({
+              date: fund.dateIn instanceof Date ? fund.dateIn : utils.toDate(fund.dateIn),
+              amount: convert(fund.invest, fund.curr),
+              fund: fund.fund,
+              freeze: !!fund.freeze
+          }))
+          .filter(evt => evt.date instanceof Date && !isNaN(evt.date) && Number.isFinite(evt.amount) && evt.amount !== 0)
+          .sort((a, b) => a.date - b.date);
+      if (!events.length) {
           return { available: false, reason: 'empty' };
       }
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const projectionEnd = new Date(`${PROJECTION_END_YEAR}-12-31`);
-      const hasIrr = Number.isFinite(irr);
-      const irrPositive = hasIrr && irr > 0;
+      const hasIrr = Number.isFinite(irr) && activeSet.length > 0;
       const dailyRate = hasIrr ? Math.pow(1 + irr, 1 / 365.25) - 1 : 0;
-      const firstDate = groups[0].date;
-      let runningValue = 0;
+      const firstDate = events[0].date;
+      let runningActive = 0;
+      let runningFrozen = 0;
       let cumulative = 0;
-      let lastDate = firstDate;
+      let lastGrowthDate = firstDate;
       const contributionPoints = [{ date: firstDate, value: 0 }];
-      const valuePoints = hasIrr ? [{ date: firstDate, value: 0 }] : [];
-      const depositPoints = [];
+      const valuePoints = [{ date: firstDate, value: 0 }];
+      const depositsByDay = new Map();
 
-      groups.forEach(group => {
-          const amount = group.entries.reduce((sum, entry) => sum + entry.amount, 0);
-          const days = Math.max(0, (group.date - lastDate) / MS_PER_DAY);
+      events.forEach(evt => {
+          const days = Math.max(0, (evt.date - lastGrowthDate) / MS_PER_DAY);
+          if (hasIrr && days > 0 && runningActive !== 0) {
+              runningActive *= Math.pow(1 + dailyRate, days);
+          }
+          lastGrowthDate = evt.date;
 
-          if (hasIrr && days > 0) {
-              runningValue *= Math.pow(1 + dailyRate, days);
-              valuePoints.push({ date: group.date, value: runningValue });
+          const valueBefore = runningActive + runningFrozen;
+          valuePoints.push({ date: evt.date, value: valueBefore });
+          contributionPoints.push({ date: evt.date, value: cumulative });
+
+          cumulative += evt.amount;
+          if (evt.freeze) {
+              runningFrozen += evt.amount;
+          } else {
+              runningActive += evt.amount;
           }
 
-          contributionPoints.push({ date: group.date, value: cumulative });
+          const valueAfter = runningActive + runningFrozen;
+          valuePoints.push({ date: evt.date, value: valueAfter });
+          contributionPoints.push({ date: evt.date, value: cumulative });
 
-          runningValue += amount;
-          cumulative += amount;
-
-          contributionPoints.push({ date: group.date, value: cumulative });
-
-          if (hasIrr) {
-              valuePoints.push({ date: group.date, value: runningValue });
-          }
-
-          depositPoints.push({
-              date: group.date,
-              amount,
-              value: hasIrr ? runningValue : null,
-              contributions: cumulative,
-              breakdown: group.entries
-          });
-          lastDate = group.date;
+          const key = evt.date.toISOString().split('T')[0];
+          const entry = depositsByDay.get(key) || { date: evt.date, amount: 0, breakdown: [], contributions: 0, value: 0 };
+          entry.date = evt.date;
+          entry.amount += evt.amount;
+          entry.breakdown.push({ fund: evt.fund, amount: evt.amount });
+          entry.contributions = cumulative;
+          entry.value = valueAfter;
+          depositsByDay.set(key, entry);
       });
 
-      const daysToToday = Math.max(0, (today - lastDate) / MS_PER_DAY);
-      const valueAtToday = hasIrr ? runningValue * Math.pow(1 + dailyRate, daysToToday) : cumulative;
-      contributionPoints.push({ date: today, value: cumulative });
-      if (hasIrr) {
-          if (daysToToday > 0) {
-              valuePoints.push({ date: today, value: valueAtToday });
-          } else {
-              valuePoints.push({ date: today, value: runningValue });
-          }
+      const daysToToday = Math.max(0, (today - lastGrowthDate) / MS_PER_DAY);
+      if (hasIrr && daysToToday > 0 && runningActive !== 0) {
+          runningActive *= Math.pow(1 + dailyRate, daysToToday);
       }
+
+      const frozenCurrentTotal = Number.isFinite(frozenTotal)
+          ? frozenTotal
+          : funds.reduce((sum, fund) => fund.freeze ? sum + (Number.isFinite(convert(fund.current, fund.curr)) ? convert(fund.current, fund.curr) : 0) : sum, 0);
+      const frozenAdjustment = frozenCurrentTotal - runningFrozen;
+      if (frozenAdjustment !== 0) {
+          valuePoints.forEach(point => { point.value += frozenAdjustment; });
+          depositsByDay.forEach(entry => { entry.value += frozenAdjustment; });
+          runningFrozen += frozenAdjustment;
+      }
+
+      const valueAtToday = runningActive + runningFrozen;
+      contributionPoints.push({ date: today, value: cumulative });
+      valuePoints.push({ date: today, value: valueAtToday });
 
       const projectionPoints = [];
-      if (irrPositive) {
-          let stepYear = today.getFullYear() + 4;
-          while (stepYear <= PROJECTION_END_YEAR) {
-              const future = new Date(today);
-              future.setFullYear(stepYear);
-              if (future > projectionEnd) break;
-              const daysAhead = Math.max(0, (future - today) / MS_PER_DAY);
-              const futureValue = valueAtToday * Math.pow(1 + dailyRate, daysAhead);
-              projectionPoints.push({ date: future, value: futureValue });
-              stepYear += 4;
+      if (hasIrr && runningActive !== 0) {
+          let projectedActive = runningActive;
+          let cursor = today;
+          while (cursor < projectionEnd) {
+              const next = new Date(cursor);
+              next.setFullYear(next.getFullYear() + 1);
+              if (next > projectionEnd) break;
+              const daysAhead = Math.max(0, (next - cursor) / MS_PER_DAY);
+              projectedActive *= Math.pow(1 + dailyRate, daysAhead);
+              projectionPoints.push({ date: next, value: projectedActive + runningFrozen });
+              cursor = next;
           }
       }
 
-      const timelineEnd = irrPositive ? projectionEnd : today;
+      const depositPoints = Array.from(depositsByDay.values()).sort((a, b) => a.date - b.date);
+      const irrPositive = projectionPoints.length > 0;
+
+      const timelineEnd = projectionPoints.length ? projectionEnd : today;
       const span = Math.max(1, timelineEnd - firstDate);
       const valuesForMax = contributionPoints.map(p => p.value);
-      if (hasIrr) valuesForMax.push(...valuePoints.map(p => p.value));
+      valuesForMax.push(...valuePoints.map(p => p.value));
       if (projectionPoints.length) valuesForMax.push(...projectionPoints.map(p => p.value));
       const yMaxRaw = Math.max(...valuesForMax, 0);
       const yMax = yMaxRaw > 0 ? Math.ceil(yMaxRaw / 1000) * 1000 : 1000;
@@ -3260,7 +3337,17 @@ document.addEventListener('DOMContentLoaded', () => {
           ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true, /* PATCH */ copy: copy.pie, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language })
           : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">${htmlEscape(copy.pie.noData)}</div>`;
 
-      const lineBlock = renderLineChart(null, snapshot.activeFunds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady, formattedTodayValue: sharedFormattedTotals.activeCurrent, /* PATCH */ copy: copy.line, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
+      const frozenForExport = (snapshot.portfolioSummary.totalCurrentConverted || 0) - (snapshot.portfolioSummary.totalCurrentActive || 0);
+      const lineBlock = renderLineChart(null, snapshot.funds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
+        isStaticExport: true,
+        conversionReady,
+        formattedTodayValue: sharedFormattedTotals.totalCurrent,
+        /* PATCH */ copy: copy.line,
+        /* PATCH */ format: copy.format,
+        /* PATCH */ language: copy.language,
+        /* PATCH */ activeFunds: snapshot.activeFunds || [],
+        /* PATCH */ frozenTotal: frozenForExport
+      });
 
       const explanationsBlock = `<div class="export-explanations">
         <article>
