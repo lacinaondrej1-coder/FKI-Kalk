@@ -504,7 +504,7 @@
         }
         .summary-table {
             width: 100%;
-            min-width: 520px;
+            min-width: 720px;
             border-collapse: separate;
             border-spacing: 0;
             font-variant-numeric: tabular-nums;
@@ -535,9 +535,9 @@
         .summary-table tbody tr.is-neutral .gain-value { color: var(--muted); background: rgba(31, 42, 55, 0.08); box-shadow: inset 0 0 0 1px rgba(31, 42, 55, 0.12); }
         .summary-table .gain-cell {
             display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.6rem;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.4rem;
             width: 100%;
         }
         .summary-table .gain-value {
@@ -561,39 +561,74 @@
             background: rgba(255, 255, 255, 0.65);
             font-size: 0.7rem;
         }
-        .summary-table .crash-indicator {
+        .summary-table .gain-meta {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--muted);
+            letter-spacing: 0;
+        }
+        .summary-table .period-label { display: flex; flex-direction: column; gap: 0.25rem; }
+        .summary-table .period-year { font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
+        .summary-table .period-range { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
+        .summary-table .event-chip {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.15rem 0.6rem;
+            gap: 0.45rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 999px;
-            background: var(--danger-bg);
-            color: var(--danger);
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             white-space: nowrap;
+            box-shadow: inset 0 0 0 1px rgba(13, 44, 84, 0.08);
         }
-        .summary-table .crash-indicator[data-tooltip] {
+        .summary-table .event-chip-value {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0;
+            font-weight: 700;
+        }
+        .summary-table .event-chip-count {
+            font-size: 0.68rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.55);
+            font-weight: 600;
+        }
+        .summary-table .event-chip--deposit {
+            background: rgba(77, 177, 200, 0.18);
+            color: var(--primary);
+            box-shadow: inset 0 0 0 1px rgba(77, 177, 200, 0.28);
+        }
+        .summary-table .event-chip--crash {
+            background: var(--danger-bg);
+            color: var(--danger);
+            box-shadow: inset 0 0 0 1px rgba(217, 75, 75, 0.24);
+        }
+        .summary-table .event-chip--none {
+            background: rgba(31, 42, 55, 0.1);
+            color: var(--muted);
+            box-shadow: inset 0 0 0 1px rgba(31, 42, 55, 0.12);
+        }
+        .summary-table .event-chip[data-tooltip] {
             position: relative;
             cursor: help;
         }
-        .summary-table .crash-indicator[data-tooltip]::after {
+        .summary-table .event-chip[data-tooltip]::after {
             content: attr(data-tooltip);
             position: absolute;
             top: calc(100% + 0.55rem);
             right: 0;
-            min-width: 220px;
-            max-width: 260px;
-            padding: 0.65rem 0.75rem;
+            min-width: 240px;
+            max-width: 320px;
+            padding: 0.7rem 0.8rem;
             border-radius: 0.75rem;
             border: 1px solid var(--border-strong);
             background: var(--surface);
             box-shadow: var(--shadow-hover);
             color: var(--text);
             font-size: 0.75rem;
-            line-height: 1.35;
+            line-height: 1.4;
             opacity: 0;
             pointer-events: none;
             transform: translateY(-4px);
@@ -601,7 +636,7 @@
             white-space: pre-line;
             z-index: 20;
         }
-        .summary-table .crash-indicator[data-tooltip]::before {
+        .summary-table .event-chip[data-tooltip]::before {
             content: '';
             position: absolute;
             top: calc(100% + 0.2rem);
@@ -617,10 +652,10 @@
             transition: opacity 0.18s ease, transform 0.18s ease;
             z-index: 19;
         }
-        .summary-table .crash-indicator[data-tooltip]:hover::after,
-        .summary-table .crash-indicator[data-tooltip]:focus-visible::after,
-        .summary-table .crash-indicator[data-tooltip]:hover::before,
-        .summary-table .crash-indicator[data-tooltip]:focus-visible::before {
+        .summary-table .event-chip[data-tooltip]:hover::after,
+        .summary-table .event-chip[data-tooltip]:focus-visible::after,
+        .summary-table .event-chip[data-tooltip]:hover::before,
+        .summary-table .event-chip[data-tooltip]:focus-visible::before {
             opacity: 1;
             transform: translateY(0);
         }
@@ -1324,6 +1359,7 @@
                             fundName: state.name,
                             amount: deposit.amount,
                             label: deposit.label,
+                            type: deposit.type || null,
                             investedToDate: investedSoFar,
                         });
                     });
@@ -2869,6 +2905,8 @@
                     const inclusiveEnd =
                         offset === horizonYears || periodEndTime >= projectionFinal.getTime();
                     const crashesInPeriod = [];
+                    const depositsInPeriod = [];
+                    let depositTotal = 0;
                     markerList.forEach((marker) => {
                         const time = marker.date.getTime();
                         const inRange =
@@ -2876,6 +2914,49 @@
                             (inclusiveEnd ? time <= periodEndTime : time < periodEndTime);
                         if (!inRange) {
                             return;
+                        }
+                        const depositList = Array.isArray(marker.deposits) ? marker.deposits.filter(Boolean) : [];
+                        const validDeposits = depositList.filter((deposit) => {
+                            const amount = Number(deposit.amount);
+                            return Number.isFinite(amount) && amount > 0;
+                        });
+                        if (validDeposits.length > 0) {
+                            let entryAmount = 0;
+                            let entryCount = 0;
+                            let startEntryCount = 0;
+                            let topUpEntryCount = 0;
+                            const fundNames = [];
+                            const labelSet = new Set();
+                            validDeposits.forEach((deposit) => {
+                                const amount = Number(deposit.amount);
+                                entryAmount += amount;
+                                depositTotal += amount;
+                                entryCount += 1;
+                                const rawLabel = typeof deposit.label === 'string' ? deposit.label.trim() : '';
+                                if (rawLabel) {
+                                    labelSet.add(rawLabel);
+                                }
+                                if (typeof deposit.fundName === 'string' && deposit.fundName.trim().length > 0) {
+                                    fundNames.push(deposit.fundName.trim());
+                                }
+                                const rawType = typeof deposit.type === 'string' ? deposit.type.toLowerCase() : '';
+                                if (rawType === 'topup' || (rawLabel && rawLabel.toLowerCase().includes('dokup'))) {
+                                    topUpEntryCount += 1;
+                                } else {
+                                    startEntryCount += 1;
+                                }
+                            });
+                            if (entryAmount > 0) {
+                                depositsInPeriod.push({
+                                    date: marker.date,
+                                    totalAmount: entryAmount,
+                                    entryCount,
+                                    startEntryCount,
+                                    topUpEntryCount,
+                                    fundNames,
+                                    labels: Array.from(labelSet),
+                                });
+                            }
                         }
                         (Array.isArray(marker.crashes) ? marker.crashes : [])
                             .filter(Boolean)
@@ -2903,16 +2984,46 @@
                           }
                         : null;
 
+                    const depositDetails = depositsInPeriod.length
+                        ? {
+                              entries: depositsInPeriod,
+                              totalAmount: depositTotal,
+                              eventCount: depositsInPeriod.length,
+                              entryCount: depositsInPeriod.reduce((acc, entry) => acc + entry.entryCount, 0),
+                              startEntryCount: depositsInPeriod.reduce(
+                                  (acc, entry) => acc + entry.startEntryCount,
+                                  0,
+                              ),
+                              topUpEntryCount: depositsInPeriod.reduce(
+                                  (acc, entry) => acc + entry.topUpEntryCount,
+                                  0,
+                              ),
+                          }
+                        : null;
+
+                    const crashLoss = crashDetails ? crashDetails.totalLoss : 0;
+                    const adjustedGain = gain - depositTotal + crashLoss;
+                    const expectedEndTime = addYears(periodStart, 1).getTime();
+                    const isPartial = expectedEndTime - periodEndTime > 12 * 60 * 60 * 1000;
+
                     rows.push({
                         key: `period-${offset}`,
                         year: periodStart.getFullYear(),
+                        periodIndex: offset + 1,
+                        startDate: periodStart,
+                        endDate: periodEnd,
+                        durationYears: diffInYears(periodStart, periodEnd),
                         offset,
                         startValue,
                         endValue,
                         gain,
                         hadCrash: crashesInPeriod.length > 0,
                         crashDetails,
+                        depositDetails,
+                        depositTotal,
                         gainStatus,
+                        adjustedGain,
+                        isPartial,
                     });
                 }
 
@@ -2924,6 +3035,46 @@
                 projectionProjectTo,
                 projectionTotalYears,
             ]);
+
+            const formatSignedValue = (value) => {
+                if (!Number.isFinite(value)) {
+                    return '—';
+                }
+                const absolute = Math.abs(value);
+                if (absolute < 0.5) {
+                    return formatCurrency(0);
+                }
+                const formatted = formatCurrency(absolute);
+                return value >= 0 ? `+${formatted}` : `−${formatted}`;
+            };
+
+            const formatFundList = (names) => {
+                if (!Array.isArray(names)) return '';
+                const unique = Array.from(
+                    new Set(
+                        names
+                            .filter((name) => typeof name === 'string' && name.trim().length > 0)
+                            .map((name) => name.trim()),
+                    ),
+                );
+                if (unique.length === 0) return '';
+                if (unique.length <= 3) {
+                    return unique.join(', ');
+                }
+                return `${unique.slice(0, 3).join(', ')} + ${unique.length - 3} další`;
+            };
+
+            const yearlyHeaderDescription = projectionOrigin instanceof Date
+                ? [
+                      `Každé období začíná ${formatDate(projectionOrigin)} a končí vždy o rok později`,
+                      projectionFinal instanceof Date
+                          ? `poslední řádek se uzavírá ${formatDate(projectionFinal)}`
+                          : null,
+                  ]
+                      .filter(Boolean)
+                      .join('; ')
+                      .concat('.')
+                : 'Každé období zachycuje změnu portfolia mezi výročními daty zahájení.';
 
             useEffect(() => {
                 if (!availableStages.length) {
@@ -3099,17 +3250,19 @@
                                 <div>
                                     <span className="badge-pill">Roční vývoj</span>
                                     <h2 className="card-header-title">Roční vývoj portfolia</h2>
-                                    <p className="card-header-sub">Přehled zůstatků na začátku a na konci každého roku.</p>
+                                    <p className="card-header-sub">{yearlyHeaderDescription}</p>
                                 </div>
                             </div>
                             <div className="summary-table-container">
                                 <table className="summary-table">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Rok</th>
-                                            <th scope="col" className="text-right">Začátek roku</th>
-                                            <th scope="col" className="text-right">Konec roku</th>
-                                            <th scope="col" className="text-right">Výnos v roce</th>
+                                            <th scope="col">Období</th>
+                                            <th scope="col" className="text-right">Stav na začátku</th>
+                                            <th scope="col" className="text-right">Vklady</th>
+                                            <th scope="col" className="text-right">Propady</th>
+                                            <th scope="col" className="text-right">Stav na konci</th>
+                                            <th scope="col" className="text-right">Výsledek roku</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -3132,14 +3285,115 @@
                                                       })
                                                       .join('\n')
                                                 : null;
+                                            const depositTooltip = row.depositDetails
+                                                ? row.depositDetails.entries
+                                                      .map((entry) => {
+                                                          const parts = [];
+                                                          if (entry.date instanceof Date) {
+                                                              parts.push(formatDate(entry.date));
+                                                          }
+                                                          if (Array.isArray(entry.labels) && entry.labels.length === 1) {
+                                                              parts.push(entry.labels[0]);
+                                                          } else if (entry.startEntryCount > 0 || entry.topUpEntryCount > 0) {
+                                                              const detailParts = [];
+                                                              if (entry.startEntryCount > 0) {
+                                                                  detailParts.push(`${entry.startEntryCount}× počáteční vklad`);
+                                                              }
+                                                              if (entry.topUpEntryCount > 0) {
+                                                                  detailParts.push(`${entry.topUpEntryCount}× dokup`);
+                                                              }
+                                                              if (detailParts.length) {
+                                                                  parts.push(detailParts.join(' + '));
+                                                              }
+                                                          }
+                                                          parts.push(`+${formatCurrency(entry.totalAmount)}`);
+                                                          const fundList = formatFundList(entry.fundNames);
+                                                          if (fundList) {
+                                                              parts.push(fundList);
+                                                          }
+                                                          return parts.join(' · ');
+                                                      })
+                                                      .join('\n')
+                                                : null;
                                             const rowClassNames = ['summary-table-row'];
                                             if (row.hadCrash) rowClassNames.push('has-crash');
                                             if (row.gainStatus) rowClassNames.push(`is-${row.gainStatus}`);
+                                            const depositTotal = Number(row.depositTotal) || 0;
+                                            const crashLoss = row.crashDetails ? row.crashDetails.totalLoss : 0;
+                                            const metaParts = [];
+                                            if (depositTotal > 0.5) {
+                                                metaParts.push(`Vklady ${formatSignedValue(depositTotal)}`);
+                                            }
+                                            if (crashLoss > 0.5) {
+                                                metaParts.push(`Propady ${formatSignedValue(-crashLoss)}`);
+                                            }
+                                            metaParts.push(`Čistý výkon ${formatSignedValue(row.adjustedGain)}`);
+                                            const gainMeta = metaParts.join(' · ');
+                                            const depositChip = row.depositDetails ? (
+                                                <span
+                                                    className="event-chip event-chip--deposit"
+                                                    data-tooltip={depositTooltip || undefined}
+                                                    tabIndex={depositTooltip ? 0 : undefined}
+                                                    aria-label={`Vklady v období: ${formatCurrency(
+                                                        row.depositDetails.totalAmount,
+                                                    )}`}
+                                                >
+                                                    <span className="event-chip-count">{row.depositDetails.eventCount}×</span>
+                                                    <span className="event-chip-value">
+                                                        {formatSignedValue(row.depositDetails.totalAmount)}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="event-chip event-chip--none" aria-hidden="true">
+                                                    —
+                                                </span>
+                                            );
+                                            const crashChip = row.crashDetails ? (
+                                                <span
+                                                    className="event-chip event-chip--crash"
+                                                    data-tooltip={crashTooltip || undefined}
+                                                    tabIndex={crashTooltip ? 0 : undefined}
+                                                    aria-label={`Propady v období: ${formatCurrency(
+                                                        row.crashDetails.totalLoss,
+                                                    )}`}
+                                                >
+                                                    <span className="event-chip-count">
+                                                        {row.crashDetails.entries.length}×
+                                                    </span>
+                                                    <span className="event-chip-value">
+                                                        {formatSignedValue(-row.crashDetails.totalLoss)}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="event-chip event-chip--none" aria-hidden="true">
+                                                    —
+                                                </span>
+                                            );
                                             return (
                                                 <tr key={row.key || row.year} className={rowClassNames.join(' ')}>
-                                                    <td>{row.year}</td>
-                                                    <td className="tabular-nums text-right">{formatCurrency(row.startValue)}</td>
-                                                    <td className="tabular-nums text-right">{formatCurrency(row.endValue)}</td>
+                                                    <td>
+                                                        <div className="period-label">
+                                                            <span className="period-year">
+                                                                {row.periodIndex ? `${row.periodIndex}. rok` : row.year}
+                                                                {row.isPartial ? ' (zkrácený)' : ''}
+                                                            </span>
+                                                            <span className="period-range">
+                                                                {row.startDate instanceof Date
+                                                                    ? formatDate(row.startDate)
+                                                                    : '—'}{' '}
+                                                                →{' '}
+                                                                {row.endDate instanceof Date ? formatDate(row.endDate) : '—'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="tabular-nums text-right">
+                                                        {formatCurrency(row.startValue)}
+                                                    </td>
+                                                    <td className="text-right">{depositChip}</td>
+                                                    <td className="text-right">{crashChip}</td>
+                                                    <td className="tabular-nums text-right">
+                                                        {formatCurrency(row.endValue)}
+                                                    </td>
                                                     <td className="tabular-nums text-right">
                                                         <div className="gain-cell">
                                                             <span className={`gain-value ${row.gainStatus ? `is-${row.gainStatus}` : ''}`}>
@@ -3150,17 +3404,9 @@
                                                                         ? '▼'
                                                                         : '•'}
                                                                 </span>
-                                                                {formatCurrency(row.gain)}
+                                                                {formatSignedValue(row.gain)}
                                                             </span>
-                                                            {row.hadCrash && (
-                                                                <span
-                                                                    className="crash-indicator"
-                                                                    data-tooltip={crashTooltip || 'Propad portfolia'}
-                                                                    tabIndex={0}
-                                                                >
-                                                                    Propad
-                                                                </span>
-                                                            )}
+                                                            {gainMeta && <span className="gain-meta">{gainMeta}</span>}
                                                         </div>
                                                     </td>
                                                 </tr>
