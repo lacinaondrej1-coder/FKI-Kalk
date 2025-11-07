@@ -2940,7 +2940,11 @@
 
                     const elapsedStart = diffInYears(projectionOrigin, periodStart);
                     const elapsedEnd = diffInYears(projectionOrigin, periodEnd);
-                    const startProjection = projectionProjectTo(periodStart, {
+                    const startBefore = projectionProjectTo(periodStart, {
+                        elapsedHint: elapsedStart,
+                        eventPosition: 'before',
+                    });
+                    const startAfter = projectionProjectTo(periodStart, {
                         elapsedHint: elapsedStart,
                         eventPosition: 'after',
                     });
@@ -2948,19 +2952,21 @@
                         elapsedHint: elapsedEnd,
                         eventPosition: 'before',
                     });
-                    if (!startProjection || !endProjection) {
+                    const effectiveStart = startBefore || startAfter;
+                    if (!effectiveStart || !endProjection) {
                         continue;
                     }
 
-                    const startValue = Number.isFinite(startProjection.totalValue) ? startProjection.totalValue : 0;
+                    const startValueBefore = Number.isFinite(startBefore?.totalValue) ? startBefore.totalValue : null;
+                    const fallbackStartValue = Number.isFinite(startAfter?.totalValue) ? startAfter.totalValue : null;
+                    const startValue =
+                        startValueBefore !== null
+                            ? startValueBefore
+                            : fallbackStartValue !== null
+                            ? fallbackStartValue
+                            : 0;
                     const endValue = Number.isFinite(endProjection.totalValue) ? endProjection.totalValue : 0;
-                    const gain = endValue - startValue;
-                    let gainStatus = 'neutral';
-                    if (gain > 1) {
-                        gainStatus = 'positive';
-                    } else if (gain < -1) {
-                        gainStatus = 'negative';
-                    }
+                    const grossChange = endValue - startValue;
 
                     const periodStartTime = periodStart.getTime();
                     const periodEndTime = periodEnd.getTime();
@@ -3064,7 +3070,13 @@
                         : null;
 
                     const crashLoss = crashDetails ? crashDetails.totalLoss : 0;
-                    const adjustedGain = gain - depositTotal + crashLoss;
+                    const netResult = grossChange - depositTotal;
+                    let resultStatus = 'neutral';
+                    if (netResult > 1) {
+                        resultStatus = 'positive';
+                    } else if (netResult < -1) {
+                        resultStatus = 'negative';
+                    }
                     const expectedEndTime = addYears(periodStart, 1).getTime();
                     const isPartial = expectedEndTime - periodEndTime > 12 * 60 * 60 * 1000;
 
@@ -3078,13 +3090,13 @@
                         offset,
                         startValue,
                         endValue,
-                        gain,
+                        grossChange,
                         hadCrash: crashesInPeriod.length > 0,
                         crashDetails,
                         depositDetails,
                         depositTotal,
-                        gainStatus,
-                        adjustedGain,
+                        gainStatus: resultStatus,
+                        netResult,
                         isPartial,
                     });
                 }
@@ -3383,13 +3395,14 @@
                                             const depositTotal = Number(row.depositTotal) || 0;
                                             const crashLoss = row.crashDetails ? row.crashDetails.totalLoss : 0;
                                             const metaParts = [];
+                                            metaParts.push(`Pohyb portfolia ${formatSignedValue(row.grossChange)}`);
                                             if (depositTotal > 0.5) {
                                                 metaParts.push(`Vklady ${formatSignedValue(depositTotal)}`);
                                             }
                                             if (crashLoss > 0.5) {
                                                 metaParts.push(`Propady ${formatSignedValue(-crashLoss)}`);
                                             }
-                                            metaParts.push(`Čistý výkon ${formatSignedValue(row.adjustedGain)}`);
+                                            metaParts.push(`Čistý výsledek ${formatSignedValue(row.netResult)}`);
                                             const gainMeta = metaParts.join(' · ');
                                             const depositChip = row.depositDetails ? (
                                                 <span
@@ -3466,7 +3479,7 @@
                                                                         ? '▼'
                                                                         : '•'}
                                                                 </span>
-                                                                {formatSignedValue(row.gain)}
+                                                                {formatSignedValue(row.netResult)}
                                                             </span>
                                                             {gainMeta && <span className="gain-meta">{gainMeta}</span>}
                                                         </div>
