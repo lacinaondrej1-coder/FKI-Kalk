@@ -524,7 +524,7 @@
         }
         .summary-table thead th.text-right { text-align: right; }
         .summary-table tbody td {
-            padding: 1.1rem 1.1rem;
+            padding: 1.15rem 1.2rem;
             border-bottom: 1px solid var(--border);
             font-size: 0.95rem;
             color: var(--text);
@@ -570,9 +570,27 @@
             color: var(--muted);
             letter-spacing: 0;
         }
+        .summary-table .period-cell { display: grid; gap: 0.85rem; }
         .summary-table .period-label { display: flex; flex-direction: column; gap: 0.3rem; }
         .summary-table .period-year { font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
         .summary-table .period-range { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
+        .summary-table .period-events {
+            display: grid;
+            gap: 0.55rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(13, 44, 84, 0.08);
+            background: rgba(13, 44, 84, 0.035);
+        }
+        .summary-table .period-events.has-deposits { border-color: rgba(77, 177, 200, 0.32); }
+        .summary-table .period-events.has-crash { background: rgba(217, 75, 75, 0.08); border-color: rgba(217, 75, 75, 0.24); }
+        .summary-table .period-events-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+        }
         .summary-table .portfolio-lines { display: grid; gap: 0.4rem; }
         .summary-table .portfolio-line { display: flex; justify-content: space-between; gap: 1.25rem; }
         .summary-table .portfolio-line span:first-child {
@@ -582,24 +600,31 @@
             text-transform: uppercase;
         }
         .summary-table .portfolio-line span:last-child { font-weight: 600; letter-spacing: -0.01em; }
-        .summary-table .events-cell { display: grid; gap: 0.65rem; }
-        .summary-table .event-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+        .summary-table .events-cell { display: grid; gap: 0.5rem; }
+        .summary-table .event-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
         .summary-table .event-label {
-            font-size: 0.78rem;
+            font-size: 0.74rem;
             color: var(--muted);
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
+            font-weight: 600;
         }
         .summary-table .event-chip {
-            display: grid;
-            gap: 0.3rem;
-            justify-items: end;
-            padding: 0.4rem 0.7rem;
-            border-radius: 0.85rem;
-            font-size: 0.72rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
             font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            text-transform: none;
             white-space: nowrap;
             box-shadow: inset 0 0 0 1px rgba(13, 44, 84, 0.08);
         }
@@ -609,10 +634,10 @@
             font-weight: 700;
         }
         .summary-table .event-chip-count {
-            font-size: 0.68rem;
-            padding: 0.15rem 0.45rem;
+            font-size: 0.7rem;
+            padding: 0.18rem 0.5rem;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.7);
             font-weight: 600;
         }
         .summary-table .event-chip--deposit {
@@ -3352,9 +3377,8 @@
                                 <table className="summary-table">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Období</th>
+                                            <th scope="col">Období a události</th>
                                             <th scope="col" className="text-right">Portfolio</th>
-                                            <th scope="col">Události</th>
                                             <th scope="col" className="text-right">Výsledek roku</th>
                                         </tr>
                                     </thead>
@@ -3463,21 +3487,41 @@
                                                     —
                                                 </span>
                                             );
+                                            const eventsClassNames = ['period-events'];
+                                            if (row.depositDetails) eventsClassNames.push('has-deposits');
+                                            if (row.crashDetails) eventsClassNames.push('has-crash');
                                             return (
                                                 <tr key={row.key || row.year} className={rowClassNames.join(' ')}>
                                                     <td>
-                                                        <div className="period-label">
-                                                            <span className="period-year">
-                                                                {row.periodIndex ? `${row.periodIndex}. rok` : row.year}
-                                                                {row.isPartial ? ' (zkrácený)' : ''}
-                                                            </span>
-                                                            <span className="period-range">
-                                                                {row.startDate instanceof Date
-                                                                    ? formatDate(row.startDate)
-                                                                    : '—'}{' '}
-                                                                →{' '}
-                                                                {row.endDate instanceof Date ? formatDate(row.endDate) : '—'}
-                                                            </span>
+                                                        <div className="period-cell">
+                                                            <div className="period-label">
+                                                                <span className="period-year">
+                                                                    {row.periodIndex ? `${row.periodIndex}. rok` : row.year}
+                                                                    {row.isPartial ? ' (zkrácený)' : ''}
+                                                                </span>
+                                                                <span className="period-range">
+                                                                    {row.startDate instanceof Date
+                                                                        ? formatDate(row.startDate)
+                                                                        : '—'}{' '}
+                                                                    →{' '}
+                                                                    {row.endDate instanceof Date
+                                                                        ? formatDate(row.endDate)
+                                                                        : '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className={eventsClassNames.join(' ')}>
+                                                                <span className="period-events-title">Události</span>
+                                                                <div className="events-cell">
+                                                                    <div className="event-row">
+                                                                        <span className="event-label">Vklady</span>
+                                                                        {depositChip}
+                                                                    </div>
+                                                                    <div className="event-row">
+                                                                        <span className="event-label">Propady</span>
+                                                                        {crashChip}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="tabular-nums text-right">
@@ -3489,18 +3533,6 @@
                                                             <div className="portfolio-line">
                                                                 <span>Konec</span>
                                                                 <span>{formatCurrency(row.endValue)}</span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div className="events-cell">
-                                                            <div className="event-row">
-                                                                <span className="event-label">Vklady</span>
-                                                                {depositChip}
-                                                            </div>
-                                                            <div className="event-row">
-                                                                <span className="event-label">Propady</span>
-                                                                {crashChip}
                                                             </div>
                                                         </div>
                                                     </td>
