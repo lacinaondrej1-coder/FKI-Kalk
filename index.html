@@ -2464,7 +2464,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePieChartFromSlider();
   };
   const updatePieChartFromSlider = () => {
-    const { activeFunds } = state.lastProcessedData;
+    /* PATCH */
+    const { funds: allFunds = [] } = state.lastProcessedData;
     const outCurr = elements.outCurrency?.value || 'CZK';
     const fxRate = utils.numCZ(elements.fxRate?.value);
     const slider = elements.pieSlider || document.getElementById('pie-time-slider');
@@ -2475,31 +2476,38 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.sliderCurrentLabel.textContent = currentDate.toLocaleDateString('cs-CZ');
     }
     /* PATCH */
-    const collection = Array.isArray(activeFunds) ? activeFunds : [];
-    const dataForDate = Object.entries(collection.reduce((acc, f) => { if (!acc[f.fund]) acc[f.fund] = { investments: [], irr: null }; acc[f.fund].investments.push(f); if (isFinite(f.irr)) acc[f.fund].irr = f.irr; return acc; }, {})).map(([name, {investments, irr}]) => {
+    const collection = Array.isArray(allFunds) ? allFunds : [];
+    /* PATCH */
+    const grouped = collection.reduce((acc, fund) => {
+        if (!fund.fund) return acc;
+        if (!acc[fund.fund]) acc[fund.fund] = [];
+        acc[fund.fund].push(fund);
+        return acc;
+    }, {});
+    /* PATCH */
+    const dataForDate = Object.entries(grouped).map(([name, entries]) => {
         let value = 0;
-        const cfs = investments
-            .filter(inv => inv.dateIn <= currentDate)
-            .map(inv => ({ date: inv.dateIn, amount: -convert(inv.invest, inv.curr) }))
-            .sort((a,b) => a.date - b.date);
-        if (cfs.length > 0) {
-            const fundIrr = investments[0]?.irr;
-            if (isFinite(fundIrr)) {
-                const dailyRate = Math.pow(1 + fundIrr, 1 / 365.25) - 1;
-                let runningValue = 0;
-                let lastDate = cfs[0].date;
-                cfs.forEach(cf => {
-                    const days = (cf.date - lastDate) / (1000 * 60 * 60 * 24);
-                    runningValue *= Math.pow(1 + dailyRate, days);
-                    runningValue += -cf.amount;
-                    lastDate = cf.date;
-                });
-                const daysFinal = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
-                value = runningValue * Math.pow(1 + dailyRate, daysFinal);
+        entries.forEach(entry => {
+            if (!(entry.dateIn instanceof Date) || currentDate < entry.dateIn) return;
+            const convertedInvest = convert(entry.invest, entry.curr);
+            const convertedCurrent = convert(entry.current, entry.curr);
+            const hasValuation = entry.currDate instanceof Date && entry.currDate >= entry.dateIn;
+            if (hasValuation && Number.isFinite(convertedCurrent)) {
+                if (entry.freeze) {
+                    value += convertedCurrent;
+                } else if (Number.isFinite(entry.irr)) {
+                    const dailyRate = Math.pow(1 + entry.irr, 1 / 365.25) - 1;
+                    const days = Math.max(0, (currentDate - entry.currDate) / MS_PER_DAY);
+                    value += convertedCurrent * Math.pow(1 + dailyRate, days);
+                } else {
+                    value += convertedCurrent;
+                }
+            } else if (Number.isFinite(convertedInvest)) {
+                value += convertedInvest;
             }
-        }
+        });
         return { name, totalCurrent: value };
-    }).filter(d => d.totalCurrent > 0);
+    }).filter(d => Number.isFinite(d.totalCurrent) && d.totalCurrent > 0);
     const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
     if (pieContainer) {
         renderPieChart(pieContainer, dataForDate, outCurr);
@@ -3309,15 +3317,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
 
       /* PATCH */
-      const activeGrouped = (snapshot.activeFunds || []).reduce((acc, fund) => {
-          if (!fund.fund) return acc;
-          if (!acc[fund.fund]) acc[fund.fund] = [];
-          acc[fund.fund].push(fund);
-          return acc;
-      }, {});
-
       const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
-      const allocationData = Object.entries(activeGrouped).map(([name, entries]) => {
+      /* PATCH */
+      const allocationData = Object.entries(groupedFunds).map(([name, entries]) => {
           const totalCurrent = entries.reduce((sum, entry) => {
               const converted = convert(entry.current, entry.curr);
               return Number.isFinite(converted) ? sum + converted : sum;
