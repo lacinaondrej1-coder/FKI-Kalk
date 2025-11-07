@@ -9,6 +9,7 @@ Interaktivní webová kalkulačka pro správu investičního portfolia.
 - Kalkulačka nekonečné renty a upozornění na chybějící data
 - Přímý export do JSONu pro zálohování nebo opětovný import
 - **Export prezentace pro klienta** – generuje statický HTML report připravený ke sdílení offline
+- Možnost **zmrazit** jednotlivé fondy: zůstanou v přehledu, ale neovlivňují souhrnné výnosy, projekce ani kalkulačku renty
 
 ## Jak exportovat klientský report
 1. Vyplňte všechna potřebná data ve fondech a zkontrolujte výsledky.
