@@ -2807,94 +2807,53 @@
             const containerRef = useRef(null);
             const [tooltip, setTooltip] = useState(null);
             const projection = useMemo(() => createProjectionEngine(analysis), [analysis]);
-            const { originDate: projectionOrigin, finalDate: projectionFinal, projectTo: projectionProjectTo } = projection;
+            const {
+                originDate: projectionOrigin,
+                finalDate: projectionFinal,
+                totalYears: projectionTotalYears,
+                projectTo: projectionProjectTo,
+            } = projection;
             const yearlyRows = useMemo(() => {
-                if (!analysis?.hasData) {
-                    return [];
-                }
-                const rawTimeline = Array.isArray(analysis.timeline) ? analysis.timeline : [];
-                const timeline = rawTimeline
-                    .filter((point) => point && point.date instanceof Date)
-                    .sort((a, b) => a.date - b.date);
-                if (timeline.length === 0) {
-                    return [];
-                }
-
-                const scenarioStart = projectionOrigin instanceof Date ? projectionOrigin : timeline[0].date;
-                const scenarioEnd = projectionFinal instanceof Date ? projectionFinal : timeline[timeline.length - 1].date;
-                if (!(scenarioStart instanceof Date) || !(scenarioEnd instanceof Date) || typeof projectionProjectTo !== 'function') {
+                if (
+                    !analysis?.hasData ||
+                    !(projectionOrigin instanceof Date) ||
+                    !(projectionFinal instanceof Date) ||
+                    typeof projectionProjectTo !== 'function'
+                ) {
                     return [];
                 }
 
-                const crashYears = new Set();
-                const crashDetailsByYear = new Map();
-                if (Array.isArray(analysis.markers)) {
-                    analysis.markers.forEach((marker) => {
-                        if (!marker || !(marker.date instanceof Date)) {
-                            return;
-                        }
-                        const hasCrash = Array.isArray(marker.crashes)
-                            ? marker.crashes.some((crash) => {
-                                  if (!crash) return false;
-                                  const loss = Number(crash.loss);
-                                  const haircut = Number(crash.haircut);
-                                  return (Number.isFinite(loss) && loss > 0) || (Number.isFinite(haircut) && haircut > 0);
-                              })
-                            : false;
-                        if (hasCrash) {
-                            const crashYear = marker.date.getFullYear();
-                            crashYears.add(crashYear);
-                            const bucket = crashDetailsByYear.get(crashYear) || {
-                                entries: [],
-                                totalLoss: 0,
-                            };
-                            (Array.isArray(marker.crashes) ? marker.crashes : [])
-                                .filter(Boolean)
-                                .forEach((crash) => {
-                                    const loss = Number(crash.loss);
-                                    const haircut = Number(crash.haircut);
-                                    const entry = {
-                                        fundName: crash.fundName || 'Fond',
-                                        loss: Number.isFinite(loss) ? loss : 0,
-                                        haircut: Number.isFinite(haircut) ? haircut : null,
-                                        date: marker.date,
-                                    };
-                                    bucket.entries.push(entry);
-                                    bucket.totalLoss += entry.loss;
-                                });
-                            bucket.count = bucket.entries.length;
-                            crashDetailsByYear.set(crashYear, bucket);
-                        }
-                    });
-                }
+                const horizonYears = Number.isFinite(projectionTotalYears)
+                    ? projectionTotalYears
+                    : Math.max(0, Math.ceil(diffInYears(projectionOrigin, projectionFinal)));
 
-                const firstYear = scenarioStart.getFullYear();
-                const finalYear = Math.max(scenarioEnd.getFullYear(), firstYear + Y - 1);
+                const markerList = Array.isArray(analysis.markers)
+                    ? analysis.markers
+                          .filter((marker) => marker && marker.date instanceof Date)
+                          .sort((a, b) => a.date - b.date)
+                    : [];
+
                 const rows = [];
-                for (let year = firstYear; year <= finalYear; year += 1) {
-                    const yearStart = year === firstYear ? scenarioStart : new Date(year, 0, 1);
-                    if (yearStart.getTime() > scenarioEnd.getTime()) {
+                for (let offset = 0; offset <= horizonYears; offset += 1) {
+                    const periodStart = offset === 0 ? projectionOrigin : addYears(projectionOrigin, offset);
+                    if (periodStart.getTime() > projectionFinal.getTime()) {
                         break;
                     }
-                    const nextYearStart = new Date(year + 1, 0, 1);
-                    const yearEnd =
-                        year === finalYear || nextYearStart.getTime() > scenarioEnd.getTime()
-                            ? scenarioEnd
-                            : nextYearStart;
-                    if (yearEnd.getTime() <= yearStart.getTime()) {
+
+                    const rawPeriodEnd = addYears(projectionOrigin, offset + 1);
+                    const periodEnd = rawPeriodEnd.getTime() > projectionFinal.getTime() ? projectionFinal : rawPeriodEnd;
+                    if (periodEnd.getTime() <= periodStart.getTime()) {
                         continue;
                     }
-                    const startProjection = projectionProjectTo(
-                        yearStart,
-                        { elapsedHint: diffInYears(scenarioStart, yearStart) },
-                    );
-                    const endProjection = projectionProjectTo(
-                        yearEnd,
-                        { elapsedHint: diffInYears(scenarioStart, yearEnd) },
-                    );
+
+                    const elapsedStart = diffInYears(projectionOrigin, periodStart);
+                    const elapsedEnd = diffInYears(projectionOrigin, periodEnd);
+                    const startProjection = projectionProjectTo(periodStart, { elapsedHint: elapsedStart });
+                    const endProjection = projectionProjectTo(periodEnd, { elapsedHint: elapsedEnd });
                     if (!startProjection || !endProjection) {
                         continue;
                     }
+
                     const startValue = Number.isFinite(startProjection.totalValue) ? startProjection.totalValue : 0;
                     const endValue = Number.isFinite(endProjection.totalValue) ? endProjection.totalValue : 0;
                     const gain = endValue - startValue;
@@ -2904,18 +2863,67 @@
                     } else if (gain < -1) {
                         gainStatus = 'negative';
                     }
+
+                    const periodStartTime = periodStart.getTime();
+                    const periodEndTime = periodEnd.getTime();
+                    const inclusiveEnd =
+                        offset === horizonYears || periodEndTime >= projectionFinal.getTime();
+                    const crashesInPeriod = [];
+                    markerList.forEach((marker) => {
+                        const time = marker.date.getTime();
+                        const inRange =
+                            time >= periodStartTime &&
+                            (inclusiveEnd ? time <= periodEndTime : time < periodEndTime);
+                        if (!inRange) {
+                            return;
+                        }
+                        (Array.isArray(marker.crashes) ? marker.crashes : [])
+                            .filter(Boolean)
+                            .forEach((crash) => {
+                                const loss = Number(crash.loss);
+                                const haircut = Number(crash.haircut);
+                                const hasLoss = Number.isFinite(loss) && loss > 0;
+                                const hasHaircut = Number.isFinite(haircut) && haircut > 0;
+                                if (!hasLoss && !hasHaircut) {
+                                    return;
+                                }
+                                crashesInPeriod.push({
+                                    fundName: crash.fundName || 'Fond',
+                                    loss: hasLoss ? loss : 0,
+                                    haircut: hasHaircut ? haircut : null,
+                                    date: marker.date,
+                                });
+                            });
+                    });
+
+                    const crashDetails = crashesInPeriod.length
+                        ? {
+                              entries: crashesInPeriod,
+                              totalLoss: crashesInPeriod.reduce((acc, entry) => acc + entry.loss, 0),
+                          }
+                        : null;
+
                     rows.push({
-                        year,
+                        key: `period-${offset}`,
+                        year: periodStart.getFullYear(),
+                        offset,
                         startValue,
                         endValue,
                         gain,
-                        hadCrash: crashYears.has(year),
-                        crashDetails: crashDetailsByYear.get(year) || null,
+                        hadCrash: crashesInPeriod.length > 0,
+                        crashDetails,
                         gainStatus,
                     });
                 }
+
                 return rows;
-            }, [analysis, projectionOrigin, projectionFinal, projectionProjectTo]);
+            }, [
+                analysis,
+                projectionOrigin,
+                projectionFinal,
+                projectionProjectTo,
+                projectionTotalYears,
+            ]);
 
             useEffect(() => {
                 if (!availableStages.length) {
@@ -3128,7 +3136,7 @@
                                             if (row.hadCrash) rowClassNames.push('has-crash');
                                             if (row.gainStatus) rowClassNames.push(`is-${row.gainStatus}`);
                                             return (
-                                                <tr key={row.year} className={rowClassNames.join(' ')}>
+                                                <tr key={row.key || row.year} className={rowClassNames.join(' ')}>
                                                     <td>{row.year}</td>
                                                     <td className="tabular-nums text-right">{formatCurrency(row.startValue)}</td>
                                                     <td className="tabular-nums text-right">{formatCurrency(row.endValue)}</td>
