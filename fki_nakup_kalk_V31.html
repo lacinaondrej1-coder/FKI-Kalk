@@ -2000,11 +2000,12 @@
                 const invested = Number.isFinite(state.invested) ? state.invested : 0;
                 if (baseValue <= 0 && invested <= 0) return;
                 const rate = Number.isFinite(state.rate) ? state.rate : 0;
-                const isActive = state.status === 'active' && state.canGrow !== false;
-                const effectiveRate = isActive ? rate : 0;
+                const isUnlocked = state.locked !== true;
+                const canAccrue = state.status === 'active' && state.canGrow === true && isUnlocked;
+                const effectiveRate = canAccrue ? rate : 0;
                 let projectedValue = 0;
                 if (baseValue > 0) {
-                    projectedValue = isActive ? baseValue * Math.pow(1 + rate, years) : baseValue;
+                    projectedValue = canAccrue ? baseValue * Math.pow(1 + rate, years) : baseValue;
                     total += projectedValue;
                 }
                 if (invested > 0) {
