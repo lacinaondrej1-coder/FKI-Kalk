@@ -935,7 +935,7 @@
 
         const sanitizeFund = (fund, fallbackStartDate) => {
             const fallback = fallbackStartDate instanceof Date ? fallbackStartDate : startOfToday();
-            const startDateInstance = parseISODate(fund?.startDate) || fallback;
+            const startDateInstance = fallback instanceof Date ? fallback : startOfToday();
             const startDateStr = toInputDate(startDateInstance);
             const rawHaircut = fund?.haircutStr;
             const normalizedHaircut = (() => {
@@ -983,6 +983,7 @@
         };
 
         const deriveScenarioStartDate = (fundList) => {
+            const anchor = startOfToday();
             let earliest = null;
             if (Array.isArray(fundList)) {
                 fundList.forEach((fund) => {
@@ -994,7 +995,10 @@
                     }
                 });
             }
-            return earliest || startOfToday();
+            if (earliest instanceof Date && earliest.getTime() > anchor.getTime()) {
+                return earliest;
+            }
+            return anchor;
         };
 
         const prepareScenarioInput = (funds) => {
