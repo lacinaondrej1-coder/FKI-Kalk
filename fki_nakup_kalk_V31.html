@@ -1462,7 +1462,7 @@
             const finalEntry = timeline[timeline.length - 1];
             const finalValue = finalEntry ? finalEntry.totalValue : 0;
             const scenarioEnd = finalEntry ? finalEntry.date : finalDate;
-            const scenarioStart = timeline[0]?.date;
+            const timelineStart = timeline[0]?.date;
 
             if (finalValue !== 0 && scenarioEnd) {
                 cashFlows.push({ amount: finalValue, date: scenarioEnd });
@@ -1472,7 +1472,7 @@
             const xirr = calculateXIRR(normalizedCashFlows);
             const pl = finalValue - totalInvested;
             const plPercent = totalInvested > 0 ? pl / totalInvested : 0;
-            const durationYears = scenarioStart ? diffInYears(scenarioStart, scenarioEnd) : 0;
+            const durationYears = timelineStart ? diffInYears(timelineStart, scenarioEnd) : 0;
             const crashSummary = crashCount === 0
                 ? 'Bez propadů'
                 : `${crashBreakdown.propad || crashCount}× propad`;
@@ -1530,7 +1530,7 @@
                         share: item.share,
                     })),
                 })),
-                startDate: scenarioStart ? scenarioStart.toISOString() : null,
+                startDate: timelineStart ? timelineStart.toISOString() : null,
                 endDate: scenarioEnd ? scenarioEnd.toISOString() : null,
             };
 
@@ -1548,7 +1548,7 @@
                 crashCount,
                 crashSummary,
                 totalCrashLoss,
-                startDate: scenarioStart,
+                startDate: timelineStart,
                 endDate: scenarioEnd,
                 durationYears,
                 finalAllocations,
