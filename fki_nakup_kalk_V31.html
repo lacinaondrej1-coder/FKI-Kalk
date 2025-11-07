@@ -1193,8 +1193,14 @@
             const horizonDate = earliestDate ? addYears(earliestDate, Y) : null;
             const finalDateCandidates = [today];
             if (latestDate) finalDateCandidates.push(latestDate);
-            if (horizonDate) finalDateCandidates.push(horizonDate);
-            const finalDate = new Date(Math.max(...finalDateCandidates.map((date) => date.getTime())));
+            let finalDateTime = Math.max(...finalDateCandidates.map((date) => date.getTime()));
+            if (horizonDate instanceof Date) {
+                const horizonTime = horizonDate.getTime();
+                if (!Number.isFinite(finalDateTime) || finalDateTime < horizonTime) {
+                    finalDateTime = horizonTime;
+                }
+            }
+            const finalDate = new Date(finalDateTime);
             ensureEntry(finalDate).control = true;
 
             const stageDefinitions = [];
