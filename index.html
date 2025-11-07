@@ -3289,12 +3289,9 @@ document.addEventListener('DOMContentLoaded', () => {
           totalCurrent: formatCurrency0(snapshot.portfolioSummary.totalCurrentConverted, outCurr, copy.format.currency)
       };
       /* PATCH */
-      const formattedCapture = {};
-      /* PATCH */
       const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, {
           isStaticExport: true,
           formattedTotals: formattedOverrides,
-          captureFormatted: formattedCapture,
           tone: communicationTone,
           /* PATCH */ summaryLabels: copy.summary.labels,
           /* PATCH */ format: copy.format,
@@ -3302,11 +3299,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       /* PATCH */
-      const sharedFormattedTotals = {
-          totalCurrent: formattedCapture.totalCurrent || formattedOverrides.totalCurrent,
-          activeCurrent: formatCurrency0(snapshot.portfolioSummary.totalCurrentActive, outCurr, copy.format.currency)
-      };
-
       const groupedFunds = snapshot.funds.reduce((acc, fund) => {
           if (!fund.fund) return acc;
           if (!acc[fund.fund]) acc[fund.fund] = [];
@@ -3341,7 +3333,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const lineBlock = renderLineChart(null, snapshot.funds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
         isStaticExport: true,
         conversionReady,
-        formattedTodayValue: sharedFormattedTotals.totalCurrent,
         /* PATCH */ copy: copy.line,
         /* PATCH */ format: copy.format,
         /* PATCH */ language: copy.language,
