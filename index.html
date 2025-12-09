@@ -2146,8 +2146,13 @@ document.addEventListener('DOMContentLoaded', () => {
         /* PATCH */
         const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
         /* PATCH */
+        const metaPayload = htmlEscape(JSON.stringify({
+            locale: currencyFormat.locale || 'cs-CZ',
+            generic: exportChart.hoverTemplate || '__DATE__\n__VALUE__'
+        }));
+        /* PATCH */
         const canvasAttrs = pointsPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-line-points="${pointsPayload}" data-viewbox="${viewBoxPayload}"`
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-line-points="${pointsPayload}" data-viewbox="${viewBoxPayload}" data-line-meta="${metaPayload}"`
             : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
         return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${footnote}</div>`;
     }
@@ -2903,6 +2908,7 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const hoverBase = hasIrr ? [...valuePoints, ...projectionPoints] : contributionPoints;
       /* PATCH */
+      /* PATCH */
       const hoverPointsBase = hoverBase.map(point => {
           const dateLabel = formatDateLocal(point.date);
           const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
@@ -2912,7 +2918,10 @@ document.addEventListener('DOMContentLoaded', () => {
           return {
               x: formatCoord(xScale(point.date)),
               y: formatCoord(yScale(point.value)),
-              tooltip
+              tooltip,
+              /* PATCH */ kind: 'line',
+              /* PATCH */ t: point.date.getTime(),
+              /* PATCH */ v: point.value
           };
       });
 
@@ -2923,7 +2932,10 @@ document.addEventListener('DOMContentLoaded', () => {
           return {
               x: formatCoord(xScale(point.date)),
               y: formatCoord(yScale(yCoord)),
-              tooltip
+              tooltip,
+              /* PATCH */ kind: 'marker',
+              /* PATCH */ t: point.date.getTime(),
+              /* PATCH */ v: yCoord
           };
       });
 
@@ -2943,6 +2955,17 @@ document.addEventListener('DOMContentLoaded', () => {
           : `Dnes (${formatDateLocal(today)}): ${formattedTodayValue}`;
       /* PATCH: remove native title tooltip, keep aria label for accessibility */
       const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" aria-label="${htmlEscape(todayTooltip)}" data-tooltip-text="${htmlEscape(todayTooltip)}"></circle>` : '';
+      /* PATCH */
+      if (hasIrr) {
+          hoverPoints.push({
+              x: formatCoord(xScale(today)),
+              y: formatCoord(yScale(valueAtToday)),
+              tooltip: todayTooltip,
+              kind: 'marker',
+              t: today.getTime(),
+              v: valueAtToday
+          });
+      }
 
       const startLabel = formatDateLocal(firstDate);
       const endLabel = formatDateLocal(timelineEnd);
@@ -2990,6 +3013,8 @@ document.addEventListener('DOMContentLoaded', () => {
           ariaLabel,
           /* PATCH */
           hoverPoints,
+          /* PATCH */
+          hoverTemplate: tooltipCopy.generic ? tooltipCopy.generic('__DATE__', '__VALUE__') : '__DATE__\n__VALUE__',
           /* PATCH */
           viewBox: { width, height }
       };
@@ -3561,9 +3586,121 @@ document.addEventListener('DOMContentLoaded', () => {
       const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var locale=el.getAttribute('data-locale')||'cs-CZ';var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString(locale);})();";
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
-      const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});const attachLineCharts=()=>{document.querySelectorAll('.line-canvas[data-line-points]').forEach(canvas=>{const raw=canvas.getAttribute('data-line-points');let pts;try{pts=JSON.parse(raw);}catch(_e){return;}if(!pts||!pts.length)return;const svg=canvas.querySelector('svg');if(!svg)return;const vbAttr=(canvas.getAttribute('data-viewbox')||svg.getAttribute('viewBox')||'820 380').split(/[,\s]+/);const vbW=parseFloat(vbAttr[0])||820;const vbH=parseFloat(vbAttr[1])||380;const ns='http://www.w3.org/2000/svg';const guide=document.createElementNS(ns,'g');guide.setAttribute('class','line-hover');guide.style.display='none';const gl=document.createElementNS(ns,'line');gl.setAttribute('stroke','#94a3b8');gl.setAttribute('stroke-width','1');gl.setAttribute('stroke-dasharray','4 3');const gc=document.createElementNS(ns,'circle');gc.setAttribute('r','5');gc.setAttribute('fill','#0d2c54');gc.setAttribute('stroke','#ffffff');gc.setAttribute('stroke-width','2');guide.appendChild(gl);guide.appendChild(gc);svg.appendChild(guide);const hideGuide=()=>{guide.style.display='none';hide();};const showPoint=(pt)=>{guide.style.display='block';gl.setAttribute('x1',pt.x);gl.setAttribute('x2',pt.x);gl.setAttribute('y1',pt.y);gl.setAttribute('y2',vbH-32);gc.setAttribute('cx',pt.x);gc.setAttribute('cy',pt.y);tooltip.textContent=pt.tooltip||'';tooltip.style.opacity='1';active=true;};canvas.addEventListener('mousemove',ev=>{const rect=svg.getBoundingClientRect();const scaleX=vbW/rect.width;const scaleY=vbH/rect.height;const x=(ev.clientX-rect.left)*scaleX;let best=pts[0];let dist=Math.abs(best.x-x);for(let i=1;i<pts.length;i++){const dx=Math.abs(pts[i].x-x);const isCloser=dx<dist;const tieBetter=dx===dist&&pts[i].y<best.y; /* PATCH: prefer higher-value point on ties */ if(isCloser||tieBetter){dist=dx;best=pts[i];}}tooltip.style.left=ev.clientX+12+'px';tooltip.style.top=ev.clientY+12+'px';showPoint(best);});canvas.addEventListener('mouseleave',hideGuide);canvas.addEventListener('blur',hideGuide,{capture:true});});};attachLineCharts();});`;
-      /* PATCH */
-      const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
+            const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{
+        const tooltip=document.createElement('div');
+        tooltip.style.position='fixed';
+        tooltip.style.pointerEvents='none';
+        tooltip.style.padding='0.4rem 0.6rem';
+        tooltip.style.background='rgba(15,23,42,0.92)';
+        tooltip.style.color='#f8fafc';
+        tooltip.style.fontSize='0.75rem';
+        tooltip.style.borderRadius='0.5rem';
+        tooltip.style.opacity='0';
+        tooltip.style.transition='opacity 0.15s ease';
+        tooltip.style.zIndex='50';
+        document.body.appendChild(tooltip);
+        let active=false;
+        const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};
+        const hide=()=>{active=false;tooltip.style.opacity='0';};
+        document.addEventListener('mousemove',move);
+        document.addEventListener('mouseover',e=>{
+          const target=e.target.closest('[data-tooltip-text]');
+          if(!target)return;
+          tooltip.textContent=target.getAttribute('data-tooltip-text')||'';
+          tooltip.style.left=e.clientX+12+'px';
+          tooltip.style.top=e.clientY+12+'px';
+          tooltip.style.opacity='1';
+          active=true;
+        });
+        document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});
+        const attachLineCharts=()=>{
+          document.querySelectorAll('.line-canvas[data-line-points]').forEach(canvas=>{
+            const raw=canvas.getAttribute('data-line-points');
+            let pts;try{pts=JSON.parse(raw);}catch(_e){return;}
+            if(!pts||!pts.length)return;
+            /* PATCH */
+            let meta={};
+            const metaRaw=canvas.getAttribute('data-line-meta');
+            try{meta=JSON.parse(metaRaw);}catch(_e){}
+            const locale=meta.locale||'cs-CZ';
+            const genericTemplate=meta.generic||'__DATE__\n__VALUE__';
+            const fmtInt=new Intl.NumberFormat(locale,{maximumFractionDigits:0});
+            const formatValue=(v)=>fmtInt.format(Math.round(v));
+            const formatDate=(ms)=>{const d=new Date(ms);return d.toLocaleDateString(locale);};
+            const basePoints=pts.filter(p=>p.kind==='line').sort((a,b)=>a.x-b.x);
+            const svg=canvas.querySelector('svg');
+            if(!svg)return;
+            const vbAttr=(canvas.getAttribute('data-viewbox')||svg.getAttribute('viewBox')||'820 380').split(/[,\s]+/);
+            const vbW=parseFloat(vbAttr[0])||820;
+            const vbH=parseFloat(vbAttr[1])||380;
+            const ns='http://www.w3.org/2000/svg';
+            const guide=document.createElementNS(ns,'g');
+            guide.setAttribute('class','line-hover');
+            guide.style.display='none';
+            const gl=document.createElementNS(ns,'line');
+            gl.setAttribute('stroke','#94a3b8');
+            gl.setAttribute('stroke-width','1');
+            gl.setAttribute('stroke-dasharray','4 3');
+            const gc=document.createElementNS(ns,'circle');
+            gc.setAttribute('r','5');
+            gc.setAttribute('fill','#0d2c54');
+            gc.setAttribute('stroke','#ffffff');
+            gc.setAttribute('stroke-width','2');
+            guide.appendChild(gl);guide.appendChild(gc);
+            svg.appendChild(guide);
+            const hideGuide=()=>{guide.style.display='none';hide();};
+            const showPoint=(pt,textOverride)=>{
+              guide.style.display='block';
+              gl.setAttribute('x1',pt.x);gl.setAttribute('x2',pt.x);
+              gl.setAttribute('y1',pt.y);gl.setAttribute('y2',vbH-32);
+              gc.setAttribute('cx',pt.x);gc.setAttribute('cy',pt.y);
+              tooltip.textContent=textOverride||pt.tooltip||'';
+              tooltip.style.opacity='1';
+              active=true;
+            };
+            canvas.addEventListener('mousemove',ev=>{
+              const rect=svg.getBoundingClientRect();
+              const scaleX=vbW/rect.width;
+              const x=(ev.clientX-rect.left)*scaleX;
+              let best=pts[0];
+              let dist=Math.abs(best.x-x);
+              for(let i=1;i<pts.length;i++){
+                const dx=Math.abs(pts[i].x-x);
+                const isCloser=dx<dist;
+                const tieBetter=dx===dist&&pts[i].y<best.y; /* PATCH: prefer higher-value point on ties */
+                if(isCloser||tieBetter){dist=dx;best=pts[i];}
+              }
+              tooltip.style.left=ev.clientX+12+'px';
+              tooltip.style.top=ev.clientY+12+'px';
+              const snapThreshold=12;
+              if(best.kind!=='line'&&dist<=snapThreshold){showPoint(best);return;}
+              if(basePoints.length>=2){
+                let prev=basePoints[0];
+                let next=basePoints[basePoints.length-1];
+                for(let i=0;i<basePoints.length;i++){
+                  if(basePoints[i].x<=x){prev=basePoints[i];}
+                  if(basePoints[i].x>=x){next=basePoints[i];break;}
+                }
+                if(!next||!prev){showPoint(best);return;}
+                if(Math.abs(next.x-prev.x)<1e-4){showPoint(next);return;}
+                const ratio=Math.min(1,Math.max(0,(x-prev.x)/(next.x-prev.x)));
+                const interpX=prev.x+ratio*(next.x-prev.x);
+                const interpY=prev.y+ratio*(next.y-prev.y);
+                const interpValue=prev.v+ratio*(next.v-prev.v);
+                const interpDate=prev.t+ratio*(next.t-prev.t);
+                const text=genericTemplate.replace(/__DATE__/g,formatDate(interpDate)).replace(/__VALUE__/g,formatValue(interpValue));
+                showPoint({x:interpX,y:interpY,tooltip:text},text);
+                return;
+              }
+              showPoint(best);
+            });
+            canvas.addEventListener('mouseleave',hideGuide);
+            canvas.addEventListener('blur',hideGuide,{capture:true});
+          });
+        };
+        attachLineCharts();
+      });`;
+const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 
       const html = `<!doctype html>
 <html lang="${copy.htmlLang}">
