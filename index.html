@@ -125,12 +125,14 @@
 
     /* PATCH */
     .card {
-        background: var(--color-card);
+        background: radial-gradient(circle at 18% 20%, rgba(77, 177, 200, 0.08), transparent 42%),
+            radial-gradient(circle at 85% 15%, rgba(13, 44, 84, 0.06), transparent 38%),
+            var(--color-card);
         border: 1px solid var(--color-border);
         border-radius: 1.5rem;
-        box-shadow: none;
+        box-shadow: var(--color-shadow);
         padding: 1.5rem;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
     }
 
     /* PATCH */
@@ -178,9 +180,12 @@
     }
 
     .card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: var(--color-border-strong);
-        box-shadow: var(--color-shadow);
+        box-shadow: var(--color-shadow-strong);
+        background: radial-gradient(circle at 20% 18%, rgba(77, 177, 200, 0.12), transparent 45%),
+            radial-gradient(circle at 80% 12%, rgba(13, 44, 84, 0.08), transparent 42%),
+            var(--color-card);
     }
 
     .primary-btn, .secondary-btn, .danger-btn {
@@ -343,20 +348,23 @@
         flex-direction: column;
         gap: 1.2rem;
     }
+    /* PATCH */
     .feature-card {
-        background: var(--color-card);
+        background: linear-gradient(145deg, rgba(77, 177, 200, 0.07), transparent 46%), var(--color-card);
         border: 1px solid var(--color-border);
         border-radius: 1.5rem;
         padding: 1.3rem 1.4rem;
         display: flex;
         gap: 1rem;
         align-items: flex-start;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
     }
+    /* PATCH */
     .feature-card:hover {
         transform: translateY(-3px);
         border-color: var(--color-border-strong);
-        box-shadow: var(--color-shadow);
+        box-shadow: var(--color-shadow-strong);
+        background: linear-gradient(145deg, rgba(77, 177, 200, 0.12), transparent 50%), var(--color-card);
     }
     .feature-icon {
         width: 42px;
@@ -553,8 +561,10 @@
     }
 
     .summary-grid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; justify-content: space-between; gap: 0.65rem; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: none; }
-    .summary-card:hover { transform: translateY(-3px); border-color: var(--color-border-strong); box-shadow: var(--color-shadow); }
+    /* PATCH */
+    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: linear-gradient(180deg, rgba(77, 177, 200, 0.06), transparent 45%), var(--color-card); display: flex; flex-direction: column; justify-content: space-between; gap: 0.65rem; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease; box-shadow: var(--color-shadow); }
+    /* PATCH */
+    .summary-card:hover { transform: translateY(-3px); border-color: var(--color-border-strong); box-shadow: var(--color-shadow-strong); background: linear-gradient(180deg, rgba(77, 177, 200, 0.1), transparent 55%), var(--color-card); }
     .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
     /* PATCH: Summary values – keep large figures inside cards */
     .summary-value {
