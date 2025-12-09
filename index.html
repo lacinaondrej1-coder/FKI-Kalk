@@ -2112,6 +2112,13 @@ document.addEventListener('DOMContentLoaded', () => {
         /* PATCH */ frozenTotal: frozenTotalOption = null
     } = options;
 
+    /* PATCH */
+    const currencyFormat = format.currency || {};
+    /* PATCH */
+    const percentFormat = format.percent || {};
+    /* PATCH */
+    const monthsFormat = format.months || {};
+
     if (isStaticExport) {
         const exportChart = buildLineChartForExport(
             funds,
