@@ -982,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const utils = {
     nf: (d = 2, opts = {}) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d, ...opts }),
     toDate: (s) => { if (!s) return null; const t = String(s).trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(t)) { const d = new Date(t); return isNaN(d.getTime()) ? null : d; } const m = t.match(/^([0-3]?\d)\.?\s*([01]?\d)\.?\s*(\d{4})$/); if (m) { const d = new Date(`${m[3]}-${m[2]}-${m[1]}`); return isNaN(d.getTime()) ? null : d; } const genericDate = new Date(t); return isNaN(genericDate.getTime()) ? null : genericDate; },
-    monthsDiff: (d1, d2) => { if (!(d1 instanceof Date && d2 instanceof Date && !isNaN(d1) && !isNaN(d2))) return NaN; const days = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24); return Math.max(0, days / (365.2425 / 12)); },
+    monthsDiff: (d1, d2) => { if (!(d1 instanceof Date && d2 instanceof Date && !isNaN(d1) && !isNaN(d2))) return NaN; const days = (d2.getTime() - d1.getTime()) / MS_PER_DAY; return Math.max(0, days / (365.2425 / 12)); },
     numCZ: (v) => { if (v === null || v === undefined) return NaN; let t = String(v).replace(/\u00A0/g, ' ').trim(); if (t === '') return NaN; t = t.replace(/\s*\b(Kč|CZK|€|EUR)\b\s*/gi, ''); t = t.replace(/[\u2212\u2013\u2014]/g, '-'); let isNegative = false; if (t.startsWith('(') && t.endsWith(')')) { isNegative = true; t = t.substring(1, t.length - 1); } t = t.replace(/\s/g, ''); const lastComma = t.lastIndexOf(','); const lastDot = t.lastIndexOf('.'); if (lastComma > lastDot) { t = t.replace(/\./g, '').replace(',', '.'); } else if (lastDot > -1 && t.length - lastDot - 1 > 2) { t = t.replace(/,/g, ''); } else { t = t.replace(/,/g, ''); } const num = parseFloat(t); if (isNaN(num)) return NaN; return isNegative ? -Math.abs(num) : num; },
     normName: s => String(s || '').replace(/[\u00A0\s]+/g, ' ').trim(),
     convertAmount: (amt, from, to, fxRate) => { if (!isFinite(amt)) return NaN; if (from === to) return amt; const k = fxRate; if (!isFinite(k) || k <= 0) return NaN; if (from === 'EUR' && to === 'CZK') return amt * k; if (from === 'CZK' && to === 'EUR') return amt / k; return NaN; }
@@ -2148,8 +2148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     /* PATCH */
     const activeSet = Array.isArray(activeFundsOption) && activeFundsOption.length ? activeFundsOption : funds.filter(f => !f.freeze);
-    /* PATCH */
-    const msPerDay = 1000 * 60 * 60 * 24;
     const today = new Date(); today.setHours(0,0,0,0);
     const firstDate = allEvents[0].date;
     const futureEndDate = new Date(`${PROJECTION_END_YEAR}-12-31`);
@@ -2169,7 +2167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const allPoints = [{ date: firstDate, value: 0, contributions: 0, frozenValue: 0 }];
     const depositsByDay = new Map();
     allEvents.forEach(evt => {
-        const daysSinceLast = (evt.date - lastGrowthDate) / msPerDay;
+        const daysSinceLast = (evt.date - lastGrowthDate) / MS_PER_DAY;
         if (daysSinceLast > 0 && hasIrr && runningActive !== 0) {
             runningActive *= Math.pow(1 + dailyRate, daysSinceLast);
         }
@@ -2193,7 +2191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dayEntry.entries.push({ fund: evt.fund, amount: evt.amount, freeze: evt.freeze });
         depositsByDay.set(dayKey, dayEntry);
     });
-    const daysToToday = (today - lastGrowthDate) / msPerDay;
+    const daysToToday = (today - lastGrowthDate) / MS_PER_DAY;
     if (daysToToday > 0 && hasIrr && runningActive !== 0) {
         runningActive *= Math.pow(1 + dailyRate, daysToToday);
     }
@@ -2225,7 +2223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastProjectionDate = today;
         for (let year = today.getFullYear() + 1; year <= PROJECTION_END_YEAR; year++) {
             const nextDate = new Date(`${year}-12-31`);
-            const daysFromLast = (nextDate - lastProjectionDate) / msPerDay;
+            const daysFromLast = (nextDate - lastProjectionDate) / MS_PER_DAY;
             projectedActive *= Math.pow(1 + dailyRate, daysFromLast);
             projectionPoints.push({ date: nextDate, value: projectedActive + runningFrozen });
             lastProjectionDate = nextDate;
@@ -2259,7 +2257,7 @@ document.addEventListener('DOMContentLoaded', () => {
       innerHTML += `<line class="line-chart-grid-line" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>`;
       innerHTML += `<text class="line-chart-axis-text" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${val/1000000} M</text>`;
     }
-    for (let year = firstDate.getFullYear(); year <= 2035; year+=2) {
+    for (let year = firstDate.getFullYear(); year <= PROJECTION_END_YEAR; year+=2) {
       if(year < firstDate.getFullYear()) continue;
       const date = new Date(`${year}-01-01`);
       const x = xScale(date);
@@ -2313,7 +2311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!(targetDate instanceof Date) || isNaN(targetDate)) return valueAtToday;
         if (targetDate <= today) return valueAtToday;
         if (!hasIrr || runningActive === 0) return valueAtToday;
-        const daysAhead = (targetDate - today) / msPerDay;
+        const daysAhead = (targetDate - today) / MS_PER_DAY;
         return runningFrozen + runningActive * Math.pow(1 + dailyRate, daysAhead);
     };
     if (options.isForPdf) {
@@ -2322,7 +2320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (endOfYear > today) {
             fixedTooltipPoints.push({ date: endOfYear, label: endOfYear.getFullYear().toString() });
         }
-        for (let year = today.getFullYear() + 3; year <= 2035; year += 3) {
+        for (let year = today.getFullYear() + 3; year <= PROJECTION_END_YEAR; year += 3) {
             const date = new Date(year, 11, 31);
             if (date <= futureEndDate) {
                 fixedTooltipPoints.push({ date, label: year.toString() });
@@ -2447,7 +2445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deposits = funds.map(f => f.dateIn).sort((a,b) => a - b);
     if(deposits.length === 0) return;
     const firstDate = deposits[0];
-    const endDate = new Date('2035-12-31');
+    const endDate = new Date(`${PROJECTION_END_YEAR}-12-31`);
     const today = new Date();
     slider.min = firstDate.getTime();
     slider.max = endDate.getTime();
