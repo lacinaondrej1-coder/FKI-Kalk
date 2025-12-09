@@ -2860,14 +2860,16 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const depositMarkers = depositPoints.map(point => {
           const tooltip = formatDepositTooltip(point);
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+          /* PATCH: remove native title tooltip, keep aria label for accessibility */
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDateLocal(point.date);
           const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
           const tooltip = tooltipCopy.projection ? tooltipCopy.projection(dateLabel, valueLabel) : `Odhad ${dateLabel}: ${valueLabel}`;
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+          /* PATCH: remove native title tooltip, keep aria label for accessibility */
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"></circle>`;
       }).join('');
 
       /* PATCH */
@@ -2891,7 +2893,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const todayTooltip = tooltipCopy.today
           ? tooltipCopy.today(formatDateLocal(today), formattedTodayValue)
           : `Dnes (${formatDateLocal(today)}): ${formattedTodayValue}`;
-      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
+      /* PATCH: remove native title tooltip, keep aria label for accessibility */
+      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" aria-label="${htmlEscape(todayTooltip)}" data-tooltip-text="${htmlEscape(todayTooltip)}"></circle>` : '';
 
       const startLabel = formatDateLocal(firstDate);
       const endLabel = formatDateLocal(timelineEnd);
