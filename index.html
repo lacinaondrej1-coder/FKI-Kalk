@@ -2141,7 +2141,15 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">${baseLegend}</span></div>`;
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
-        return `<div class="line-export">${legend}<div class="line-canvas" role="img" aria-label="${ariaAttr}">${exportChart.svg}</div>${footnote}</div>`;
+        /* PATCH */
+        const pointsPayload = exportChart.hoverPoints ? htmlEscape(JSON.stringify(exportChart.hoverPoints)) : '';
+        /* PATCH */
+        const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
+        /* PATCH */
+        const canvasAttrs = pointsPayload
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-line-points="${pointsPayload}" data-viewbox="${viewBoxPayload}"`
+            : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
+        return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${footnote}</div>`;
     }
 
     if (!container) return;
@@ -2863,6 +2871,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
 
       /* PATCH */
+      const hoverBase = hasIrr ? [...valuePoints, ...projectionPoints] : contributionPoints;
+      /* PATCH */
+      const hoverPoints = hoverBase.map(point => {
+          const dateLabel = formatDateLocal(point.date);
+          const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
+          const tooltip = tooltipCopy.generic
+              ? tooltipCopy.generic(dateLabel, valueLabel)
+              : `${dateLabel}\n${valueLabel}`;
+          return {
+              x: formatCoord(xScale(point.date)),
+              y: formatCoord(yScale(point.value)),
+              tooltip
+          };
+      });
+
+      /* PATCH */
       const formattedTodayValue = formattedTodayValueOverride || formatCurrency0(valueAtToday, outCurr, currencyFormat);
       const todayTooltip = tooltipCopy.today
           ? tooltipCopy.today(formatDateLocal(today), formattedTodayValue)
@@ -2913,7 +2937,11 @@ document.addEventListener('DOMContentLoaded', () => {
           hasIrr,
           irrPositive,
           footnote,
-          ariaLabel
+          ariaLabel,
+          /* PATCH */
+          hoverPoints,
+          /* PATCH */
+          viewBox: { width, height }
       };
   };
 
@@ -3483,7 +3511,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var locale=el.getAttribute('data-locale')||'cs-CZ';var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString(locale);})();";
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
-      const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});});`;
+      const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});const attachLineCharts=()=>{document.querySelectorAll('.line-canvas[data-line-points]').forEach(canvas=>{const raw=canvas.getAttribute('data-line-points');let pts;try{pts=JSON.parse(raw);}catch(_e){return;}if(!pts||!pts.length)return;const svg=canvas.querySelector('svg');if(!svg)return;const vbAttr=(canvas.getAttribute('data-viewbox')||svg.getAttribute('viewBox')||'820 380').split(/[,\s]+/);const vbW=parseFloat(vbAttr[0])||820;const vbH=parseFloat(vbAttr[1])||380;const ns='http://www.w3.org/2000/svg';const guide=document.createElementNS(ns,'g');guide.setAttribute('class','line-hover');guide.style.display='none';const gl=document.createElementNS(ns,'line');gl.setAttribute('stroke','#94a3b8');gl.setAttribute('stroke-width','1');gl.setAttribute('stroke-dasharray','4 3');const gc=document.createElementNS(ns,'circle');gc.setAttribute('r','5');gc.setAttribute('fill','#0d2c54');gc.setAttribute('stroke','#ffffff');gc.setAttribute('stroke-width','2');guide.appendChild(gl);guide.appendChild(gc);svg.appendChild(guide);const hideGuide=()=>{guide.style.display='none';hide();};const showPoint=(pt)=>{guide.style.display='block';gl.setAttribute('x1',pt.x);gl.setAttribute('x2',pt.x);gl.setAttribute('y1',pt.y);gl.setAttribute('y2',vbH-32);gc.setAttribute('cx',pt.x);gc.setAttribute('cy',pt.y);tooltip.textContent=pt.tooltip||'';tooltip.style.opacity='1';active=true;};canvas.addEventListener('mousemove',ev=>{const rect=svg.getBoundingClientRect();const scaleX=vbW/rect.width;const scaleY=vbH/rect.height;const x=(ev.clientX-rect.left)*scaleX;let best=pts[0];let dist=Math.abs(best.x-x);for(let i=1;i<pts.length;i++){const dx=Math.abs(pts[i].x-x);if(dx<dist){dist=dx;best=pts[i];}}tooltip.style.left=ev.clientX+12+'px';tooltip.style.top=ev.clientY+12+'px';showPoint(best);});canvas.addEventListener('mouseleave',hideGuide);canvas.addEventListener('blur',hideGuide,{capture:true});});};attachLineCharts();});`;
       /* PATCH */
       const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 
