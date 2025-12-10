@@ -2149,34 +2149,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
         /* PATCH: embed hover payloads via JSON blocks (avoid attribute encoding issues) */
-        const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
         const hasHoverPayload = Array.isArray(exportChart.hoverPoints) && exportChart.hoverPoints.length > 0;
-        /* PATCH: base64 payloads to survive serialization */
-        const encodePayload = (obj) => {
-            try {
-                return btoa(unescape(encodeURIComponent(JSON.stringify(obj || {}))));
-            } catch (_e) {
-                return '';
-            }
-        };
-        const dataId = hasHoverPayload ? `line-data-${Date.now()}-${Math.random().toString(36).slice(2)}` : '';
-        const metaId = hasHoverPayload ? `${dataId}-meta` : '';
-        const dataB64 = hasHoverPayload ? encodePayload(exportChart.hoverPoints || []) : '';
-        const metaB64 = hasHoverPayload ? encodePayload({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }) : '';
         const safeJson = (payload) => String(payload || '')
             .replace(/</g, '\\u003c')
             .replace(/<\/script>/gi, '<\\/script>');
-        const dataScript = hasHoverPayload
-            ? `<script type="application/json" id="${dataId}">${safeJson(JSON.stringify(exportChart.hoverPoints || []))}${SCRIPT_CLOSE_TAG}`
+        const payloadId = hasHoverPayload ? `line-payload-${Date.now()}-${Math.random().toString(36).slice(2)}` : '';
+        const payloadScript = hasHoverPayload
+            ? `<script type="application/json" id="${payloadId}">${safeJson(JSON.stringify({
+                points: exportChart.hoverPoints || [],
+                meta: { locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate },
+                viewBox: exportChart.viewBox || null
+            }))}${SCRIPT_CLOSE_TAG}`
             : '';
-        const metaScript = hasHoverPayload
-            ? `<script type="application/json" id="${metaId}">${safeJson(JSON.stringify({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }))}${SCRIPT_CLOSE_TAG}`
-            : '';
-        const viewBoxAttr = viewBoxPayload ? htmlEscape(viewBoxPayload) : '';
+        const viewBoxAttr = exportChart.viewBox ? htmlEscape(`${exportChart.viewBox.width},${exportChart.viewBox.height}`) : '';
         const canvasAttrs = hasHoverPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-data="${htmlEscape(dataId)}" data-line-meta-id="${htmlEscape(metaId)}" data-line-points-b64="${htmlEscape(dataB64)}" data-line-meta-b64="${htmlEscape(metaB64)}"`
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-payload="${htmlEscape(payloadId)}"`
             : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
-        return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${dataScript}${metaScript}${footnote}</div>`;
+        return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${payloadScript}${footnote}</div>`;
     }
 
     if (!container) return;
@@ -3673,37 +3662,46 @@ document.addEventListener('DOMContentLoaded', () => {
             for(const attempt of attempts){try{return attempt();}catch(_e){}}
             return null;
           };
-          document.querySelectorAll('.line-canvas[data-line-points], .line-canvas[data-line-data], .line-canvas[data-line-points-b64]').forEach(canvas=>{
+          document.querySelectorAll('.line-canvas[data-line-payload], .line-canvas[data-line-points], .line-canvas[data-line-data], .line-canvas[data-line-points-b64]').forEach(canvas=>{
             const encoding=canvas.getAttribute('data-encoding')||'uri';
+            const parseJsonById=(id)=>{
+              if(!id) return null;
+              const el=document.getElementById(id);
+              if(!el) return null;
+              try{return JSON.parse(el.textContent||'');}catch(_e){return null;}
+            };
             let pts=null;
+            let meta=null;
+            let viewBoxOverride=null;
+            const payloadId=canvas.getAttribute('data-line-payload');
+            if(payloadId){
+              const payload=parseJsonById(payloadId);
+              if(payload){
+                pts=payload.points||payload.hoverPoints||null;
+                meta=payload.meta||payload.metaData||null;
+                viewBoxOverride=payload.viewBox||null;
+              }
+            }
             const b64Attr=canvas.getAttribute('data-line-points-b64');
-            if(b64Attr){
+            if(!pts && b64Attr){
               pts=decodePayload(b64Attr,'b64');
             }
             const dataId=canvas.getAttribute('data-line-data');
-            if(dataId){
-              const scriptEl=document.getElementById(dataId);
-              if(scriptEl){
-                try{ pts=JSON.parse(scriptEl.textContent||''); }catch(_e){}
-              }
+            if(!pts && dataId){
+              pts=parseJsonById(dataId);
             }
             if(!pts){
               const raw=canvas.getAttribute('data-line-points');
               pts=decodePayload(raw,encoding);
             }
             if(!Array.isArray(pts)||!pts.length)return;
-            /* PATCH */
-            let meta=null;
             const metaB64=canvas.getAttribute('data-line-meta-b64');
-            if(metaB64){
+            if(!meta && metaB64){
               meta=decodePayload(metaB64,'b64');
             }
             const metaId=canvas.getAttribute('data-line-meta-id');
-            if(metaId){
-              const metaEl=document.getElementById(metaId);
-              if(metaEl){
-                try{ meta=JSON.parse(metaEl.textContent||''); }catch(_e){}
-              }
+            if(!meta && metaId){
+              meta=parseJsonById(metaId);
             }
             if(!meta){
               meta=decodePayload(canvas.getAttribute('data-line-meta'),encoding)||{};
@@ -3716,7 +3714,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const basePoints=pts.filter(p=>p.kind==='line').sort((a,b)=>a.x-b.x);
             const svg=canvas.querySelector('svg');
             if(!svg)return;
-            const vbAttr=(canvas.getAttribute('data-viewbox')||svg.getAttribute('viewBox')||'820 380').split(/[,\s]+/);
+            const vbRaw=viewBoxOverride?(viewBoxOverride.width+','+viewBoxOverride.height):(canvas.getAttribute('data-viewbox')||svg.getAttribute('viewBox')||'820 380');
+            const vbAttr=String(vbRaw).split(/[,\s]+/);
             const vbW=parseFloat(vbAttr[0])||820;
             const vbH=parseFloat(vbAttr[1])||380;
             const ns='http://www.w3.org/2000/svg';
