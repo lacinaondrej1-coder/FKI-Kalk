@@ -2157,10 +2157,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/</g, '\\u003c')
             .replace(/<\/script>/gi, '<\\/script>');
         const dataScript = hasHoverPayload
-            ? `<script type="application/json" id="${dataId}">${safeJson(JSON.stringify(exportChart.hoverPoints || []))}</script>`
+            ? `<script type="application/json" id="${dataId}">${safeJson(JSON.stringify(exportChart.hoverPoints || []))}${SCRIPT_CLOSE_TAG}`
             : '';
         const metaScript = hasHoverPayload
-            ? `<script type="application/json" id="${metaId}">${safeJson(JSON.stringify({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }))}</script>`
+            ? `<script type="application/json" id="${metaId}">${safeJson(JSON.stringify({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }))}${SCRIPT_CLOSE_TAG}`
             : '';
         const viewBoxAttr = viewBoxPayload ? htmlEscape(viewBoxPayload) : '';
         const canvasAttrs = hasHoverPayload
