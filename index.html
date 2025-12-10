@@ -2148,24 +2148,20 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">${baseLegend}</span></div>`;
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
-        /* PATCH: embed hover payloads via JSON blocks (avoid attribute encoding issues) */
+        /* PATCH: embed hover payloads via base64 data attributes for reliable tooltip hydration */
         const hasHoverPayload = Array.isArray(exportChart.hoverPoints) && exportChart.hoverPoints.length > 0;
-        const safeJson = (payload) => String(payload || '')
-            .replace(/</g, '\\u003c')
-            .replace(/<\/script>/gi, '<\\/script>');
-        const payloadId = hasHoverPayload ? `line-payload-${Date.now()}-${Math.random().toString(36).slice(2)}` : '';
-        const payloadScript = hasHoverPayload
-            ? `<script type="application/json" id="${payloadId}">${safeJson(JSON.stringify({
-                points: exportChart.hoverPoints || [],
-                meta: { locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate },
-                viewBox: exportChart.viewBox || null
-            }))}${SCRIPT_CLOSE_TAG}`
-            : '';
         const viewBoxAttr = exportChart.viewBox ? htmlEscape(`${exportChart.viewBox.width},${exportChart.viewBox.height}`) : '';
-        const canvasAttrs = hasHoverPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-payload="${htmlEscape(payloadId)}"`
-            : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
-        return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${payloadScript}${footnote}</div>`;
+        let canvasAttrs = `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}"`;
+        if (hasHoverPayload) {
+            const payload = { points: exportChart.hoverPoints || [], meta: { locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }, viewBox: exportChart.viewBox || null };
+            const payloadJson = JSON.stringify(payload);
+            const metaJson = JSON.stringify(payload.meta);
+            const b64 = btoa(unescape(encodeURIComponent(payloadJson)));
+            const metaB64 = btoa(unescape(encodeURIComponent(metaJson)));
+            canvasAttrs += ` data-line-points-b64="${htmlEscape(b64)}" data-line-meta-b64="${htmlEscape(metaB64)}" data-encoding="b64"`;
+        }
+        canvasAttrs += '>';
+        return `<div class="line-export">${legend}<div ${canvasAttrs}${exportChart.svg}</div>${footnote}</div>`;
     }
 
     if (!container) return;
