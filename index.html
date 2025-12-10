@@ -2150,19 +2150,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
         /* PATCH */
         /* PATCH: robustly encode hover payloads for export tooltip hydration */
+        /* PATCH: encode hover/meta payloads but keep decoding flexible in the bootstrapper */
         const pointsPayload = exportChart.hoverPoints
             ? encodeURIComponent(JSON.stringify(exportChart.hoverPoints))
             : '';
         /* PATCH */
         const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
         /* PATCH */
-        const metaPayload = encodeURIComponent(JSON.stringify({
-            locale: currencyFormat.locale || 'cs-CZ',
-            generic: exportChart.hoverTemplate || '__DATE__\n__VALUE__'
-        }));
+        const metaPayload = exportChart.hoverTemplate
+            ? encodeURIComponent(JSON.stringify({
+                locale: currencyFormat.locale || 'cs-CZ',
+                generic: exportChart.hoverTemplate
+            }))
+            : '';
         /* PATCH */
         const canvasAttrs = pointsPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-line-points="${pointsPayload}" data-viewbox="${viewBoxPayload}" data-line-meta="${metaPayload}"`
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-line-points="${pointsPayload}" data-viewbox="${viewBoxPayload}" ${metaPayload ? `data-line-meta="${metaPayload}"` : ''}`
             : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
         return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${footnote}</div>`;
     }
@@ -3624,14 +3627,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});
         const attachLineCharts=()=>{
+          const parsePayload=(raw)=>{
+            if(!raw)return null;
+            const attempts=[() => JSON.parse(raw),() => JSON.parse(decodeURIComponent(raw))];
+            for(const attempt of attempts){try{return attempt();}catch(_e){}}
+            return null;
+          };
           document.querySelectorAll('.line-canvas[data-line-points]').forEach(canvas=>{
             const raw=canvas.getAttribute('data-line-points');
-            let pts;try{pts=JSON.parse(decodeURIComponent(raw));}catch(_e){return;}
-            if(!pts||!pts.length)return;
+            const pts=parsePayload(raw);
+            if(!Array.isArray(pts)||!pts.length)return;
             /* PATCH */
-            let meta={};
-            const metaRaw=canvas.getAttribute('data-line-meta');
-            try{meta=JSON.parse(decodeURIComponent(metaRaw));}catch(_e){}
+            const meta=parsePayload(canvas.getAttribute('data-line-meta'))||{};
             const locale=meta.locale||'cs-CZ';
             const genericTemplate=meta.generic||'__DATE__\n__VALUE__';
             const fmtInt=new Intl.NumberFormat(locale,{maximumFractionDigits:0});
