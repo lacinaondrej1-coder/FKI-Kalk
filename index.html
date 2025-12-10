@@ -2149,11 +2149,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
         /* PATCH */
-        const pointsPayload = exportChart.hoverPoints ? htmlEscape(JSON.stringify(exportChart.hoverPoints)) : '';
+        /* PATCH: robustly encode hover payloads for export tooltip hydration */
+        const pointsPayload = exportChart.hoverPoints
+            ? encodeURIComponent(JSON.stringify(exportChart.hoverPoints))
+            : '';
         /* PATCH */
         const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
         /* PATCH */
-        const metaPayload = htmlEscape(JSON.stringify({
+        const metaPayload = encodeURIComponent(JSON.stringify({
             locale: currencyFormat.locale || 'cs-CZ',
             generic: exportChart.hoverTemplate || '__DATE__\n__VALUE__'
         }));
@@ -3623,12 +3626,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const attachLineCharts=()=>{
           document.querySelectorAll('.line-canvas[data-line-points]').forEach(canvas=>{
             const raw=canvas.getAttribute('data-line-points');
-            let pts;try{pts=JSON.parse(raw);}catch(_e){return;}
+            let pts;try{pts=JSON.parse(decodeURIComponent(raw));}catch(_e){return;}
             if(!pts||!pts.length)return;
             /* PATCH */
             let meta={};
             const metaRaw=canvas.getAttribute('data-line-meta');
-            try{meta=JSON.parse(metaRaw);}catch(_e){}
+            try{meta=JSON.parse(decodeURIComponent(metaRaw));}catch(_e){}
             const locale=meta.locale||'cs-CZ';
             const genericTemplate=meta.generic||'__DATE__\n__VALUE__';
             const fmtInt=new Intl.NumberFormat(locale,{maximumFractionDigits:0});
