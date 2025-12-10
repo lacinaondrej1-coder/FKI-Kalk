@@ -475,6 +475,8 @@
     .line-chart-dot { cursor: pointer; transition: r 0.2s; outline: none; }
     .line-chart-dot:hover { r: 7; }
     .line-chart-dot:focus-visible { r: 7; outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    /* PATCH: exported line hover dots for static tooltips */
+    .line-hover-dot { cursor: pointer; }
 
     .text-positive { color: var(--color-accent); }
     .text-negative { color: #B2403D; }
@@ -2979,6 +2981,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const ariaLabel = hasIrr
           ? (copy.aria?.withIrr ? copy.aria.withIrr(startLabel, endLabel, formattedTodayValue, formatXirr1(irr, percentFormat)) : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(irr, percentFormat)}`)
           : (copy.aria?.withoutIrr ? copy.aria.withoutIrr(startLabel, endLabel, formattedTodayValue) : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`);
+      /* PATCH: inject explicit hover dots so tooltips work without JS decoding issues */
+      const hoverDots = hoverPoints.map(pt => {
+          const label = htmlEscape(pt.tooltip || '');
+          return `<circle class="line-hover-dot" cx="${pt.x}" cy="${pt.y}" r="8" fill="transparent" data-tooltip-text="${label}" aria-label="${label}" />`;
+      }).join('');
+
       const svg = `
         <svg viewBox="0 0 ${width} ${height}" aria-label="${htmlEscape(ariaLabel)}" role="img">
           ${defs}
@@ -2999,6 +3007,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${depositMarkers}
           ${todayMarker}
             ${projectionMarkers}
+          ${hoverDots}
         </svg>
       `;
 
