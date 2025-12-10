@@ -2170,9 +2170,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 generic: exportChart.hoverTemplate
             })
             : '';
+        /* PATCH: escape payloads to keep attributes valid */
+        const pointsAttr = pointsPayload ? htmlEscape(pointsPayload) : '';
+        const viewBoxAttr = viewBoxPayload ? htmlEscape(viewBoxPayload) : '';
+        const metaAttr = metaPayload ? htmlEscape(metaPayload) : '';
         /* PATCH */
         const canvasAttrs = pointsPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-encoding="b64" data-line-points="${pointsPayload}" data-viewbox="${viewBoxPayload}" ${metaPayload ? `data-line-meta="${metaPayload}"` : ''}`
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-encoding="b64" data-line-points="${pointsAttr}" data-viewbox="${viewBoxAttr}" ${metaAttr ? `data-line-meta="${metaAttr}"` : ''}`
             : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
         return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${footnote}</div>`;
     }
@@ -3635,13 +3639,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});
         const attachLineCharts=()=>{
           const decodePayload=(raw, encoding)=>{
+            /* PATCH: normalise payloads before decoding */
             if(!raw)return null;
+            const cleaned=String(raw).replace(/\s+/g,'').replace(/&amp;/g,'&');
             const attempts=[];
             if(encoding==='b64'){
-              attempts.push(() => JSON.parse(decodeURIComponent(atob(raw))));
+              attempts.push(() => JSON.parse(decodeURIComponent(atob(cleaned))));
+              attempts.push(() => JSON.parse(atob(cleaned)));
             }
-            attempts.push(() => JSON.parse(raw));
-            attempts.push(() => JSON.parse(decodeURIComponent(raw)));
+            attempts.push(() => JSON.parse(cleaned));
+            attempts.push(() => JSON.parse(decodeURIComponent(cleaned)));
             for(const attempt of attempts){try{return attempt();}catch(_e){}}
             return null;
           };
