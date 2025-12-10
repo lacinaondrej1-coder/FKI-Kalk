@@ -2151,8 +2151,18 @@ document.addEventListener('DOMContentLoaded', () => {
         /* PATCH: embed hover payloads via JSON blocks (avoid attribute encoding issues) */
         const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
         const hasHoverPayload = Array.isArray(exportChart.hoverPoints) && exportChart.hoverPoints.length > 0;
+        /* PATCH: base64 payloads to survive serialization */
+        const encodePayload = (obj) => {
+            try {
+                return btoa(unescape(encodeURIComponent(JSON.stringify(obj || {}))));
+            } catch (_e) {
+                return '';
+            }
+        };
         const dataId = hasHoverPayload ? `line-data-${Date.now()}-${Math.random().toString(36).slice(2)}` : '';
         const metaId = hasHoverPayload ? `${dataId}-meta` : '';
+        const dataB64 = hasHoverPayload ? encodePayload(exportChart.hoverPoints || []) : '';
+        const metaB64 = hasHoverPayload ? encodePayload({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }) : '';
         const safeJson = (payload) => String(payload || '')
             .replace(/</g, '\\u003c')
             .replace(/<\/script>/gi, '<\\/script>');
@@ -2164,7 +2174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : '';
         const viewBoxAttr = viewBoxPayload ? htmlEscape(viewBoxPayload) : '';
         const canvasAttrs = hasHoverPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-data="${htmlEscape(dataId)}" data-line-meta-id="${htmlEscape(metaId)}"`
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-data="${htmlEscape(dataId)}" data-line-meta-id="${htmlEscape(metaId)}" data-line-points-b64="${htmlEscape(dataB64)}" data-line-meta-b64="${htmlEscape(metaB64)}"`
             : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
         return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${dataScript}${metaScript}${footnote}</div>`;
     }
@@ -3663,9 +3673,13 @@ document.addEventListener('DOMContentLoaded', () => {
             for(const attempt of attempts){try{return attempt();}catch(_e){}}
             return null;
           };
-          document.querySelectorAll('.line-canvas[data-line-points], .line-canvas[data-line-data]').forEach(canvas=>{
+          document.querySelectorAll('.line-canvas[data-line-points], .line-canvas[data-line-data], .line-canvas[data-line-points-b64]').forEach(canvas=>{
             const encoding=canvas.getAttribute('data-encoding')||'uri';
             let pts=null;
+            const b64Attr=canvas.getAttribute('data-line-points-b64');
+            if(b64Attr){
+              pts=decodePayload(b64Attr,'b64');
+            }
             const dataId=canvas.getAttribute('data-line-data');
             if(dataId){
               const scriptEl=document.getElementById(dataId);
@@ -3680,6 +3694,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!Array.isArray(pts)||!pts.length)return;
             /* PATCH */
             let meta=null;
+            const metaB64=canvas.getAttribute('data-line-meta-b64');
+            if(metaB64){
+              meta=decodePayload(metaB64,'b64');
+            }
             const metaId=canvas.getAttribute('data-line-meta-id');
             if(metaId){
               const metaEl=document.getElementById(metaId);
