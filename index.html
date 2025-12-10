@@ -2148,40 +2148,23 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">${baseLegend}</span></div>`;
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
-        /* PATCH */
-        /* PATCH: robust encoding for hover payloads (base64) */
-        const encodePayload = (obj) => {
-            try {
-                return btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
-            } catch (_e) {
-                return '';
-            }
-        };
-        /* PATCH */
-        const pointsPayload = exportChart.hoverPoints
-            ? encodePayload(exportChart.hoverPoints)
-            : '';
-        /* PATCH */
+        /* PATCH: embed hover payloads via JSON blocks (avoid attribute encoding issues) */
         const viewBoxPayload = exportChart.viewBox ? `${exportChart.viewBox.width},${exportChart.viewBox.height}` : '';
-        /* PATCH */
-        const metaPayload = exportChart.hoverTemplate
-            ? encodePayload({
-                locale: currencyFormat.locale || 'cs-CZ',
-                generic: exportChart.hoverTemplate
-            })
-            : '';
-        /* PATCH: introduce JSON data blocks to avoid attribute corruption */
-        const dataId = pointsPayload ? `line-data-${Date.now()}-${Math.random().toString(36).slice(2)}` : '';
-        const metaId = metaPayload ? `${dataId || 'line-meta'}-meta` : '';
+        const hasHoverPayload = Array.isArray(exportChart.hoverPoints) && exportChart.hoverPoints.length > 0;
+        const dataId = hasHoverPayload ? `line-data-${Date.now()}-${Math.random().toString(36).slice(2)}` : '';
+        const metaId = hasHoverPayload ? `${dataId}-meta` : '';
         const safeJson = (payload) => String(payload || '')
             .replace(/</g, '\\u003c')
             .replace(/<\/script>/gi, '<\\/script>');
-        const dataScript = pointsPayload ? `<script type="application/json" id="${dataId}">${safeJson(exportChart.hoverPoints ? JSON.stringify(exportChart.hoverPoints) : '')}</script>` : '';
-        const metaScript = metaPayload ? `<script type="application/json" id="${metaId}">${safeJson(exportChart.hoverTemplate ? JSON.stringify({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }) : '')}</script>` : '';
+        const dataScript = hasHoverPayload
+            ? `<script type="application/json" id="${dataId}">${safeJson(JSON.stringify(exportChart.hoverPoints || []))}</script>`
+            : '';
+        const metaScript = hasHoverPayload
+            ? `<script type="application/json" id="${metaId}">${safeJson(JSON.stringify({ locale: currencyFormat.locale || 'cs-CZ', generic: exportChart.hoverTemplate }))}</script>`
+            : '';
         const viewBoxAttr = viewBoxPayload ? htmlEscape(viewBoxPayload) : '';
-        /* PATCH */
-        const canvasAttrs = pointsPayload
-            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-data="${htmlEscape(dataId)}" ${metaId ? `data-line-meta-id="${htmlEscape(metaId)}"` : ''}`
+        const canvasAttrs = hasHoverPayload
+            ? `class="line-canvas" role="img" aria-label="${ariaAttr}" data-viewbox="${viewBoxAttr}" data-line-data="${htmlEscape(dataId)}" data-line-meta-id="${htmlEscape(metaId)}"`
             : `class="line-canvas" role="img" aria-label="${ariaAttr}"`;
         return `<div class="line-export">${legend}<div ${canvasAttrs}>${exportChart.svg}</div>${dataScript}${metaScript}${footnote}</div>`;
     }
