@@ -3367,6 +3367,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const exportToStaticHTML = () => {
+      /* PATCH: guard export pipeline so errors surface and download still proceeds when possible */
+      const failExport = (err) => {
+          console.error('Export failed:', err);
+          showToast('Export se nepodařil, zkontrolujte konzoli.', 'error');
+      };
       const clientName = (state.clientName || '').trim();
       if (!clientName) {
           showToast('Před exportem vyplňte jméno klienta.', 'error');
@@ -3399,7 +3404,13 @@ document.addEventListener('DOMContentLoaded', () => {
           document.activeElement.blur();
       }
 
-      const snapshot = processAllRows();
+      let snapshot;
+      try {
+          snapshot = processAllRows();
+      } catch (err) {
+          failExport(err);
+          return;
+      }
       const outCurr = elements.outCurrency?.value || 'CZK';
       const fxRate = utils.numCZ(elements.fxRate?.value);
       const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
@@ -3411,7 +3422,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       /* PATCH */
-      const copy = buildExportCopy({ language: clientLanguage, tone: communicationTone, gender: clientGender });
+      let copy;
+      try {
+          copy = buildExportCopy({ language: clientLanguage, tone: communicationTone, gender: clientGender });
+      } catch (err) {
+          failExport(err);
+          return;
+      }
       /* PATCH */
       const heroLeadText = copy.hero.lead(salutation);
 
@@ -3455,15 +3472,21 @@ document.addEventListener('DOMContentLoaded', () => {
           : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">${htmlEscape(copy.pie.noData)}</div>`;
 
       const frozenForExport = (snapshot.portfolioSummary.totalCurrentConverted || 0) - (snapshot.portfolioSummary.totalCurrentActive || 0);
-      const lineBlock = renderLineChart(null, snapshot.funds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
-        isStaticExport: true,
-        conversionReady,
-        /* PATCH */ copy: copy.line,
-        /* PATCH */ format: copy.format,
-        /* PATCH */ language: copy.language,
-        /* PATCH */ activeFunds: snapshot.activeFunds || [],
-        /* PATCH */ frozenTotal: frozenForExport
-      });
+      let lineBlock;
+      try {
+          lineBlock = renderLineChart(null, snapshot.funds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
+            isStaticExport: true,
+            conversionReady,
+            /* PATCH */ copy: copy.line,
+            /* PATCH */ format: copy.format,
+            /* PATCH */ language: copy.language,
+            /* PATCH */ activeFunds: snapshot.activeFunds || [],
+            /* PATCH */ frozenTotal: frozenForExport
+          });
+      } catch (err) {
+          console.error('Export line chart failed:', err);
+          lineBlock = `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">${htmlEscape(copy.line.empty || 'Pro liniový graf nejsou k dispozici údaje.')}</div>`;
+      }
 
       const explanationsBlock = `<div class="export-explanations">
         <article>
@@ -3772,17 +3795,21 @@ const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 </body>
 </html>`;
 
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      const safeName = clientName.toLowerCase().replace(/[^\p{L}\p{N}\s-]+/gu, '').trim().replace(/\s+/g, '-');
-      anchor.href = url;
-      anchor.download = `report-${safeName || 'klient'}-${generatedAt.toISOString().split('T')[0]}.html`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-      showToast('Report byl exportován.');
+      try {
+          const blob = new Blob([html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          const safeName = clientName.toLowerCase().replace(/[^\p{L}\p{N}\s-]+/gu, '').trim().replace(/\s+/g, '-');
+          anchor.href = url;
+          anchor.download = `report-${safeName || 'klient'}-${generatedAt.toISOString().split('T')[0]}.html`;
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          URL.revokeObjectURL(url);
+          showToast('Report byl exportován.');
+      } catch (err) {
+          failExport(err);
+      }
   };
 
   const calculateAnnuity = () => {
