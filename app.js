@@ -2734,15 +2734,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});
         const attachLineCharts=()=>{
-          const decodePayload=(raw, encoding)=>{
-            /* PATCH: normalise payloads before decoding */
-            if(!raw)return null;
-            const cleaned=String(raw).replace(/\s+/g,'').replace(/&amp;/g,'&');
-            const attempts=[];
-            if(encoding==='b64'){
-              attempts.push(() => JSON.parse(decodeURIComponent(atob(cleaned))));
-              attempts.push(() => JSON.parse(atob(cleaned)));
-            }
+            const decodePayload=(raw, encoding)=>{
+              /* PATCH: normalise payloads before decoding */
+              if(!raw)return null;
+              const cleaned=String(raw).replace(/\s+/g,'').replace(/&/g,'&');
+              const attempts=[];
+              if(encoding==='b64'){
+                attempts.push(() => JSON.parse(decodeURIComponent(atob(cleaned))));
+                attempts.push(() => JSON.parse(atob(cleaned)));
+              }
             attempts.push(() => JSON.parse(cleaned));
             attempts.push(() => JSON.parse(decodeURIComponent(cleaned)));
             for(const attempt of attempts){try{return attempt();}catch(_e){}}
