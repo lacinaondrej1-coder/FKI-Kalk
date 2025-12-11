@@ -254,7 +254,15 @@
         tbody tr:nth-child(even) td { background: #f9fbff; }
         tbody tr:hover td { background: rgba(77, 177, 200, 0.1); }
         tbody tr:last-child td { border-bottom: none; }
-        .table-actions { text-align: right; }
+        .table-actions {
+            text-align: right;
+            position: sticky;
+            right: 0;
+            background: var(--surface);
+            box-shadow: -10px 0 18px -14px rgba(13, 44, 84, 0.25);
+            z-index: 2;
+        }
+        .table-actions .btn { padding-left: 0.9rem; padding-right: 0.9rem; }
         .table-input {
             width: 100%;
             border-radius: 0.7rem;
@@ -474,9 +482,12 @@
         .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
         .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
         .legend-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
-        .pie-stage-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .pie-stage-controls .btn { padding-inline: 1.1rem; font-size: 0.8rem; }
-        .pie-stage-controls .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+        .pie-stage-controls { display: grid; gap: 0.55rem; }
+        .pie-stage-slider { width: 100%; }
+        .pie-stage-slider input[type='range'] { width: 100%; }
+        .pie-stage-labels { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.35rem; font-size: 0.85rem; color: var(--muted); }
+        .pie-stage-label { text-align: center; padding: 0.2rem 0.4rem; border-radius: 0.65rem; background: rgba(77, 177, 200, 0.08); }
+        .pie-stage-label.is-active { color: var(--primary); font-weight: 700; background: rgba(13, 44, 84, 0.08); }
         .pie-chart-wrapper { position: relative; width: 100%; max-width: 320px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
         .pie-legend { display: grid; gap: 0.85rem; }
         .pie-legend-item {
@@ -500,15 +511,13 @@
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .card-subheading { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
         .summary-table-container {
-            border: 1px solid var(--border);
             border-radius: 1rem;
-            box-shadow: var(--shadow);
-            background: var(--surface);
+            background: transparent;
         }
         .summary-table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 0;
+            border-spacing: 0 0.6rem;
             font-variant-numeric: tabular-nums;
         }
         @media (max-width: 900px) {
@@ -524,19 +533,25 @@
             padding: 0.85rem 1.1rem;
             text-align: left;
             background: #F9FAFB;
-            border-bottom: 1px solid #E5E7EB;
+            border-bottom: none;
         }
         .summary-table thead th.text-right { text-align: right; }
         .summary-table tbody td {
             padding: 1rem 1.2rem;
-            border-bottom: 1px solid #E5E7EB;
+            border-bottom: none;
             font-size: 0.95rem;
             color: var(--text);
             vertical-align: top;
         }
         .summary-table tbody td.tabular-nums { white-space: nowrap; }
-        .summary-table tbody tr:last-child td { border-bottom: none; }
-        .summary-table tbody tr:hover { background: rgba(31, 111, 235, 0.03); }
+        .summary-table tbody tr.summary-table-row {
+            background: var(--surface);
+            box-shadow: 0 18px 32px -20px rgba(13, 44, 84, 0.26);
+        }
+        .summary-table tbody tr.summary-table-row td:first-child { border-radius: 16px 0 0 16px; }
+        .summary-table tbody tr.summary-table-row td:last-child { border-radius: 0 16px 16px 0; }
+        .summary-table tbody tr.summary-table-row td:only-child { border-radius: 16px; }
+        .summary-table tbody tr:hover { background: transparent; }
         .summary-table tbody tr.is-positive .gain-value { color: var(--positive); background: rgba(47, 155, 108, 0.15); box-shadow: inset 0 0 0 1px rgba(47, 155, 108, 0.18); }
         .summary-table tbody tr.is-negative .gain-value { color: var(--danger); background: rgba(217, 75, 75, 0.12); box-shadow: inset 0 0 0 1px rgba(217, 75, 75, 0.18); }
         .summary-table tbody tr.is-neutral .gain-value { color: var(--muted); background: rgba(31, 42, 55, 0.08); box-shadow: inset 0 0 0 1px rgba(31, 42, 55, 0.12); }
@@ -570,9 +585,11 @@
         }
         .summary-table .gain-meta {
             display: block;
-            font-size: 0.75rem;
-            color: var(--muted);
+            font-size: 0.82rem;
+            color: var(--muted-soft);
             letter-spacing: 0;
+            margin-top: 0.3rem;
+            line-height: 1.35;
         }
         .summary-table .period-cell { display: grid; gap: 0.85rem; }
         .summary-table .period-label { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -811,8 +828,8 @@
             currency: 'CZK',
             locale: 'cs-CZ',
             colors: {
-                line: '#1f6feb',
-                lineStop: '#27b3c8',
+                line: '#0d2c54',
+                lineStop: '#4DB1C8',
                 grid: '#E5E7EB',
                 axisText: '#6B7280',
                 tooltipBorder: '#E5E7EB',
@@ -3054,8 +3071,9 @@
                 () => stages.filter((stage) => stage && stage.available),
                 [stages],
             );
-            const fallbackKey = availableStages.length > 0 ? availableStages[availableStages.length - 1].key : null;
-            const [view, setView] = useState(fallbackKey);
+            const [stageIndex, setStageIndex] = useState(
+                availableStages.length > 0 ? availableStages.length - 1 : 0,
+            );
             const containerRef = useRef(null);
             const [tooltip, setTooltip] = useState(null);
             const projection = useMemo(() => createProjectionEngine(analysis), [analysis]);
@@ -3313,25 +3331,24 @@
 
             useEffect(() => {
                 if (!availableStages.length) {
-                    if (view !== null) {
-                        setView(null);
-                    }
+                    setStageIndex(0);
                     return;
                 }
-                if (!view || !availableStages.some((stage) => stage.key === view)) {
-                    setView(availableStages[availableStages.length - 1].key);
-                }
-            }, [availableStages, view]);
+                setStageIndex((prev) => {
+                    if (prev >= 0 && prev < availableStages.length) return prev;
+                    return availableStages.length - 1;
+                });
+            }, [availableStages]);
 
             useEffect(() => {
                 setTooltip(null);
-            }, [view, availableStages.length]);
+            }, [stageIndex, availableStages.length]);
 
             if (!analysis?.hasData || availableStages.length === 0) {
                 return null;
             }
 
-            const activeStage = availableStages.find((stage) => stage.key === view) || availableStages[availableStages.length - 1];
+            const activeStage = availableStages[stageIndex] || availableStages[availableStages.length - 1];
             const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
             const total = Number(activeStage?.totalValue) || 0;
             const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
@@ -3404,22 +3421,33 @@
                                 <span className="badge-pill">Alokace</span>
                                 <h2 className="card-header-title">Rozložení portfolia</h2>
                                 <p className="card-header-sub">
-                                Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
-                            </p>
+                                    Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
+                                </p>
+                            </div>
+                            <div className="pie-stage-controls">
+                                <div className="pie-stage-slider">
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={Math.max(availableStages.length - 1, 0)}
+                                        step={1}
+                                        value={stageIndex}
+                                        onChange={(event) => setStageIndex(Number(event.target.value) || 0)}
+                                        aria-label="Změnit okamžik alokace"
+                                    />
+                                </div>
+                                <div className="pie-stage-labels" aria-hidden="true">
+                                    {availableStages.map((stage, index) => (
+                                        <span
+                                            key={stage.key}
+                                            className={`pie-stage-label ${index === stageIndex ? 'is-active' : ''}`}
+                                        >
+                                            {stage.buttonLabel}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                        <div className="pie-stage-controls">
-                            {availableStages.map((stage) => (
-                                <button
-                                    key={stage.key}
-                                    className={`btn btn-secondary ${stage.key === activeStage?.key ? 'active' : ''}`}
-                                    onClick={() => setView(stage.key)}
-                                    type="button"
-                                >
-                                    {stage.buttonLabel}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                     <div className="responsive-grid-two">
                         <div className="pie-chart-wrapper" ref={containerRef}>
                             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
