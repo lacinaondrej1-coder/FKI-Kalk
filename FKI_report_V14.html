@@ -2653,7 +2653,6 @@ document.addEventListener('DOMContentLoaded', () => {
               : `${name} • ${amountLabel} (${percentLabel})`;
           return `<g class="pie-slice" tabindex="0" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}">
             <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
-            <title>${htmlEscape(tooltip)}</title>
           </g>`;
       }).join('');
       const backdrop = `<circle cx="50" cy="50" r="${outerRadius}" fill="rgba(240,253,250,0.65)" />`;
@@ -2892,8 +2891,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? (copy.aria?.withIrr ? copy.aria.withIrr(startLabel, endLabel, formattedTodayValue, formatXirr1(irr, percentFormat)) : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR ${formatXirr1(irr, percentFormat)}`)
           : (copy.aria?.withoutIrr ? copy.aria.withoutIrr(startLabel, endLabel, formattedTodayValue) : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue}; XIRR není k dispozici.`);
       const svg = `
-        <svg viewBox="0 0 ${width} ${height}">
-          <title>${htmlEscape(ariaLabel)}</title>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${htmlEscape(ariaLabel)}">
           ${defs}
           <rect x="0" y="0" width="${width}" height="${height}" fill="url(#chartBackdrop)" rx="26" />
           <rect x="${margin.left - 8}" y="${margin.top - 12}" width="${chartWidth + 16}" height="${chartHeight + 24}" rx="22" fill="rgba(255,255,255,0.78)" stroke="rgba(148,163,184,0.25)" />
