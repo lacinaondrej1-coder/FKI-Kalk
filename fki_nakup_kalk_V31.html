@@ -58,7 +58,7 @@
         details > summary::-webkit-details-marker { display: none; }
         details > summary .summary-arrow { transition: transform 0.2s ease; }
         details[open] > summary .summary-arrow { transform: rotate(90deg); }
-        #toast-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast-stack { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; flex-direction: column; gap: 0.75rem; }
         .toast {
             display: flex;
             align-items: center;
@@ -180,21 +180,21 @@
         .card-section:hover { border-color: var(--border-strong); box-shadow: var(--shadow-hover); transform: translateY(-2px); }
         .card-header { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
         @media (min-width: 768px) { .card-header { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
-        .card-header-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; color: var(--primary); }
-        .card-header-sub { font-size: 0.95rem; color: var(--muted); max-width: 580px; }
+        .card-header-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; color: var(--primary); margin: 0.1rem 0; }
+        .card-header-sub { font-size: 0.95rem; color: var(--muted); max-width: 620px; line-height: 1.7; margin: 0; }
         .badge-pill {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.45rem 1.05rem;
+            padding: 0.4rem 0.95rem;
             border-radius: 999px;
-            background: rgba(77, 177, 200, 0.12);
-            border: 1px solid rgba(77, 177, 200, 0.35);
+            background: rgba(31, 111, 235, 0.08);
+            border: 1px solid rgba(39, 179, 200, 0.28);
             font-size: 0.72rem;
             letter-spacing: 0.2em;
             text-transform: uppercase;
             color: var(--primary);
-            font-weight: 600;
+            font-weight: 700;
         }
         .meta-deck { display: flex; flex-wrap: wrap; gap: 0.75rem; }
         .meta-card {
@@ -212,10 +212,10 @@
         .meta-label { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
         .meta-value { font-size: 1rem; font-weight: 600; color: var(--primary); }
         .meta-card .input { width: 100%; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.7rem 1.5rem; border-radius: 0.9rem; font-weight: 600; font-size: 0.92rem; letter-spacing: 0.02em; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.78rem 1.5rem; border-radius: 999px; font-weight: 600; font-size: 0.92rem; letter-spacing: 0.01em; cursor: pointer; border: 1px solid transparent; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; min-height: 2.75rem; }
         .btn:hover { transform: translateY(-2px); }
-        .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: var(--shadow); }
-        .btn-primary:hover { background: #12386c; border-color: #12386c; box-shadow: var(--shadow-hover); }
+        .btn-primary { background: linear-gradient(120deg, var(--primary), var(--accent)); border-color: var(--primary); color: #fff; box-shadow: var(--shadow); }
+        .btn-primary:hover { background: linear-gradient(120deg, #12386c, var(--accent-strong)); border-color: #12386c; box-shadow: var(--shadow-hover); }
         .btn-primary:active { transform: translateY(0); box-shadow: none; }
         .btn-secondary { background: var(--surface); color: var(--primary); border-color: var(--border); box-shadow: none; }
         .btn-secondary:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
@@ -254,7 +254,15 @@
         tbody tr:nth-child(even) td { background: #f9fbff; }
         tbody tr:hover td { background: rgba(77, 177, 200, 0.1); }
         tbody tr:last-child td { border-bottom: none; }
-        .table-actions { text-align: right; }
+        .table-actions {
+            text-align: right;
+            position: sticky;
+            right: 0;
+            background: var(--surface);
+            box-shadow: -10px 0 18px -14px rgba(13, 44, 84, 0.25);
+            z-index: 2;
+        }
+        .table-actions .btn { padding-left: 0.9rem; padding-right: 0.9rem; }
         .table-input {
             width: 100%;
             border-radius: 0.7rem;
@@ -269,6 +277,70 @@
         .table-select { width: 100%; }
         .info-grid { display: grid; gap: 1.25rem; }
         @media (min-width: 520px) { .info-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } }
+        .timeline-slider { margin-top: 2.2rem; display: flex; flex-direction: column; gap: 1.15rem; }
+        .timeline-slider-header { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: flex-end; }
+        .timeline-slider-meta { display: flex; flex-direction: column; gap: 0.25rem; min-width: 160px; }
+        .timeline-slider-label { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+        .timeline-slider-value { font-size: 1.05rem; font-weight: 600; color: var(--primary); }
+        .timeline-slider-track {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(
+                90deg,
+                var(--accent) 0%,
+                var(--accent) var(--slider-progress, 0%),
+                rgba(13, 44, 84, 0.12) var(--slider-progress, 0%),
+                rgba(13, 44, 84, 0.12) 100%
+            );
+            outline: none;
+            cursor: pointer;
+            transition: box-shadow 0.2s ease;
+        }
+        .timeline-slider-track:focus-visible { box-shadow: 0 0 0 3px rgba(77, 177, 200, 0.35); }
+        .timeline-slider-track:disabled { cursor: not-allowed; background: rgba(13, 44, 84, 0.12); opacity: 0.6; }
+        .timeline-slider-track::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(13, 44, 84, 0.25);
+            transition: transform 0.2s ease;
+        }
+        .timeline-slider-track::-webkit-slider-thumb:hover { transform: scale(1.08); }
+        .timeline-slider-track::-webkit-slider-thumb:active { transform: scale(1.12); }
+        .timeline-slider-track::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(13, 44, 84, 0.25);
+            transition: transform 0.2s ease;
+        }
+        .timeline-slider-track::-moz-range-thumb:hover { transform: scale(1.08); }
+        .timeline-slider-track::-moz-range-thumb:active { transform: scale(1.12); }
+        .timeline-slider-track::-moz-range-track {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(13, 44, 84, 0.12);
+        }
+        .timeline-slider-track::-moz-range-progress {
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+        .timeline-slider-scale { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); }
+        .timeline-slider-scale span { white-space: nowrap; }
+        .timeline-slider-invested { font-size: 0.88rem; color: var(--muted); }
+        .timeline-narrative { margin-top: 2.15rem; padding: 1.6rem; border-radius: 1.25rem; background: linear-gradient(135deg, rgba(77, 177, 200, 0.08), rgba(13, 44, 84, 0.03)); border: 1px solid rgba(13, 44, 84, 0.08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6); display: grid; gap: 0.85rem; }
+        .timeline-narrative-title { font-size: 0.78rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; color: var(--primary); }
+        .timeline-narrative-text { margin: 0; font-size: 0.95rem; line-height: 1.7; color: var(--muted); }
         .info-card {
             border: 1px solid var(--border);
             border-radius: 1.25rem;
@@ -286,21 +358,25 @@
         .tooltip {
             position: absolute;
             z-index: 10;
-            padding: 0.6rem 0.8rem;
+            padding: 0.7rem 0.9rem;
             background: #fff;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
+            border: 1px solid var(--chart-grid-color, #E5E7EB);
+            box-shadow: var(--shadow), var(--chart-tooltip-shadow, 0 10px 20px rgba(15, 23, 42, 0.12));
             border-radius: 0.75rem;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--text);
             pointer-events: none;
             display: none;
+            max-width: 280px;
         }
         .tooltip.show { display: block; }
+        .chart-tooltip-heading { font-weight: 700; color: #1f2937; margin-bottom: 0.2rem; font-size: 0.92rem; }
+        .chart-tooltip-value { font-weight: 700; color: var(--accent-strong); font-size: 1rem; margin-bottom: 0.2rem; }
+        .chart-tooltip-meta { color: #6B7280; font-size: 0.85rem; line-height: 1.45; }
         .chart-container { position: relative; height: 22rem; width: 100%; }
-        .chart-axis-text { fill: var(--muted); font-size: 0.68rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
-        .chart-grid-line { stroke: #E5EAF0; }
-        .chart-line-accent { stroke: var(--primary); stroke-width: 2.2; fill: none; }
+        .chart-axis-text { fill: var(--chart-axis-color, var(--muted)); font-size: 0.7rem; font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
+        .chart-grid-line { stroke: var(--chart-grid-color, #E5E7EB); }
+        .chart-line-accent { stroke: var(--chart-line-color, var(--primary)); stroke-width: 2; fill: none; stroke-linecap: round; }
         .chart-dot { stroke: var(--accent); stroke-width: 2; fill: #fff; }
         .chart-marker-hints {
             margin-top: 1.35rem;
@@ -406,9 +482,12 @@
         .legend { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--muted); }
         .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
         .legend-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
-        .pie-stage-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .pie-stage-controls .btn { padding-inline: 1.1rem; font-size: 0.8rem; }
-        .pie-stage-controls .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+        .pie-stage-controls { display: grid; gap: 0.55rem; }
+        .pie-stage-slider { width: 100%; }
+        .pie-stage-slider input[type='range'] { width: 100%; }
+        .pie-stage-labels { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.35rem; font-size: 0.85rem; color: var(--muted); }
+        .pie-stage-label { text-align: center; padding: 0.2rem 0.4rem; border-radius: 0.65rem; background: rgba(77, 177, 200, 0.08); }
+        .pie-stage-label.is-active { color: var(--primary); font-weight: 700; background: rgba(13, 44, 84, 0.08); }
         .pie-chart-wrapper { position: relative; width: 100%; max-width: 320px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
         .pie-legend { display: grid; gap: 0.85rem; }
         .pie-legend-item {
@@ -432,60 +511,219 @@
         @media (min-width: 768px) { .responsive-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .card-subheading { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
         .summary-table-container {
-            overflow-x: auto;
-            border: 1px solid var(--border);
             border-radius: 1rem;
-            box-shadow: var(--shadow);
-            background: var(--surface);
+            background: transparent;
         }
         .summary-table {
             width: 100%;
-            min-width: 520px;
             border-collapse: separate;
-            border-spacing: 0;
+            border-spacing: 0 0.6rem;
             font-variant-numeric: tabular-nums;
+        }
+        @media (max-width: 900px) {
+            .summary-table-container { overflow-x: auto; }
+            .summary-table { min-width: 640px; }
         }
         .summary-table thead th {
             font-size: 0.72rem;
             letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: var(--muted);
-            font-weight: 600;
+            color: #6B7280;
+            font-weight: 700;
             padding: 0.85rem 1.1rem;
             text-align: left;
-            background: rgba(77, 177, 200, 0.1);
-            border-bottom: 1px solid var(--border);
+            background: #F9FAFB;
+            border-bottom: none;
         }
+        .summary-table thead th.text-right { text-align: right; }
         .summary-table tbody td {
-            padding: 0.95rem 1.1rem;
-            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.2rem;
+            border-bottom: none;
             font-size: 0.95rem;
             color: var(--text);
-            vertical-align: middle;
+            vertical-align: top;
         }
         .summary-table tbody td.tabular-nums { white-space: nowrap; }
-        .summary-table tbody tr:last-child td { border-bottom: none; }
-        .summary-table tbody tr:hover { background: rgba(77, 177, 200, 0.06); }
+        .summary-table tbody tr.summary-table-row {
+            background: var(--surface);
+            box-shadow: 0 18px 32px -20px rgba(13, 44, 84, 0.26);
+        }
+        .summary-table tbody tr.summary-table-row td:first-child { border-radius: 16px 0 0 16px; }
+        .summary-table tbody tr.summary-table-row td:last-child { border-radius: 0 16px 16px 0; }
+        .summary-table tbody tr.summary-table-row td:only-child { border-radius: 16px; }
+        .summary-table tbody tr:hover { background: transparent; }
+        .summary-table tbody tr.is-positive .gain-value { color: var(--positive); background: rgba(47, 155, 108, 0.15); box-shadow: inset 0 0 0 1px rgba(47, 155, 108, 0.18); }
+        .summary-table tbody tr.is-negative .gain-value { color: var(--danger); background: rgba(217, 75, 75, 0.12); box-shadow: inset 0 0 0 1px rgba(217, 75, 75, 0.18); }
+        .summary-table tbody tr.is-neutral .gain-value { color: var(--muted); background: rgba(31, 42, 55, 0.08); box-shadow: inset 0 0 0 1px rgba(31, 42, 55, 0.12); }
         .summary-table .gain-cell {
             display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.6rem;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.4rem;
             width: 100%;
         }
-        .summary-table .crash-indicator {
+        .summary-table .gain-value {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.15rem 0.6rem;
+            gap: 0.45rem;
+            padding: 0.35rem 0.85rem;
             border-radius: 999px;
-            background: var(--danger-bg);
-            color: var(--danger);
-            font-size: 0.7rem;
             font-weight: 600;
+            transition: transform 0.2s ease;
+            letter-spacing: -0.01em;
+        }
+        .summary-table tbody tr:hover .gain-value { transform: translateY(-1px); }
+        .summary-table .gain-value-icon {
+            display: inline-flex;
+            width: 1.05rem;
+            height: 1.05rem;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.65);
+            font-size: 0.7rem;
+        }
+        .summary-table .gain-meta {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--muted-soft);
+            letter-spacing: 0;
+            margin-top: 0.3rem;
+            line-height: 1.35;
+        }
+        .summary-table .period-cell { display: grid; gap: 0.85rem; }
+        .summary-table .period-label { display: flex; flex-direction: column; gap: 0.3rem; }
+        .summary-table .period-year { font-weight: 600; color: var(--primary); letter-spacing: -0.01em; }
+        .summary-table .period-range { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
+        .summary-table .period-events {
+            display: grid;
+            gap: 0.55rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(13, 44, 84, 0.08);
+            background: rgba(13, 44, 84, 0.035);
+        }
+        .summary-table .period-events.has-deposits { border-color: rgba(77, 177, 200, 0.32); }
+        .summary-table .period-events.has-crash { background: rgba(217, 75, 75, 0.08); border-color: rgba(217, 75, 75, 0.24); }
+        .summary-table .period-events-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .summary-table .portfolio-lines { display: grid; gap: 0.4rem; }
+        .summary-table .portfolio-line { display: flex; justify-content: space-between; gap: 1.25rem; }
+        .summary-table .portfolio-line span:first-child {
+            font-size: 0.78rem;
+            color: var(--muted);
             letter-spacing: 0.08em;
             text-transform: uppercase;
+        }
+        .summary-table .portfolio-line span:last-child { font-weight: 600; letter-spacing: -0.01em; }
+        .summary-table .events-cell { display: grid; gap: 0.5rem; }
+        .summary-table .event-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        .summary-table .event-label {
+            font-size: 0.74rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .summary-table .event-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            text-transform: none;
             white-space: nowrap;
+            box-shadow: inset 0 0 0 1px rgba(13, 44, 84, 0.08);
+        }
+        .summary-table .event-chip-value {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0;
+            font-weight: 700;
+        }
+        .summary-table .event-chip-count {
+            font-size: 0.7rem;
+            padding: 0.18rem 0.5rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+        }
+        .summary-table .event-chip--deposit {
+            background: rgba(77, 177, 200, 0.18);
+            color: var(--primary);
+            box-shadow: inset 0 0 0 1px rgba(77, 177, 200, 0.28);
+        }
+        .summary-table .event-chip--crash {
+            background: var(--danger-bg);
+            color: var(--danger);
+            box-shadow: inset 0 0 0 1px rgba(217, 75, 75, 0.24);
+        }
+        .summary-table .event-chip--none {
+            background: rgba(31, 42, 55, 0.1);
+            color: var(--muted);
+            box-shadow: inset 0 0 0 1px rgba(31, 42, 55, 0.12);
+        }
+        .summary-table .event-chip[data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+        .summary-table .event-chip[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 0.55rem);
+            right: 0;
+            min-width: 240px;
+            max-width: 320px;
+            padding: 0.7rem 0.8rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-strong);
+            background: var(--surface);
+            box-shadow: var(--shadow-hover);
+            color: var(--text);
+            font-size: 0.75rem;
+            line-height: 1.4;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-4px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            white-space: pre-line;
+            z-index: 20;
+        }
+        .summary-table .event-chip[data-tooltip]::before {
+            content: '';
+            position: absolute;
+            top: calc(100% + 0.2rem);
+            right: 1rem;
+            width: 0.55rem;
+            height: 0.55rem;
+            transform: rotate(45deg);
+            border: 1px solid var(--border-strong);
+            border-left-color: transparent;
+            border-top-color: transparent;
+            background: var(--surface);
+            opacity: 0;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 19;
+        }
+        .summary-table .event-chip[data-tooltip]:hover::after,
+        .summary-table .event-chip[data-tooltip]:focus-visible::after,
+        .summary-table .event-chip[data-tooltip]:hover::before,
+        .summary-table .event-chip[data-tooltip]:focus-visible::before {
+            opacity: 1;
+            transform: translateY(0);
         }
         .summary-table tbody tr.has-crash { background: rgba(217, 75, 75, 0.06); }
         .summary-table tbody tr.has-crash:hover { background: rgba(217, 75, 75, 0.12); }
@@ -532,6 +770,25 @@
             color: var(--muted);
         }
         .note-block.alert { border-color: rgba(217, 75, 75, 0.32); background: var(--danger-bg); color: var(--danger); }
+        .alert-banner {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            padding: 0.95rem 1.1rem;
+            border-radius: 1rem;
+            border: 1px solid #fbbf24;
+            background: #fffbeb;
+            color: #92400e;
+            box-shadow: var(--shadow);
+        }
+        .alert-banner--error {
+            border-color: #fecdd3;
+            background: #fff1f2;
+            color: #b91c1c;
+        }
+        .alert-banner-icon { font-size: 1.1rem; line-height: 1; }
+        .alert-banner-body { display: grid; gap: 0.15rem; }
+        .alert-banner-body p { margin: 0; font-size: 0.95rem; line-height: 1.5; }
         footer { padding: 3rem 0; color: var(--muted); font-size: 0.78rem; text-align: center; }
         .app-error {
             max-width: 560px;
@@ -552,33 +809,57 @@
         @media print {
             body { background: #fff; }
             .card-section, .surface-card, .info-card, .pie-legend-item, .note-block { box-shadow: none !important; }
-            #toast-container, .tooltip { display: none !important; }
+            .toast-stack, .tooltip { display: none !important; }
             .btn { display: none !important; }
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    <div id="toast-container"></div>
 
     <script
         type="text/babel"
         data-presets="env,react"
         data-plugins="proposal-class-properties,proposal-object-rest-spread,proposal-optional-chaining,proposal-nullish-coalescing-operator"
     >
-        const { useState, useMemo, useEffect, useRef, Fragment } = React;
+        const { useState, useMemo, useEffect, useRef, Fragment, useCallback, useContext } = React;
 
-        const BASE_CURRENCY = 'CZK';
+        const THEME = {
+            currency: 'CZK',
+            locale: 'cs-CZ',
+            colors: {
+                line: '#0d2c54',
+                lineStop: '#4DB1C8',
+                grid: '#E5E7EB',
+                axisText: '#6B7280',
+                tooltipBorder: '#E5E7EB',
+                tooltipShadow: '0 10px 20px rgba(15, 23, 42, 0.12)',
+                accent: '#1d4ed8',
+            },
+            chart: {
+                snapThresholdPx: 12,
+                dotRadius: 6,
+                guideLineWidth: 2,
+                yTicksCount: 5,
+                lineWidth: 2,
+            },
+            labels: {
+                scenario: 'Časová osa',
+            },
+        };
+
+        const BASE_CURRENCY = THEME.currency;
+        const BASE_LOCALE = THEME.locale;
         const Y = 15;
         const randomId = () =>
             (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
                 ? crypto.randomUUID()
                 : `id-${Math.random().toString(36).slice(2, 11)}-${Date.now().toString(36)}`);
-        const currencyFormatter = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: BASE_CURRENCY, maximumFractionDigits: 0 });
-        const percentFormatter = new Intl.NumberFormat('cs-CZ', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const shortPercentFormatter = new Intl.NumberFormat('cs-CZ', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
-        const dateFormatter = new Intl.DateTimeFormat('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const monthYearFormatter = new Intl.DateTimeFormat('cs-CZ', { month: 'long', year: 'numeric' });
+        const currencyFormatter = new Intl.NumberFormat(BASE_LOCALE, { style: 'currency', currency: BASE_CURRENCY, maximumFractionDigits: 0 });
+        const percentFormatter = new Intl.NumberFormat(BASE_LOCALE, { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const shortPercentFormatter = new Intl.NumberFormat(BASE_LOCALE, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        const dateFormatter = new Intl.DateTimeFormat(BASE_LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const monthYearFormatter = new Intl.DateTimeFormat(BASE_LOCALE, { month: 'long', year: 'numeric' });
 
         const parseMoney = (value) => {
             if (typeof value === 'number') return value;
@@ -646,21 +927,96 @@
             if (months > 0) segments.push(`${months} ${months === 1 ? 'měsíc' : months < 5 ? 'měsíce' : 'měsíců'}`);
             return segments.join(' ');
         };
-
-        const showToast = (message, type = 'success') => {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<span>${message}</span>`;
-            container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.add('show'));
-            setTimeout(() => {
-                toast.classList.remove('show');
-                const removeToast = () => toast.remove();
-                toast.addEventListener('transitionend', removeToast, { once: true });
-            }, 3000);
+        const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+        const formatAxisValue = (value) => {
+            if (!Number.isFinite(value)) return '0';
+            const absolute = Math.abs(value);
+            if (absolute >= 1_000_000) {
+                const scaled = Math.round((value / 1_000_000) * 10) / 10;
+                return `${scaled.toString().replace('.', ',')} M`;
+            }
+            if (absolute >= 1_000) {
+                const scaled = Math.round((value / 1_000) * 10) / 10;
+                return `${scaled.toString().replace('.', ',')} K`;
+            }
+            return String(Math.round(value));
         };
+
+        const applyThemeTokens = () => {
+            if (typeof document === 'undefined') return;
+            const root = document.documentElement;
+            if (!root) return;
+            const tokens = {
+                '--chart-line-color': THEME.colors.line,
+                '--chart-line-stop': THEME.colors.lineStop,
+                '--chart-grid-color': THEME.colors.grid,
+                '--chart-axis-color': THEME.colors.axisText,
+                '--chart-accent-color': THEME.colors.accent,
+                '--chart-tooltip-shadow': THEME.colors.tooltipShadow,
+            };
+            Object.entries(tokens).forEach(([key, value]) => root.style.setProperty(key, value));
+        };
+
+        applyThemeTokens();
+        const ToastContext = React.createContext({ push: () => {} });
+
+        const TOAST_DURATION_MS = 3200;
+        const TOAST_FADE_MS = 280;
+
+        const ToastProvider = ({ children }) => {
+            const [toasts, setToasts] = useState([]);
+            const timersRef = useRef(new Map());
+
+            const clearTimers = useCallback((id) => {
+                const timers = timersRef.current.get(id);
+                if (Array.isArray(timers)) {
+                    timers.forEach((handle) => clearTimeout(handle));
+                }
+                timersRef.current.delete(id);
+            }, []);
+
+            const removeToast = useCallback((id) => {
+                clearTimers(id);
+                setToasts((prev) => prev.filter((toast) => toast.id !== id));
+            }, [clearTimers]);
+
+            const push = useCallback((message, tone = 'success') => {
+                if (!message) return;
+                const id = randomId();
+                setToasts((prev) => [...prev, { id, message, tone, visible: true }]);
+                const hideTimer = setTimeout(() => {
+                    setToasts((prev) =>
+                        prev.map((toast) => (toast.id === id ? { ...toast, visible: false } : toast)),
+                    );
+                }, TOAST_DURATION_MS);
+                const removalTimer = setTimeout(() => removeToast(id), TOAST_DURATION_MS + TOAST_FADE_MS);
+                timersRef.current.set(id, [hideTimer, removalTimer]);
+            }, [removeToast]);
+
+            useEffect(() => () => {
+                timersRef.current.forEach((handles) => handles.forEach((handle) => clearTimeout(handle)));
+                timersRef.current.clear();
+            }, []);
+
+            return (
+                <ToastContext.Provider value={{ push }}>
+                    {children}
+                    <div className="toast-stack" aria-live="polite" aria-atomic="true">
+                        {toasts.map((toast) => (
+                            <div
+                                key={toast.id}
+                                className={`toast toast-${toast.tone} ${toast.visible ? 'show' : ''}`}
+                                role="status"
+                            >
+                                <span>{toast.message}</span>
+                            </div>
+                        ))}
+                    </div>
+                </ToastContext.Provider>
+            );
+        };
+
+        const useToasts = () => useContext(ToastContext);
 
         const MoneyInput = ({ value, onChange, placeholder }) => {
             const [displayValue, setDisplayValue] = useState(value);
@@ -724,22 +1080,38 @@
             segment = 'CODYA',
             startDate = toInputDate(startOfToday()),
             options = {},
-        ) => ({
-            id: randomId(),
-            name,
-            currency: BASE_CURRENCY,
-            amountStr: '0',
-            returnStr: String(rate),
-            startDate,
-            segment,
-            topUpStr: '0',
-            crashYear: '0',
-            crashMode: 'haircut',
-            haircutStr: '50',
-            defaultKey: options.defaultKey || null,
-        });
+        ) => {
+            const normalizedStartDate = (() => {
+                if (startDate instanceof Date) {
+                    return toInputDate(startDate);
+                }
+                if (typeof startDate === 'string' && startDate) {
+                    const parsed = parseISODate(startDate);
+                    return parsed ? toInputDate(parsed) : startDate;
+                }
+                return toInputDate(startOfToday());
+            })();
 
-        const sanitizeFund = (fund) => {
+            return {
+                id: randomId(),
+                name,
+                currency: BASE_CURRENCY,
+                amountStr: '0',
+                returnStr: String(rate),
+                startDate: normalizedStartDate,
+                segment,
+                topUpStr: '0',
+                crashYear: '0',
+                crashMode: 'haircut',
+                haircutStr: '50',
+                defaultKey: options.defaultKey || null,
+            };
+        };
+
+        const sanitizeFund = (fund, fallbackStartDate) => {
+            const fallback = fallbackStartDate instanceof Date ? fallbackStartDate : startOfToday();
+            const startDateInstance = fallback instanceof Date ? fallback : startOfToday();
+            const startDateStr = toInputDate(startDateInstance);
             const rawHaircut = fund?.haircutStr;
             const normalizedHaircut = (() => {
                 if (rawHaircut === undefined || rawHaircut === null) return '50';
@@ -755,7 +1127,7 @@
                 currency: fund?.currency || BASE_CURRENCY,
                 amountStr: String(fund?.amountStr ?? '0'),
                 returnStr: String(fund?.returnStr ?? '0'),
-                startDate: fund?.startDate || toInputDate(startOfToday()),
+                startDate: startDateStr,
                 segment: fund?.segment || 'CODYA',
                 topUpStr: String(fund?.topUpStr ?? fund?.amountStrY1 ?? '0'),
                 crashYear: String(fund?.crashYear ?? fund?.failureYear ?? '0'),
@@ -785,13 +1157,35 @@
             };
         };
 
+        const deriveScenarioStartDate = (fundList) => {
+            const anchor = startOfToday();
+            let earliest = null;
+            if (Array.isArray(fundList)) {
+                fundList.forEach((fund) => {
+                    const parsed = parseISODate(fund?.startDate);
+                    if (parsed instanceof Date) {
+                        if (!earliest || parsed < earliest) {
+                            earliest = parsed;
+                        }
+                    }
+                });
+            }
+            if (earliest instanceof Date && earliest.getTime() > anchor.getTime()) {
+                return earliest;
+            }
+            return anchor;
+        };
+
         const prepareScenarioInput = (funds) => {
             const today = startOfToday();
+            const scenarioStart = deriveScenarioStartDate(funds);
             const preparedFunds = [];
             const topUps = [];
             const crashes = [];
-            (funds || []).map(sanitizeFund).forEach((fund) => {
-                const startDate = parseISODate(fund.startDate) || today;
+            (funds || [])
+                .map((fund) => sanitizeFund(fund, scenarioStart))
+                .forEach((fund) => {
+                    const startDate = parseISODate(fund.startDate) || scenarioStart || today;
                 const startDateStr = toInputDate(startDate);
                 preparedFunds.push({
                     id: fund.id,
@@ -811,24 +1205,25 @@
                         amountStr: String(topUpAmount),
                     });
                 }
-                const crashYear = parseInt(fund.crashYear, 10);
-                if (Number.isFinite(crashYear) && crashYear > 0) {
-                    const crashDate = addYears(startDate, crashYear);
-                    crashes.push({
-                        id: `${fund.id}-crash`,
-                        fundId: fund.id,
-                        date: toInputDate(crashDate),
-                        mode: 'haircut',
-                        haircutStr: String(fund.haircutStr ?? '50'),
-                    });
-                }
-            });
+                    const crashYear = parseInt(fund.crashYear, 10);
+                    if (Number.isFinite(crashYear) && crashYear > 0) {
+                        const crashDate = addYears(startDate, crashYear);
+                        crashes.push({
+                            id: `${fund.id}-crash`,
+                            fundId: fund.id,
+                            date: toInputDate(crashDate),
+                            mode: 'haircut',
+                            haircutStr: String(fund.haircutStr ?? '50'),
+                        });
+                    }
+                });
             return { funds: preparedFunds, topUps, crashes };
         };
 
         const STORAGE_KEY = 'fkiPurchaseScenarioState';
         function analyzeScenario(funds, topUps, crashes) {
-            const parsedFunds = (funds || []).map(sanitizeFund);
+            const scenarioStart = deriveScenarioStartDate(funds);
+            const parsedFunds = (funds || []).map((fund) => sanitizeFund(fund, scenarioStart));
             const fundMap = new Map();
             parsedFunds.forEach((fund) => {
                 fundMap.set(fund.id, {
@@ -938,8 +1333,14 @@
             const horizonDate = earliestDate ? addYears(earliestDate, Y) : null;
             const finalDateCandidates = [today];
             if (latestDate) finalDateCandidates.push(latestDate);
-            if (horizonDate) finalDateCandidates.push(horizonDate);
-            const finalDate = new Date(Math.max(...finalDateCandidates.map((date) => date.getTime())));
+            let finalDateTime = Math.max(...finalDateCandidates.map((date) => date.getTime()));
+            if (horizonDate instanceof Date) {
+                const horizonTime = horizonDate.getTime();
+                if (!Number.isFinite(finalDateTime) || finalDateTime < horizonTime) {
+                    finalDateTime = horizonTime;
+                }
+            }
+            const finalDate = new Date(finalDateTime);
             ensureEntry(finalDate).control = true;
 
             const stageDefinitions = [];
@@ -999,9 +1400,11 @@
                     name: fund.name,
                     rate: Number.isFinite(fund.rate) ? fund.rate : 0,
                     value: 0,
+                    invested: 0,
                     status: 'pending',
                     canGrow: false,
                     hadDeposit: false,
+                    locked: false,
                 });
             });
 
@@ -1028,9 +1431,11 @@
                 Array.from(fundStates.values()).map((state) => ({
                     id: state.id,
                     value: state.value,
+                    invested: state.invested,
                     rate: state.rate,
                     status: state.status,
                     canGrow: state.canGrow,
+                    locked: state.locked,
                 }));
 
             const EPSILON = 0.005;
@@ -1039,6 +1444,7 @@
             let investedSoFar = 0;
             let totalCrashLoss = 0;
             const timeline = [];
+            let timelineSequence = 0;
             const markers = [];
             const controlPoints = [];
 
@@ -1056,7 +1462,7 @@
                 const valueBeforeEvents = sumPortfolioValue();
                 const snapshotBeforeEvents = snapshotStates();
 
-                const pushPoint = (value, invested, snapshotOverride) => {
+                const pushPoint = (value, invested, snapshotOverride, phase = 'postEvents') => {
                     const finalSnapshot = snapshotOverride || snapshotStates();
                     const lastPoint = timeline[timeline.length - 1];
                     if (
@@ -1066,28 +1472,36 @@
                     ) {
                         lastPoint.investedToDate = invested;
                         lastPoint.snapshot = finalSnapshot;
+                        lastPoint.phase = phase || lastPoint.phase;
                         return;
                     }
+                    timelineSequence += 1;
                     timeline.push({
                         date: entry.date,
                         totalValue: value,
                         investedToDate: invested,
                         snapshot: finalSnapshot,
+                        phase,
+                        sequence: timelineSequence,
                     });
                 };
 
-                pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents);
+                pushPoint(valueBeforeEvents, investedSoFar, snapshotBeforeEvents, 'preEvents');
                 let portfolioValueAfterDeposits = valueBeforeEvents;
 
                 if (entry.deposits.length > 0) {
                     entry.deposits.forEach((deposit) => {
                         const state = fundStates.get(deposit.fundId);
                         if (!state) return;
-                        if (state.status !== 'frozen' && state.status !== 'zeroed') {
+                        if (!state.locked) {
                             state.status = 'active';
                             state.canGrow = true;
+                        } else {
+                            state.status = state.value <= EPSILON ? 'zeroed' : 'frozen';
+                            state.canGrow = false;
                         }
                         state.hadDeposit = true;
+                        state.invested += deposit.amount;
                         state.value += deposit.amount;
                         investedSoFar += deposit.amount;
                         entryDepositTotal += deposit.amount;
@@ -1096,13 +1510,14 @@
                             fundName: state.name,
                             amount: deposit.amount,
                             label: deposit.label,
+                            type: deposit.type || null,
                             investedToDate: investedSoFar,
                         });
                     });
 
                     portfolioValueAfterDeposits = sumPortfolioValue();
                     const snapshotAfterDeposits = snapshotStates();
-                    pushPoint(portfolioValueAfterDeposits, investedSoFar, snapshotAfterDeposits);
+                    pushPoint(portfolioValueAfterDeposits, investedSoFar, snapshotAfterDeposits, 'postDeposits');
                 }
 
                 let portfolioValueBeforeCrashes = portfolioValueAfterDeposits;
@@ -1120,6 +1535,7 @@
                         state.value = state.value * (1 - haircut);
                         state.status = state.value <= EPSILON ? 'zeroed' : 'frozen';
                         state.canGrow = false;
+                        state.locked = true;
                         const after = state.value;
                         const loss = Math.max(0, before - after);
                         if (loss > 0) {
@@ -1147,7 +1563,8 @@
                 }
                 const snapshot = snapshotStates();
                 if (entry.crashes.length > 0 || entry.deposits.length === 0) {
-                    pushPoint(totalValue, investedSoFar, snapshot);
+                    const phase = entry.crashes.length > 0 ? 'postCrashes' : 'postEvents';
+                    pushPoint(totalValue, investedSoFar, snapshot, phase);
                 }
 
                 if (entryDeposits.length > 0 || entryCrashes.length > 0) {
@@ -1237,16 +1654,17 @@
             const finalEntry = timeline[timeline.length - 1];
             const finalValue = finalEntry ? finalEntry.totalValue : 0;
             const scenarioEnd = finalEntry ? finalEntry.date : finalDate;
-            const scenarioStart = timeline[0]?.date;
+            const timelineStart = timeline[0]?.date;
 
             if (finalValue !== 0 && scenarioEnd) {
                 cashFlows.push({ amount: finalValue, date: scenarioEnd });
             }
 
-            const xirr = calculateXIRR(cashFlows);
+            const normalizedCashFlows = normalizeCashFlows(cashFlows);
+            const xirr = calculateXIRR(normalizedCashFlows);
             const pl = finalValue - totalInvested;
             const plPercent = totalInvested > 0 ? pl / totalInvested : 0;
-            const durationYears = scenarioStart ? diffInYears(scenarioStart, scenarioEnd) : 0;
+            const durationYears = timelineStart ? diffInYears(timelineStart, scenarioEnd) : 0;
             const crashSummary = crashCount === 0
                 ? 'Bez propadů'
                 : `${crashBreakdown.propad || crashCount}× propad`;
@@ -1304,7 +1722,7 @@
                         share: item.share,
                     })),
                 })),
-                startDate: scenarioStart ? scenarioStart.toISOString() : null,
+                startDate: timelineStart ? timelineStart.toISOString() : null,
                 endDate: scenarioEnd ? scenarioEnd.toISOString() : null,
             };
 
@@ -1322,13 +1740,21 @@
                 crashCount,
                 crashSummary,
                 totalCrashLoss,
-                startDate: scenarioStart,
+                startDate: timelineStart,
                 endDate: scenarioEnd,
                 durationYears,
                 finalAllocations,
                 exportSnapshot,
                 allocationStages,
+                cashFlows: normalizedCashFlows,
             };
+        }
+
+        function normalizeCashFlows(cashFlows) {
+            if (!Array.isArray(cashFlows)) return [];
+            return cashFlows
+                .filter((cf) => cf && cf.date instanceof Date && Number.isFinite(cf.amount) && cf.amount !== 0)
+                .sort((a, b) => a.date - b.date);
         }
 
         function calculateXIRR(cashFlows) {
@@ -1337,6 +1763,8 @@
                 .filter((cf) => cf && cf.date instanceof Date && Number.isFinite(cf.amount) && cf.amount !== 0)
                 .sort((a, b) => a.date - b.date);
             if (flows.length < 2) return null;
+            const uniqueTimes = new Set(flows.map((cf) => cf.date.getTime()));
+            if (uniqueTimes.size < 2) return null;
             const hasPositive = flows.some((cf) => cf.amount > 0);
             const hasNegative = flows.some((cf) => cf.amount < 0);
             if (!hasPositive || !hasNegative) return null;
@@ -1402,13 +1830,17 @@
             { key: 'AVANT::Semper', segment: 'AVANT', name: 'Semper', rate: 11 },
         ];
 
-        const getDefaultFunds = () =>
-            DEFAULT_FUND_CONFIG.map((config) =>
-                createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }),
+        const getDefaultFunds = () => {
+            const startDateStr = toInputDate(startOfToday());
+            return DEFAULT_FUND_CONFIG.map((config) =>
+                createFund(config.name, config.rate, config.segment, startDateStr, { defaultKey: config.key }),
             );
+        };
 
         const ensureDefaultFunds = (fundList) => {
-            const sanitized = (fundList || []).map(sanitizeFund);
+            const scenarioStartDate = deriveScenarioStartDate(fundList);
+            const startDateStr = toInputDate(scenarioStartDate);
+            const sanitized = (fundList || []).map((fund) => sanitizeFund(fund, scenarioStartDate));
             const keyFor = (fund) => fund.defaultKey || `${fund.segment}::${fund.name}`;
             const usedIds = new Set();
             const result = [];
@@ -1419,7 +1851,7 @@
                     result.push({ ...match, segment: config.segment, defaultKey: config.key });
                     usedIds.add(match.id);
                 } else {
-                    result.push(createFund(config.name, config.rate, config.segment, undefined, { defaultKey: config.key }));
+                    result.push(createFund(config.name, config.rate, config.segment, startDateStr, { defaultKey: config.key }));
                 }
             });
 
@@ -1430,6 +1862,67 @@
             });
 
             return result;
+        };
+
+        const loadScenarioFromStorage = () => {
+            if (typeof window === 'undefined' || !window.localStorage) {
+                return null;
+            }
+            const stored = window.localStorage.getItem(STORAGE_KEY);
+            if (!stored) {
+                return null;
+            }
+            const parsed = JSON.parse(stored);
+            return {
+                clientName: typeof parsed.clientName === 'string' ? parsed.clientName : '',
+                funds:
+                    Array.isArray(parsed.funds) && parsed.funds.length > 0
+                        ? ensureDefaultFunds(parsed.funds)
+                        : getDefaultFunds(),
+            };
+        };
+
+        const useScenarioState = (pushToast) => {
+            const [clientName, setClientName] = useState('');
+            const [funds, setFunds] = useState(getDefaultFunds);
+            const [lastSaved, setLastSaved] = useState(null);
+            const hydratedRef = useRef(false);
+
+            useEffect(() => {
+                if (hydratedRef.current) {
+                    return;
+                }
+                hydratedRef.current = true;
+                try {
+                    const snapshot = loadScenarioFromStorage();
+                    if (snapshot) {
+                        setClientName(snapshot.clientName);
+                        setFunds(snapshot.funds);
+                        pushToast?.('Data byla úspěšně načtena.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    pushToast?.('Nepodařilo se načíst uložená data.', 'error');
+                } finally {
+                    setLastSaved(getTimeString());
+                }
+            }, [pushToast]);
+
+            useEffect(() => {
+                try {
+                    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+                    if (!storage) {
+                        return;
+                    }
+                    const snapshot = { clientName, funds };
+                    storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+                    setLastSaved(getTimeString());
+                } catch (error) {
+                    console.error(error);
+                }
+            }, [clientName, funds]);
+
+            return { clientName, setClientName, funds, setFunds, lastSaved };
         };
 
         const SEGMENT_CONFIG = [
@@ -1506,6 +1999,22 @@
                 {subValue && <div className="info-card-sub">{subValue}</div>}
             </div>
         );
+
+        const ValidationBanner = ({ messages, tone = 'warning' }) => {
+            if (!messages || messages.length === 0) return null;
+            const toneClass = tone === 'error' ? 'alert-banner alert-banner--error' : 'alert-banner';
+            const icon = tone === 'error' ? '⛔' : '⚠️';
+            return (
+                <div className={toneClass} role="alert">
+                    <span className="alert-banner-icon" aria-hidden="true">{icon}</span>
+                    <div className="alert-banner-body">
+                        {messages.map((message, index) => (
+                            <p key={`validation-${index}`}>{message}</p>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
 
         const ReportHero = ({ lastSaved, clientName, onClientNameChange }) => {
             return (
@@ -1683,34 +2192,549 @@
             );
         };
 
-        const ScenarioSummary = ({ analysis }) => (
-            <section className="card-section">
-                <div className="card-header">
-                    <div>
-                        <span className="badge-pill">Souhrn scénáře</span>
-                        <h2 className="card-header-title">Klíčové metriky</h2>
-                        <p className="card-header-sub">Průběžný přehled aktuální hodnoty a zhodnocení portfolia.</p>
-                    </div>
-                </div>
-                {analysis?.hasData ? (
-                    <Fragment>
-                        <div className="info-grid">
-                            <InfoCard title="Aktuální hodnota" value={formatCurrency(analysis.currentValue)} />
-                            <InfoCard title="XIRR" value={analysis.xirr !== null ? formatPercent(analysis.xirr) : '—'} subValue={analysis.durationYears > 0 ? `Délka scénáře ${formatDuration(analysis.durationYears)}` : 'Čekáme na data'} />
+        const projectSnapshotToHorizon = (snapshot, yearsForward) => {
+            if (!Array.isArray(snapshot) || snapshot.length === 0) {
+                return {
+                    total: 0,
+                    weightedRate: null,
+                    investedWeightedRate: null,
+                    activeWeightedRate: null,
+                    activeValue: 0,
+                    activeInvested: 0,
+                    lockedValue: 0,
+                    lockedInvested: 0,
+                    lockedShortfall: 0,
+                };
+            }
+            const years = Number.isFinite(yearsForward) && yearsForward > 0 ? yearsForward : 0;
+            let total = 0;
+            let investedNumerator = 0;
+            let investedDenominator = 0;
+            let valueNumerator = 0;
+            let valueDenominator = 0;
+            let activeValueTotal = 0;
+            let activeInvestedTotal = 0;
+            let activeValueNumerator = 0;
+            let lockedValueTotal = 0;
+            let lockedInvestedTotal = 0;
+            snapshot.forEach((state) => {
+                if (!state) return;
+                const baseValue = Number.isFinite(state.value) ? state.value : 0;
+                const invested = Number.isFinite(state.invested) ? state.invested : 0;
+                if (baseValue <= 0 && invested <= 0) return;
+                const rate = Number.isFinite(state.rate) ? state.rate : 0;
+                const isUnlocked = state.locked !== true;
+                const canAccrue = state.status === 'active' && state.canGrow === true && isUnlocked;
+                const effectiveRate = canAccrue ? rate : 0;
+                let projectedValue = 0;
+                if (baseValue > 0) {
+                    projectedValue = canAccrue ? baseValue * Math.pow(1 + rate, years) : baseValue;
+                    total += projectedValue;
+                }
+                if (invested > 0) {
+                    investedDenominator += invested;
+                    investedNumerator += invested * effectiveRate;
+                    if (canAccrue) {
+                        activeInvestedTotal += invested;
+                    } else {
+                        lockedInvestedTotal += invested;
+                    }
+                }
+                if (projectedValue > 0) {
+                    valueDenominator += projectedValue;
+                    valueNumerator += projectedValue * effectiveRate;
+                    if (canAccrue) {
+                        activeValueTotal += projectedValue;
+                        activeValueNumerator += projectedValue * rate;
+                    } else {
+                        lockedValueTotal += projectedValue;
+                    }
+                }
+            });
+            const investedWeightedRate = investedDenominator > 0 ? investedNumerator / investedDenominator : null;
+            const valueWeightedRate = valueDenominator > 0 ? valueNumerator / valueDenominator : investedWeightedRate;
+            const activeWeightedRate = activeValueTotal > 0 ? activeValueNumerator / activeValueTotal : null;
+            const lockedShortfall = Math.max(0, lockedInvestedTotal - lockedValueTotal);
+            return {
+                total,
+                weightedRate: valueWeightedRate,
+                investedWeightedRate,
+                activeWeightedRate,
+                activeValue: activeValueTotal,
+                activeInvested: activeInvestedTotal,
+                lockedValue: lockedValueTotal,
+                lockedInvested: lockedInvestedTotal,
+                lockedShortfall,
+            };
+        };
+
+        const projectPointToDate = (point, targetDate, overrideYearsForward) => {
+            if (!point || !(point.date instanceof Date)) {
+                const fallbackValue = Number(point?.totalValue) || 0;
+                return {
+                    total: Math.max(fallbackValue, 0),
+                    weightedRate: null,
+                    investedWeightedRate: null,
+                    activeWeightedRate: null,
+                    activeValue: 0,
+                    activeInvested: 0,
+                    lockedValue: 0,
+                    lockedInvested: 0,
+                    lockedShortfall: 0,
+                    yearsForward: 0,
+                };
+            }
+            const safeTarget = targetDate instanceof Date ? targetDate : point.date;
+            const baseValue = Number(point.totalValue) || 0;
+            const snapshot = Array.isArray(point.snapshot) ? point.snapshot : [];
+            let yearsForward = Number.isFinite(overrideYearsForward)
+                ? overrideYearsForward
+                : diffInYears(point.date, safeTarget);
+            if (!Number.isFinite(yearsForward) || yearsForward <= 0) {
+                yearsForward = 0;
+            }
+            if (snapshot.length === 0) {
+                return {
+                    total: Math.max(baseValue, 0),
+                    weightedRate: null,
+                    investedWeightedRate: null,
+                    activeWeightedRate: null,
+                    activeValue: 0,
+                    activeInvested: 0,
+                    lockedValue: 0,
+                    lockedInvested: 0,
+                    lockedShortfall: 0,
+                    yearsForward,
+                };
+            }
+            const projection = projectSnapshotToHorizon(snapshot, yearsForward);
+            const total = Number.isFinite(projection.total) ? projection.total : baseValue;
+            return {
+                total: Math.max(total, 0),
+                weightedRate: projection.weightedRate,
+                investedWeightedRate: projection.investedWeightedRate,
+                activeWeightedRate: projection.activeWeightedRate,
+                activeValue: projection.activeValue,
+                activeInvested: projection.activeInvested,
+                lockedValue: projection.lockedValue,
+                lockedInvested: projection.lockedInvested,
+                lockedShortfall: projection.lockedShortfall,
+                yearsForward,
+            };
+        };
+
+        const createProjectionEngine = (analysis) => {
+            const rawTimeline = Array.isArray(analysis?.timeline) ? analysis.timeline : [];
+            const timeline = rawTimeline
+                .filter((point) => point && point.date instanceof Date)
+                .map((point) => ({
+                    ...point,
+                    phase: point.phase || 'postEvents',
+                    sequence: Number.isFinite(point.sequence) ? point.sequence : 0,
+                }))
+                .sort((a, b) => {
+                    const diff = a.date - b.date;
+                    if (diff !== 0) return diff;
+                    return a.sequence - b.sequence;
+                });
+
+            if (timeline.length === 0) {
+                return {
+                    timeline: [],
+                    originDate: null,
+                    finalDate: null,
+                    totalYears: 0,
+                    projectTo: () => null,
+                };
+            }
+
+            const originDate = analysis?.startDate instanceof Date ? analysis.startDate : timeline[0].date;
+            const finalDate = analysis?.endDate instanceof Date ? analysis.endDate : timeline[timeline.length - 1].date;
+            const sanitizedFlows = normalizeCashFlows(analysis?.cashFlows);
+
+            const locatePoint = (targetDate, options = {}) => {
+                const position = options.eventPosition === 'before' ? 'before' : 'after';
+                const targetTime = targetDate.getTime();
+                let lastBefore = null;
+                const sameDay = [];
+                for (let i = 0; i < timeline.length; i += 1) {
+                    const point = timeline[i];
+                    if (!(point.date instanceof Date)) continue;
+                    const pointTime = point.date.getTime();
+                    if (pointTime < targetTime) {
+                        lastBefore = point;
+                        sameDay.length = 0;
+                        continue;
+                    }
+                    if (pointTime === targetTime) {
+                        sameDay.push(point);
+                        continue;
+                    }
+                    break;
+                }
+                if (position === 'before') {
+                    if (sameDay.length > 0) {
+                        return (
+                            sameDay.find((p) => p.phase === 'preEvents') ||
+                            sameDay[0] ||
+                            lastBefore ||
+                            timeline[0] ||
+                            null
+                        );
+                    }
+                    return lastBefore || timeline[0] || null;
+                }
+                if (sameDay.length > 0) {
+                    return sameDay[sameDay.length - 1];
+                }
+                return lastBefore || timeline[0] || null;
+            };
+
+            const projectTo = (targetDate, options = {}) => {
+                if (!(targetDate instanceof Date)) {
+                    return null;
+                }
+                const safeTarget = targetDate > finalDate ? finalDate : targetDate;
+                const basePoint = locatePoint(safeTarget, options) || timeline[0];
+                if (!basePoint) {
+                    return null;
+                }
+
+                const invested = Number.isFinite(basePoint.investedToDate) ? basePoint.investedToDate : 0;
+                const elapsedHint = Number.isFinite(options.elapsedHint) && options.elapsedHint >= 0
+                    ? options.elapsedHint
+                    : diffInYears(originDate, safeTarget);
+                const rawElapsedYears = diffInYears(originDate, safeTarget);
+                const elapsedYears = Math.abs(rawElapsedYears - elapsedHint) < 0.05 ? elapsedHint : rawElapsedYears;
+                const basePointDate = basePoint.date instanceof Date ? basePoint.date : originDate;
+                const baseElapsedYears = diffInYears(originDate, basePointDate);
+                const baseSliderYears = Number.isFinite(baseElapsedYears) ? Math.round(baseElapsedYears) : 0;
+                const candidateYearsFromBase = Math.max(0, elapsedHint - baseSliderYears);
+                const rawYearsFromBase = Math.max(0, diffInYears(basePointDate, safeTarget));
+                const yearsFromBase = Math.abs(rawYearsFromBase - candidateYearsFromBase) < 0.05
+                    ? candidateYearsFromBase
+                    : rawYearsFromBase;
+
+                const projection = projectPointToDate(basePoint, safeTarget, yearsFromBase);
+                const totalValue = Number.isFinite(projection.total) ? projection.total : 0;
+                const gain = totalValue - invested;
+                const gainPercent = invested > 0 ? gain / invested : null;
+
+                const allowSameDayFlows = options.eventPosition !== 'before';
+                const targetTime = safeTarget.getTime();
+                const negativeFlows = sanitizedFlows.filter((flow) => {
+                    if (!(flow.date instanceof Date) || flow.amount >= 0) {
+                        return false;
+                    }
+                    const flowTime = flow.date.getTime();
+                    if (flowTime < targetTime) {
+                        return true;
+                    }
+                    if (!allowSameDayFlows) {
+                        return false;
+                    }
+                    return flowTime === targetTime;
+                });
+                const flowsForPoint = [...negativeFlows];
+                if (totalValue > 0) {
+                    flowsForPoint.push({ amount: totalValue, date: safeTarget });
+                }
+
+                const earliestNegativeDate = negativeFlows[0]?.date instanceof Date ? negativeFlows[0].date : null;
+                const rawHorizonYears = earliestNegativeDate ? diffInYears(earliestNegativeDate, safeTarget) : 0;
+                const horizonYears = Math.abs(rawHorizonYears - elapsedHint) < 0.05 ? elapsedHint : rawHorizonYears;
+                const totalInvestedFromFlows = negativeFlows.reduce((acc, flow) => acc - flow.amount, 0);
+                const lockedValue = Number.isFinite(projection.lockedValue) ? projection.lockedValue : 0;
+                const lockedInvested = Number.isFinite(projection.lockedInvested) ? projection.lockedInvested : 0;
+                const lockedShortfall = Number.isFinite(projection.lockedShortfall)
+                    ? projection.lockedShortfall
+                    : Math.max(0, lockedInvested - lockedValue);
+                const activeValue = Number.isFinite(projection.activeValue)
+                    ? projection.activeValue
+                    : Math.max(0, totalValue - lockedValue);
+                const activeInvested = Number.isFinite(projection.activeInvested)
+                    ? projection.activeInvested
+                    : Math.max(0, invested - lockedInvested);
+
+                let portfolioXirr = flowsForPoint.length >= 2 ? calculateXIRR(flowsForPoint) : null;
+
+                if (
+                    (portfolioXirr === null || !Number.isFinite(portfolioXirr)) &&
+                    horizonYears > 1e-6 &&
+                    totalInvestedFromFlows > 0 &&
+                    totalValue > 0
+                ) {
+                    const impliedRate = Math.pow(totalValue / totalInvestedFromFlows, 1 / Math.max(horizonYears, 1e-6)) - 1;
+                    if (Number.isFinite(impliedRate)) {
+                        portfolioXirr = impliedRate;
+                    }
+                }
+
+                if (
+                    (portfolioXirr === null || !Number.isFinite(portfolioXirr)) &&
+                    (Number.isFinite(projection.weightedRate) || Number.isFinite(projection.investedWeightedRate))
+                ) {
+                    portfolioXirr = Number.isFinite(projection.weightedRate)
+                        ? projection.weightedRate
+                        : projection.investedWeightedRate;
+                }
+
+                let activeXirr = null;
+                if (activeInvested > 0 && activeValue > 0 && horizonYears > 1e-6) {
+                    const ratio = activeValue / activeInvested;
+                    if (ratio > 0) {
+                        const solved = Math.pow(ratio, 1 / Math.max(horizonYears, 1e-6)) - 1;
+                        if (Number.isFinite(solved)) {
+                            activeXirr = solved;
+                        }
+                    }
+                }
+
+                if (activeXirr === null || !Number.isFinite(activeXirr)) {
+                    if (Number.isFinite(projection.activeWeightedRate)) {
+                        activeXirr = projection.activeWeightedRate;
+                    } else if (Number.isFinite(projection.weightedRate)) {
+                        activeXirr = projection.weightedRate;
+                    }
+                }
+
+                const preferActive = lockedShortfall > 1 && Number.isFinite(activeXirr);
+                let pointXirr = preferActive && Number.isFinite(activeXirr) ? activeXirr : portfolioXirr;
+                if (pointXirr === null || !Number.isFinite(pointXirr)) {
+                    pointXirr = Number.isFinite(portfolioXirr) ? portfolioXirr : activeXirr;
+                }
+                const usingActiveXirr = preferActive && Number.isFinite(pointXirr) && pointXirr === activeXirr;
+
+                return {
+                    date: safeTarget,
+                    invested,
+                    totalValue,
+                    gain,
+                    gainPercent,
+                    elapsedYears,
+                    weightedRate: projection.weightedRate,
+                    investedWeightedRate: projection.investedWeightedRate,
+                    activeWeightedRate: projection.activeWeightedRate,
+                    activeValue,
+                    activeInvested,
+                    lockedValue,
+                    lockedInvested,
+                    lockedShortfall,
+                    xirr: pointXirr,
+                    portfolioXirr: Number.isFinite(portfolioXirr) ? portfolioXirr : null,
+                    activeXirr: Number.isFinite(activeXirr) ? activeXirr : null,
+                    usingActiveXirr,
+                };
+            };
+
+            return {
+                timeline,
+                originDate,
+                finalDate,
+                totalYears: Math.max(0, Math.ceil(diffInYears(originDate, finalDate))),
+                projectTo,
+            };
+        };
+
+        const ScenarioSummary = ({ analysis }) => {
+            const formatSignedCurrency = (value) => {
+                if (!Number.isFinite(value)) {
+                    return '—';
+                }
+                const absolute = Math.abs(value);
+                if (absolute < 0.5) {
+                    return formatCurrency(0);
+                }
+                const formatted = formatCurrency(absolute);
+                if (value > 0) return `+${formatted}`;
+                if (value < 0) return `−${formatted}`;
+                return formatted;
+            };
+
+            const projection = useMemo(() => createProjectionEngine(analysis), [analysis]);
+            const { originDate, finalDate, totalYears, projectTo, timeline } = projection;
+
+            const sliderPoints = useMemo(() => {
+                if (!(originDate instanceof Date) || !(finalDate instanceof Date) || typeof projectTo !== 'function') {
+                    return [];
+                }
+
+                const maxYear = Math.max(totalYears, 0);
+
+                return Array.from({ length: maxYear + 1 }, (_, year) => {
+                    const rawTarget = year === 0 ? originDate : addYears(originDate, year);
+                    const targetDate = rawTarget instanceof Date && rawTarget < finalDate ? rawTarget : finalDate;
+                    const projected = projectTo(targetDate, { elapsedHint: year });
+                    if (!projected) {
+                        return null;
+                    }
+                    return {
+                        index: year,
+                        year,
+                        date: projected.date,
+                        invested: projected.invested,
+                        totalValue: projected.totalValue,
+                        gain: projected.gain,
+                        gainPercent: projected.gainPercent,
+                        elapsedYears: projected.elapsedYears,
+                        xirr: projected.xirr,
+                        portfolioXirr: projected.portfolioXirr,
+                        activeXirr: projected.activeXirr,
+                        lockedShortfall: projected.lockedShortfall,
+                        lockedValue: projected.lockedValue,
+                        lockedInvested: projected.lockedInvested,
+                        activeValue: projected.activeValue,
+                        activeInvested: projected.activeInvested,
+                        usingActiveXirr: projected.usingActiveXirr,
+                        weightedRate: projected.weightedRate,
+                        investedWeightedRate: projected.investedWeightedRate,
+                    };
+                }).filter(Boolean);
+            }, [originDate, finalDate, totalYears, projectTo]);
+
+
+            const firstActiveIndex = sliderPoints.findIndex((point) => point.invested > 0 || point.totalValue > 0);
+            const defaultIndex = firstActiveIndex >= 0 ? firstActiveIndex : 0;
+            const [selectedIndex, setSelectedIndex] = useState(() => defaultIndex);
+            const hasHydratedRef = useRef(false);
+
+            useEffect(() => {
+                if (!sliderPoints.length) {
+                    hasHydratedRef.current = false;
+                    setSelectedIndex(0);
+                    return;
+                }
+                setSelectedIndex((prev) => {
+                    let next = prev;
+                    if (!hasHydratedRef.current) {
+                        hasHydratedRef.current = true;
+                        next = defaultIndex;
+                    }
+                    if (!Number.isFinite(next)) {
+                        next = defaultIndex;
+                    }
+                    const clamped = Math.min(Math.max(next, 0), sliderPoints.length - 1);
+                    return clamped === prev ? prev : clamped;
+                });
+            }, [sliderPoints.length, defaultIndex]);
+
+            const hasData = Boolean(analysis?.hasData);
+            const sliderAvailable = sliderPoints.length > 0;
+            const sliderMaxIndex = sliderAvailable ? sliderPoints.length - 1 : 0;
+            const activeIndex = sliderAvailable ? Math.min(Math.max(selectedIndex, 0), sliderMaxIndex) : 0;
+            const selectedPoint = sliderAvailable ? sliderPoints[activeIndex] : null;
+            const sliderDisabled = sliderPoints.length <= 1;
+            const sliderMax = Math.max(sliderPoints.length - 1, 0);
+            const sliderProgress = sliderMax > 0 ? `${((activeIndex / sliderMax) * 100).toFixed(2)}%` : '0%';
+
+            const dateLabel = selectedPoint ? formatDate(selectedPoint.date) : '—';
+            const elapsedLabel = selectedPoint
+                ? selectedPoint.year === 0
+                    ? 'Začátek'
+                    : formatDuration(selectedPoint.elapsedYears)
+                : '—';
+            const investedLabel = selectedPoint ? formatCurrency(selectedPoint.invested) : '—';
+            const totalValueLabel = selectedPoint ? formatCurrency(selectedPoint.totalValue) : '—';
+            const gainPercentLabel =
+                selectedPoint && selectedPoint.gainPercent !== null ? formatPercent(selectedPoint.gainPercent) : '—';
+            const gainCurrencyLabel = selectedPoint ? formatSignedCurrency(selectedPoint.gain) : '—';
+            const startLabel = sliderAvailable ? 'Rok 0' : '—';
+            const endLabel = sliderAvailable ? `Rok ${sliderPoints[sliderPoints.length - 1].year}` : '—';
+            const usingActiveXirr = selectedPoint?.usingActiveXirr === true;
+            const xirrValue = Number.isFinite(selectedPoint?.xirr) ? selectedPoint.xirr : null;
+            const portfolioXirrValue = Number.isFinite(selectedPoint?.portfolioXirr) ? selectedPoint.portfolioXirr : null;
+            const xirrDurationLabel = selectedPoint
+                ? selectedPoint.year === 0
+                    ? 'Začátek scénáře'
+                    : `K ${formatDuration(selectedPoint.elapsedYears)}`
+                : 'Čekáme na data';
+            const xirrTitle = usingActiveXirr ? 'XIRR (aktivní část)' : 'XIRR';
+            const xirrDisplayValue = xirrValue !== null ? formatPercent(xirrValue) : '—';
+            const xirrSubLines = [xirrDurationLabel];
+            if (usingActiveXirr && portfolioXirrValue !== null) {
+                xirrSubLines.push(`Celé portfolio: ${formatPercent(portfolioXirrValue)}`);
+            }
+            const xirrSubValue = xirrSubLines.length
+                ? (
+                      <Fragment>
+                          {xirrSubLines.map((line, index) => (
+                              <div key={index}>{line}</div>
+                          ))}
+                      </Fragment>
+                  )
+                : null;
+
+            return (
+                <section className="card-section">
+                    <div className="card-header">
+                        <div>
+                            <span className="badge-pill">Souhrn scénáře</span>
+                            <h2 className="card-header-title">Klíčové metriky</h2>
+                            <p className="card-header-sub">Průběžný přehled aktuální hodnoty a zhodnocení portfolia.</p>
                         </div>
-                    </Fragment>
-                ) : (
-                    <div className="note-block" style={{ marginTop: '1rem' }}>
-                        Zadejte alespoň jeden počáteční vklad nebo dokup, aby bylo možné spočítat scénář.
                     </div>
-                )}
-            </section>
-        );
+                    {hasData ? (
+                        <Fragment>
+                            <div className="info-grid">
+                                <InfoCard title="Hodnota portfolia" value={totalValueLabel} subValue={`K datu ${dateLabel}`} />
+                                <InfoCard title="Zhodnocení" value={gainPercentLabel} subValue={`Zisk/ztráta ${gainCurrencyLabel}`} />
+                                <InfoCard title={xirrTitle} value={xirrDisplayValue} subValue={xirrSubValue} />
+                            </div>
+                            {sliderAvailable && (
+                                <div className="timeline-slider">
+                                    <div className="timeline-slider-header">
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Rok horizontu</span>
+                                            <span className="timeline-slider-value">{selectedPoint ? selectedPoint.year : '—'}</span>
+                                        </div>
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Datum</span>
+                                            <span className="timeline-slider-value tabular-nums">{dateLabel}</span>
+                                        </div>
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Uplynulý čas</span>
+                                            <span className="timeline-slider-value">{elapsedLabel}</span>
+                                        </div>
+                                        <div className="timeline-slider-meta">
+                                            <span className="timeline-slider-label">Investováno k datu</span>
+                                            <span className="timeline-slider-value tabular-nums">{investedLabel}</span>
+                                        </div>
+                                    </div>
+                                    <input
+                                        className="timeline-slider-track"
+                                        type="range"
+                                        min={0}
+                                        max={sliderMax}
+                                        step={1}
+                                        value={activeIndex}
+                                        onChange={(event) => setSelectedIndex(Number(event.target.value))}
+                                        disabled={sliderDisabled}
+                                        style={{ '--slider-progress': sliderProgress }}
+                                    />
+                                    <div className="timeline-slider-scale">
+                                        <span>{startLabel}</span>
+                                        <span>{endLabel}</span>
+                                    </div>
+                                    <div className="timeline-slider-invested">Posuňte pro zobrazení vývoje portfolia rok po roce.</div>
+                                </div>
+                            )}
+                        </Fragment>
+                    ) : (
+                        <div className="note-block" style={{ marginTop: '1rem' }}>
+                            Zadejte alespoň jeden počáteční vklad nebo dokup, aby bylo možné spočítat scénář.
+                        </div>
+                    )}
+                </section>
+            );
+        };
         const ScenarioChart = ({ analysis }) => {
             const containerRef = useRef(null);
             const svgRef = useRef(null);
             const dimensions = useResizeObserver(containerRef);
             const [tooltip, setTooltip] = useState(null);
+            const gradientId = useMemo(() => `chart-line-gradient-${Math.random().toString(36).slice(2, 8)}`, []);
+            const dotRadius = THEME.chart.dotRadius || 6;
+            const guideLineWidth = THEME.chart.guideLineWidth || 2;
 
             if (!analysis?.hasData) {
                 return (
@@ -1793,7 +2817,8 @@
                 });
             };
 
-            const yTicks = Array.from({ length: 5 }, (_, index) => (maxValue / 4) * index);
+            const yTickCount = Math.max(2, THEME.chart.yTicksCount || 5);
+            const yTicks = Array.from({ length: yTickCount }, (_, index) => (maxValue / (yTickCount - 1)) * index);
             const xTicks = timeline.length <= 1
                 ? [startDate]
                 : timeline.filter((_, index) => index === 0 || index === timeline.length - 1 || index % Math.ceil(timeline.length / 4) === 0).map((point) => point.date);
@@ -1813,7 +2838,7 @@
                         snappedMarker = marker;
                     }
                 });
-                const markerSnapThreshold = Math.max(4, Math.min(10, plotWidth * 0.02));
+                const markerSnapThreshold = THEME.chart.snapThresholdPx || Math.max(4, Math.min(10, plotWidth * 0.02));
                 if (snappedMarker && smallestDistance <= markerSnapThreshold) {
                     showMarkerTooltip(snappedMarker);
                     return;
@@ -1886,10 +2911,6 @@
                         </div>
                         <div className="meta-deck">
                             <div className="meta-card">
-                                <span className="meta-label">Výnos p.a. (XIRR)</span>
-                                <span className="meta-value tabular-nums">{analysis.xirr !== null ? formatShortPercent(analysis.xirr) : '—'}</span>
-                            </div>
-                            <div className="meta-card">
                                 <span className="meta-label">Počet dokupů</span>
                                 <span className="meta-value">{analysis.depositCount}</span>
                             </div>
@@ -1901,18 +2922,29 @@
                     </div>
                     <div className="chart-container" ref={containerRef}>
                         <svg ref={svgRef} width="100%" height={height} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+                            <defs>
+                                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={THEME.colors.line} />
+                                    <stop offset="100%" stopColor={THEME.colors.lineStop} />
+                                </linearGradient>
+                            </defs>
                             {yTicks.map((value) => (
                                 <g key={`y-${value}`}>
                                     <line className="chart-grid-line" x1={margin.left} x2={width - margin.right} y1={yScale(value)} y2={yScale(value)} />
-                                    <text className="chart-axis-text" x={margin.left - 10} y={yScale(value) + 4} textAnchor="end">{formatCurrency(value)}</text>
+                                    <text className="chart-axis-text" x={margin.left - 10} y={yScale(value) + 4} textAnchor="end">{formatAxisValue(value)}</text>
                                 </g>
                             ))}
                             {xTicks.map((date) => (
                                 <text key={`x-${date.getTime()}`} className="chart-axis-text" x={xScale(date)} y={height - margin.bottom + 24} textAnchor="middle">{formatMonthYear(date)}</text>
                             ))}
-                            <path d={createPath(pathPoints)} className="chart-line-accent" />
+                            <path
+                                d={createPath(pathPoints)}
+                                className="chart-line-accent"
+                                stroke={`url(#${gradientId})`}
+                                strokeWidth={THEME.chart.lineWidth || 2}
+                            />
                             {pathPoints.length > 0 && (
-                                <circle className="chart-dot" r="5" cx={pathPoints[0].x} cy={pathPoints[0].y} />
+                                <circle className="chart-dot" r={dotRadius - 1} cx={pathPoints[0].x} cy={pathPoints[0].y} />
                             )}
                             {markerPoints.map((marker) => (
                                 <g key={marker.key} transform={`translate(${marker.x}, ${marker.y})`} onMouseEnter={() => handleMarkerEnter(marker)} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }}>
@@ -1940,49 +2972,55 @@
                             ))}
                             {tooltip && (
                                 <>
-                                    <line x1={tooltip.x} x2={tooltip.x} y1={margin.top} y2={height - margin.bottom} stroke="rgba(77, 177, 200, 0.4)" strokeDasharray="4 4" />
-                                    <circle className="chart-dot" r="6" cx={tooltip.x} cy={tooltip.y} />
+                                    <line x1={tooltip.x} x2={tooltip.x} y1={tooltip.y} y2={yScale(0)} stroke="rgba(77, 177, 200, 0.55)" strokeWidth={guideLineWidth} strokeDasharray="4 4" />
+                                    <circle className="chart-dot" r={dotRadius} cx={tooltip.x} cy={tooltip.y} />
                                 </>
                             )}
                         </svg>
                         {tooltip && (
                             <div className="tooltip show" style={tooltipStyle}>
-                                <div className="meta-label" style={{ textTransform: 'none', fontWeight: 600 }}>{formatDate(tooltip.date)}</div>
-                                <div className="meta-value" style={{ fontSize: '0.95rem' }}>{formatCurrency(tooltip.value)}</div>
-                                {tooltip.type === 'line' && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}</div>
-                                )}
-                                {tooltip.type === 'marker' && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.4rem' }}>
-                                        Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}
-                                    </div>
-                                )}
+                                <div className="chart-tooltip-heading">
+                                    <span>{formatDate(tooltip.date)}</span>
+                                    <span style={{ color: 'var(--primary)', marginLeft: '0.35rem' }}>
+                                        {tooltip.type === 'marker'
+                                            ? tooltip.kind === 'deposit'
+                                                ? 'Dokup'
+                                                : tooltip.kind === 'default'
+                                                ? 'Propad'
+                                                : 'Událost'
+                                            : tooltip.date && tooltip.date.getTime() === startDate.getTime()
+                                            ? 'Dnes'
+                                            : 'Simulace'}
+                                    </span>
+                                </div>
+                                <div className="chart-tooltip-value">{formatCurrency(tooltip.value)}</div>
+                                <div className="chart-tooltip-meta">Investováno k datu {formatCurrency(tooltip.invested ?? analysis.totalInvested)}</div>
                                 {tooltip.type === 'marker' && tooltip.valueBefore !== undefined && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.45rem' }}>
+                                    <div className="chart-tooltip-meta" style={{ marginTop: '0.35rem' }}>
                                         Hodnota před událostí: {formatCurrency(tooltip.valueBefore)}
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.valueAfter !== undefined && tooltip.valueAfter !== tooltip.valueBefore && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.45rem' }}>
+                                    <div className="chart-tooltip-meta" style={{ marginTop: '0.25rem' }}>
                                         Hodnota po události: {formatCurrency(tooltip.valueAfter)}
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.depositTotal > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.6rem', color: 'var(--accent)' }}>
+                                    <div className="chart-tooltip-meta" style={{ marginTop: '0.45rem', color: 'var(--accent)' }}>
                                         Součet dokupů: +{formatCurrency(tooltip.depositTotal)}
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.crashTotalLoss > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.45rem', color: 'var(--danger)' }}>
+                                    <div className="chart-tooltip-meta" style={{ marginTop: '0.3rem', color: 'var(--danger)' }}>
                                         Ztráta v události: −{formatCurrency(tooltip.crashTotalLoss)}
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.deposits && tooltip.deposits.length > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: '0.6rem' }}>
+                                    <div className="chart-tooltip-meta" style={{ marginTop: '0.55rem' }}>
                                         <strong>Dokupy</strong>
                                         <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
                                             {tooltip.deposits.map((deposit, index) => (
-                                                <li key={`deposit-${index}`} style={{ marginBottom: '0.25rem' }}>
+                                                <li key={`deposit-${index}`} style={{ marginBottom: '0.2rem' }}>
                                                     {deposit.fundName}: {formatCurrency(deposit.amount)}{deposit.label ? ` · ${deposit.label}` : ''}
                                                 </li>
                                             ))}
@@ -1990,11 +3028,11 @@
                                     </div>
                                 )}
                                 {tooltip.type === 'marker' && tooltip.crashes && tooltip.crashes.length > 0 && (
-                                    <div className="info-card-sub" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.75rem' : '0.6rem', color: 'var(--danger)' }}>
+                                    <div className="chart-tooltip-meta" style={{ marginTop: tooltip.deposits && tooltip.deposits.length > 0 ? '0.7rem' : '0.55rem', color: 'var(--danger)' }}>
                                         <strong style={{ color: 'var(--danger)' }}>Propady</strong>
                                         <ul style={{ paddingLeft: '1rem', margin: '0.35rem 0 0', listStyle: 'disc' }}>
                                             {tooltip.crashes.map((crash, index) => (
-                                                <li key={`crash-${index}`} style={{ marginBottom: '0.25rem' }}>
+                                                <li key={`crash-${index}`} style={{ marginBottom: '0.2rem' }}>
                                                     {crash.fundName}: −{formatCurrency(crash.loss || 0)}{typeof crash.haircut === 'number' ? ` · Propad ${formatPercent(crash.haircut)}` : ''}
                                                 </li>
                                             ))}
@@ -2033,153 +3071,284 @@
                 () => stages.filter((stage) => stage && stage.available),
                 [stages],
             );
-            const fallbackKey = availableStages.length > 0 ? availableStages[availableStages.length - 1].key : null;
-            const [view, setView] = useState(fallbackKey);
+            const [stageIndex, setStageIndex] = useState(
+                availableStages.length > 0 ? availableStages.length - 1 : 0,
+            );
             const containerRef = useRef(null);
             const [tooltip, setTooltip] = useState(null);
+            const projection = useMemo(() => createProjectionEngine(analysis), [analysis]);
+            const {
+                originDate: projectionOrigin,
+                finalDate: projectionFinal,
+                totalYears: projectionTotalYears,
+                projectTo: projectionProjectTo,
+            } = projection;
             const yearlyRows = useMemo(() => {
-                if (!analysis?.hasData) {
-                    return [];
-                }
-                const rawTimeline = Array.isArray(analysis.timeline) ? analysis.timeline : [];
-                const timeline = rawTimeline
-                    .filter((point) => point && point.date instanceof Date)
-                    .sort((a, b) => a.date - b.date);
-                if (timeline.length === 0) {
-                    return [];
-                }
-
-                const scenarioStart =
-                    analysis.startDate instanceof Date ? analysis.startDate : timeline[0].date;
-                const scenarioEnd =
-                    analysis.endDate instanceof Date
-                        ? analysis.endDate
-                        : timeline[timeline.length - 1].date;
-                if (!(scenarioStart instanceof Date) || !(scenarioEnd instanceof Date)) {
+                if (
+                    !analysis?.hasData ||
+                    !(projectionOrigin instanceof Date) ||
+                    !(projectionFinal instanceof Date) ||
+                    typeof projectionProjectTo !== 'function'
+                ) {
                     return [];
                 }
 
-                const crashYears = new Set();
-                if (Array.isArray(analysis.markers)) {
-                    analysis.markers.forEach((marker) => {
-                        if (!marker || !(marker.date instanceof Date)) {
-                            return;
-                        }
-                        const hasCrash = Array.isArray(marker.crashes)
-                            ? marker.crashes.some((crash) => {
-                                  if (!crash) return false;
-                                  const loss = Number(crash.loss);
-                                  const haircut = Number(crash.haircut);
-                                  return (Number.isFinite(loss) && loss > 0) || (Number.isFinite(haircut) && haircut > 0);
-                              })
-                            : false;
-                        if (hasCrash) {
-                            crashYears.add(marker.date.getFullYear());
-                        }
-                    });
-                }
+                const horizonYears = Number.isFinite(projectionTotalYears)
+                    ? projectionTotalYears
+                    : Math.max(0, Math.ceil(diffInYears(projectionOrigin, projectionFinal)));
 
-                const projectFromPoint = (point, targetDate) => {
-                    if (!point || !(point.date instanceof Date)) {
-                        return 0;
-                    }
-                    const baseValue = Number(point.totalValue) || 0;
-                    const targetTime = targetDate.getTime();
-                    const baseTime = point.date.getTime();
-                    if (!Number.isFinite(targetTime) || targetTime <= baseTime) {
-                        return baseValue;
-                    }
-                    const years = diffInYears(point.date, targetDate);
-                    if (!Number.isFinite(years) || years <= 0) {
-                        return baseValue;
-                    }
-                    const snapshot = Array.isArray(point.snapshot) ? point.snapshot : [];
-                    if (snapshot.length === 0) {
-                        return baseValue;
-                    }
-                    let total = 0;
-                    snapshot.forEach((state) => {
-                        const value = Number(state?.value) || 0;
-                        if (value <= 0) return;
-                        const status = state?.status;
-                        const canGrow = status === 'active' && state?.canGrow !== false;
-                        if (canGrow) {
-                            const rate = Number(state?.rate) || 0;
-                            total += value * Math.pow(1 + rate, years);
-                        } else {
-                            total += value;
-                        }
-                    });
-                    return total;
-                };
+                const markerList = Array.isArray(analysis.markers)
+                    ? analysis.markers
+                          .filter((marker) => marker && marker.date instanceof Date)
+                          .sort((a, b) => a.date - b.date)
+                    : [];
 
-                const computeValueAt = (targetDate) => {
-                    if (!(targetDate instanceof Date)) {
-                        return 0;
-                    }
-                    const targetTime = targetDate.getTime();
-                    let basePoint = timeline[0];
-                    for (let i = 0; i < timeline.length; i += 1) {
-                        const point = timeline[i];
-                        if (point.date.getTime() <= targetTime + 1) {
-                            basePoint = point;
-                        } else {
-                            break;
-                        }
-                    }
-                    return projectFromPoint(basePoint, targetDate);
-                };
-
-                const firstYear = scenarioStart.getFullYear();
-                const finalYear = Math.max(scenarioEnd.getFullYear(), firstYear + Y - 1);
                 const rows = [];
-                for (let year = firstYear; year <= finalYear; year += 1) {
-                    const yearStart = year === firstYear ? scenarioStart : new Date(year, 0, 1);
-                    if (yearStart.getTime() > scenarioEnd.getTime()) {
+                for (let offset = 0; offset <= horizonYears; offset += 1) {
+                    const periodStart = offset === 0 ? projectionOrigin : addYears(projectionOrigin, offset);
+                    if (periodStart.getTime() > projectionFinal.getTime()) {
                         break;
                     }
-                    const nextYearStart = new Date(year + 1, 0, 1);
-                    const yearEnd =
-                        year === finalYear || nextYearStart.getTime() > scenarioEnd.getTime()
-                            ? scenarioEnd
-                            : nextYearStart;
-                    if (yearEnd.getTime() <= yearStart.getTime()) {
+
+                    const rawPeriodEnd = addYears(projectionOrigin, offset + 1);
+                    const periodEnd = rawPeriodEnd.getTime() > projectionFinal.getTime() ? projectionFinal : rawPeriodEnd;
+                    if (periodEnd.getTime() <= periodStart.getTime()) {
                         continue;
                     }
-                    const startValue = computeValueAt(yearStart);
-                    const endValue = computeValueAt(yearEnd);
+
+                    const elapsedStart = diffInYears(projectionOrigin, periodStart);
+                    const elapsedEnd = diffInYears(projectionOrigin, periodEnd);
+                    const startBefore = projectionProjectTo(periodStart, {
+                        elapsedHint: elapsedStart,
+                        eventPosition: 'before',
+                    });
+                    const startAfter = projectionProjectTo(periodStart, {
+                        elapsedHint: elapsedStart,
+                        eventPosition: 'after',
+                    });
+                    const endProjection = projectionProjectTo(periodEnd, {
+                        elapsedHint: elapsedEnd,
+                        eventPosition: 'before',
+                    });
+                    const effectiveStart = startBefore || startAfter;
+                    if (!effectiveStart || !endProjection) {
+                        continue;
+                    }
+
+                    const startValueBefore = Number.isFinite(startBefore?.totalValue) ? startBefore.totalValue : null;
+                    const fallbackStartValue = Number.isFinite(startAfter?.totalValue) ? startAfter.totalValue : null;
+                    const startValue =
+                        startValueBefore !== null
+                            ? startValueBefore
+                            : fallbackStartValue !== null
+                            ? fallbackStartValue
+                            : 0;
+                    const endValue = Number.isFinite(endProjection.totalValue) ? endProjection.totalValue : 0;
+                    const grossChange = endValue - startValue;
+
+                    const periodStartTime = periodStart.getTime();
+                    const periodEndTime = periodEnd.getTime();
+                    const inclusiveEnd =
+                        offset === horizonYears || periodEndTime >= projectionFinal.getTime();
+                    const crashesInPeriod = [];
+                    const depositsInPeriod = [];
+                    let depositTotal = 0;
+                    markerList.forEach((marker) => {
+                        const time = marker.date.getTime();
+                        const inRange =
+                            time >= periodStartTime &&
+                            (inclusiveEnd ? time <= periodEndTime : time < periodEndTime);
+                        if (!inRange) {
+                            return;
+                        }
+                        const depositList = Array.isArray(marker.deposits) ? marker.deposits.filter(Boolean) : [];
+                        const validDeposits = depositList.filter((deposit) => {
+                            const amount = Number(deposit.amount);
+                            return Number.isFinite(amount) && amount > 0;
+                        });
+                        if (validDeposits.length > 0) {
+                            let entryAmount = 0;
+                            let entryCount = 0;
+                            let startEntryCount = 0;
+                            let topUpEntryCount = 0;
+                            const fundNames = [];
+                            const labelSet = new Set();
+                            validDeposits.forEach((deposit) => {
+                                const amount = Number(deposit.amount);
+                                entryAmount += amount;
+                                depositTotal += amount;
+                                entryCount += 1;
+                                const rawLabel = typeof deposit.label === 'string' ? deposit.label.trim() : '';
+                                if (rawLabel) {
+                                    labelSet.add(rawLabel);
+                                }
+                                if (typeof deposit.fundName === 'string' && deposit.fundName.trim().length > 0) {
+                                    fundNames.push(deposit.fundName.trim());
+                                }
+                                const rawType = typeof deposit.type === 'string' ? deposit.type.toLowerCase() : '';
+                                if (rawType === 'topup' || (rawLabel && rawLabel.toLowerCase().includes('dokup'))) {
+                                    topUpEntryCount += 1;
+                                } else {
+                                    startEntryCount += 1;
+                                }
+                            });
+                            if (entryAmount > 0) {
+                                depositsInPeriod.push({
+                                    date: marker.date,
+                                    totalAmount: entryAmount,
+                                    entryCount,
+                                    startEntryCount,
+                                    topUpEntryCount,
+                                    fundNames,
+                                    labels: Array.from(labelSet),
+                                });
+                            }
+                        }
+                        (Array.isArray(marker.crashes) ? marker.crashes : [])
+                            .filter(Boolean)
+                            .forEach((crash) => {
+                                const loss = Number(crash.loss);
+                                const haircut = Number(crash.haircut);
+                                const hasLoss = Number.isFinite(loss) && loss > 0;
+                                const hasHaircut = Number.isFinite(haircut) && haircut > 0;
+                                if (!hasLoss && !hasHaircut) {
+                                    return;
+                                }
+                                crashesInPeriod.push({
+                                    fundName: crash.fundName || 'Fond',
+                                    loss: hasLoss ? loss : 0,
+                                    haircut: hasHaircut ? haircut : null,
+                                    date: marker.date,
+                                });
+                            });
+                    });
+
+                    const crashDetails = crashesInPeriod.length
+                        ? {
+                              entries: crashesInPeriod,
+                              eventCount: crashesInPeriod.length,
+                              totalLoss: crashesInPeriod.reduce((acc, entry) => acc + entry.loss, 0),
+                          }
+                        : null;
+
+                    const depositDetails = depositsInPeriod.length
+                        ? {
+                              entries: depositsInPeriod,
+                              totalAmount: depositTotal,
+                              eventCount: depositsInPeriod.length,
+                              entryCount: depositsInPeriod.reduce((acc, entry) => acc + entry.entryCount, 0),
+                              startEntryCount: depositsInPeriod.reduce(
+                                  (acc, entry) => acc + entry.startEntryCount,
+                                  0,
+                              ),
+                              topUpEntryCount: depositsInPeriod.reduce(
+                                  (acc, entry) => acc + entry.topUpEntryCount,
+                                  0,
+                              ),
+                          }
+                        : null;
+
+                    const crashLoss = crashDetails ? crashDetails.totalLoss : 0;
+                    const netResult = grossChange - depositTotal;
+                    let resultStatus = 'neutral';
+                    if (netResult > 1) {
+                        resultStatus = 'positive';
+                    } else if (netResult < -1) {
+                        resultStatus = 'negative';
+                    }
+                    const expectedEndTime = addYears(periodStart, 1).getTime();
+                    const isPartial = expectedEndTime - periodEndTime > 12 * 60 * 60 * 1000;
+
                     rows.push({
-                        year,
+                        key: `period-${offset}`,
+                        year: periodStart.getFullYear(),
+                        periodIndex: offset + 1,
+                        startDate: periodStart,
+                        endDate: periodEnd,
+                        durationYears: diffInYears(periodStart, periodEnd),
+                        offset,
                         startValue,
                         endValue,
-                        gain: endValue - startValue,
-                        hadCrash: crashYears.has(year),
+                        grossChange,
+                        hadCrash: crashesInPeriod.length > 0,
+                        crashDetails,
+                        depositDetails,
+                        depositTotal,
+                        gainStatus: resultStatus,
+                        netResult,
+                        isPartial,
                     });
                 }
+
                 return rows;
-            }, [analysis]);
+            }, [
+                analysis,
+                projectionOrigin,
+                projectionFinal,
+                projectionProjectTo,
+                projectionTotalYears,
+            ]);
+
+            const formatSignedValue = (value) => {
+                if (!Number.isFinite(value)) {
+                    return '—';
+                }
+                const absolute = Math.abs(value);
+                if (absolute < 0.5) {
+                    return formatCurrency(0);
+                }
+                const formatted = formatCurrency(absolute);
+                return value >= 0 ? `+${formatted}` : `−${formatted}`;
+            };
+
+            const formatFundList = (names) => {
+                if (!Array.isArray(names)) return '';
+                const unique = Array.from(
+                    new Set(
+                        names
+                            .filter((name) => typeof name === 'string' && name.trim().length > 0)
+                            .map((name) => name.trim()),
+                    ),
+                );
+                if (unique.length === 0) return '';
+                if (unique.length <= 3) {
+                    return unique.join(', ');
+                }
+                return `${unique.slice(0, 3).join(', ')} + ${unique.length - 3} další`;
+            };
+
+            const yearlyHeaderDescription = projectionOrigin instanceof Date
+                ? [
+                      `Každé období začíná ${formatDate(projectionOrigin)} a končí vždy o rok později`,
+                      projectionFinal instanceof Date
+                          ? `poslední řádek se uzavírá ${formatDate(projectionFinal)}`
+                          : null,
+                  ]
+                      .filter(Boolean)
+                      .join('; ')
+                      .concat('.')
+                : 'Každé období zachycuje změnu portfolia mezi výročními daty zahájení.';
 
             useEffect(() => {
                 if (!availableStages.length) {
-                    if (view !== null) {
-                        setView(null);
-                    }
+                    setStageIndex(0);
                     return;
                 }
-                if (!view || !availableStages.some((stage) => stage.key === view)) {
-                    setView(availableStages[availableStages.length - 1].key);
-                }
-            }, [availableStages, view]);
+                setStageIndex((prev) => {
+                    if (prev >= 0 && prev < availableStages.length) return prev;
+                    return availableStages.length - 1;
+                });
+            }, [availableStages]);
 
             useEffect(() => {
                 setTooltip(null);
-            }, [view, availableStages.length]);
+            }, [stageIndex, availableStages.length]);
 
             if (!analysis?.hasData || availableStages.length === 0) {
                 return null;
             }
 
-            const activeStage = availableStages.find((stage) => stage.key === view) || availableStages[availableStages.length - 1];
+            const activeStage = availableStages[stageIndex] || availableStages[availableStages.length - 1];
             const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
             const total = Number(activeStage?.totalValue) || 0;
             const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
@@ -2252,22 +3421,33 @@
                                 <span className="badge-pill">Alokace</span>
                                 <h2 className="card-header-title">Rozložení portfolia</h2>
                                 <p className="card-header-sub">
-                                Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
-                            </p>
+                                    Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
+                                </p>
+                            </div>
+                            <div className="pie-stage-controls">
+                                <div className="pie-stage-slider">
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={Math.max(availableStages.length - 1, 0)}
+                                        step={1}
+                                        value={stageIndex}
+                                        onChange={(event) => setStageIndex(Number(event.target.value) || 0)}
+                                        aria-label="Změnit okamžik alokace"
+                                    />
+                                </div>
+                                <div className="pie-stage-labels" aria-hidden="true">
+                                    {availableStages.map((stage, index) => (
+                                        <span
+                                            key={stage.key}
+                                            className={`pie-stage-label ${index === stageIndex ? 'is-active' : ''}`}
+                                        >
+                                            {stage.buttonLabel}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                        <div className="pie-stage-controls">
-                            {availableStages.map((stage) => (
-                                <button
-                                    key={stage.key}
-                                    className={`btn btn-secondary ${stage.key === activeStage?.key ? 'active' : ''}`}
-                                    onClick={() => setView(stage.key)}
-                                    type="button"
-                                >
-                                    {stage.buttonLabel}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                     <div className="responsive-grid-two">
                         <div className="pie-chart-wrapper" ref={containerRef}>
                             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
@@ -2333,35 +3513,190 @@
                                 <div>
                                     <span className="badge-pill">Roční vývoj</span>
                                     <h2 className="card-header-title">Roční vývoj portfolia</h2>
-                                    <p className="card-header-sub">Přehled zůstatků na začátku a na konci každého roku.</p>
+                                    <p className="card-header-sub">{yearlyHeaderDescription}</p>
                                 </div>
                             </div>
                             <div className="summary-table-container">
                                 <table className="summary-table">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Rok</th>
-                                            <th scope="col" className="text-right">Začátek roku</th>
-                                            <th scope="col" className="text-right">Konec roku</th>
-                                            <th scope="col" className="text-right">Výnos v roce</th>
+                                            <th scope="col">Období a události</th>
+                                            <th scope="col" className="text-right">Portfolio</th>
+                                            <th scope="col" className="text-right">Výsledek roku</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {yearlyRows.map((row) => (
-                                            <tr key={row.year} className={row.hadCrash ? 'has-crash' : undefined}>
-                                                <td>{row.year}</td>
-                                                <td className="tabular-nums text-right">{formatCurrency(row.startValue)}</td>
-                                                <td className="tabular-nums text-right">{formatCurrency(row.endValue)}</td>
-                                                <td className="tabular-nums text-right">
-                                                    <div className="gain-cell">
-                                                        <span>{formatCurrency(row.gain)}</span>
-                                                        {row.hadCrash && (
-                                                            <span className="crash-indicator" title="V tomto roce došlo k propadu portfolia">Propad</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {yearlyRows.map((row) => {
+                                            const crashTooltip = row.crashDetails
+                                                ? row.crashDetails.entries
+                                                      .map((entry) => {
+                                                          const parts = [];
+                                                          if (entry.date instanceof Date) {
+                                                              parts.push(formatDate(entry.date));
+                                                          }
+                                                          parts.push(entry.fundName);
+                                                          if (entry.loss > 0) {
+                                                              parts.push(`−${formatCurrency(entry.loss)}`);
+                                                          }
+                                                          if (typeof entry.haircut === 'number' && entry.haircut > 0) {
+                                                              parts.push(`Propad ${formatPercent(entry.haircut)}`);
+                                                          }
+                                                          return parts.join(' · ');
+                                                      })
+                                                      .join('\n')
+                                                : null;
+                                            const depositTooltip = row.depositDetails
+                                                ? row.depositDetails.entries
+                                                      .map((entry) => {
+                                                          const parts = [];
+                                                          if (entry.date instanceof Date) {
+                                                              parts.push(formatDate(entry.date));
+                                                          }
+                                                          if (Array.isArray(entry.labels) && entry.labels.length === 1) {
+                                                              parts.push(entry.labels[0]);
+                                                          } else if (entry.startEntryCount > 0 || entry.topUpEntryCount > 0) {
+                                                              const detailParts = [];
+                                                              if (entry.startEntryCount > 0) {
+                                                                  detailParts.push(`${entry.startEntryCount}× počáteční vklad`);
+                                                              }
+                                                              if (entry.topUpEntryCount > 0) {
+                                                                  detailParts.push(`${entry.topUpEntryCount}× dokup`);
+                                                              }
+                                                              if (detailParts.length) {
+                                                                  parts.push(detailParts.join(' + '));
+                                                              }
+                                                          }
+                                                          parts.push(`+${formatCurrency(entry.totalAmount)}`);
+                                                          const fundList = formatFundList(entry.fundNames);
+                                                          if (fundList) {
+                                                              parts.push(fundList);
+                                                          }
+                                                          return parts.join(' · ');
+                                                      })
+                                                      .join('\n')
+                                                : null;
+                                            const rowClassNames = ['summary-table-row'];
+                                            if (row.hadCrash) rowClassNames.push('has-crash');
+                                            if (row.gainStatus) rowClassNames.push(`is-${row.gainStatus}`);
+                                            const depositTotal = Number(row.depositTotal) || 0;
+                                            const crashLoss = row.crashDetails ? row.crashDetails.totalLoss : 0;
+                                            const metaParts = [];
+                                            metaParts.push(`Pohyb portfolia ${formatSignedValue(row.grossChange)}`);
+                                            if (depositTotal > 0.5) {
+                                                metaParts.push(`Vklady ${formatSignedValue(depositTotal)}`);
+                                            }
+                                            if (crashLoss > 0.5) {
+                                                metaParts.push(`Propady ${formatSignedValue(-crashLoss)}`);
+                                            }
+                                            metaParts.push(`Čistý výsledek ${formatSignedValue(row.netResult)}`);
+                                            const gainMeta = metaParts.join(' · ');
+                                            const depositChip = row.depositDetails ? (
+                                                <span
+                                                    className="event-chip event-chip--deposit"
+                                                    data-tooltip={depositTooltip || undefined}
+                                                    tabIndex={depositTooltip ? 0 : undefined}
+                                                    aria-label={`Vklady v období: ${formatCurrency(
+                                                        row.depositDetails.totalAmount,
+                                                    )}`}
+                                                >
+                                                    <span className="event-chip-count">{row.depositDetails.eventCount}×</span>
+                                                    <span className="event-chip-value">
+                                                        {formatSignedValue(row.depositDetails.totalAmount)}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="event-chip event-chip--none" aria-hidden="true">
+                                                    —
+                                                </span>
+                                            );
+                                            const crashChip = row.crashDetails ? (
+                                                <span
+                                                    className="event-chip event-chip--crash"
+                                                    data-tooltip={crashTooltip || undefined}
+                                                    tabIndex={crashTooltip ? 0 : undefined}
+                                                    aria-label={`Propady v období: ${formatCurrency(
+                                                        row.crashDetails.totalLoss,
+                                                    )}`}
+                                                >
+                                                    <span className="event-chip-count">
+                                                        {row.crashDetails.eventCount || row.crashDetails.entries.length}×
+                                                    </span>
+                                                    <span className="event-chip-value">
+                                                        {formatSignedValue(-row.crashDetails.totalLoss)}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="event-chip event-chip--none" aria-hidden="true">
+                                                    —
+                                                </span>
+                                            );
+                                            const eventsClassNames = ['period-events'];
+                                            if (row.depositDetails) eventsClassNames.push('has-deposits');
+                                            if (row.crashDetails) eventsClassNames.push('has-crash');
+                                            return (
+                                                <tr key={row.key || row.year} className={rowClassNames.join(' ')}>
+                                                    <td>
+                                                        <div className="period-cell">
+                                                            <div className="period-label">
+                                                                <span className="period-year">
+                                                                    {row.periodIndex ? `${row.periodIndex}. rok` : row.year}
+                                                                    {row.isPartial ? ' (zkrácený)' : ''}
+                                                                </span>
+                                                                <span className="period-range">
+                                                                    {row.startDate instanceof Date
+                                                                        ? formatDate(row.startDate)
+                                                                        : '—'}{' '}
+                                                                    →{' '}
+                                                                    {row.endDate instanceof Date
+                                                                        ? formatDate(row.endDate)
+                                                                        : '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className={eventsClassNames.join(' ')}>
+                                                                <span className="period-events-title">Události</span>
+                                                                <div className="events-cell">
+                                                                    <div className="event-row">
+                                                                        <span className="event-label">Vklady</span>
+                                                                        {depositChip}
+                                                                    </div>
+                                                                    <div className="event-row">
+                                                                        <span className="event-label">Propady</span>
+                                                                        {crashChip}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="tabular-nums text-right">
+                                                        <div className="portfolio-lines">
+                                                            <div className="portfolio-line">
+                                                                <span>Začátek</span>
+                                                                <span>{formatCurrency(row.startValue)}</span>
+                                                            </div>
+                                                            <div className="portfolio-line">
+                                                                <span>Konec</span>
+                                                                <span>{formatCurrency(row.endValue)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="tabular-nums text-right">
+                                                        <div className="gain-cell">
+                                                            <span className={`gain-value ${row.gainStatus ? `is-${row.gainStatus}` : ''}`}>
+                                                                <span className="gain-value-icon">
+                                                                    {row.gainStatus === 'positive'
+                                                                        ? '▲'
+                                                                        : row.gainStatus === 'negative'
+                                                                        ? '▼'
+                                                                        : '•'}
+                                                                </span>
+                                                                {formatSignedValue(row.netResult)}
+                                                            </span>
+                                                            {gainMeta && <span className="gain-meta">{gainMeta}</span>}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -2392,43 +3727,8 @@
         );
 
         function App() {
-            const [lastSaved, setLastSaved] = useState(null);
-            const [clientName, setClientName] = useState('');
-            const [funds, setFunds] = useState(() => getDefaultFunds());
-
-            const getTimeString = () => new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-
-            useEffect(() => {
-                try {
-                    const stored = localStorage.getItem(STORAGE_KEY);
-                    if (stored) {
-                        const parsed = JSON.parse(stored);
-                        if (Array.isArray(parsed.funds) && parsed.funds.length > 0) {
-                            setFunds(ensureDefaultFunds(parsed.funds));
-                        } else {
-                            setFunds(getDefaultFunds());
-                        }
-                        if (typeof parsed.clientName === 'string') {
-                            setClientName(parsed.clientName);
-                        }
-                        showToast('Data byla úspěšně načtena.');
-                    }
-                    setLastSaved(getTimeString());
-                } catch (error) {
-                    console.error(error);
-                    showToast('Nepodařilo se načíst uložená data.', 'error');
-                }
-            }, []);
-
-            useEffect(() => {
-                try {
-                    const snapshot = { clientName, funds };
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-                    setLastSaved(getTimeString());
-                } catch (error) {
-                    console.error(error);
-                }
-            }, [clientName, funds]);
+            const { push: pushToast } = useToasts();
+            const { clientName, setClientName, funds, setFunds, lastSaved } = useScenarioState(pushToast);
 
             const analysis = useMemo(() => {
                 const prepared = prepareScenarioInput(funds);
@@ -2436,20 +3736,43 @@
             }, [funds]);
 
             const totalInitial = useMemo(() => funds.reduce((sum, fund) => sum + parseMoney(fund.amountStr), 0), [funds]);
+            const hasValidData = !!(analysis?.hasData && analysis.timeline && analysis.timeline.length > 0);
+            const validationMessages = useMemo(() => {
+                const messages = [];
+                if (!hasValidData) {
+                    messages.push('Chybí vstupní data nebo nejsou platná – doplňte vklady či scénáře, aby šlo zobrazit graf a analýzu.');
+                }
+                return messages;
+            }, [hasValidData]);
 
-            const addFund = (segment) => {
-                setFunds((prev) => [...prev, createFund('Nový fond', 5, segment)]);
-            };
+            useEffect(() => {
+                if (typeof window === 'undefined') return;
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('flag.tests') === '1') {
+                    const start = startOfToday();
+                    const demoFund = sanitizeFund(createFund('Self-test fond', 6, 'demo', toInputDate(start)), start);
+                    const result = analyzeScenario([demoFund], [], []);
+                    console.info('[Self-test] timeline points:', result.timeline?.length || 0, 'XIRR:', result.xirr);
+                }
+            }, []);
 
-            const updateFund = (id, patch) => {
+            const addFund = useCallback((segment) => {
+                setFunds((prev) => {
+                    const scenarioStart = deriveScenarioStartDate(prev);
+                    const startDateStr = toInputDate(scenarioStart);
+                    return [...prev, createFund('Nový fond', 5, segment, startDateStr)];
+                });
+            }, [setFunds]);
+
+            const updateFund = useCallback((id, patch) => {
                 setFunds((prev) => prev.map((fund) => (fund.id === id ? { ...fund, ...patch } : fund)));
-            };
+            }, [setFunds]);
 
-            const removeFund = (id) => {
+            const removeFund = useCallback((id) => {
                 setFunds((prev) => prev.filter((fund) => fund.id !== id));
-            };
+            }, [setFunds]);
 
-            const resetSegment = (segment) => {
+            const resetSegment = useCallback((segment) => {
                 setFunds((prev) =>
                     prev.map((fund) =>
                         fund.segment === segment
@@ -2457,9 +3780,9 @@
                             : fund,
                     ),
                 );
-            };
+            }, [setFunds]);
 
-            const demoSegment = (segment) => {
+            const demoSegment = useCallback((segment) => {
                 const config = SEGMENT_CONFIG.find((item) => item.key === segment);
                 if (!config) return;
                 setFunds((prev) =>
@@ -2471,10 +3794,10 @@
                         return { ...fund, amountStr: '0', topUpStr: '0', crashYear: '0', crashMode: 'haircut', haircutStr: '50' };
                     }),
                 );
-                showToast('Segment byl naplněn ukázkovými hodnotami.');
-            };
+                pushToast('Segment byl naplněn ukázkovými hodnotami.');
+            }, [pushToast, setFunds]);
 
-            const exportState = () => {
+            const exportState = useCallback(() => {
                 try {
                     const prepared = prepareScenarioInput(funds);
                     const exportPayload = {
@@ -2494,14 +3817,14 @@
                     element.click();
                     document.body.removeChild(element);
                     URL.revokeObjectURL(url);
-                    showToast('Scénář byl exportován.');
+                    pushToast('Scénář byl exportován.');
                 } catch (error) {
                     console.error(error);
-                    showToast('Chyba při exportu souboru.', 'error');
+                    pushToast('Chyba při exportu souboru.', 'error');
                 }
-            };
+            }, [analysis, clientName, funds, pushToast]);
 
-            const importState = (event) => {
+            const importState = useCallback((event) => {
                 const file = event.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -2514,27 +3837,28 @@
                             setFunds(getDefaultFunds());
                         }
                         setClientName(typeof parsed.clientName === 'string' ? parsed.clientName : '');
-                        showToast('Scénář byl importován.');
+                        pushToast('Scénář byl importován.');
                     } catch (error) {
                         console.error(error);
-                        showToast('Chyba při importu souboru.', 'error');
+                        pushToast('Chyba při importu souboru.', 'error');
                     }
                 };
                 reader.readAsText(file);
                 event.target.value = '';
-            };
+            }, [pushToast, setClientName, setFunds]);
 
-            const resetAll = () => {
+            const resetAll = useCallback(() => {
                 setFunds(getDefaultFunds());
                 setClientName('');
-                showToast('Scénář byl resetován.');
-            };
+                pushToast('Scénář byl resetován.');
+            }, [pushToast, setClientName, setFunds]);
 
             return (
                 <Fragment>
                     <ReportHero lastSaved={lastSaved} clientName={clientName} onClientNameChange={setClientName} analysis={analysis} />
                     <main>
                         <div className="app-shell content-stack">
+                            <ValidationBanner messages={validationMessages} tone={hasValidData ? 'info' : 'warning'} />
                             <DataManagement onExport={exportState} onImport={importState} onReset={resetAll} analysis={analysis} />
                             {SEGMENT_CONFIG.map((segment) => (
                                 <SegmentTable
@@ -2566,7 +3890,13 @@
         }
 
         try {
-            ReactDOM.createRoot(rootElement).render(<App />);
+            ReactDOM.createRoot(rootElement).render(
+                <React.StrictMode>
+                    <ToastProvider>
+                        <App />
+                    </ToastProvider>
+                </React.StrictMode>,
+            );
         } catch (error) {
             console.error('Nepodařilo se inicializovat aplikaci.', error);
             rootElement.innerHTML = '<div class="app-error">Nepodařilo se načíst kalkulačku. Zkuste obnovit stránku nebo kontaktujte podporu.</div>';
