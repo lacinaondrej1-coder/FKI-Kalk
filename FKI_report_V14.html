@@ -955,8 +955,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
+  const CONFIG = {
+      currency: { default: 'CZK', supported: ['CZK', 'EUR'] },
+      locale: { primary: 'cs-CZ' },
+      chart: { snapThresholdPx: 10, guideLineWidth: 1, dotRadius: 4 },
+      sections: ['avant', 'codya', 'atris', 'jt'],
+      providers: { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' },
+      texts: {
+          pageTitle: 'Report investičního portfolia',
+          inputsHint: 'Spravujte transakce a sledujte výkonnost jednotlivých fondů.'
+      }
+  };
+
   const state = {
-      rows: { avant: [], codya: [], atris: [], jt: [] },
+      rows: CONFIG.sections.reduce((acc, key) => { acc[key] = []; return acc; }, {}),
       lastProcessedData: { funds: [], activeFunds: [], hasMixedCurrencies: false, portfolioSummary: {} },
       fundColorMap: {},
       clientName: '',
@@ -966,6 +978,9 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */ clientLanguage: 'cs'
   };
   const elements = {};
+  document.title = CONFIG.texts.pageTitle;
+  const getOutCurrency = () => elements.outCurrency?.value || CONFIG.currency.default;
+  const getLocale = () => CONFIG.locale.primary;
   const updateToneInputs = () => {
       if (!Array.isArray(elements.clientToneInputs)) return;
       elements.clientToneInputs.forEach((input) => {
@@ -989,151 +1004,155 @@ document.addEventListener('DOMContentLoaded', () => {
   let rowSeq = 0;
   let rafId = 0;
 
-  const PROVIDERS = { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' };
+  const PROVIDERS = CONFIG.providers;
   const CHART_COLORS = [
       '#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'
   ];
-  const EXPORT_TOOLTIP_BUNDLE = `(function(){
-  const tooltip=document.getElementById('chart-tooltip');
-  if(!tooltip)return;
-  const showTooltip=(html)=>{
-    tooltip.innerHTML=html||'';
-    tooltip.classList.remove('hidden');
-    tooltip.style.opacity='1';
-  };
-  const hideTooltip=()=>{
-    tooltip.classList.add('hidden');
-    tooltip.style.opacity='0';
-  };
-  const positionTooltip=(clientX,clientY,offsetY=0)=>{
-    let left=window.scrollX+clientX+15;
-    let top=window.scrollY+clientY+15+offsetY;
-    const w=tooltip.offsetWidth;const h=tooltip.offsetHeight;
-    if(w&&left+w>window.scrollX+window.innerWidth){left=window.scrollX+clientX-w-15;}
-    if(h&&top+h>window.scrollY+window.innerHeight){top=window.scrollY+clientY-h-15;}
-    tooltip.style.left=left+'px';
-    tooltip.style.top=top+'px';
-  };
-  const attachDataTooltips=()=>{
-    document.addEventListener('mouseover',e=>{
-      const target=e.target.closest('[data-tooltip-text]');
-      if(!target||target.closest('.line-canvas[data-line-payload]'))return;
-      const content=(target.getAttribute('data-tooltip-text')||'').replace(/&quot;/g,'"');
-      showTooltip(content);
-      const offsetY=target.classList.contains('pie-slice')?10:0;
-      positionTooltip(e.clientX,e.clientY,offsetY);
-    });
-    document.addEventListener('mousemove',e=>{
-      if(tooltip.classList.contains('hidden'))return;
-      if(e.target.closest('.line-canvas[data-line-payload]'))return;
-      const offsetY=e.target.closest('.pie-slice')?10:0;
-      positionTooltip(e.clientX,e.clientY,offsetY);
-    });
-    document.addEventListener('mouseout',e=>{
-      if(!e.target.closest('[data-tooltip-text]'))return;
-      hideTooltip();
-    });
-  };
-  const attachLineCharts=()=>{
-    const canvases=document.querySelectorAll('.line-canvas[data-line-payload]');
-    canvases.forEach(canvas=>{
-      const payloadId=canvas.getAttribute('data-line-payload');
-      const payloadNode=payloadId?document.getElementById(payloadId):null;
-      const raw=payloadNode?.textContent||'';
-      const encoding=(canvas.getAttribute('data-encoding')||'json').toLowerCase();
-      if(!payloadNode||encoding!=='json')return;
-      let points;try{points=JSON.parse(raw);}catch{return;}
-      if(!Array.isArray(points)||!points.length)return;
-      const vbRaw=canvas.getAttribute('data-viewbox')||'';
-      const vbParts=String(vbRaw).split(/[\s,]+/).map(Number).filter(n=>!isNaN(n));
-      const svg=canvas.querySelector('svg');
-      let viewBoxDims=vbParts.length>=2?vbParts.slice(0,2):null;
-      const svgViewBox=svg?.getAttribute('viewBox');
-      if(!viewBoxDims&&svgViewBox){
-        const cleaned=String(svgViewBox).replace(/,/g,' ');
-        const parts=cleaned.split(/\s+/).map(Number).filter(n=>!isNaN(n));
-        if(parts.length>=4){viewBoxDims=parts.slice(2,4);}
-      }
-      if(!viewBoxDims||!svg)return;
-      const[vbWidth,vbHeight]=viewBoxDims;
-      const maxY=Math.max(...points.map(p=>p.y));
-      const ns='http://www.w3.org/2000/svg';
-      let guideLine=svg.querySelector('.line-guide');
-      if(!guideLine){
-        guideLine=document.createElementNS(ns,'line');
-        guideLine.classList.add('line-guide');
-        guideLine.setAttribute('stroke','#9ca3af');
-        guideLine.setAttribute('stroke-width','1');
-        guideLine.style.opacity=0;
-        svg.appendChild(guideLine);
-      }
-      let guideCircle=svg.querySelector('.line-guide-dot');
-      if(!guideCircle){
-        guideCircle=document.createElementNS(ns,'circle');
-        guideCircle.classList.add('line-guide-dot');
-        guideCircle.setAttribute('r','4');
-        guideCircle.setAttribute('fill','#4b5563');
-        guideCircle.style.opacity=0;
-        svg.appendChild(guideCircle);
-      }
-      let interactionLayer=svg.querySelector('.line-interaction');
-      if(!interactionLayer){
-        interactionLayer=document.createElementNS(ns,'rect');
-        interactionLayer.classList.add('line-interaction');
-        interactionLayer.setAttribute('x','0');
-        interactionLayer.setAttribute('y','0');
-        interactionLayer.setAttribute('fill','transparent');
-        svg.appendChild(interactionLayer);
-      }
-      interactionLayer.setAttribute('width',vbWidth);
-      interactionLayer.setAttribute('height',vbHeight);
-      const handleMove=(evt)=>{
-        const rect=canvas.getBoundingClientRect();
-        if(!rect.width||!rect.height)return;
-        const hoverX=(evt.clientX-rect.left)*(vbWidth/rect.width);
-        let best=null;
-        points.forEach(p=>{
-          const dist=Math.abs(p.x-hoverX);
-          const priority=p.priority||0;
-          if(best===null||dist<best.dist||(dist===best.dist&&priority>best.priority)){
-            best={point:p,dist,priority};
-          }
-        });
-        if(!best){
-          guideLine.style.opacity=0;
-          guideCircle.style.opacity=0;
-          hideTooltip();
-          return;
-        }
-        const gx=best.point.x;
-        const gy=best.point.y;
-        guideLine.setAttribute('x1',gx);
-        guideLine.setAttribute('x2',gx);
-        guideLine.setAttribute('y1',gy);
-        guideLine.setAttribute('y2',maxY);
-        guideCircle.setAttribute('cx',gx);
-        guideCircle.setAttribute('cy',gy);
-        guideLine.style.opacity=1;
-        guideCircle.style.opacity=1;
-        const targetX=rect.left+(gx/vbWidth)*rect.width;
-        const targetY=rect.top+(gy/vbHeight)*rect.height;
-        showTooltip(best.point.tooltip||'');
-        positionTooltip(targetX,targetY);
-      };
-      const handleLeave=()=>{
-        guideLine.style.opacity=0;
-        guideCircle.style.opacity=0;
+  const bootstrapTooltipBundle = function bootstrapTooltipBundle(doc = document, chartConfig = { guideLineWidth: 1, dotRadius: 4 }) {
+    const tooltip = doc.getElementById('chart-tooltip');
+    if (!tooltip) return;
+    const win = doc.defaultView || window;
+    const guideWidth = chartConfig?.guideLineWidth ?? 1;
+    const dotRadius = chartConfig?.dotRadius ?? 4;
+    const showTooltip = (html) => {
+      tooltip.innerHTML = html || '';
+      tooltip.classList.remove('hidden');
+      tooltip.style.opacity = '1';
+    };
+    const hideTooltip = () => {
+      tooltip.classList.add('hidden');
+      tooltip.style.opacity = '0';
+    };
+    const positionTooltip = (clientX, clientY, offsetY = 0) => {
+      let left = win.scrollX + clientX + 15;
+      let top = win.scrollY + clientY + 15 + offsetY;
+      const w = tooltip.offsetWidth;
+      const h = tooltip.offsetHeight;
+      if (w && left + w > win.scrollX + win.innerWidth) { left = win.scrollX + clientX - w - 15; }
+      if (h && top + h > win.scrollY + win.innerHeight) { top = win.scrollY + clientY - h - 15; }
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    };
+    const attachDataTooltips = () => {
+      doc.addEventListener('mouseover', (e) => {
+        const target = e.target.closest('[data-tooltip-text]');
+        if (!target || target.closest('.line-canvas[data-line-payload]')) return;
+        const content = (target.getAttribute('data-tooltip-text') || '').replace(/&quot;/g, '"');
+        showTooltip(content);
+        const offsetY = target.classList.contains('pie-slice') ? 10 : 0;
+        positionTooltip(e.clientX, e.clientY, offsetY);
+      });
+      doc.addEventListener('mousemove', (e) => {
+        if (tooltip.classList.contains('hidden')) return;
+        if (e.target.closest('.line-canvas[data-line-payload]')) return;
+        const offsetY = e.target.closest('.pie-slice') ? 10 : 0;
+        positionTooltip(e.clientX, e.clientY, offsetY);
+      });
+      doc.addEventListener('mouseout', (e) => {
+        if (!e.target.closest('[data-tooltip-text]')) return;
         hideTooltip();
-      };
-      interactionLayer.addEventListener('mousemove',handleMove);
-      interactionLayer.addEventListener('mouseleave',handleLeave);
-    });
-  };
-  document.addEventListener('DOMContentLoaded',()=>{
+      });
+    };
+    const attachLineCharts = () => {
+      const canvases = doc.querySelectorAll('.line-canvas[data-line-payload]');
+      canvases.forEach((canvas) => {
+        const payloadId = canvas.getAttribute('data-line-payload');
+        const payloadNode = payloadId ? doc.getElementById(payloadId) : null;
+        const raw = payloadNode?.textContent || '';
+        const encoding = (canvas.getAttribute('data-encoding') || 'json').toLowerCase();
+        if (!payloadNode || encoding !== 'json') return;
+        let points; try { points = JSON.parse(raw); } catch { return; }
+        if (!Array.isArray(points) || !points.length) return;
+        const vbRaw = canvas.getAttribute('data-viewbox') || '';
+        const vbParts = String(vbRaw).split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+        const svg = canvas.querySelector('svg');
+        let viewBoxDims = vbParts.length >= 2 ? vbParts.slice(0, 2) : null;
+        const svgViewBox = svg?.getAttribute('viewBox');
+        if (!viewBoxDims && svgViewBox) {
+          const cleaned = String(svgViewBox).replace(/,/g, ' ');
+          const parts = cleaned.split(/\s+/).map(Number).filter(n => !isNaN(n));
+          if (parts.length >= 4) { viewBoxDims = parts.slice(2, 4); }
+        }
+        if (!viewBoxDims || !svg) return;
+        const [vbWidth, vbHeight] = viewBoxDims;
+        const maxY = Math.max(...points.map(p => p.y));
+        const ns = 'http://www.w3.org/2000/svg';
+        let guideLine = svg.querySelector('.line-guide');
+        if (!guideLine) {
+          guideLine = doc.createElementNS(ns, 'line');
+          guideLine.classList.add('line-guide');
+          guideLine.setAttribute('stroke', '#9ca3af');
+          guideLine.setAttribute('stroke-width', String(guideWidth));
+          guideLine.style.opacity = 0;
+          svg.appendChild(guideLine);
+        }
+        let guideCircle = svg.querySelector('.line-guide-dot');
+        if (!guideCircle) {
+          guideCircle = doc.createElementNS(ns, 'circle');
+          guideCircle.classList.add('line-guide-dot');
+          guideCircle.setAttribute('r', String(dotRadius));
+          guideCircle.setAttribute('fill', '#4b5563');
+          guideCircle.style.opacity = 0;
+          svg.appendChild(guideCircle);
+        }
+        let interactionLayer = svg.querySelector('.line-interaction');
+        if (!interactionLayer) {
+          interactionLayer = doc.createElementNS(ns, 'rect');
+          interactionLayer.classList.add('line-interaction');
+          interactionLayer.setAttribute('x', '0');
+          interactionLayer.setAttribute('y', '0');
+          interactionLayer.setAttribute('fill', 'transparent');
+          svg.appendChild(interactionLayer);
+        }
+        interactionLayer.setAttribute('width', vbWidth);
+        interactionLayer.setAttribute('height', vbHeight);
+        const handleMove = (evt) => {
+          const rect = canvas.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const hoverX = (evt.clientX - rect.left) * (vbWidth / rect.width);
+          let best = null;
+          points.forEach((p) => {
+            const dist = Math.abs(p.x - hoverX);
+            const priority = p.priority || 0;
+            if (best === null || dist < best.dist || (dist === best.dist && priority > best.priority)) {
+              best = { point: p, dist, priority };
+            }
+          });
+          if (!best) {
+            guideLine.style.opacity = 0;
+            guideCircle.style.opacity = 0;
+            hideTooltip();
+            return;
+          }
+          const gx = best.point.x;
+          const gy = best.point.y;
+          guideLine.setAttribute('x1', gx);
+          guideLine.setAttribute('x2', gx);
+          guideLine.setAttribute('y1', gy);
+          guideLine.setAttribute('y2', maxY);
+          guideCircle.setAttribute('cx', gx);
+          guideCircle.setAttribute('cy', gy);
+          guideLine.style.opacity = 1;
+          guideCircle.style.opacity = 1;
+          const targetX = rect.left + (gx / vbWidth) * rect.width;
+          const targetY = rect.top + (gy / vbHeight) * rect.height;
+          showTooltip(best.point.tooltip || '');
+          positionTooltip(targetX, targetY);
+        };
+        const handleLeave = () => {
+          guideLine.style.opacity = 0;
+          guideCircle.style.opacity = 0;
+          hideTooltip();
+        };
+        interactionLayer.addEventListener('mousemove', handleMove);
+        interactionLayer.addEventListener('mouseleave', handleLeave);
+      });
+    };
     attachDataTooltips();
     attachLineCharts();
-  });
-})();`;
+  };
+  const EXPORT_TOOLTIP_BUNDLE = `(${bootstrapTooltipBundle.toString()})(document, ${JSON.stringify(CONFIG.chart)});`;
+  bootstrapTooltipBundle(document, CONFIG.chart);
   const SCRIPT_CLOSE_TAG = '<' + '/script>';
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const PROJECTION_END_YEAR = 2035;
@@ -1500,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const section = document.createElement('section');
       section.className = 'card p-7 sm:p-8 space-y-6';
-      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">${CONFIG.texts.inputsHint}</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
       return section;
   };
   const createInputRow = (providerKey, rowData) => {
@@ -1551,7 +1570,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const select = document.createElement('select');
           select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-primary';
           select.dataset.key = key;
-          ['CZK', 'EUR'].forEach(c => {
+          CONFIG.currency.supported.forEach(c => {
               const option = document.createElement('option');
               option.value = c;
               option.textContent = c;
@@ -1608,7 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
       issueNav: utils.numCZ(r.issueNav),
       currNav: utils.numCZ(r.currNav),
       currDate: utils.toDate(r.currDate),
-      curr: r.curr || 'CZK',
+      curr: r.curr || CONFIG.currency.default,
       /* PATCH */
       freeze: !!r.freeze,
   });
@@ -1672,7 +1691,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
       const { funds, hasMixedCurrencies: hasMixed } = { funds: processedFunds, hasMixedCurrencies: allCurrencies.size > 1 };
-      const outCurr = elements.outCurrency?.value || 'CZK';
+      const outCurr = getOutCurrency();
       const fxRate = utils.numCZ(elements.fxRate?.value);
       const portfolioSummary = calculateSummary(funds, outCurr, fxRate);
       const activeFunds = funds.filter(f => !f.freeze);
@@ -1680,15 +1699,78 @@ document.addEventListener('DOMContentLoaded', () => {
       return state.lastProcessedData;
   };
 
+  const validateData = (funds, { hasMixedCurrencies = false, fxRate = NaN } = {}) => {
+      const issues = [];
+      const hasAnyAmount = funds.some(f => (isFinite(f.invest) && f.invest !== 0) || (isFinite(f.current) && f.current !== 0));
+      if (!hasAnyAmount) {
+          issues.push('Zadaná data neobsahují žádné investice ani aktuální hodnoty.');
+      }
+      if (hasMixedCurrencies && !(Number.isFinite(fxRate) && fxRate > 0)) {
+          issues.push('Při více měnách je nutné doplnit kurz EUR/CZK.');
+      }
+      let seenDeposit = false;
+      const illogicalFlow = funds.some(f => {
+          if (isFinite(f.invest) && f.invest > 0) {
+              seenDeposit = true;
+          }
+          return !seenDeposit && isFinite(f.current) && f.current < 0;
+      });
+      if (illogicalFlow) {
+          issues.push('Detekováno nelogické cashflow: záporná hodnota před prvním vkladem.');
+      }
+      return issues;
+  };
+
+  const runSelfTests = () => {
+      const results = [];
+      const addResult = (name, pass, detail = '') => results.push({ name, pass, detail });
+      try {
+          const irr = finance.xirr([
+              { date: new Date('2023-01-01'), amount: -10000 },
+              { date: new Date('2024-01-01'), amount: 11000 }
+          ]);
+          addResult('XIRR základní scénář', Math.abs((irr || 0) - 0.1) < 1e-3, `Výsledek: ${(irr * 100).toFixed(2)}%`);
+      } catch (e) {
+          addResult('XIRR základní scénář', false, e.message);
+      }
+      const fxCheck = utils.convertAmount(100, 'EUR', 'CZK', 25);
+      addResult('Převod měn EUR→CZK', fxCheck === 2500, `Výsledek: ${fxCheck}`);
+      const dataSample = [
+          { invest: 1000, current: 1100 },
+          { invest: 500, current: 550 }
+      ];
+      const sumInvest = dataSample.reduce((s, r) => s + r.invest, 0);
+      const sumCurrent = dataSample.reduce((s, r) => s + r.current, 0);
+      addResult('Součet vkladů a hodnot', sumInvest === 1500 && sumCurrent === 1650, `Investováno ${sumInvest}, hodnota ${sumCurrent}`);
+      console.groupCollapsed('Self-test výsledky');
+      results.forEach(r => console.log(`${r.pass ? '✅' : '❌'} ${r.name}`, r.detail));
+      console.groupEnd();
+      const debugBox = document.createElement('div');
+      debugBox.style.position = 'fixed';
+      debugBox.style.bottom = '1rem';
+      debugBox.style.right = '1rem';
+      debugBox.style.background = 'rgba(255,255,255,0.95)';
+      debugBox.style.border = '1px solid var(--color-border)';
+      debugBox.style.boxShadow = 'var(--color-shadow)';
+      debugBox.style.padding = '0.75rem 1rem';
+      debugBox.style.borderRadius = '0.75rem';
+      debugBox.style.fontSize = '0.82rem';
+      debugBox.style.zIndex = '70';
+      debugBox.style.color = 'var(--color-text)';
+      debugBox.innerHTML = `<div class="font-semibold mb-1">Self-test</div>${results.map(r => `<div>${r.pass ? '✅' : '❌'} ${htmlEscape(r.name)}${r.detail ? ` – ${htmlEscape(r.detail)}` : ''}</div>`).join('')}`;
+      document.body.appendChild(debugBox);
+  };
+
   const recalculateAndRender = () => {
     const { funds, activeFunds, hasMixedCurrencies, portfolioSummary } = processAllRows();
-    const outCurr = elements.outCurrency?.value || 'CZK';
+    const outCurr = getOutCurrency();
     const fxRate = utils.numCZ(elements.fxRate?.value);
     const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
     const statusContainer = elements.statusContainer || document.getElementById('status-container');
+    const validationIssues = validateData(funds, { hasMixedCurrencies, fxRate });
     if (statusContainer) {
-        if (hasMixedCurrencies && !hasValidFx) {
-            statusContainer.innerHTML = `<div class="rounded-2xl border border-accent-soft bg-accent-soft p-5 text-sm text-body"><strong class="text-primary">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
+        if (validationIssues.length > 0) {
+            statusContainer.innerHTML = validationIssues.map(msg => `<div class="rounded-2xl border border-accent-soft bg-accent-soft p-5 text-sm text-body"><strong class="text-primary">Kontrola vstupů:</strong> ${htmlEscape(msg)}</div>`).join('');
         } else {
             statusContainer.innerHTML = '';
         }
@@ -2541,10 +2623,10 @@ document.addEventListener('DOMContentLoaded', () => {
         interactionLayer.setAttribute('fill', 'transparent');
         const guideLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         guideLine.setAttribute('stroke', '#9ca3af');
-        guideLine.setAttribute('stroke-width', '1');
+        guideLine.setAttribute('stroke-width', String(CONFIG.chart.guideLineWidth));
         guideLine.style.opacity = 0;
         const guideCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        guideCircle.setAttribute('r', '4');
+        guideCircle.setAttribute('r', String(CONFIG.chart.dotRadius));
         guideCircle.setAttribute('fill', '#4b5563');
         guideCircle.style.opacity = 0;
         svg.appendChild(guideLine);
@@ -2552,7 +2634,7 @@ document.addEventListener('DOMContentLoaded', () => {
         svg.appendChild(interactionLayer);
         interactionLayer.addEventListener('mousemove', (e) => {
             const x = e.offsetX;
-            const snapThreshold = 10;
+            const snapThreshold = CONFIG.chart.snapThresholdPx;
             let finalX = x, finalY, finalDate, finalValue, tooltipText;
             let closestSnapPoint = null;
             let minDistance = snapThreshold;
@@ -2640,7 +2722,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const updatePieChartFromSlider = () => {
     /* PATCH */
     const { funds: allFunds = [] } = state.lastProcessedData;
-    const outCurr = elements.outCurrency?.value || 'CZK';
+    const outCurr = getOutCurrency();
     const fxRate = utils.numCZ(elements.fxRate?.value);
     const slider = elements.pieSlider || document.getElementById('pie-time-slider');
     if (!slider) return;
@@ -3505,7 +3587,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const snapshot = processAllRows();
-      const outCurr = elements.outCurrency?.value || 'CZK';
+      const outCurr = getOutCurrency();
       const fxRate = utils.numCZ(elements.fxRate?.value);
       const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
       const conversionReady = !(snapshot.hasMixedCurrencies && !hasValidFx);
@@ -3583,10 +3665,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const rawStyle = document.querySelector('style')?.textContent || '';
       const fontImport = "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');";
-      const cleanedStyle = rawStyle
+      const cleanedStyleBase = rawStyle
         .replace(/@import[^;]+;\s*/g, '')
         .replace(/\s*500;600;700&display=swap'\);?/g, '')
         .trim();
+      const unusedSelectorPatterns = [
+        /\.editable[^}]*\{[\s\S]*?\}\s*/g,
+        /input\s*\[[^\]]*type=number[^\]]*\][^{]*\{[\s\S]*?\}\s*/g,
+        /input\s*\[[^\]]*type=number[^\]]*\][^{]*\{[\s\S]*?\}\s*/g,
+        /\.glass-input[^}]*\{[\s\S]*?\}\s*/g,
+        /#toast-container[^{]*\{[\s\S]*?\}\s*/g,
+        /\.toast[^}]*\{[\s\S]*?\}\s*/g,
+        /\.skip-link[\s\S]*?\{[\s\S]*?\}\s*/g
+      ];
+      const cleanedStyle = unusedSelectorPatterns.reduce((css, pattern) => css.replace(pattern, ''), cleanedStyleBase).trim();
       const styleContent = `${fontImport}\n${cleanedStyle}`;
       /* PATCH */
       const generatedAt = new Date();
@@ -3929,7 +4021,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         const button = e.target.closest('button[data-action]'); if (!button) return;
         const { action, provider, id } = button.dataset;
-        if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: 'CZK', freeze: false }); renderProviderInputs(provider, newId); }
+        if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: CONFIG.currency.default, freeze: false }); renderProviderInputs(provider, newId); }
         if (action === 'delete-row') { const rowElement = button.closest('tr'); rowElement.className = 'fade-out'; rowElement.addEventListener('animationend', () => { state.rows[provider] = state.rows[provider].filter(r => r.id !== parseInt(id,10)); rowElement.remove(); scheduleRecalc(); saveState(); }); }
         if (action === 'delete-all') { if (confirm(`Opravdu chcete smazat všechny řádky pro ${PROVIDERS[provider]}?`)) { state.rows[provider] = []; renderProviderInputs(provider); scheduleRecalc(); saveState(); } }
         /* PATCH */
@@ -4086,6 +4178,10 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltip.style.opacity = '0';
         }
     });
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get('flag.tests') === '1') {
+        runSelfTests();
+    }
     loadState();
   };
   init();
