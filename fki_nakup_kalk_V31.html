@@ -256,13 +256,10 @@
         tbody tr:last-child td { border-bottom: none; }
         .table-actions {
             text-align: right;
-            position: sticky;
-            right: 0;
-            background: var(--surface);
-            box-shadow: -10px 0 18px -14px rgba(13, 44, 84, 0.25);
-            z-index: 2;
+            width: 52px;
+            background: transparent;
         }
-        .table-actions .btn { padding-left: 0.9rem; padding-right: 0.9rem; }
+        .table-actions .btn { padding-left: 0.55rem; padding-right: 0.55rem; }
         .table-input {
             width: 100%;
             border-radius: 0.7rem;
@@ -338,6 +335,49 @@
         .timeline-slider-scale { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); }
         .timeline-slider-scale span { white-space: nowrap; }
         .timeline-slider-invested { font-size: 0.88rem; color: var(--muted); }
+        .allocation-slider { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.8rem; }
+        .allocation-slider .timeline-slider-scale { font-size: 0.8rem; }
+        .allocation-stage-labels { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.4rem; }
+        .allocation-stage-label { text-align: center; font-size: 0.86rem; color: var(--muted); padding: 0.3rem 0.4rem; border-radius: 0.65rem; background: var(--surface-alt); }
+        .allocation-stage-label.is-active { color: var(--primary); background: rgba(13, 44, 84, 0.08); font-weight: 600; }
+        .segment-card .card-header { background: var(--surface-alt); border-radius: 1rem; padding: 1.1rem 1.25rem; align-items: flex-start; }
+        .segment-card .card-header h2 { margin: 0.15rem 0; }
+        .segment-card .card-header .control-bar { margin-left: auto; }
+        .segment-card .card-header .badge-pill { margin-bottom: 0.35rem; }
+        .segment-card .card-section-inner { background: #fff; border-radius: 1rem; padding: 1rem; }
+        .table-col-name { min-width: 160px; }
+        .table-col-return { width: 120px; }
+        .table-col-amount { width: 150px; }
+        .table-col-default { width: 120px; }
+        .table-col-drop { width: 160px; }
+        .table-col-portfolio { width: 120px; }
+        .table-col-return,
+        .table-col-amount,
+        .table-col-default,
+        .table-col-drop,
+        .table-col-portfolio,
+        .table-actions {
+            padding-left: 0.55rem;
+            padding-right: 0.55rem;
+            white-space: nowrap;
+        }
+        .year-cards { display: grid; gap: 1rem; margin-top: 1rem; }
+        .year-card { border: 1px solid var(--border); border-radius: 18px; background: #fff; box-shadow: var(--shadow); overflow: hidden; }
+        .year-card-header { width: 100%; display: flex; gap: 1rem; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; background: var(--surface-alt); border: none; cursor: pointer; }
+        .year-card-header:hover { background: rgba(77, 177, 200, 0.1); }
+        .year-card-title { display: grid; gap: 0.25rem; text-align: left; }
+        .year-card-title strong { font-size: 1rem; color: var(--primary); letter-spacing: -0.01em; }
+        .year-card-meta { font-size: 0.9rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.55rem; }
+        .year-card-body { padding: 1rem 1.2rem 1.2rem; display: grid; gap: 0.85rem; }
+        .year-card-row { display: flex; flex-wrap: wrap; gap: 0.65rem 1.25rem; align-items: center; }
+        .year-card-label { font-size: 0.85rem; color: var(--muted); }
+        .year-card-value { font-weight: 600; color: var(--text); }
+        .year-card-gain { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem; border-radius: 12px; font-weight: 600; }
+        .year-card-gain.is-positive { color: var(--positive); background: rgba(47, 155, 108, 0.14); }
+        .year-card-gain.is-negative { color: var(--danger); background: rgba(217, 75, 75, 0.14); }
+        .year-card-gain.is-neutral { color: var(--muted); background: rgba(31, 42, 55, 0.08); }
+        .year-card-events { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .year-card-divider { height: 1px; background: var(--border); margin: 0.4rem 0; }
         .timeline-narrative { margin-top: 2.15rem; padding: 1.6rem; border-radius: 1.25rem; background: linear-gradient(135deg, rgba(77, 177, 200, 0.08), rgba(13, 44, 84, 0.03)); border: 1px solid rgba(13, 44, 84, 0.08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6); display: grid; gap: 0.85rem; }
         .timeline-narrative-title { font-size: 0.78rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; color: var(--primary); }
         .timeline-narrative-text { margin: 0; font-size: 0.95rem; line-height: 1.7; color: var(--muted); }
@@ -2103,7 +2143,7 @@
                 : 0;
 
             return (
-                <section className="card-section">
+                <section className="card-section segment-card">
                     <div className="card-header">
                         <div>
                             <span className="badge-pill">{segment.label}</span>
@@ -2116,7 +2156,7 @@
                             <button className="btn btn-secondary" onClick={onAddFund}>Přidat fond</button>
                         </div>
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="card-section-inner overflow-x-auto">
                         <table>
                             <thead>
                                 <tr>
@@ -2127,7 +2167,7 @@
                                     <th className="table-col-default">Propad (rok)</th>
                                     <th className="table-col-drop">Propad</th>
                                     <th className="table-col-portfolio">Podíl v portfoliu</th>
-                                    <th style={{ width: '56px' }}></th>
+                                    <th style={{ width: '52px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -3066,16 +3106,10 @@
             );
         };
         const AllocationPie = ({ analysis }) => {
-            const stages = Array.isArray(analysis?.allocationStages) ? analysis.allocationStages : [];
-            const availableStages = useMemo(
-                () => stages.filter((stage) => stage && stage.available),
-                [stages],
-            );
-            const [stageIndex, setStageIndex] = useState(
-                availableStages.length > 0 ? availableStages.length - 1 : 0,
-            );
             const containerRef = useRef(null);
             const [tooltip, setTooltip] = useState(null);
+            const [stageIndex, setStageIndex] = useState(0);
+            const [openYearKey, setOpenYearKey] = useState(null);
             const projection = useMemo(() => createProjectionEngine(analysis), [analysis]);
             const {
                 originDate: projectionOrigin,
@@ -3289,6 +3323,66 @@
                 projectionTotalYears,
             ]);
 
+            const timelinePoints = useMemo(() => {
+                const list = Array.isArray(analysis?.timeline) ? analysis.timeline : [];
+                return list
+                    .filter((point) => point && point.date instanceof Date)
+                    .map((point) => ({ ...point }))
+                    .sort((a, b) => a.date - b.date);
+            }, [analysis]);
+
+            const allocationPoints = useMemo(() => {
+                if (!analysis?.hasData || !timelinePoints.length || yearlyRows.length === 0) {
+                    return [];
+                }
+
+                const findPoint = (targetDate) => {
+                    const targetTime = targetDate.getTime();
+                    let candidate = timelinePoints[0];
+                    for (let i = 0; i < timelinePoints.length; i += 1) {
+                        const point = timelinePoints[i];
+                        if (point.date.getTime() <= targetTime + 1) {
+                            candidate = point;
+                        } else {
+                            break;
+                        }
+                    }
+                    return candidate;
+                };
+
+                return yearlyRows
+                    .map((row, index) => {
+                        const targetDate = row.endDate instanceof Date ? row.endDate : projectionFinal || projectionOrigin;
+                        if (!(targetDate instanceof Date)) return null;
+                        const point = findPoint(targetDate);
+                        if (!point) return null;
+                        const totalValueAtStage = Number(point.totalValue) || 0;
+                        const allocations = Array.isArray(point.snapshot)
+                            ? point.snapshot
+                                  .map((state) => ({
+                                      id: state.id,
+                                      name: state.name || 'Fond',
+                                      value: state.value,
+                                  }))
+                                  .filter((item) => Number(item.value) > 0.01)
+                                  .map((item) => ({
+                                      ...item,
+                                      share: totalValueAtStage > 0 ? item.value / totalValueAtStage : 0,
+                                  }))
+                                  .sort((a, b) => b.value - a.value)
+                            : [];
+                        return {
+                            key: row.key || `alloc-${index}`,
+                            label: row.periodIndex ? `${row.periodIndex}. rok` : formatDate(targetDate),
+                            buttonLabel: row.periodIndex ? `${row.periodIndex}. rok` : formatDate(targetDate),
+                            date: point.date,
+                            totalValue: totalValueAtStage,
+                            allocations,
+                        };
+                    })
+                    .filter(Boolean);
+            }, [analysis, projectionFinal, projectionOrigin, timelinePoints, yearlyRows]);
+
             const formatSignedValue = (value) => {
                 if (!Number.isFinite(value)) {
                     return '—';
@@ -3330,28 +3424,35 @@
                 : 'Každé období zachycuje změnu portfolia mezi výročními daty zahájení.';
 
             useEffect(() => {
-                if (!availableStages.length) {
+                if (!allocationPoints.length) {
                     setStageIndex(0);
                     return;
                 }
                 setStageIndex((prev) => {
-                    if (prev >= 0 && prev < availableStages.length) return prev;
-                    return availableStages.length - 1;
+                    if (prev >= 0 && prev < allocationPoints.length) return prev;
+                    return allocationPoints.length - 1;
                 });
-            }, [availableStages]);
+            }, [allocationPoints.length]);
 
             useEffect(() => {
                 setTooltip(null);
-            }, [stageIndex, availableStages.length]);
+            }, [stageIndex, allocationPoints.length]);
 
-            if (!analysis?.hasData || availableStages.length === 0) {
+            useEffect(() => {
+                const initial = yearlyRows[0]?.key || yearlyRows[0]?.year || null;
+                setOpenYearKey(initial);
+            }, [yearlyRows]);
+
+            if (!analysis?.hasData || allocationPoints.length === 0) {
                 return null;
             }
 
-            const activeStage = availableStages[stageIndex] || availableStages[availableStages.length - 1];
+            const activeStage = allocationPoints[stageIndex] || allocationPoints[allocationPoints.length - 1];
             const data = Array.isArray(activeStage?.allocations) ? activeStage.allocations : [];
             const total = Number(activeStage?.totalValue) || 0;
             const stageDateLabel = activeStage?.date ? formatDate(activeStage.date) : '—';
+            const sliderMax = Math.max(allocationPoints.length - 1, 0);
+            const sliderProgress = sliderMax > 0 ? Math.min(100, (stageIndex / sliderMax) * 100) : 0;
             const CHART_COLORS = ['#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'];
             const outerRadius = 46;
             const innerRadius = 28;
@@ -3424,25 +3525,29 @@
                                     Aktuální pohled: {activeStage?.label || '—'} · {stageDateLabel}
                                 </p>
                             </div>
-                            <div className="pie-stage-controls">
-                                <div className="pie-stage-slider">
-                                    <input
-                                        type="range"
-                                        min={0}
-                                        max={Math.max(availableStages.length - 1, 0)}
-                                        step={1}
-                                        value={stageIndex}
-                                        onChange={(event) => setStageIndex(Number(event.target.value) || 0)}
-                                        aria-label="Změnit okamžik alokace"
-                                    />
+                            <div className="allocation-slider">
+                                <input
+                                    className="timeline-slider-track"
+                                    type="range"
+                                    min={0}
+                                    max={sliderMax}
+                                    step={1}
+                                    value={stageIndex}
+                                    onChange={(event) => setStageIndex(Number(event.target.value) || 0)}
+                                    aria-label="Změnit okamžik alokace"
+                                    style={{ '--slider-progress': `${sliderProgress}%` }}
+                                />
+                                <div className="timeline-slider-scale">
+                                    <span>{allocationPoints[0]?.label}</span>
+                                    <span>{allocationPoints[allocationPoints.length - 1]?.label}</span>
                                 </div>
-                                <div className="pie-stage-labels" aria-hidden="true">
-                                    {availableStages.map((stage, index) => (
+                                <div className="allocation-stage-labels" aria-hidden="true">
+                                    {allocationPoints.map((point, index) => (
                                         <span
-                                            key={stage.key}
-                                            className={`pie-stage-label ${index === stageIndex ? 'is-active' : ''}`}
+                                            key={point.key}
+                                            className={`allocation-stage-label ${index === stageIndex ? 'is-active' : ''}`}
                                         >
-                                            {stage.buttonLabel}
+                                            {point.buttonLabel}
                                         </span>
                                     ))}
                                 </div>
@@ -3516,189 +3621,160 @@
                                     <p className="card-header-sub">{yearlyHeaderDescription}</p>
                                 </div>
                             </div>
-                            <div className="summary-table-container">
-                                <table className="summary-table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Období a události</th>
-                                            <th scope="col" className="text-right">Portfolio</th>
-                                            <th scope="col" className="text-right">Výsledek roku</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {yearlyRows.map((row) => {
-                                            const crashTooltip = row.crashDetails
-                                                ? row.crashDetails.entries
-                                                      .map((entry) => {
-                                                          const parts = [];
-                                                          if (entry.date instanceof Date) {
-                                                              parts.push(formatDate(entry.date));
-                                                          }
-                                                          parts.push(entry.fundName);
-                                                          if (entry.loss > 0) {
-                                                              parts.push(`−${formatCurrency(entry.loss)}`);
-                                                          }
-                                                          if (typeof entry.haircut === 'number' && entry.haircut > 0) {
-                                                              parts.push(`Propad ${formatPercent(entry.haircut)}`);
-                                                          }
-                                                          return parts.join(' · ');
-                                                      })
-                                                      .join('\n')
-                                                : null;
-                                            const depositTooltip = row.depositDetails
-                                                ? row.depositDetails.entries
-                                                      .map((entry) => {
-                                                          const parts = [];
-                                                          if (entry.date instanceof Date) {
-                                                              parts.push(formatDate(entry.date));
-                                                          }
-                                                          if (Array.isArray(entry.labels) && entry.labels.length === 1) {
-                                                              parts.push(entry.labels[0]);
-                                                          } else if (entry.startEntryCount > 0 || entry.topUpEntryCount > 0) {
-                                                              const detailParts = [];
-                                                              if (entry.startEntryCount > 0) {
-                                                                  detailParts.push(`${entry.startEntryCount}× počáteční vklad`);
-                                                              }
-                                                              if (entry.topUpEntryCount > 0) {
-                                                                  detailParts.push(`${entry.topUpEntryCount}× dokup`);
-                                                              }
-                                                              if (detailParts.length) {
-                                                                  parts.push(detailParts.join(' + '));
-                                                              }
-                                                          }
-                                                          parts.push(`+${formatCurrency(entry.totalAmount)}`);
-                                                          const fundList = formatFundList(entry.fundNames);
-                                                          if (fundList) {
-                                                              parts.push(fundList);
-                                                          }
-                                                          return parts.join(' · ');
-                                                      })
-                                                      .join('\n')
-                                                : null;
-                                            const rowClassNames = ['summary-table-row'];
-                                            if (row.hadCrash) rowClassNames.push('has-crash');
-                                            if (row.gainStatus) rowClassNames.push(`is-${row.gainStatus}`);
-                                            const depositTotal = Number(row.depositTotal) || 0;
-                                            const crashLoss = row.crashDetails ? row.crashDetails.totalLoss : 0;
-                                            const metaParts = [];
-                                            metaParts.push(`Pohyb portfolia ${formatSignedValue(row.grossChange)}`);
-                                            if (depositTotal > 0.5) {
-                                                metaParts.push(`Vklady ${formatSignedValue(depositTotal)}`);
-                                            }
-                                            if (crashLoss > 0.5) {
-                                                metaParts.push(`Propady ${formatSignedValue(-crashLoss)}`);
-                                            }
-                                            metaParts.push(`Čistý výsledek ${formatSignedValue(row.netResult)}`);
-                                            const gainMeta = metaParts.join(' · ');
-                                            const depositChip = row.depositDetails ? (
-                                                <span
-                                                    className="event-chip event-chip--deposit"
-                                                    data-tooltip={depositTooltip || undefined}
-                                                    tabIndex={depositTooltip ? 0 : undefined}
-                                                    aria-label={`Vklady v období: ${formatCurrency(
-                                                        row.depositDetails.totalAmount,
-                                                    )}`}
-                                                >
-                                                    <span className="event-chip-count">{row.depositDetails.eventCount}×</span>
-                                                    <span className="event-chip-value">
-                                                        {formatSignedValue(row.depositDetails.totalAmount)}
+                            <div className="year-cards">
+                                {yearlyRows.map((row) => {
+                                    const crashTooltip = row.crashDetails
+                                        ? row.crashDetails.entries
+                                              .map((entry) => {
+                                                  const parts = [];
+                                                  if (entry.date instanceof Date) {
+                                                      parts.push(formatDate(entry.date));
+                                                  }
+                                                  parts.push(entry.fundName);
+                                                  if (entry.loss > 0) {
+                                                      parts.push(`−${formatCurrency(entry.loss)}`);
+                                                  }
+                                                  if (typeof entry.haircut === 'number' && entry.haircut > 0) {
+                                                      parts.push(`Propad ${formatPercent(entry.haircut)}`);
+                                                  }
+                                                  return parts.join(' · ');
+                                              })
+                                              .join('\n')
+                                        : null;
+                                    const depositTooltip = row.depositDetails
+                                        ? row.depositDetails.entries
+                                              .map((entry) => {
+                                                  const parts = [];
+                                                  if (entry.date instanceof Date) {
+                                                      parts.push(formatDate(entry.date));
+                                                  }
+                                                  if (Array.isArray(entry.labels) && entry.labels.length === 1) {
+                                                      parts.push(entry.labels[0]);
+                                                  } else if (entry.startEntryCount > 0 || entry.topUpEntryCount > 0) {
+                                                      const detailParts = [];
+                                                      if (entry.startEntryCount > 0) {
+                                                          detailParts.push(`${entry.startEntryCount}× počáteční vklad`);
+                                                      }
+                                                      if (entry.topUpEntryCount > 0) {
+                                                          detailParts.push(`${entry.topUpEntryCount}× dokup`);
+                                                      }
+                                                      if (detailParts.length) {
+                                                          parts.push(detailParts.join(' + '));
+                                                      }
+                                                  }
+                                                  parts.push(`+${formatCurrency(entry.totalAmount)}`);
+                                                  const fundList = formatFundList(entry.fundNames);
+                                                  if (fundList) {
+                                                      parts.push(fundList);
+                                                  }
+                                                  return parts.join(' · ');
+                                              })
+                                              .join('\n')
+                                        : null;
+                                    const depositTotal = Number(row.depositTotal) || 0;
+                                    const crashLoss = row.crashDetails ? row.crashDetails.totalLoss : 0;
+                                    const metaParts = [];
+                                    metaParts.push(`Pohyb portfolia ${formatSignedValue(row.grossChange)}`);
+                                    if (depositTotal > 0.5) {
+                                        metaParts.push(`Vklady ${formatSignedValue(depositTotal)}`);
+                                    }
+                                    if (crashLoss > 0.5) {
+                                        metaParts.push(`Propady ${formatSignedValue(-crashLoss)}`);
+                                    }
+                                    metaParts.push(`Čistý výsledek ${formatSignedValue(row.netResult)}`);
+                                    const gainMeta = metaParts.join(' · ');
+                                    const depositChip = row.depositDetails ? (
+                                        <span
+                                            className="event-chip event-chip--deposit"
+                                            data-tooltip={depositTooltip || undefined}
+                                            tabIndex={depositTooltip ? 0 : undefined}
+                                            aria-label={`Vklady v období: ${formatCurrency(row.depositDetails.totalAmount)}`}
+                                        >
+                                            <span className="event-chip-count">{row.depositDetails.eventCount}×</span>
+                                            <span className="event-chip-value">
+                                                {formatSignedValue(row.depositDetails.totalAmount)}
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        <span className="event-chip event-chip--none" aria-hidden="true">
+                                            —
+                                        </span>
+                                    );
+                                    const crashChip = row.crashDetails ? (
+                                        <span
+                                            className="event-chip event-chip--crash"
+                                            data-tooltip={crashTooltip || undefined}
+                                            tabIndex={crashTooltip ? 0 : undefined}
+                                            aria-label={`Propady v období: ${formatCurrency(row.crashDetails.totalLoss)}`}
+                                        >
+                                            <span className="event-chip-count">
+                                                {row.crashDetails.eventCount || row.crashDetails.entries.length}×
+                                            </span>
+                                            <span className="event-chip-value">
+                                                {formatSignedValue(-row.crashDetails.totalLoss)}
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        <span className="event-chip event-chip--none" aria-hidden="true">
+                                            —
+                                        </span>
+                                    );
+                                    const gainClass = row.gainStatus ? `is-${row.gainStatus}` : 'is-neutral';
+                                    const isOpen = openYearKey === (row.key || row.year);
+                                    return (
+                                        <div className="year-card" key={row.key || row.year}>
+                                            <button
+                                                className="year-card-header"
+                                                onClick={() => setOpenYearKey(isOpen ? null : row.key || row.year)}
+                                                type="button"
+                                            >
+                                                <div className="year-card-title">
+                                                    <strong>
+                                                        {row.periodIndex ? `${row.periodIndex}. rok` : row.year}
+                                                        {row.isPartial ? ' (zkrácený)' : ''}
+                                                    </strong>
+                                                    <div className="year-card-meta">
+                                                        <span>
+                                                            {row.startDate instanceof Date ? formatDate(row.startDate) : '—'} →{' '}
+                                                            {row.endDate instanceof Date ? formatDate(row.endDate) : '—'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="year-card-meta">
+                                                    <span>Začátek: {formatCurrency(row.startValue)}</span>
+                                                    <span>Konec: {formatCurrency(row.endValue)}</span>
+                                                    <span className={`year-card-gain ${gainClass}`}>
+                                                        Výsledek {formatSignedValue(row.netResult)}
                                                     </span>
-                                                </span>
-                                            ) : (
-                                                <span className="event-chip event-chip--none" aria-hidden="true">
-                                                    —
-                                                </span>
-                                            );
-                                            const crashChip = row.crashDetails ? (
-                                                <span
-                                                    className="event-chip event-chip--crash"
-                                                    data-tooltip={crashTooltip || undefined}
-                                                    tabIndex={crashTooltip ? 0 : undefined}
-                                                    aria-label={`Propady v období: ${formatCurrency(
-                                                        row.crashDetails.totalLoss,
-                                                    )}`}
-                                                >
-                                                    <span className="event-chip-count">
-                                                        {row.crashDetails.eventCount || row.crashDetails.entries.length}×
-                                                    </span>
-                                                    <span className="event-chip-value">
-                                                        {formatSignedValue(-row.crashDetails.totalLoss)}
-                                                    </span>
-                                                </span>
-                                            ) : (
-                                                <span className="event-chip event-chip--none" aria-hidden="true">
-                                                    —
-                                                </span>
-                                            );
-                                            const eventsClassNames = ['period-events'];
-                                            if (row.depositDetails) eventsClassNames.push('has-deposits');
-                                            if (row.crashDetails) eventsClassNames.push('has-crash');
-                                            return (
-                                                <tr key={row.key || row.year} className={rowClassNames.join(' ')}>
-                                                    <td>
-                                                        <div className="period-cell">
-                                                            <div className="period-label">
-                                                                <span className="period-year">
-                                                                    {row.periodIndex ? `${row.periodIndex}. rok` : row.year}
-                                                                    {row.isPartial ? ' (zkrácený)' : ''}
-                                                                </span>
-                                                                <span className="period-range">
-                                                                    {row.startDate instanceof Date
-                                                                        ? formatDate(row.startDate)
-                                                                        : '—'}{' '}
-                                                                    →{' '}
-                                                                    {row.endDate instanceof Date
-                                                                        ? formatDate(row.endDate)
-                                                                        : '—'}
-                                                                </span>
-                                                            </div>
-                                                            <div className={eventsClassNames.join(' ')}>
-                                                                <span className="period-events-title">Události</span>
-                                                                <div className="events-cell">
-                                                                    <div className="event-row">
-                                                                        <span className="event-label">Vklady</span>
-                                                                        {depositChip}
-                                                                    </div>
-                                                                    <div className="event-row">
-                                                                        <span className="event-label">Propady</span>
-                                                                        {crashChip}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
+                                                </div>
+                                            </button>
+                                            {isOpen && (
+                                                <div className="year-card-body">
+                                                    <div className="year-card-row">
+                                                        <span className="year-card-label">Události</span>
+                                                        <div className="year-card-events">
+                                                            {depositChip}
+                                                            {crashChip}
                                                         </div>
-                                                    </td>
-                                                    <td className="tabular-nums text-right">
-                                                        <div className="portfolio-lines">
-                                                            <div className="portfolio-line">
-                                                                <span>Začátek</span>
-                                                                <span>{formatCurrency(row.startValue)}</span>
-                                                            </div>
-                                                            <div className="portfolio-line">
-                                                                <span>Konec</span>
-                                                                <span>{formatCurrency(row.endValue)}</span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="tabular-nums text-right">
-                                                        <div className="gain-cell">
-                                                            <span className={`gain-value ${row.gainStatus ? `is-${row.gainStatus}` : ''}`}>
-                                                                <span className="gain-value-icon">
-                                                                    {row.gainStatus === 'positive'
-                                                                        ? '▲'
-                                                                        : row.gainStatus === 'negative'
-                                                                        ? '▼'
-                                                                        : '•'}
-                                                                </span>
-                                                                {formatSignedValue(row.netResult)}
-                                                            </span>
-                                                            {gainMeta && <span className="gain-meta">{gainMeta}</span>}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                                    </div>
+                                                    <div className="year-card-divider" />
+                                                    <div className="year-card-row">
+                                                        <span className="year-card-label">Pohyb portfolia</span>
+                                                        <span className="year-card-value gain-meta">{gainMeta}</span>
+                                                    </div>
+                                                    <div className="year-card-row">
+                                                        <span className="year-card-label">Popis</span>
+                                                        <span className="year-card-value" style={{ color: 'var(--muted)' }}>
+                                                            {row.hadCrash
+                                                                ? 'Období obsahuje propad – výsledky reflektují zmrazené části portfolia.'
+                                                                : 'Standardní růst bez propadů, výsledek odráží čistý výkon a vklady.'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </section>
                     )}
