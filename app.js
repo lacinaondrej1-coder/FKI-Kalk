@@ -39,6 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
       '#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'
   ];
   const SCRIPT_CLOSE_TAG = '<' + '/script>';
+  const loadStyleContent = (() => {
+      let cached;
+      const normalize = (css) => `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${(css || '').replace(/@import[^;]+;\s*/g, '')}`;
+      return async () => {
+          if (cached !== undefined) return cached;
+          const preferredLink = document.querySelector('link[rel="stylesheet"][href$="styles.css"]') || document.querySelector('link[rel="stylesheet"]');
+          if (preferredLink?.href) {
+              try {
+                  const response = await fetch(preferredLink.href);
+                  if (!response.ok) throw new Error(`Failed to load stylesheet: ${response.status}`);
+                  const css = await response.text();
+                  cached = normalize(css);
+                  return cached;
+              } catch (err) {
+                  console.warn('Using inline stylesheet fallback for export.', err);
+              }
+          }
+          const inlineCss = document.querySelector('style')?.textContent || '';
+          cached = normalize(inlineCss);
+          return cached;
+      };
+  })();
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const PROJECTION_END_YEAR = 2035;
   const getColor = (fundName) => {
@@ -2430,7 +2452,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
   };
 
-  const exportToStaticHTML = () => {
+  const exportToStaticHTML = async () => {
       /* PATCH: guard export pipeline so errors surface and download still proceeds when possible */
       const failExport = (err) => {
           console.error('Export failed:', err);
@@ -2563,8 +2585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </article>
       </div>`;
 
-      const rawStyle = document.querySelector('style')?.textContent || '';
-      const styleContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${rawStyle.replace(/@import[^;]+;\s*/g, '')}`;
+      const styleContent = await loadStyleContent();
       /* PATCH */
       const generatedAt = new Date();
       /* PATCH */
@@ -3089,7 +3110,12 @@ const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
         }
         if (action === 'export-json') exportState();
         if (action === 'import-json') elements.importFile?.click();
-        if (action === 'export-html') exportToStaticHTML();
+        if (action === 'export-html') {
+            exportToStaticHTML().catch((err) => {
+                console.error('Export HTML failed:', err);
+                showToast('Export se nepodařil, zkontrolujte konzoli.', 'error');
+            });
+        }
         if (action === 'add-sample') {
             const today = new Date().toISOString().split('T')[0];
             const SAMPLES = {
