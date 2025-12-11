@@ -134,13 +134,14 @@
         transition: opacity 0.15s ease;
         font-size: 0.82rem;
         line-height: 1.45;
-        background: rgba(15, 23, 42, 0.95);
-        color: #f9fafb;
-        padding: 0.5rem 0.65rem;
-        border-radius: 0.55rem;
-        box-shadow: var(--color-shadow-strong);
+        background: var(--color-card);
+        color: var(--color-text);
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.7rem;
+        box-shadow: var(--color-shadow);
         opacity: 0;
-        max-width: min(300px, 90vw);
+        max-width: min(320px, 90vw);
         overflow-wrap: anywhere;
     }
 
@@ -3604,9 +3605,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if(!viewBoxDims||!svg)return;
       const[vbWidth,vbHeight]=viewBoxDims;
-      const baselineRaw=canvas.getAttribute('data-baseline');
-      const parsedBaseline=Number(baselineRaw);
-      const baselineY=Number.isFinite(parsedBaseline)?parsedBaseline:vbHeight;
+      const maxY=Math.max(...points.map(p=>p.y));
       const ns='http://www.w3.org/2000/svg';
       let guideLine=svg.querySelector('.line-guide');
       if(!guideLine){
@@ -3657,11 +3656,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const gx=best.point.x;
         const gy=best.point.y;
-        const yStart=Math.min(gy,baselineY);
         guideLine.setAttribute('x1',gx);
         guideLine.setAttribute('x2',gx);
-        guideLine.setAttribute('y1',yStart);
-        guideLine.setAttribute('y2',baselineY);
+        guideLine.setAttribute('y1',gy);
+        guideLine.setAttribute('y2',maxY);
         guideCircle.setAttribute('cx',gx);
         guideCircle.setAttribute('cy',gy);
         guideLine.style.opacity=1;
