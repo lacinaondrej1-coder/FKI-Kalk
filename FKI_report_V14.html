@@ -129,17 +129,18 @@
 
     #chart-tooltip {
         position: absolute;
-        z-index: 20;
-        transition: opacity 0.2s;
         pointer-events: none;
-        background: var(--color-card);
-        border: 1px solid var(--color-border);
-        color: var(--color-text);
-        border-radius: 0.75rem;
-        box-shadow: var(--color-shadow);
-        padding: 0.5rem 0.75rem;
+        z-index: 60;
+        transition: opacity 0.15s ease;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        background: rgba(15, 23, 42, 0.95);
+        color: #f9fafb;
+        padding: 0.5rem 0.65rem;
+        border-radius: 0.55rem;
+        box-shadow: var(--color-shadow-strong);
         opacity: 0;
-        max-width: min(320px, 90vw);
+        max-width: min(300px, 90vw);
         overflow-wrap: anywhere;
     }
 
@@ -2152,7 +2153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">${baseLegend}</span></div>`;
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
-        const payloadAttr = exportChart.payloadId ? ` data-line-payload="${htmlEscape(exportChart.payloadId)}" data-encoding="json" data-viewbox="${htmlEscape(exportChart.viewBox || '')}"` : '';
+        const payloadAttr = exportChart.payloadId ? ` data-line-payload="${htmlEscape(exportChart.payloadId)}" data-encoding="json" data-viewbox="${htmlEscape(exportChart.viewBox || '')}" data-baseline="${htmlEscape(exportChart.baseline || '')}"` : '';
         const payloadScript = exportChart.payloadJson
             ? `<script type="application/json" id="${htmlEscape(exportChart.payloadId)}">${exportChart.payloadJson}${SCRIPT_CLOSE_TAG}`
             : '';
@@ -2853,20 +2854,19 @@ document.addEventListener('DOMContentLoaded', () => {
               const breakdownLabel = point.breakdown
                   .map(item => `${item.fund}: ${formatCurrency0(item.amount, outCurr, currencyFormat)}`)
                   .join(' • ');
-              const heading = tooltipCopy.depositMulti ? tooltipCopy.depositMulti(dateLabel, breakdownLabel) : `Vklady (${dateLabel})`;
-              return `<div class="font-bold text-primary">${heading}</div>${breakdown}`;
+              const heading = tooltipCopy.depositMulti ? tooltipCopy.depositMulti(dateLabel, breakdownLabel) : `Vklady ${dateLabel}`;
+              return `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-accent">${amountLabel}</div>${breakdown}`;
           }
           if (point.breakdown.length === 1) {
               const entry = point.breakdown[0];
-              if (tooltipCopy.depositSingle) {
-                  return tooltipCopy.depositSingle(entry.fund, amountLabel, dateLabel);
-              }
-              return `<div class="text-primary">Vklad (${htmlEscape(entry.fund)}): ${amountLabel} (${dateLabel})</div>`;
+              const heading = tooltipCopy.depositSingle ? tooltipCopy.depositSingle(entry.fund, amountLabel, dateLabel) : `Vklad ${htmlEscape(entry.fund)} • ${dateLabel}`;
+              return `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-accent">${amountLabel}</div>`;
           }
           if (tooltipCopy.generic) {
-              return tooltipCopy.generic(dateLabel, amountLabel);
+              const genericContent = tooltipCopy.generic(dateLabel, amountLabel);
+              return `<div class="font-semibold text-primary">${genericContent}</div>`;
           }
-          return `<div class="font-bold text-primary">${dateLabel}</div><div class="text-body">${amountLabel}</div>`;
+          return `<div class="font-semibold text-primary">${dateLabel}</div><div class="font-semibold text-accent">${amountLabel}</div>`;
       };
       const depositMarkers = depositPoints.map(point => {
           const tooltip = formatDepositTooltip(point);
@@ -2876,16 +2876,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const projectionMarkers = projectionPoints.map(point => {
           const dateLabel = formatDateLocal(point.date);
           const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
-          const defaultTooltip = `<div class="font-bold text-primary">${dateLabel}</div><div class="text-body">${valueLabel}</div>`;
-          const tooltip = tooltipCopy.projection ? tooltipCopy.projection(dateLabel, valueLabel) : defaultTooltip;
+          const heading = tooltipCopy.projectionHeading ? tooltipCopy.projectionHeading(dateLabel, valueLabel) : `Odhad ${dateLabel}:`;
+          const valueLine = tooltipCopy.projectionValue ? tooltipCopy.projectionValue(dateLabel, valueLabel) : valueLabel;
+          const tooltip = `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-primary">${valueLine}</div>`;
           return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"></circle>`;
       }).join('');
 
       /* PATCH */
       const formattedTodayValue = formattedTodayValueOverride || formatCurrency0(valueAtToday, outCurr, currencyFormat);
-      const todayTooltip = tooltipCopy.today
-          ? tooltipCopy.today(formatDateLocal(today), formattedTodayValue)
-          : `<div class="font-bold text-primary">Dnes: ${formatDateLocal(today)}</div><div class="text-body">Dopočítaná hodnota: ${formattedTodayValue}</div>`;
+      const todayHeading = tooltipCopy.todayHeading
+          ? tooltipCopy.todayHeading(formatDateLocal(today), formattedTodayValue)
+          : `Dnes: ${formatDateLocal(today)}`;
+      const todayValueLine = tooltipCopy.todayValue
+          ? tooltipCopy.todayValue(formatDateLocal(today), formattedTodayValue)
+          : `Dopočítaná hodnota: ${formattedTodayValue}`;
+      const todayTooltip = `<div class="font-semibold text-primary">${todayHeading}</div><div class="font-semibold text-accent">${todayValueLine}</div>`;
       const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" aria-label="${htmlEscape(todayTooltip)}" data-tooltip-text="${htmlEscape(todayTooltip)}"></circle>` : '';
 
       const startLabel = formatDateLocal(firstDate);
@@ -2928,17 +2933,20 @@ document.addEventListener('DOMContentLoaded', () => {
               priority
           });
       };
-      const formatValueTooltip = (date, value) => {
+      const formatValueTooltip = (date, value, labelPrefix = '') => {
           const dateLabel = formatDateLocal(date);
+          const heading = labelPrefix ? `${labelPrefix} ${dateLabel}` : dateLabel;
           const valueLabel = formatCurrency0(value, outCurr, currencyFormat);
-          return `<div class="font-bold text-primary">${dateLabel}</div><div class="text-body">${valueLabel}</div>`;
+          return `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-primary">${valueLabel}</div>`;
       };
       const baseSeries = hasIrr ? valuePoints : contributionPoints;
       baseSeries.forEach(point => pushHoverPoint(point, formatValueTooltip(point.date, point.value), 1));
       projectionPoints.forEach(point => {
           const dateLabel = formatDateLocal(point.date);
           const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
-          const tooltip = tooltipCopy.projection ? tooltipCopy.projection(dateLabel, valueLabel) : formatValueTooltip(point.date, point.value);
+          const heading = tooltipCopy.projectionHeading ? tooltipCopy.projectionHeading(dateLabel, valueLabel) : `Odhad ${dateLabel}:`;
+          const valueLine = tooltipCopy.projectionValue ? tooltipCopy.projectionValue(dateLabel, valueLabel) : valueLabel;
+          const tooltip = `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-primary">${valueLine}</div>`;
           pushHoverPoint(point, tooltip, 1);
       });
       depositPoints.forEach(point => {
@@ -2971,7 +2979,8 @@ document.addEventListener('DOMContentLoaded', () => {
           ariaLabel,
           payloadId,
           payloadJson,
-          viewBox: viewBoxAttr
+          viewBox: viewBoxAttr,
+          baseline: baselineY
       };
   };
 
@@ -3542,20 +3551,139 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
       const tooltipScript = `(function(){
-const tooltip=document.getElementById('chart-tooltip');
-if(!tooltip)return;
-const showTooltip=(html)=>{tooltip.innerHTML=html||'';tooltip.classList.remove('hidden');tooltip.style.opacity='1';};
-const hideTooltip=()=>{tooltip.classList.add('hidden');tooltip.style.opacity='0';};
-const positionTooltip=(clientX,clientY)=>{let left=window.scrollX+clientX+15;let top=window.scrollY+clientY+15;const w=tooltip.offsetWidth;const h=tooltip.offsetHeight;if(w&&left+w>window.scrollX+window.innerWidth){left=window.scrollX+clientX-w-15;}if(h&&top+h>window.scrollY+window.innerHeight){top=window.scrollY+clientY-h-15;}tooltip.style.left=left+'px';tooltip.style.top=top+'px';};
-const attachDataTooltips=()=>{document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target||target.closest('.line-canvas[data-line-payload]'))return;const content=(target.getAttribute('data-tooltip-text')||'').replace(/&quot;/g,'"');showTooltip(content);positionTooltip(e.clientX,e.clientY);});document.addEventListener('mousemove',e=>{if(tooltip.classList.contains('hidden'))return;if(e.target.closest('.line-canvas[data-line-payload]'))return;positionTooltip(e.clientX,e.clientY);});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hideTooltip();});};
-const attachLineCharts=()=>{const canvases=document.querySelectorAll('.line-canvas[data-line-payload]');canvases.forEach(canvas=>{const payloadId=canvas.getAttribute('data-line-payload');const payloadNode=payloadId?document.getElementById(payloadId):null;const raw=payloadNode?.textContent||'';const encoding=(canvas.getAttribute('data-encoding')||'json').toLowerCase();if(!payloadNode||encoding!=='json')return;let points;try{points=JSON.parse(raw);}catch{return;}if(!Array.isArray(points)||!points.length)return;const vbRaw=canvas.getAttribute('data-viewbox')||'';const vbParts=String(vbRaw).split(/[\\s,]+/).map(Number).filter(n=>!isNaN(n));const svg=canvas.querySelector('svg');let viewBoxDims=vbParts.length>=2?vbParts.slice(0,2):null;const svgViewBox=svg?.getAttribute('viewBox');if(!viewBoxDims&&svgViewBox){const cleaned=String(svgViewBox).replace(/,/g,' ');const parts=cleaned.split(/\\s+/).map(Number).filter(n=>!isNaN(n));if(parts.length>=4){viewBoxDims=parts.slice(2,4);} }
-if(!viewBoxDims||!svg)return;const[vbWidth,vbHeight]=viewBoxDims;const ns='http://www.w3.org/2000/svg';let guideLine=svg.querySelector('.line-guide');if(!guideLine){guideLine=document.createElementNS(ns,'line');guideLine.classList.add('line-guide');guideLine.setAttribute('stroke','#9ca3af');guideLine.setAttribute('stroke-width','1');guideLine.style.opacity=0;svg.appendChild(guideLine);}let guideCircle=svg.querySelector('.line-guide-dot');if(!guideCircle){guideCircle=document.createElementNS(ns,'circle');guideCircle.classList.add('line-guide-dot');guideCircle.setAttribute('r','4');guideCircle.setAttribute('fill','#4b5563');guideCircle.style.opacity=0;svg.appendChild(guideCircle);}let interactionLayer=svg.querySelector('.line-interaction');if(!interactionLayer){interactionLayer=document.createElementNS(ns,'rect');interactionLayer.classList.add('line-interaction');interactionLayer.setAttribute('x','0');interactionLayer.setAttribute('y','0');interactionLayer.setAttribute('fill','transparent');svg.appendChild(interactionLayer);}interactionLayer.setAttribute('width',vbWidth);interactionLayer.setAttribute('height',vbHeight);
-const handleMove=(evt)=>{const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const hoverX=(evt.clientX-rect.left)*(vbWidth/rect.width);let best=null;points.forEach(p=>{const dist=Math.abs(p.x-hoverX);const priority=p.priority||0;if(best===null||dist<best.dist||(dist===best.dist&&priority>best.priority)){best={point:p,dist,priority};}});if(!best){guideLine.style.opacity=0;guideCircle.style.opacity=0;hideTooltip();return;}const gx=best.point.x;const gy=best.point.y;guideLine.setAttribute('x1',gx);guideLine.setAttribute('x2',gx);guideLine.setAttribute('y1','0');guideLine.setAttribute('y2',vbHeight);guideCircle.setAttribute('cx',gx);guideCircle.setAttribute('cy',gy);guideLine.style.opacity=1;guideCircle.style.opacity=1;const targetX=rect.left+(gx/vbWidth)*rect.width;const targetY=rect.top+(gy/vbHeight)*rect.height;showTooltip(best.point.tooltip||'');positionTooltip(targetX,targetY);};
-const handleLeave=()=>{guideLine.style.opacity=0;guideCircle.style.opacity=0;hideTooltip();};
-interactionLayer.addEventListener('mousemove',handleMove);
-interactionLayer.addEventListener('mouseleave',handleLeave);
-});};
-document.addEventListener('DOMContentLoaded',()=>{attachDataTooltips();attachLineCharts();});
+  const tooltip=document.getElementById('chart-tooltip');
+  if(!tooltip)return;
+  const showTooltip=(html)=>{tooltip.innerHTML=html||'';tooltip.classList.remove('hidden');tooltip.style.opacity='1';};
+  const hideTooltip=()=>{tooltip.classList.add('hidden');tooltip.style.opacity='0';};
+  const positionTooltip=(clientX,clientY)=>{
+    let left=window.scrollX+clientX+15;
+    let top=window.scrollY+clientY+15;
+    const w=tooltip.offsetWidth;const h=tooltip.offsetHeight;
+    if(w&&left+w>window.scrollX+window.innerWidth){left=window.scrollX+clientX-w-15;}
+    if(h&&top+h>window.scrollY+window.innerHeight){top=window.scrollY+clientY-h-15;}
+    tooltip.style.left=left+'px';
+    tooltip.style.top=top+'px';
+  };
+  const attachDataTooltips=()=>{
+    document.addEventListener('mouseover',e=>{
+      const target=e.target.closest('[data-tooltip-text]');
+      if(!target||target.closest('.line-canvas[data-line-payload]'))return;
+      const content=(target.getAttribute('data-tooltip-text')||'').replace(/&quot;/g,'"');
+      showTooltip(content);
+      positionTooltip(e.clientX,e.clientY);
+    });
+    document.addEventListener('mousemove',e=>{
+      if(tooltip.classList.contains('hidden'))return;
+      if(e.target.closest('.line-canvas[data-line-payload]'))return;
+      positionTooltip(e.clientX,e.clientY);
+    });
+    document.addEventListener('mouseout',e=>{
+      if(!e.target.closest('[data-tooltip-text]'))return;
+      hideTooltip();
+    });
+  };
+  const attachLineCharts=()=>{
+    const canvases=document.querySelectorAll('.line-canvas[data-line-payload]');
+    canvases.forEach(canvas=>{
+      const payloadId=canvas.getAttribute('data-line-payload');
+      const payloadNode=payloadId?document.getElementById(payloadId):null;
+      const raw=payloadNode?.textContent||'';
+      const encoding=(canvas.getAttribute('data-encoding')||'json').toLowerCase();
+      if(!payloadNode||encoding!=='json')return;
+      let points;try{points=JSON.parse(raw);}catch{return;}
+      if(!Array.isArray(points)||!points.length)return;
+      const vbRaw=canvas.getAttribute('data-viewbox')||'';
+      const vbParts=String(vbRaw).split(/[\\s,]+/).map(Number).filter(n=>!isNaN(n));
+      const svg=canvas.querySelector('svg');
+      let viewBoxDims=vbParts.length>=2?vbParts.slice(0,2):null;
+      const svgViewBox=svg?.getAttribute('viewBox');
+      if(!viewBoxDims&&svgViewBox){
+        const cleaned=String(svgViewBox).replace(/,/g,' ');
+        const parts=cleaned.split(/\\s+/).map(Number).filter(n=>!isNaN(n));
+        if(parts.length>=4){viewBoxDims=parts.slice(2,4);}
+      }
+      if(!viewBoxDims||!svg)return;
+      const[vbWidth,vbHeight]=viewBoxDims;
+      const baselineRaw=canvas.getAttribute('data-baseline');
+      const parsedBaseline=Number(baselineRaw);
+      const baselineY=Number.isFinite(parsedBaseline)?parsedBaseline:vbHeight;
+      const ns='http://www.w3.org/2000/svg';
+      let guideLine=svg.querySelector('.line-guide');
+      if(!guideLine){
+        guideLine=document.createElementNS(ns,'line');
+        guideLine.classList.add('line-guide');
+        guideLine.setAttribute('stroke','#9ca3af');
+        guideLine.setAttribute('stroke-width','1');
+        guideLine.style.opacity=0;
+        svg.appendChild(guideLine);
+      }
+      let guideCircle=svg.querySelector('.line-guide-dot');
+      if(!guideCircle){
+        guideCircle=document.createElementNS(ns,'circle');
+        guideCircle.classList.add('line-guide-dot');
+        guideCircle.setAttribute('r','4');
+        guideCircle.setAttribute('fill','#4b5563');
+        guideCircle.style.opacity=0;
+        svg.appendChild(guideCircle);
+      }
+      let interactionLayer=svg.querySelector('.line-interaction');
+      if(!interactionLayer){
+        interactionLayer=document.createElementNS(ns,'rect');
+        interactionLayer.classList.add('line-interaction');
+        interactionLayer.setAttribute('x','0');
+        interactionLayer.setAttribute('y','0');
+        interactionLayer.setAttribute('fill','transparent');
+        svg.appendChild(interactionLayer);
+      }
+      interactionLayer.setAttribute('width',vbWidth);
+      interactionLayer.setAttribute('height',vbHeight);
+      const handleMove=(evt)=>{
+        const rect=canvas.getBoundingClientRect();
+        if(!rect.width||!rect.height)return;
+        const hoverX=(evt.clientX-rect.left)*(vbWidth/rect.width);
+        let best=null;
+        points.forEach(p=>{
+          const dist=Math.abs(p.x-hoverX);
+          const priority=p.priority||0;
+          if(best===null||dist<best.dist||(dist===best.dist&&priority>best.priority)){
+            best={point:p,dist,priority};
+          }
+        });
+        if(!best){
+          guideLine.style.opacity=0;
+          guideCircle.style.opacity=0;
+          hideTooltip();
+          return;
+        }
+        const gx=best.point.x;
+        const gy=best.point.y;
+        const yStart=Math.min(gy,baselineY);
+        guideLine.setAttribute('x1',gx);
+        guideLine.setAttribute('x2',gx);
+        guideLine.setAttribute('y1',yStart);
+        guideLine.setAttribute('y2',baselineY);
+        guideCircle.setAttribute('cx',gx);
+        guideCircle.setAttribute('cy',gy);
+        guideLine.style.opacity=1;
+        guideCircle.style.opacity=1;
+        const targetX=rect.left+(gx/vbWidth)*rect.width;
+        const targetY=rect.top+(gy/vbHeight)*rect.height;
+        showTooltip(best.point.tooltip||'');
+        positionTooltip(targetX,targetY);
+      };
+      const handleLeave=()=>{
+        guideLine.style.opacity=0;
+        guideCircle.style.opacity=0;
+        hideTooltip();
+      };
+      interactionLayer.addEventListener('mousemove',handleMove);
+      interactionLayer.addEventListener('mouseleave',handleLeave);
+    });
+  };
+  document.addEventListener('DOMContentLoaded',()=>{
+    attachDataTooltips();
+    attachLineCharts();
+  });
 })();`;
       /* PATCH */
       const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
