@@ -145,6 +145,17 @@
         overflow-wrap: anywhere;
     }
 
+    /* Export-only tooltip override */
+    body:not(.antialiased) #chart-tooltip {
+        background: #ffffff;
+        color: var(--color-text);
+        border: 1px solid var(--color-border);
+        border-radius: 0.75rem;
+        box-shadow: var(--color-shadow-strong);
+        padding: 0.55rem 0.8rem;
+        backdrop-filter: blur(4px);
+    }
+
     /* PATCH */
     .card {
         background: var(--color-card);
@@ -3556,9 +3567,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if(!tooltip)return;
   const showTooltip=(html)=>{tooltip.innerHTML=html||'';tooltip.classList.remove('hidden');tooltip.style.opacity='1';};
   const hideTooltip=()=>{tooltip.classList.add('hidden');tooltip.style.opacity='0';};
-  const positionTooltip=(clientX,clientY)=>{
+  const positionTooltip=(clientX,clientY,offsetY=0)=>{
     let left=window.scrollX+clientX+15;
-    let top=window.scrollY+clientY+15;
+    let top=window.scrollY+clientY+15+offsetY;
     const w=tooltip.offsetWidth;const h=tooltip.offsetHeight;
     if(w&&left+w>window.scrollX+window.innerWidth){left=window.scrollX+clientX-w-15;}
     if(h&&top+h>window.scrollY+window.innerHeight){top=window.scrollY+clientY-h-15;}
@@ -3571,12 +3582,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!target||target.closest('.line-canvas[data-line-payload]'))return;
       const content=(target.getAttribute('data-tooltip-text')||'').replace(/&quot;/g,'"');
       showTooltip(content);
-      positionTooltip(e.clientX,e.clientY);
+      const offsetY=target.classList.contains('pie-slice')?10:0;
+      positionTooltip(e.clientX,e.clientY,offsetY);
     });
     document.addEventListener('mousemove',e=>{
       if(tooltip.classList.contains('hidden'))return;
       if(e.target.closest('.line-canvas[data-line-payload]'))return;
-      positionTooltip(e.clientX,e.clientY);
+      const offsetY=e.target.closest('.pie-slice')?10:0;
+      positionTooltip(e.clientX,e.clientY,offsetY);
     });
     document.addEventListener('mouseout',e=>{
       if(!e.target.closest('[data-tooltip-text]'))return;
