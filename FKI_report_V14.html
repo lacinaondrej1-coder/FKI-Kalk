@@ -77,6 +77,26 @@
     details > summary .summary-arrow { transition: transform 0.2s; }
     details[open] > summary .summary-arrow { transform: rotate(90deg); }
 
+    .skip-link {
+        position: absolute;
+        left: -999px;
+        top: 1rem;
+        z-index: 100;
+        background: var(--color-primary);
+        color: #fff;
+        padding: 0.85rem 1.2rem;
+        border-radius: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        box-shadow: var(--color-shadow);
+        transition: left 0.2s ease, box-shadow 0.2s ease, outline-offset 0.2s ease;
+    }
+    .skip-link:focus {
+        left: 1rem;
+        outline: 3px solid rgba(77, 177, 200, 0.4);
+        outline-offset: 4px;
+    }
+
     #toast-container {
         position: fixed;
         top: 1.5rem;
@@ -653,6 +673,7 @@
   </style>
 </head>
 <body class="antialiased text-body">
+  <a class="skip-link" href="#main-content">Přeskočit na hlavní obsah</a>
   <header class="report-header">
     <div class="report-header__inner">
       <div class="brand-logo">Fair<span>Life</span></div>
@@ -693,7 +714,7 @@
   <!-- Toast container for notifications -->
   <div id="toast-container"></div>
 
-  <main class="relative px-4 sm:px-6 lg:px-8 py-12">
+  <main id="main-content" tabindex="-1" class="relative px-4 sm:px-6 lg:px-8 py-12">
     <div class="max-w-7xl mx-auto space-y-12">
 
       <!-- === SELF-TESTS & STATUS NOTIFICATIONS === -->
