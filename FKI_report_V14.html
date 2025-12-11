@@ -2153,7 +2153,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
         const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
         const payloadAttr = exportChart.payloadId ? ` data-line-payload="${htmlEscape(exportChart.payloadId)}" data-encoding="json" data-viewbox="${htmlEscape(exportChart.viewBox || '')}"` : '';
-        const payloadScript = exportChart.payloadJson ? `<script type="application/json" id="${htmlEscape(exportChart.payloadId)}">${exportChart.payloadJson}</script>` : '';
+        const payloadScript = exportChart.payloadJson
+            ? `<script type="application/json" id="${htmlEscape(exportChart.payloadId)}">${exportChart.payloadJson}${SCRIPT_CLOSE_TAG}`
+            : '';
         return `<div class="line-export">${legend}<div class="line-canvas" role="img" aria-label="${ariaAttr}"${payloadAttr}>${exportChart.svg}</div>${payloadScript}${footnote}</div>`;
     }
 
