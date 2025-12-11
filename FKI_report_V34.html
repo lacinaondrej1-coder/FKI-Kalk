@@ -1017,20 +1017,21 @@
         tooltip.style.top = `${newTop}px`;
     });
     document.addEventListener('mouseover', e => {
-        const segment = e.target.closest('.pie-segment');
-        const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
-        if (segment) {
-            tooltip.innerHTML = `<div class="font-bold text-primary">${segment.dataset.name}</div><div class="text-body">${segment.dataset.value} (${segment.dataset.percent})</div>`;
-            tooltip.classList.remove('hidden');
-            tooltip.style.opacity = '1';
-        } else if (dot && dot.dataset.tooltipText) {
-            tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"');
-            tooltip.classList.remove('hidden');
-            tooltip.style.opacity = '1';
+        if (!tooltip) return;
+        const target = e.target.closest('.pie-segment, .pie-slice, .line-chart-dot, circle[data-tooltip-text], [data-tooltip-text]');
+        if (!target) return;
+        if (target.classList.contains('pie-segment')) {
+            tooltip.innerHTML = `<div class="font-bold text-primary">${target.dataset.name}</div><div class="text-body">${target.dataset.value} (${target.dataset.percent})</div>`;
+        } else {
+            const rawTooltip = target.dataset.tooltipText || target.getAttribute('data-tooltip-text') || '';
+            tooltip.innerHTML = rawTooltip.replace(/&quot;/g, '"').replace(/\n/g, '<br>');
         }
+        tooltip.classList.remove('hidden');
+        tooltip.style.opacity = '1';
     });
     document.addEventListener('mouseout', e => {
-        if (e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) {
+        if (!tooltip) return;
+        if (e.target.closest('.pie-segment, .pie-slice, .line-chart-dot, circle[data-tooltip-text], [data-tooltip-text]')) {
             tooltip.classList.add('hidden');
             tooltip.style.opacity = '0';
         }
@@ -3997,13 +3998,14 @@ document.addEventListener('DOMContentLoaded', () => {
         tooltip.style.zIndex='50';
         document.body.appendChild(tooltip);
         let active=false;
+        const setContent=(text)=>{tooltip.innerHTML=(text||'').replace(/\n/g,'<br>');};
         const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};
         const hide=()=>{active=false;tooltip.style.opacity='0';};
         document.addEventListener('mousemove',move);
         document.addEventListener('mouseover',e=>{
           const target=e.target.closest('[data-tooltip-text]');
           if(!target)return;
-          tooltip.textContent=target.getAttribute('data-tooltip-text')||'';
+          setContent(target.getAttribute('data-tooltip-text'));
           tooltip.style.left=e.clientX+12+'px';
           tooltip.style.top=e.clientY+12+'px';
           tooltip.style.opacity='1';
@@ -4102,7 +4104,7 @@ document.addEventListener('DOMContentLoaded', () => {
               gl.setAttribute('x1',pt.x);gl.setAttribute('x2',pt.x);
               gl.setAttribute('y1',pt.y);gl.setAttribute('y2',vbH-32);
               gc.setAttribute('cx',pt.x);gc.setAttribute('cy',pt.y);
-              tooltip.textContent=textOverride||pt.tooltip||'';
+              setContent(textOverride||pt.tooltip||'');
               tooltip.style.opacity='1';
               active=true;
             };
@@ -4136,10 +4138,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const interpY=prev.y+ratio*(next.y-prev.y);
                 const interpValue=prev.v+ratio*(next.v-prev.v);
                 const interpDate=prev.t+ratio*(next.t-prev.t);
-                const text=genericTemplate.replace(/__DATE__/g,formatDate(interpDate)).replace(/__VALUE__/g,formatValue(interpValue));
-                showPoint({x:interpX,y:interpY,tooltip:text},text);
-                return;
-              }
+              const text=genericTemplate.replace(/__DATE__/g,formatDate(interpDate)).replace(/__VALUE__/g,formatValue(interpValue));
+              showPoint({x:interpX,y:interpY,tooltip:text},text);
+              return;
+            }
               showPoint(best);
             });
             canvas.addEventListener('mouseleave',hideGuide);
@@ -4509,20 +4511,21 @@ const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
         tooltip.style.top = `${newTop}px`;
     });
     document.addEventListener('mouseover', e => {
-        const segment = e.target.closest('.pie-segment');
-        const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
-        if (segment) {
-            tooltip.innerHTML = `<div class="font-bold text-primary">${segment.dataset.name}</div><div class="text-body">${segment.dataset.value} (${segment.dataset.percent})</div>`;
-            tooltip.classList.remove('hidden');
-            tooltip.style.opacity = '1';
-        } else if (dot && dot.dataset.tooltipText) {
-            tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"');
-            tooltip.classList.remove('hidden');
-            tooltip.style.opacity = '1';
+        if (!tooltip) return;
+        const target = e.target.closest('.pie-segment, .pie-slice, .line-chart-dot, circle[data-tooltip-text], [data-tooltip-text]');
+        if (!target) return;
+        if (target.classList.contains('pie-segment')) {
+            tooltip.innerHTML = `<div class="font-bold text-primary">${target.dataset.name}</div><div class="text-body">${target.dataset.value} (${target.dataset.percent})</div>`;
+        } else {
+            const rawTooltip = target.dataset.tooltipText || target.getAttribute('data-tooltip-text') || '';
+            tooltip.innerHTML = rawTooltip.replace(/&quot;/g, '"').replace(/\n/g, '<br>');
         }
+        tooltip.classList.remove('hidden');
+        tooltip.style.opacity = '1';
     });
     document.addEventListener('mouseout', e => {
-        if (e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) {
+        if (!tooltip) return;
+        if (e.target.closest('.pie-segment, .pie-slice, .line-chart-dot, circle[data-tooltip-text], [data-tooltip-text]')) {
             tooltip.classList.add('hidden');
             tooltip.style.opacity = '0';
         }
