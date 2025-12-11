@@ -993,6 +993,147 @@ document.addEventListener('DOMContentLoaded', () => {
   const CHART_COLORS = [
       '#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'
   ];
+  const EXPORT_TOOLTIP_BUNDLE = `(function(){
+  const tooltip=document.getElementById('chart-tooltip');
+  if(!tooltip)return;
+  const showTooltip=(html)=>{
+    tooltip.innerHTML=html||'';
+    tooltip.classList.remove('hidden');
+    tooltip.style.opacity='1';
+  };
+  const hideTooltip=()=>{
+    tooltip.classList.add('hidden');
+    tooltip.style.opacity='0';
+  };
+  const positionTooltip=(clientX,clientY,offsetY=0)=>{
+    let left=window.scrollX+clientX+15;
+    let top=window.scrollY+clientY+15+offsetY;
+    const w=tooltip.offsetWidth;const h=tooltip.offsetHeight;
+    if(w&&left+w>window.scrollX+window.innerWidth){left=window.scrollX+clientX-w-15;}
+    if(h&&top+h>window.scrollY+window.innerHeight){top=window.scrollY+clientY-h-15;}
+    tooltip.style.left=left+'px';
+    tooltip.style.top=top+'px';
+  };
+  const attachDataTooltips=()=>{
+    document.addEventListener('mouseover',e=>{
+      const target=e.target.closest('[data-tooltip-text]');
+      if(!target||target.closest('.line-canvas[data-line-payload]'))return;
+      const content=(target.getAttribute('data-tooltip-text')||'').replace(/&quot;/g,'"');
+      showTooltip(content);
+      const offsetY=target.classList.contains('pie-slice')?10:0;
+      positionTooltip(e.clientX,e.clientY,offsetY);
+    });
+    document.addEventListener('mousemove',e=>{
+      if(tooltip.classList.contains('hidden'))return;
+      if(e.target.closest('.line-canvas[data-line-payload]'))return;
+      const offsetY=e.target.closest('.pie-slice')?10:0;
+      positionTooltip(e.clientX,e.clientY,offsetY);
+    });
+    document.addEventListener('mouseout',e=>{
+      if(!e.target.closest('[data-tooltip-text]'))return;
+      hideTooltip();
+    });
+  };
+  const attachLineCharts=()=>{
+    const canvases=document.querySelectorAll('.line-canvas[data-line-payload]');
+    canvases.forEach(canvas=>{
+      const payloadId=canvas.getAttribute('data-line-payload');
+      const payloadNode=payloadId?document.getElementById(payloadId):null;
+      const raw=payloadNode?.textContent||'';
+      const encoding=(canvas.getAttribute('data-encoding')||'json').toLowerCase();
+      if(!payloadNode||encoding!=='json')return;
+      let points;try{points=JSON.parse(raw);}catch{return;}
+      if(!Array.isArray(points)||!points.length)return;
+      const vbRaw=canvas.getAttribute('data-viewbox')||'';
+      const vbParts=String(vbRaw).split(/[\s,]+/).map(Number).filter(n=>!isNaN(n));
+      const svg=canvas.querySelector('svg');
+      let viewBoxDims=vbParts.length>=2?vbParts.slice(0,2):null;
+      const svgViewBox=svg?.getAttribute('viewBox');
+      if(!viewBoxDims&&svgViewBox){
+        const cleaned=String(svgViewBox).replace(/,/g,' ');
+        const parts=cleaned.split(/\s+/).map(Number).filter(n=>!isNaN(n));
+        if(parts.length>=4){viewBoxDims=parts.slice(2,4);}
+      }
+      if(!viewBoxDims||!svg)return;
+      const[vbWidth,vbHeight]=viewBoxDims;
+      const maxY=Math.max(...points.map(p=>p.y));
+      const ns='http://www.w3.org/2000/svg';
+      let guideLine=svg.querySelector('.line-guide');
+      if(!guideLine){
+        guideLine=document.createElementNS(ns,'line');
+        guideLine.classList.add('line-guide');
+        guideLine.setAttribute('stroke','#9ca3af');
+        guideLine.setAttribute('stroke-width','1');
+        guideLine.style.opacity=0;
+        svg.appendChild(guideLine);
+      }
+      let guideCircle=svg.querySelector('.line-guide-dot');
+      if(!guideCircle){
+        guideCircle=document.createElementNS(ns,'circle');
+        guideCircle.classList.add('line-guide-dot');
+        guideCircle.setAttribute('r','4');
+        guideCircle.setAttribute('fill','#4b5563');
+        guideCircle.style.opacity=0;
+        svg.appendChild(guideCircle);
+      }
+      let interactionLayer=svg.querySelector('.line-interaction');
+      if(!interactionLayer){
+        interactionLayer=document.createElementNS(ns,'rect');
+        interactionLayer.classList.add('line-interaction');
+        interactionLayer.setAttribute('x','0');
+        interactionLayer.setAttribute('y','0');
+        interactionLayer.setAttribute('fill','transparent');
+        svg.appendChild(interactionLayer);
+      }
+      interactionLayer.setAttribute('width',vbWidth);
+      interactionLayer.setAttribute('height',vbHeight);
+      const handleMove=(evt)=>{
+        const rect=canvas.getBoundingClientRect();
+        if(!rect.width||!rect.height)return;
+        const hoverX=(evt.clientX-rect.left)*(vbWidth/rect.width);
+        let best=null;
+        points.forEach(p=>{
+          const dist=Math.abs(p.x-hoverX);
+          const priority=p.priority||0;
+          if(best===null||dist<best.dist||(dist===best.dist&&priority>best.priority)){
+            best={point:p,dist,priority};
+          }
+        });
+        if(!best){
+          guideLine.style.opacity=0;
+          guideCircle.style.opacity=0;
+          hideTooltip();
+          return;
+        }
+        const gx=best.point.x;
+        const gy=best.point.y;
+        guideLine.setAttribute('x1',gx);
+        guideLine.setAttribute('x2',gx);
+        guideLine.setAttribute('y1',gy);
+        guideLine.setAttribute('y2',maxY);
+        guideCircle.setAttribute('cx',gx);
+        guideCircle.setAttribute('cy',gy);
+        guideLine.style.opacity=1;
+        guideCircle.style.opacity=1;
+        const targetX=rect.left+(gx/vbWidth)*rect.width;
+        const targetY=rect.top+(gy/vbHeight)*rect.height;
+        showTooltip(best.point.tooltip||'');
+        positionTooltip(targetX,targetY);
+      };
+      const handleLeave=()=>{
+        guideLine.style.opacity=0;
+        guideCircle.style.opacity=0;
+        hideTooltip();
+      };
+      interactionLayer.addEventListener('mousemove',handleMove);
+      interactionLayer.addEventListener('mouseleave',handleLeave);
+    });
+  };
+  document.addEventListener('DOMContentLoaded',()=>{
+    attachDataTooltips();
+    attachLineCharts();
+  });
+})();`;
   const SCRIPT_CLOSE_TAG = '<' + '/script>';
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const PROJECTION_END_YEAR = 2035;
@@ -3441,7 +3582,12 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
 
       const rawStyle = document.querySelector('style')?.textContent || '';
-      const styleContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${rawStyle.replace(/@import[^;]+;\s*/g, '')}`;
+      const fontImport = "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');";
+      const cleanedStyle = rawStyle
+        .replace(/@import[^;]+;\s*/g, '')
+        .replace(/\s*500;600;700&display=swap'\);?/g, '')
+        .trim();
+      const styleContent = `${fontImport}\n${cleanedStyle}`;
       /* PATCH */
       const generatedAt = new Date();
       /* PATCH */
@@ -3562,140 +3708,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var locale=el.getAttribute('data-locale')||'cs-CZ';var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString(locale);})();";
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
-      const tooltipScript = `(function(){
-  const tooltip=document.getElementById('chart-tooltip');
-  if(!tooltip)return;
-  const showTooltip=(html)=>{tooltip.innerHTML=html||'';tooltip.classList.remove('hidden');tooltip.style.opacity='1';};
-  const hideTooltip=()=>{tooltip.classList.add('hidden');tooltip.style.opacity='0';};
-  const positionTooltip=(clientX,clientY,offsetY=0)=>{
-    let left=window.scrollX+clientX+15;
-    let top=window.scrollY+clientY+15+offsetY;
-    const w=tooltip.offsetWidth;const h=tooltip.offsetHeight;
-    if(w&&left+w>window.scrollX+window.innerWidth){left=window.scrollX+clientX-w-15;}
-    if(h&&top+h>window.scrollY+window.innerHeight){top=window.scrollY+clientY-h-15;}
-    tooltip.style.left=left+'px';
-    tooltip.style.top=top+'px';
-  };
-  const attachDataTooltips=()=>{
-    document.addEventListener('mouseover',e=>{
-      const target=e.target.closest('[data-tooltip-text]');
-      if(!target||target.closest('.line-canvas[data-line-payload]'))return;
-      const content=(target.getAttribute('data-tooltip-text')||'').replace(/&quot;/g,'"');
-      showTooltip(content);
-      const offsetY=target.classList.contains('pie-slice')?10:0;
-      positionTooltip(e.clientX,e.clientY,offsetY);
-    });
-    document.addEventListener('mousemove',e=>{
-      if(tooltip.classList.contains('hidden'))return;
-      if(e.target.closest('.line-canvas[data-line-payload]'))return;
-      const offsetY=e.target.closest('.pie-slice')?10:0;
-      positionTooltip(e.clientX,e.clientY,offsetY);
-    });
-    document.addEventListener('mouseout',e=>{
-      if(!e.target.closest('[data-tooltip-text]'))return;
-      hideTooltip();
-    });
-  };
-  const attachLineCharts=()=>{
-    const canvases=document.querySelectorAll('.line-canvas[data-line-payload]');
-    canvases.forEach(canvas=>{
-      const payloadId=canvas.getAttribute('data-line-payload');
-      const payloadNode=payloadId?document.getElementById(payloadId):null;
-      const raw=payloadNode?.textContent||'';
-      const encoding=(canvas.getAttribute('data-encoding')||'json').toLowerCase();
-      if(!payloadNode||encoding!=='json')return;
-      let points;try{points=JSON.parse(raw);}catch{return;}
-      if(!Array.isArray(points)||!points.length)return;
-      const vbRaw=canvas.getAttribute('data-viewbox')||'';
-      const vbParts=String(vbRaw).split(/[\\s,]+/).map(Number).filter(n=>!isNaN(n));
-      const svg=canvas.querySelector('svg');
-      let viewBoxDims=vbParts.length>=2?vbParts.slice(0,2):null;
-      const svgViewBox=svg?.getAttribute('viewBox');
-      if(!viewBoxDims&&svgViewBox){
-        const cleaned=String(svgViewBox).replace(/,/g,' ');
-        const parts=cleaned.split(/\\s+/).map(Number).filter(n=>!isNaN(n));
-        if(parts.length>=4){viewBoxDims=parts.slice(2,4);}
-      }
-      if(!viewBoxDims||!svg)return;
-      const[vbWidth,vbHeight]=viewBoxDims;
-      const maxY=Math.max(...points.map(p=>p.y));
-      const ns='http://www.w3.org/2000/svg';
-      let guideLine=svg.querySelector('.line-guide');
-      if(!guideLine){
-        guideLine=document.createElementNS(ns,'line');
-        guideLine.classList.add('line-guide');
-        guideLine.setAttribute('stroke','#9ca3af');
-        guideLine.setAttribute('stroke-width','1');
-        guideLine.style.opacity=0;
-        svg.appendChild(guideLine);
-      }
-      let guideCircle=svg.querySelector('.line-guide-dot');
-      if(!guideCircle){
-        guideCircle=document.createElementNS(ns,'circle');
-        guideCircle.classList.add('line-guide-dot');
-        guideCircle.setAttribute('r','4');
-        guideCircle.setAttribute('fill','#4b5563');
-        guideCircle.style.opacity=0;
-        svg.appendChild(guideCircle);
-      }
-      let interactionLayer=svg.querySelector('.line-interaction');
-      if(!interactionLayer){
-        interactionLayer=document.createElementNS(ns,'rect');
-        interactionLayer.classList.add('line-interaction');
-        interactionLayer.setAttribute('x','0');
-        interactionLayer.setAttribute('y','0');
-        interactionLayer.setAttribute('fill','transparent');
-        svg.appendChild(interactionLayer);
-      }
-      interactionLayer.setAttribute('width',vbWidth);
-      interactionLayer.setAttribute('height',vbHeight);
-      const handleMove=(evt)=>{
-        const rect=canvas.getBoundingClientRect();
-        if(!rect.width||!rect.height)return;
-        const hoverX=(evt.clientX-rect.left)*(vbWidth/rect.width);
-        let best=null;
-        points.forEach(p=>{
-          const dist=Math.abs(p.x-hoverX);
-          const priority=p.priority||0;
-          if(best===null||dist<best.dist||(dist===best.dist&&priority>best.priority)){
-            best={point:p,dist,priority};
-          }
-        });
-        if(!best){
-          guideLine.style.opacity=0;
-          guideCircle.style.opacity=0;
-          hideTooltip();
-          return;
-        }
-        const gx=best.point.x;
-        const gy=best.point.y;
-        guideLine.setAttribute('x1',gx);
-        guideLine.setAttribute('x2',gx);
-        guideLine.setAttribute('y1',gy);
-        guideLine.setAttribute('y2',maxY);
-        guideCircle.setAttribute('cx',gx);
-        guideCircle.setAttribute('cy',gy);
-        guideLine.style.opacity=1;
-        guideCircle.style.opacity=1;
-        const targetX=rect.left+(gx/vbWidth)*rect.width;
-        const targetY=rect.top+(gy/vbHeight)*rect.height;
-        showTooltip(best.point.tooltip||'');
-        positionTooltip(targetX,targetY);
-      };
-      const handleLeave=()=>{
-        guideLine.style.opacity=0;
-        guideCircle.style.opacity=0;
-        hideTooltip();
-      };
-      interactionLayer.addEventListener('mousemove',handleMove);
-      interactionLayer.addEventListener('mouseleave',handleLeave);
-    });
-  };
-  document.addEventListener('DOMContentLoaded',()=>{
-    attachDataTooltips();
-    attachLineCharts();
-  });
-})();`;
+      const tooltipScript = EXPORT_TOOLTIP_BUNDLE;
       /* PATCH */
       const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 
