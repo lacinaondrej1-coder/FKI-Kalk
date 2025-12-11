@@ -666,7 +666,8 @@
         h2.section-title { font-size: 1.9rem; }
     }
 </head>
-<body>
+  <body>
+    <div id="chart-tooltip" class="hidden"></div>
   <div class="export-shell">
     ${heroSection}
     ${currencyWarning}
@@ -3052,6 +3053,7 @@ document.addEventListener('DOMContentLoaded', () => {
               ? copy.tooltip(name, amountLabel, percentLabel)
               : `${name} • ${amountLabel} (${percentLabel})`;
           return `<g class="pie-slice" tabindex="0" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}">
+            <title>${htmlEscape(tooltip)}</title>
             <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
           </g>`;
       }).join('');
@@ -3269,7 +3271,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const depositMarkers = depositPoints.map(point => {
           const tooltip = formatDepositTooltip(point);
           /* PATCH: remove native title tooltip, keep aria label for accessibility */
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       const projectionMarkers = projectionPoints.map(point => {
@@ -3277,7 +3279,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const valueLabel = formatCurrency0(point.value, outCurr, currencyFormat);
           const tooltip = tooltipCopy.projection ? tooltipCopy.projection(dateLabel, valueLabel) : `Odhad ${dateLabel}: ${valueLabel}`;
           /* PATCH: remove native title tooltip, keep aria label for accessibility */
-          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"></circle>`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
       }).join('');
 
       /* PATCH */
@@ -3329,7 +3331,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? tooltipCopy.today(formatDateLocal(today), formattedTodayValue)
           : `Dnes (${formatDateLocal(today)}): ${formattedTodayValue}`;
       /* PATCH: remove native title tooltip, keep aria label for accessibility */
-      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" aria-label="${htmlEscape(todayTooltip)}" data-tooltip-text="${htmlEscape(todayTooltip)}"></circle>` : '';
+      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" aria-label="${htmlEscape(todayTooltip)}" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
       /* PATCH */
       if (hasIrr) {
           hoverPoints.push({
@@ -3985,7 +3987,7 @@ document.addEventListener('DOMContentLoaded', () => {
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
             const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{
-        const tooltip=document.createElement('div');
+        const tooltip=document.getElementById('chart-tooltip')||(()=>{const t=document.createElement('div');t.id='chart-tooltip';t.className='hidden';document.body.appendChild(t);return t;})();
         tooltip.style.position='fixed';
         tooltip.style.pointerEvents='none';
         tooltip.style.padding='0.4rem 0.6rem';
@@ -3993,14 +3995,13 @@ document.addEventListener('DOMContentLoaded', () => {
         tooltip.style.color='#f8fafc';
         tooltip.style.fontSize='0.75rem';
         tooltip.style.borderRadius='0.5rem';
-        tooltip.style.opacity='0';
         tooltip.style.transition='opacity 0.15s ease';
         tooltip.style.zIndex='50';
-        document.body.appendChild(tooltip);
         let active=false;
+        const show=()=>{tooltip.classList.remove('hidden');tooltip.style.opacity='1';};
         const setContent=(text)=>{tooltip.innerHTML=(text||'').replace(/\n/g,'<br>');};
         const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};
-        const hide=()=>{active=false;tooltip.style.opacity='0';};
+        const hide=()=>{active=false;tooltip.classList.add('hidden');tooltip.style.opacity='0';};
         document.addEventListener('mousemove',move);
         document.addEventListener('mouseover',e=>{
           const target=e.target.closest('[data-tooltip-text]');
@@ -4008,7 +4009,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setContent(target.getAttribute('data-tooltip-text'));
           tooltip.style.left=e.clientX+12+'px';
           tooltip.style.top=e.clientY+12+'px';
-          tooltip.style.opacity='1';
+          show();
           active=true;
         });
         document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});
@@ -4161,6 +4162,7 @@ const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
   <style>${styleContent}</style>
 </head>
 <body>
+  <div id="chart-tooltip" class="hidden"></div>
   <div class="export-shell">
     ${heroSection}
     ${currencyWarning}
