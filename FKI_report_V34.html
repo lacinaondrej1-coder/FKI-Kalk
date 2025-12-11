@@ -3821,6 +3821,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
 
+      /* PATCH */
+      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
+      /* PATCH */
+      const allocationData = Object.entries(groupedFunds).map(([name, entries]) => {
+          const totalCurrent = entries.reduce((sum, entry) => {
+              const converted = convert(entry.current, entry.curr);
+              return Number.isFinite(converted) ? sum + converted : sum;
+          }, 0);
+          return { name, totalCurrent };
+      }).filter(item => item.totalCurrent > 0);
+
+      const pieBlock = allocationData.length
+          ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true, /* PATCH */ copy: copy.pie, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language })
+          : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">${htmlEscape(copy.pie.noData)}</div>`;
+
+      const frozenForExport = (snapshot.portfolioSummary.totalCurrentConverted || 0) - (snapshot.portfolioSummary.totalCurrentActive || 0);
+      let lineBlock;
+      try {
+          lineBlock = renderLineChart(null, snapshot.funds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
+            isStaticExport: true,
+            conversionReady,
+            /* PATCH */ copy: copy.line,
+            /* PATCH */ format: copy.format,
+            /* PATCH */ language: copy.language,
+            /* PATCH */ activeFunds: snapshot.activeFunds || [],
+            /* PATCH */ frozenTotal: frozenForExport
+          });
+      } catch (err) {
+          console.error('Export line chart failed:', err);
+          lineBlock = `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">${htmlEscape(copy.line.empty || 'Pro liniový graf nejsou k dispozici údaje.')}</div>`;
+      }
+
       const explanationsBlock = `<div class="export-explanations">
         <article>
           <h3>${htmlEscape(copy.explanations.xirr.title)}</h3>
@@ -3869,6 +3901,24 @@ document.addEventListener('DOMContentLoaded', () => {
           <p>${htmlEscape(copy.funds.description)}</p>
         </div>
         <div class="fund-export-grid">${fundsBlock}</div>
+      </section>`;
+
+      const pieSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">${htmlEscape(copy.pie.pill)}</span>
+          <h2>${htmlEscape(copy.pie.title)}</h2>
+          <p>${htmlEscape(copy.pie.description)}</p>
+        </div>
+        ${pieBlock}
+      </section>`;
+
+      const lineSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">${htmlEscape(copy.line.pill)}</span>
+          <h2>${htmlEscape(copy.line.title)}</h2>
+          <p>${htmlEscape(copy.line.description)}</p>
+        </div>
+        ${lineBlock}
       </section>`;
 
       const disclaimerSection = `<section class="card">
@@ -3936,7 +3986,173 @@ document.addEventListener('DOMContentLoaded', () => {
       const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var locale=el.getAttribute('data-locale')||'cs-CZ';var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString(locale);})();";
       /* PATCH */
       const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
-      const scriptBundle = `${reportDateScript}${footerYearScript}`;
+      /* PATCH */
+      const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{
+        const tooltip=document.createElement('div');
+        tooltip.style.position='fixed';
+        tooltip.style.pointerEvents='none';
+        tooltip.style.padding='0.4rem 0.6rem';
+        tooltip.style.background='rgba(15,23,42,0.92)';
+        tooltip.style.color='#f8fafc';
+        tooltip.style.fontSize='0.75rem';
+        tooltip.style.borderRadius='0.5rem';
+        tooltip.style.opacity='0';
+        tooltip.style.transition='opacity 0.15s ease';
+        tooltip.style.zIndex='50';
+        document.body.appendChild(tooltip);
+        let active=false;
+        const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};
+        const hide=()=>{active=false;tooltip.style.opacity='0';};
+        document.addEventListener('mousemove',move);
+        document.addEventListener('mouseover',e=>{
+          const target=e.target.closest('[data-tooltip-text]');
+          if(!target)return;
+          tooltip.textContent=target.getAttribute('data-tooltip-text')||'';
+          tooltip.style.left=e.clientX+12+'px';
+          tooltip.style.top=e.clientY+12+'px';
+          tooltip.style.opacity='1';
+          active=true;
+        });
+        document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});
+        const attachLineCharts=()=>{
+          const decodePayload=(raw, encoding)=>{
+            /* PATCH: normalise payloads before decoding */
+            if(!raw)return null;
+            const cleaned=String(raw).replace(/\s+/g,'').replace(/&amp;/g,'&');
+            const attempts=[];
+            if(encoding==='b64'){
+              attempts.push(() => JSON.parse(decodeURIComponent(atob(cleaned))));
+              attempts.push(() => JSON.parse(atob(cleaned)));
+            }
+            attempts.push(() => JSON.parse(cleaned));
+            attempts.push(() => JSON.parse(decodeURIComponent(cleaned)));
+            for(const attempt of attempts){try{return attempt();}catch(_e){}}
+            return null;
+          };
+          document.querySelectorAll('.line-canvas[data-line-payload], .line-canvas[data-line-points], .line-canvas[data-line-data], .line-canvas[data-line-points-b64]').forEach(canvas=>{
+            const encoding=canvas.getAttribute('data-encoding')||'uri';
+            const parseJsonById=(id)=>{
+              if(!id) return null;
+              const el=document.getElementById(id);
+              if(!el) return null;
+              try{return JSON.parse(el.textContent||'');}catch(_e){return null;}
+            };
+            let pts=null;
+            let meta=null;
+            let viewBoxOverride=null;
+            const payloadId=canvas.getAttribute('data-line-payload');
+            if(payloadId){
+              const payload=parseJsonById(payloadId);
+              if(payload){
+                pts=payload.points||payload.hoverPoints||null;
+                meta=payload.meta||payload.metaData||null;
+                viewBoxOverride=payload.viewBox||null;
+              }
+            }
+            const b64Attr=canvas.getAttribute('data-line-points-b64');
+            if(!pts && b64Attr){
+              pts=decodePayload(b64Attr,'b64');
+            }
+            const dataId=canvas.getAttribute('data-line-data');
+            if(!pts && dataId){
+              pts=parseJsonById(dataId);
+            }
+            if(!pts){
+              const raw=canvas.getAttribute('data-line-points');
+              pts=decodePayload(raw,encoding);
+            }
+            if(!Array.isArray(pts)||!pts.length)return;
+            const metaB64=canvas.getAttribute('data-line-meta-b64');
+            if(!meta && metaB64){
+              meta=decodePayload(metaB64,'b64');
+            }
+            const metaId=canvas.getAttribute('data-line-meta-id');
+            if(!meta && metaId){
+              meta=parseJsonById(metaId);
+            }
+            if(!meta){
+              meta=decodePayload(canvas.getAttribute('data-line-meta'),encoding)||{};
+            }
+            const locale=meta.locale||'cs-CZ';
+            const genericTemplate=meta.generic||'__DATE__\n__VALUE__';
+            const fmtInt=new Intl.NumberFormat(locale,{maximumFractionDigits:0});
+            const formatValue=(v)=>fmtInt.format(Math.round(v));
+            const formatDate=(ms)=>{const d=new Date(ms);return d.toLocaleDateString(locale);};
+            const basePoints=pts.filter(p=>p.kind==='line').sort((a,b)=>a.x-b.x);
+            const svg=canvas.querySelector('svg');
+            if(!svg)return;
+            const vbRaw=viewBoxOverride?(viewBoxOverride.width+','+viewBoxOverride.height):(canvas.getAttribute('data-viewbox')||svg.getAttribute('viewBox')||'820 380');
+            const vbAttr=String(vbRaw).split(/[,\s]+/);
+            const vbW=parseFloat(vbAttr[0])||820;
+            const vbH=parseFloat(vbAttr[1])||380;
+            const ns='http://www.w3.org/2000/svg';
+            const guide=document.createElementNS(ns,'g');
+            guide.setAttribute('class','line-hover');
+            guide.style.display='none';
+            const gl=document.createElementNS(ns,'line');
+            gl.setAttribute('stroke','#94a3b8');
+            gl.setAttribute('stroke-width','1');
+            gl.setAttribute('stroke-dasharray','4 3');
+            const gc=document.createElementNS(ns,'circle');
+            gc.setAttribute('r','5');
+            gc.setAttribute('fill','#0d2c54');
+            gc.setAttribute('stroke','#ffffff');
+            gc.setAttribute('stroke-width','2');
+            guide.appendChild(gl);guide.appendChild(gc);
+            svg.appendChild(guide);
+            const hideGuide=()=>{guide.style.display='none';hide();};
+            const showPoint=(pt,textOverride)=>{
+              guide.style.display='block';
+              gl.setAttribute('x1',pt.x);gl.setAttribute('x2',pt.x);
+              gl.setAttribute('y1',pt.y);gl.setAttribute('y2',vbH-32);
+              gc.setAttribute('cx',pt.x);gc.setAttribute('cy',pt.y);
+              tooltip.textContent=textOverride||pt.tooltip||'';
+              tooltip.style.opacity='1';
+              active=true;
+            };
+            canvas.addEventListener('mousemove',ev=>{
+              const rect=svg.getBoundingClientRect();
+              const scaleX=vbW/rect.width;
+              const x=(ev.clientX-rect.left)*scaleX;
+              let best=pts[0];
+              let dist=Math.abs(best.x-x);
+              for(let i=1;i<pts.length;i++){
+                const dx=Math.abs(pts[i].x-x);
+                const isCloser=dx<dist;
+                const tieBetter=dx===dist&&pts[i].y<best.y; /* PATCH: prefer higher-value point on ties */
+                if(isCloser||tieBetter){dist=dx;best=pts[i];}
+              }
+              tooltip.style.left=ev.clientX+12+'px';
+              tooltip.style.top=ev.clientY+12+'px';
+              const snapThreshold=12;
+              if(best.kind!=='line'&&dist<=snapThreshold){showPoint(best);return;}
+              if(basePoints.length>=2){
+                let prev=basePoints[0];
+                let next=basePoints[basePoints.length-1];
+                for(let i=0;i<basePoints.length;i++){
+                  if(basePoints[i].x<=x){prev=basePoints[i];}
+                  if(basePoints[i].x>=x){next=basePoints[i];break;}
+                }
+                if(!next||!prev){showPoint(best);return;}
+                if(Math.abs(next.x-prev.x)<1e-4){showPoint(next);return;}
+                const ratio=Math.min(1,Math.max(0,(x-prev.x)/(next.x-prev.x)));
+                const interpX=prev.x+ratio*(next.x-prev.x);
+                const interpY=prev.y+ratio*(next.y-prev.y);
+                const interpValue=prev.v+ratio*(next.v-prev.v);
+                const interpDate=prev.t+ratio*(next.t-prev.t);
+                const text=genericTemplate.replace(/__DATE__/g,formatDate(interpDate)).replace(/__VALUE__/g,formatValue(interpValue));
+                showPoint({x:interpX,y:interpY,tooltip:text},text);
+                return;
+              }
+              showPoint(best);
+            });
+            canvas.addEventListener('mouseleave',hideGuide);
+            canvas.addEventListener('blur',hideGuide,{capture:true});
+          });
+        };
+        attachLineCharts();
+      });`;
+const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
 
       const html = `<!doctype html>
 <html lang="${copy.htmlLang}">
@@ -3952,6 +4168,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ${currencyWarning}
     ${narrativeSection}
     ${summarySection}
+    ${pieSection}
+    ${lineSection}
     ${fundsSection}
     ${disclaimerSection}
     ${explanationsSection}
