@@ -3406,7 +3406,7 @@
                             ? point.snapshot
                                   .map((state) => ({
                                       id: state.id,
-                                      name: state.name || 'Fond',
+                                      name: typeof state.name === 'string' && state.name.trim().length > 0 ? state.name.trim() : 'Neznámý fond',
                                       value: state.value,
                                   }))
                                   .filter((item) => Number(item.value) > 0.01)
@@ -3845,13 +3845,20 @@
             const monthlyRent = parseMoney(rentInput);
             const annualRent = monthlyRent * 12;
             const annualReturn = useMemo(() => computeWeightedAnnualReturn(funds), [funds]);
-            const currentCapital = useMemo(() => {
-                if (Number.isFinite(analysis?.currentValue)) return analysis.currentValue;
+            const { currentCapital, capitalDate } = useMemo(() => {
                 const timeline = Array.isArray(analysis?.timeline) ? analysis.timeline : [];
+                const firstPositive = timeline.find((point) => Number.isFinite(point?.totalValue) && point.totalValue > 0);
+                if (firstPositive) {
+                    return { currentCapital: firstPositive.totalValue, capitalDate: firstPositive.date };
+                }
+                const fallbackValue = Number.isFinite(analysis?.currentValue) ? analysis.currentValue : null;
                 const last = timeline[timeline.length - 1];
-                return Number.isFinite(last?.totalValue) ? last.totalValue : 0;
+                if (Number.isFinite(fallbackValue)) {
+                    return { currentCapital: fallbackValue, capitalDate: analysis?.endDate };
+                }
+                return { currentCapital: Number.isFinite(last?.totalValue) ? last.totalValue : 0, capitalDate: last?.date };
             }, [analysis]);
-            const originDate = analysis?.startDate instanceof Date ? analysis.startDate : deriveScenarioStartDate(funds);
+            const originDate = capitalDate instanceof Date ? capitalDate : analysis?.startDate instanceof Date ? analysis.startDate : deriveScenarioStartDate(funds);
 
             const hasReturn = Number.isFinite(annualReturn) && annualReturn > 0;
             const hasRent = Number.isFinite(annualRent) && annualRent > 0;
