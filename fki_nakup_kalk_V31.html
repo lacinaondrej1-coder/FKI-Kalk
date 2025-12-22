@@ -1515,6 +1515,7 @@
             const snapshotStates = () =>
                 Array.from(fundStates.values()).map((state) => ({
                     id: state.id,
+                    name: state.name,
                     value: state.value,
                     invested: state.invested,
                     rate: state.rate,
@@ -3406,7 +3407,10 @@
                             ? point.snapshot
                                   .map((state) => ({
                                       id: state.id,
-                                      name: typeof state.name === 'string' && state.name.trim().length > 0 ? state.name.trim() : 'Neznámý fond',
+                                      name:
+                                          typeof state.name === 'string' && state.name.trim().length > 0
+                                              ? state.name.trim()
+                                              : 'Fond',
                                       value: state.value,
                                   }))
                                   .filter((item) => Number(item.value) > 0.01)
