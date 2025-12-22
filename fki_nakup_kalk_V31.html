@@ -3849,20 +3849,69 @@
             const monthlyRent = parseMoney(rentInput);
             const annualRent = monthlyRent * 12;
             const annualReturn = useMemo(() => computeWeightedAnnualReturn(funds), [funds]);
-            const { currentCapital, capitalDate } = useMemo(() => {
-                const timeline = Array.isArray(analysis?.timeline) ? analysis.timeline : [];
+            const projection = useMemo(() => createProjectionEngine(analysis), [analysis]);
+            const projectionTimeline = Array.isArray(projection?.timeline) ? projection.timeline : [];
+            const projectionOrigin = projection?.originDate instanceof Date ? projection.originDate : null;
+
+            const { currentCapital, capitalDate, sourcePoint } = useMemo(() => {
+                const timeline = projectionTimeline
+                    .filter((point) => point && point.date instanceof Date)
+                    .sort((a, b) => a.date - b.date || (a.sequence || 0) - (b.sequence || 0));
+
+                const yearOneTarget = projectionOrigin instanceof Date ? addYears(projectionOrigin, 1) : null;
+                const targetTime = yearOneTarget instanceof Date ? yearOneTarget.getTime() : null;
+
+                const pickLatestOnDate = (targetDate) => {
+                    if (!(targetDate instanceof Date)) return null;
+                    const time = targetDate.getTime();
+                    const sameDay = timeline.filter((point) => point.date.getTime() === time);
+                    if (sameDay.length > 0) {
+                        return sameDay.reduce((acc, point) => {
+                            if (!acc) return point;
+                            const seqA = Number.isFinite(acc.sequence) ? acc.sequence : 0;
+                            const seqB = Number.isFinite(point.sequence) ? point.sequence : 0;
+                            return seqB >= seqA ? point : acc;
+                        }, null);
+                    }
+                    return null;
+                };
+
+                let yearOnePoint = targetTime ? pickLatestOnDate(yearOneTarget) : null;
+                if (!yearOnePoint && targetTime) {
+                    const fallback = timeline.filter((point) => point.date.getTime() <= targetTime).pop();
+                    if (fallback) {
+                        yearOnePoint = fallback;
+                    }
+                }
+
+                if (yearOnePoint && Number.isFinite(yearOnePoint.totalValue)) {
+                    return {
+                        currentCapital: yearOnePoint.totalValue,
+                        capitalDate: yearOnePoint.date,
+                        sourcePoint: yearOnePoint,
+                    };
+                }
+
                 const firstPositive = timeline.find((point) => Number.isFinite(point?.totalValue) && point.totalValue > 0);
                 if (firstPositive) {
-                    return { currentCapital: firstPositive.totalValue, capitalDate: firstPositive.date };
+                    return { currentCapital: firstPositive.totalValue, capitalDate: firstPositive.date, sourcePoint: firstPositive };
                 }
+
                 const fallbackValue = Number.isFinite(analysis?.currentValue) ? analysis.currentValue : null;
                 const last = timeline[timeline.length - 1];
                 if (Number.isFinite(fallbackValue)) {
-                    return { currentCapital: fallbackValue, capitalDate: analysis?.endDate };
+                    return { currentCapital: fallbackValue, capitalDate: analysis?.endDate, sourcePoint: analysis?.endDate ? { ...last, date: analysis.endDate } : last };
                 }
-                return { currentCapital: Number.isFinite(last?.totalValue) ? last.totalValue : 0, capitalDate: last?.date };
-            }, [analysis]);
-            const originDate = capitalDate instanceof Date ? capitalDate : analysis?.startDate instanceof Date ? analysis.startDate : deriveScenarioStartDate(funds);
+                return { currentCapital: Number.isFinite(last?.totalValue) ? last.totalValue : 0, capitalDate: last?.date, sourcePoint: last };
+            }, [analysis, projectionOrigin, projectionTimeline]);
+
+            const originDate = capitalDate instanceof Date
+                ? capitalDate
+                : projectionOrigin instanceof Date
+                ? projectionOrigin
+                : analysis?.startDate instanceof Date
+                ? analysis.startDate
+                : deriveScenarioStartDate(funds);
 
             const hasReturn = Number.isFinite(annualReturn) && annualReturn > 0;
             const hasRent = Number.isFinite(annualRent) && annualRent > 0;
@@ -3877,11 +3926,39 @@
             let targetYears = null;
             let targetDate = null;
             if (canProject && currentCapital < requiredCapital) {
-                const numerator = requiredCapital / currentCapital;
-                const denominator = Math.log(growthBase);
-                if (numerator > 0 && Number.isFinite(denominator) && Math.abs(denominator) > 1e-8) {
-                    targetYears = Math.log(numerator) / denominator;
-                    targetDate = Number.isFinite(targetYears) ? addYearsFraction(originDate || startOfToday(), targetYears) : null;
+                const startDate = originDate instanceof Date ? originDate : capitalDate instanceof Date ? capitalDate : projectionOrigin;
+                const timeline = projectionTimeline
+                    .filter((point) => point && point.date instanceof Date && Number.isFinite(point.totalValue))
+                    .sort((a, b) => a.date - b.date || (a.sequence || 0) - (b.sequence || 0));
+                const startTime = startDate instanceof Date ? startDate.getTime() : null;
+                let reachedPoint = null;
+                const filtered = startTime !== null ? timeline.filter((point) => point.date.getTime() >= startTime) : timeline;
+                for (let i = 0; i < filtered.length; i += 1) {
+                    const point = filtered[i];
+                    if (point.totalValue >= requiredCapital) {
+                        reachedPoint = point;
+                        break;
+                    }
+                }
+
+                if (reachedPoint) {
+                    const baseStart = startDate instanceof Date ? startDate : reachedPoint.date;
+                    targetDate = reachedPoint.date;
+                    targetYears = diffInYears(baseStart, reachedPoint.date);
+                } else {
+                    const lastPoint = filtered[filtered.length - 1] || timeline[timeline.length - 1];
+                    const baseDate = lastPoint?.date instanceof Date ? lastPoint.date : startDate || startOfToday();
+                    const baseValue = Number.isFinite(lastPoint?.totalValue) && lastPoint.totalValue > 0 ? lastPoint.totalValue : currentCapital;
+                    const numerator = requiredCapital / Math.max(baseValue, 1e-9);
+                    const denominator = Math.log(growthBase);
+                    const extraYears = numerator > 0 && Number.isFinite(denominator) && Math.abs(denominator) > 1e-8
+                        ? Math.log(numerator) / denominator
+                        : null;
+                    if (Number.isFinite(extraYears) && extraYears >= 0) {
+                        const elapsedToBase = startDate instanceof Date ? diffInYears(startDate, baseDate) : 0;
+                        targetYears = Math.max(0, elapsedToBase + extraYears);
+                        targetDate = addYearsFraction(baseDate, extraYears);
+                    }
                 }
             }
 
@@ -3896,6 +3973,37 @@
                 : null;
 
             const maxMonthlyRentNow = hasReturn && hasCapital ? (currentCapital * annualReturn) / 12 : null;
+            const capitalDateLabel = capitalDate instanceof Date ? formatDate(capitalDate) : null;
+
+            useEffect(() => {
+                if (typeof window === 'undefined') return;
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('flag.tests') !== '1') return;
+                if (!Number.isFinite(annualReturn) || annualReturn <= 0) return;
+                const baseFunds = Array.isArray(funds)
+                    ? funds.map((fund) => ({ ...fund }))
+                    : [];
+                const doubledFunds = baseFunds.map((fund) => ({
+                    ...fund,
+                    amountStr: String(parseMoney(fund.amountStr) * 2 || 0),
+                    topUpStr: String(parseMoney(fund.topUpStr) * 2 || 0),
+                }));
+                const baseReturn = computeWeightedAnnualReturn(baseFunds);
+                const doubledReturn = computeWeightedAnnualReturn(doubledFunds);
+                const rent = monthlyRent > 0 ? monthlyRent : 30000;
+                const baseRequired = Number.isFinite(baseReturn) && baseReturn > 0 ? (rent * 12) / baseReturn : null;
+                const doubledRequired = Number.isFinite(doubledReturn) && doubledReturn > 0 ? (rent * 12) / doubledReturn : null;
+                if (Number.isFinite(baseRequired) && Number.isFinite(doubledRequired)) {
+                    const delta = Math.abs((doubledRequired - baseRequired) / baseRequired);
+                    if (delta > 0.001) {
+                        console.warn('[Renta self-test] Required capital differs after scaling inputs', {
+                            baseRequired,
+                            doubledRequired,
+                            delta,
+                        });
+                    }
+                }
+            }, [annualReturn, funds, monthlyRent]);
 
             const validityMessage = (() => {
                 if (!hasRent) return 'Zadejte měsíční rentu větší než 0.';
@@ -3923,7 +4031,8 @@
                                 Efektivní roční výnos portfolia: {hasReturn ? shortPercentFormatter.format(annualReturn) : '—'}
                             </div>
                             <div className="annuity-meta">
-                                Aktuální kapitál modelu: {hasCapital ? formatCurrency(currentCapital) : '—'}
+                                Kapitál po 1. roce: {hasCapital ? formatCurrency(currentCapital) : '—'}
+                                {capitalDateLabel ? ` (${capitalDateLabel})` : ''}
                             </div>
                         </div>
                         <div className="annuity-highlight">
@@ -3941,7 +4050,10 @@
                                     </div>
                                     <div className="annuity-inline">
                                         <span>Potřebný kapitál: {formatCurrency(requiredCapital)}</span>
-                                        <span>Aktuální kapitál: {formatCurrency(currentCapital)}</span>
+                                        <span>
+                                            Kapitál po 1. roce: {formatCurrency(currentCapital)}
+                                            {capitalDateLabel ? ` (${capitalDateLabel})` : ''}
+                                        </span>
                                         {Number.isFinite(reservePct) && (
                                             <span>Rezerva: {formatPercent(reservePct)}</span>
                                         )}
@@ -3957,7 +4069,8 @@
                                     <div className="annuity-meta">Potřebný kapitál pro rentu {formatCurrency(monthlyRent)} / měsíc</div>
                                     <div className="value">{formatCurrency(requiredCapital)}</div>
                                     <div className="annuity-meta">
-                                        Aktuální kapitál: {formatCurrency(currentCapital)} · chybí {formatCurrency(requiredCapital - currentCapital)}
+                                        Kapitál po 1. roce: {formatCurrency(currentCapital)}
+                                        {capitalDateLabel ? ` (${capitalDateLabel})` : ''} · chybí {formatCurrency(requiredCapital - currentCapital)}
                                     </div>
                                     {Number.isFinite(targetYears) && targetDate instanceof Date && (
                                         <div className="annuity-meta">
