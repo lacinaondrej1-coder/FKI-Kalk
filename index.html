@@ -47,8 +47,8 @@
         <div class="space-y-2">
           <label class="text-sm font-semibold text-[var(--color-muted)]" for="entryFeeInput">Vstupní poplatek</label>
           <div class="relative">
-            <input id="entryFeeInput" type="number" step="any" class="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-lg font-semibold text-[var(--color-primary)]" value="0.01" />
-            <span class="absolute inset-y-0 right-4 flex items-center text-[var(--color-muted)] text-sm">(desetinné číslo)</span>
+            <input id="entryFeeInput" type="number" step="any" class="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-lg font-semibold text-[var(--color-primary)]" value="1" />
+            <span class="absolute inset-y-0 right-4 flex items-center text-[var(--color-muted)] text-sm">%</span>
           </div>
         </div>
       </div>
@@ -322,13 +322,14 @@
 
     function calculateInitialRows() {
       const coef = sanitizeNumber(coefInput.value);
-      const entryFee = sanitizeNumber(entryFeeInput.value);
+      const entryFeePercent = sanitizeNumber(entryFeeInput.value);
+      const entryFeeDecimal = entryFeePercent / 100;
       let totalAum = 0, totalFee = 0, totalBonus = 0, totalCommission = 0, totalPoints = 0;
 
       INITIAL_FUNDS.forEach((row, index) => {
         const input = document.querySelector(`[data-initial-aum="${index}"]`);
         const aum = sanitizeNumber(input?.value);
-        const feeCommission = aum * entryFee / DENOM * coef;
+        const feeCommission = aum * entryFeeDecimal / DENOM * coef;
         let bonusCommission = 0;
         if (row.bonusMode === 'bt_points') {
           bonusCommission = aum * row.bonusRate / DENOM * coef;
@@ -502,7 +503,7 @@
         document.querySelectorAll('[data-initial-aum]').forEach((input) => (input.value = ''));
         document.querySelectorAll('[data-trail-aum]').forEach((input) => (input.value = ''));
         coefInput.value = '60';
-        entryFeeInput.value = '0.01';
+        entryFeeInput.value = '1';
         goalInput.value = '1200000';
         recalcAll();
       });
