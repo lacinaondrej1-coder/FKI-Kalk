@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FKI Report Následků a vstupů HTML</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+    :root {
+      color-scheme: light;
+      --color-bg-start: #FDFEFF;
+      --color-bg-end: #F8F9FA;
+      --color-primary: #0d2c54;
+      --color-accent: #4DB1C8;
+      --color-text: #33373D;
+      --color-muted: #888B90;
+      --color-border: #EAECEE;
+      --color-border-strong: #D0E0E8;
+    }
+    body { font-family: 'Montserrat', system-ui, -apple-system, sans-serif; background: linear-gradient(180deg, var(--color-bg-start), var(--color-bg-end)); color: var(--color-text); }
+    .card { background: white; border: 1px solid var(--color-border); box-shadow: 0 8px 32px rgba(0,0,0,0.04); }
+    .table-head { background: #f4f7fb; color: #0d2c54; }
+    .separator-row td { padding: 10px 0; border: none; }
+    .highlight-row { background: #0d2c5410; font-weight: 700; }
+    input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">FKI</p>
+        <h1 class="text-3xl font-semibold text-[var(--color-primary)]">FKI Report Následků a vstupů</h1>
+        <p class="text-[var(--color-muted)]">Interní kalkulačka pro výpočet získatelských a následných provizí</p>
+      </div>
+      <button id="resetButton" class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 shadow">Vymazat hodnoty</button>
+    </header>
+
+    <section class="card rounded-2xl p-6">
+      <h2 class="text-xl font-semibold text-[var(--color-primary)] mb-4">Globální vstupy</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-[var(--color-muted)]" for="coefInput">Koeficient</label>
+          <input id="coefInput" type="number" step="any" class="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-lg font-semibold text-[var(--color-primary)]" value="60" />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-[var(--color-muted)]" for="entryFeeInput">Vstupní poplatek</label>
+          <div class="relative">
+            <input id="entryFeeInput" type="number" step="any" class="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-lg font-semibold text-[var(--color-primary)]" value="0.01" />
+            <span class="absolute inset-y-0 right-4 flex items-center text-[var(--color-muted)] text-sm">(desetinné číslo)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card rounded-2xl p-6 space-y-4">
+      <div class="flex items-baseline justify-between gap-4">
+        <div>
+          <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Část A</p>
+          <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Získatelské provize</h2>
+        </div>
+        <span class="text-sm text-[var(--color-muted)]">Provize se počítají z konfigurace INITIAL_FUNDS</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="table-head">
+            <tr>
+              <th class="px-3 py-2 text-left">#</th>
+              <th class="px-3 py-2 text-left">Fond</th>
+              <th class="px-3 py-2 text-left">Objem AÚM (Kč)</th>
+              <th class="px-3 py-2 text-left">Provize z poplatku</th>
+              <th class="px-3 py-2 text-left">Vstupní bonus</th>
+              <th class="px-3 py-2 text-left">Provize celkem</th>
+              <th class="px-3 py-2 text-left">Body</th>
+              <th class="px-3 py-2 text-left">Poznámka</th>
+            </tr>
+          </thead>
+          <tbody id="initialBody" class="divide-y divide-[var(--color-border)]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card rounded-2xl p-6 space-y-4">
+      <div class="flex items-baseline justify-between gap-4">
+        <div>
+          <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Část B</p>
+          <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Následné provize</h2>
+        </div>
+        <span class="text-sm text-[var(--color-muted)]">Výpočty z konfigurace TRAIL_FUNDS</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="table-head">
+            <tr>
+              <th class="px-3 py-2 text-left">#</th>
+              <th class="px-3 py-2 text-left">Fond</th>
+              <th class="px-3 py-2 text-left">Objem AÚM (Kč)</th>
+              <th class="px-3 py-2 text-left">Roční následky</th>
+              <th class="px-3 py-2 text-left">Výše následné provize</th>
+              <th class="px-3 py-2 text-left">Poznámka</th>
+            </tr>
+          </thead>
+          <tbody id="trailBody" class="divide-y divide-[var(--color-border)]"></tbody>
+        </table>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="col-span-2 card rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-start)] p-4">
+          <h3 class="text-lg font-semibold text-[var(--color-primary)] mb-3">Můj cíl následných provizí</h3>
+          <div class="grid gap-3 md:grid-cols-3">
+            <div class="space-y-1">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Cíl ročně (Kč)</label>
+              <input id="goalInput" type="number" step="any" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 font-semibold text-[var(--color-primary)]" value="1200000" />
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Měsíční příjem</p>
+              <p id="monthlyIncome" class="text-lg font-semibold text-[var(--color-primary)]">0 Kč</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Chybí do cíle</p>
+              <p id="goalGap" class="text-lg font-semibold text-[var(--color-primary)]">0 Kč</p>
+            </div>
+          </div>
+        </div>
+        <div class="card rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-start)] p-4 flex flex-col gap-2 justify-center">
+          <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážený průměr sazby portfolia</p>
+          <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">zadáno málo dat k výpočtu</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DENOM = 250;
+    const INITIAL_FUNDS = [
+      {"label":"1.","fund":"ČSNF CZK i EUR","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":""},
+      {"label":"2.","fund":"R2P","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"3.","fund":"NEMOMAX","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"4.","fund":"VIHOREV","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"5.","fund":"AGUILA","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"6.","fund":"DOMUS","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2% vstupní bonus"},
+      {"label":"7.","fund":"4GIMEL","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"8.","fund":"REALIA","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus do 31.12.2025"},
+      {"label":"9.","fund":"REALIA eur","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus do 31.12.2025"},
+      {"label":"10.","fund":"Domoplán","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"11.","fund":"Gartal","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"12.","fund":"WERO","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2%"},
+      {"label":"13.","fund":"Spilberk","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2% vstupní bonus"},
+      {"label":"14.","fund":"Avant Loan","bonusRate":0.025,"bonusMode":"bt_points","pointsMode":"standard","note":"2,5% vstupní bonus přes BT"},
+      {"label":"15.","fund":"Real Luxembourg","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"16.","fund":"Semper CZK i EUR","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+
+      {"label":"17.","fund":"EBM","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+
+      {"label":"18.","fund":null,"type":"separator"},
+
+      {"label":"19.","fund":"FČKD(CODYA)","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2% vstupní bonus"},
+      {"label":"20.","fund":"Reverzní hypo(CODYA)","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus, výplata přes BT od 1.8.2024"},
+      {"label":"21.","fund":"PFFL(CODYA)","bonusRate":0.016,"bonusMode":"bt_points","pointsMode":"standard","note":"1,6% vstupní bonus, výplata mimo BT"},
+      {"label":"22.","fund":"Direct","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"23.","fund":"Julius Meinl","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"24.","fund":"Adax","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vyplácené v polovině roku 2026"},
+      {"label":"25.","fund":"ESG Senior Care","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"2% do konce srpna 2025"},
+      {"label":"26.","fund":"Silverline","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% do konce roku 2024"},
+      {"label":"27.","fund":"Vigo","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"28.","fund":"ARTEFIN","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"výplata mimo BT, 2%"},
+      {"label":"29.","fund":"Penta","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"30.","fund":"J&T Arch","bonusRate":0.01,"bonusMode":"bt_points","pointsMode":"standard","note":"1% vstupní bonus přes BT"},
+      {"label":"31.","fund":"ATRIS","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"32.","fund":"Edward","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""}
+    ];
+
+    const TRAIL_FUNDS = [
+      {"label":"1.","fund":"ČSNF CZK i EUR","annualRate":0.008,"note":""},
+      {"label":"2.","fund":"R2P do konce 2024","annualRate":0.029,"note":"prémiové akcie od 5 mio(výnos 10-11%)"},
+      {"label":"3.","fund":"R2P 2025 +","annualRate":0.024,"note":"prémiové akcie od 5 mio(výnos 10-11%)"},
+      {"label":"4.","fund":"NEMOMAX","annualRate":0.009,"note":""},
+      {"label":"5.","fund":"VIHOREV","annualRate":0.009,"note":""},
+      {"label":"6.","fund":"AGUILA","annualRate":0.009,"note":""},
+      {"label":"7.","fund":"DOMUS","annualRate":0.007,"note":""},
+      {"label":"8.","fund":"4GIMEL","annualRate":0.0075,"note":"možnost success fee až 2% (z objemu výše odměny IZ je navýšena... akcie) od 6 % p.a. do 20 % p.a., 10 % ze zisku nad 20 % p.a.)"},
+      {"label":"9.","fund":"REALIA","annualRate":0.01,"note":""},
+      {"label":"10.","fund":"REALIA eur","annualRate":0.011,"note":""},
+      {"label":"11.","fund":"WERO","annualRate":0.011,"note":"investice od 15mio: možnost podílet se na koupi bioplynky"},
+      {"label":"12.","fund":"Gartal","annualRate":0.01,"note":""},
+      {"label":"13.","fund":"Domoplán, Brixx, Mariánská cesta","annualRate":0.005,"note":""},
+      {"label":"14.","fund":"Spilberk","annualRate":0.01,"note":""},
+      {"label":"15.","fund":"Avant Loan","annualRate":0.008,"note":""},
+      {"label":"16.","fund":"Real Luxembourg","annualRate":0.01,"note":""},
+      {"label":"17.","fund":"Semper CZK i EUR","annualRate":0.01,"note":""},
+      {"label":"18.","fund":"EBM","annualRate":0.01,"note":""},
+
+      {"label":"19.","fund":null,"type":"separator"},
+
+      {"label":"20.","fund":"FČKD","annualRate":0.006,"note":"aktuálně pod Effektou- nutné zřídit si přístupy"},
+      {"label":"21.","fund":"REVERZNÍ HYPO","annualRate":0.0105,"note":""},
+      {"label":"22.","fund":"PFFL","annualRate":0.006,"note":""},
+      {"label":"23.","fund":"Julius Meinl","annualRate":0.012,"note":""},
+      {"label":"24.","fund":"Adax","annualRate":0.01,"note":""},
+
+      {"label":"25.","fund":"Silverline","annualRate":0.0065,"note":"0,5% se připočítává k management fee a vyplácí se jako bonus v červenci 2026"},
+
+      {"label":"26.","fund":"ARTEFIN- HENRY","annualRate":0.0085,"note":""},
+      {"label":"27.","fund":"ZDR","annualRate":0.006,"note":""},
+      {"label":"28.","fund":"Fond Českého bydlení","annualRate":0.006,"note":""},
+      {"label":"29.","fund":"VIGO public (retailový fond)","annualRate":0.006,"note":""},
+      {"label":"30.","fund":"Direct PRO","annualRate":0.008,"note":""},
+      {"label":"31.","fund":"ESG Senior care","annualRate":0.006,"note":""},
+      {"label":"32.","fund":"Penta PE, RE","annualRate":0.008,"note":""},
+
+      {"label":"33.","fund":null,"type":"separator"},
+      {"label":"34.","fund":null,"type":"separator"},
+
+      {"label":"35.","fund":"J @ T Arch","annualRate":0.008,"note":""},
+      {"label":"36.","fund":"ATRIS","annualRate":0.008,"note":""},
+      {"label":"37.","fund":"Edward MP4+","annualRate":0.0139,"note":"Při dosažení vyššího objemu než 1mio dochází ke snížení na 1,29%(individuálně u každého klienta)"}
+    ];
+
+    const initialBody = document.getElementById('initialBody');
+    const trailBody = document.getElementById('trailBody');
+    const coefInput = document.getElementById('coefInput');
+    const entryFeeInput = document.getElementById('entryFeeInput');
+    const goalInput = document.getElementById('goalInput');
+    const monthlyIncome = document.getElementById('monthlyIncome');
+    const goalGap = document.getElementById('goalGap');
+    const weightedRateEl = document.getElementById('weightedRate');
+    const resetButton = document.getElementById('resetButton');
+
+    const STORAGE_KEYS = {
+      coef: 'fki_coef',
+      entryFee: 'fki_entry_fee',
+      initialAum: 'fki_initial_aum',
+      trailAum: 'fki_trail_aum',
+      goal: 'fki_goal'
+    };
+
+    function sanitizeNumber(value) {
+      if (value === undefined || value === null) return 0;
+      const raw = String(value).trim();
+      if (!raw) return 0;
+      const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
+      const parts = normalized.split('.');
+      const first = parts.shift();
+      const decimal = parts.length ? '.' + parts.join('') : '';
+      const num = parseFloat(first + decimal);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function formatCurrency(value) {
+      const number = Math.round(value || 0);
+      return number.toLocaleString('cs-CZ') + ' Kč';
+    }
+
+    function formatPercent(value) {
+      const num = Number(value) || 0;
+      return num.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatPoints(value) {
+      const number = Math.round(value || 0);
+      return number.toLocaleString('cs-CZ');
+    }
+
+    function persistValues() {
+      const initialAum = {};
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+        initialAum[input.dataset.key] = input.value;
+      });
+      const trailAum = {};
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+        trailAum[input.dataset.key] = input.value;
+      });
+      localStorage.setItem(STORAGE_KEYS.coef, coefInput.value);
+      localStorage.setItem(STORAGE_KEYS.entryFee, entryFeeInput.value);
+      localStorage.setItem(STORAGE_KEYS.goal, goalInput.value);
+      localStorage.setItem(STORAGE_KEYS.initialAum, JSON.stringify(initialAum));
+      localStorage.setItem(STORAGE_KEYS.trailAum, JSON.stringify(trailAum));
+    }
+
+    function loadPersistedValues() {
+      const coef = localStorage.getItem(STORAGE_KEYS.coef);
+      const entryFee = localStorage.getItem(STORAGE_KEYS.entryFee);
+      const goal = localStorage.getItem(STORAGE_KEYS.goal);
+      const initialAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.initialAum) || '{}');
+      const trailAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.trailAum) || '{}');
+      if (coef !== null) coefInput.value = coef;
+      if (entryFee !== null) entryFeeInput.value = entryFee;
+      if (goal !== null) goalInput.value = goal;
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+        if (initialAum[input.dataset.key]) input.value = initialAum[input.dataset.key];
+      });
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+        if (trailAum[input.dataset.key]) input.value = trailAum[input.dataset.key];
+      });
+    }
+
+    function calculateInitialRows() {
+      const coef = sanitizeNumber(coefInput.value);
+      const entryFee = sanitizeNumber(entryFeeInput.value);
+      let totalAum = 0, totalFee = 0, totalBonus = 0, totalCommission = 0, totalPoints = 0;
+
+      INITIAL_FUNDS.forEach((row, index) => {
+        const input = document.querySelector(`[data-initial-aum="${index}"]`);
+        const aum = sanitizeNumber(input?.value);
+        const feeCommission = aum * entryFee / DENOM * coef;
+        let bonusCommission = 0;
+        if (row.bonusMode === 'bt_points') {
+          bonusCommission = aum * row.bonusRate / DENOM * coef;
+        } else if (row.bonusMode === 'cash') {
+          bonusCommission = aum * row.bonusRate;
+        }
+        const total = feeCommission + bonusCommission;
+        let points = 0;
+        if (row.pointsMode === 'cash_bonus_to_points') {
+          points = (feeCommission / coef) + (bonusCommission / 1000) * 4;
+        } else {
+          points = total / coef;
+        }
+
+        if (!row.type) {
+          totalAum += aum;
+          totalFee += feeCommission;
+          totalBonus += bonusCommission;
+          totalCommission += total;
+          totalPoints += points;
+        }
+
+        const cells = document.querySelectorAll(`[data-row="initial-${index}"]`);
+        if (cells.length) {
+          cells[0].textContent = formatCurrency(feeCommission);
+          cells[1].textContent = formatCurrency(bonusCommission);
+          cells[2].textContent = formatCurrency(total);
+          cells[3].textContent = formatPoints(points);
+        }
+      });
+
+      document.getElementById('initialTotalAum').textContent = formatCurrency(totalAum);
+      document.getElementById('initialTotalFee').textContent = formatCurrency(totalFee);
+      document.getElementById('initialTotalBonus').textContent = formatCurrency(totalBonus);
+      document.getElementById('initialTotalCommission').textContent = formatCurrency(totalCommission);
+      document.getElementById('initialTotalPoints').textContent = formatPoints(totalPoints);
+    }
+
+    function calculateTrailRows() {
+      const coef = sanitizeNumber(coefInput.value);
+      let totalAum = 0, totalTrail = 0;
+      let weightedNumerator = 0;
+
+      TRAIL_FUNDS.forEach((row, index) => {
+        const input = document.querySelector(`[data-trail-aum="${index}"]`);
+        const aum = sanitizeNumber(input?.value);
+        const annualTrail = aum * row.annualRate / DENOM * coef;
+
+        if (!row.type) {
+          totalAum += aum;
+          totalTrail += annualTrail;
+          weightedNumerator += aum * row.annualRate;
+        }
+
+        const cells = document.querySelectorAll(`[data-row="trail-${index}"]`);
+        if (cells.length) {
+          cells[0].textContent = formatCurrency(annualTrail);
+          cells[1].textContent = formatPercent(row.annualRate * 100) + ' %';
+        }
+      });
+
+      document.getElementById('trailTotalAum').textContent = formatCurrency(totalAum);
+      document.getElementById('trailTotalAnnual').textContent = formatCurrency(totalTrail);
+
+      if (totalAum === 0) {
+        weightedRateEl.textContent = 'zadáno málo dat k výpočtu';
+      } else {
+        const weightedRate = (weightedNumerator / totalAum) * 100;
+        weightedRateEl.textContent = formatPercent(weightedRate) + ' % p.a.';
+      }
+
+      const goal = sanitizeNumber(goalInput.value);
+      const monthly = totalTrail / 12;
+      const gap = Math.max(goal - totalTrail, 0);
+      monthlyIncome.textContent = formatCurrency(monthly);
+      goalGap.textContent = goal === 0 ? '0 Kč' : formatCurrency(gap);
+    }
+
+    function buildInitialTable() {
+      initialBody.innerHTML = '';
+      INITIAL_FUNDS.forEach((row, index) => {
+        if (row.type === 'separator') {
+          const tr = document.createElement('tr');
+          tr.className = 'separator-row';
+          tr.innerHTML = '<td colspan="8"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
+          initialBody.appendChild(tr);
+          return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
+          <td class="px-3 py-2">${row.fund}</td>
+          <td class="px-3 py-2"><input type="text" data-initial-aum data-key="${index}" data-initial-aum="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 text-[var(--color-muted)] text-xs md:text-sm">${row.note || ''}</td>
+        `;
+        initialBody.appendChild(tr);
+      });
+
+      const totalRow = document.createElement('tr');
+      totalRow.className = 'highlight-row';
+      totalRow.innerHTML = `
+        <td class="px-3 py-2 font-bold">Celkem</td>
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold" id="initialTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold" id="initialTotalFee">0 Kč</td>
+        <td class="px-3 py-2 font-bold" id="initialTotalBonus">0 Kč</td>
+        <td class="px-3 py-2 font-bold" id="initialTotalCommission">0 Kč</td>
+        <td class="px-3 py-2 font-bold" id="initialTotalPoints">0</td>
+        <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
+      `;
+      initialBody.appendChild(totalRow);
+    }
+
+    function buildTrailTable() {
+      trailBody.innerHTML = '';
+      TRAIL_FUNDS.forEach((row, index) => {
+        if (row.type === 'separator') {
+          const tr = document.createElement('tr');
+          tr.className = 'separator-row';
+          tr.innerHTML = '<td colspan="6"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
+          trailBody.appendChild(tr);
+          return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
+          <td class="px-3 py-2">${row.fund}</td>
+          <td class="px-3 py-2"><input type="text" data-trail-aum data-key="${index}" data-trail-aum="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="trail-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="trail-${index}"></td>
+          <td class="px-3 py-2 text-[var(--color-muted)] text-xs md:text-sm">${row.note || ''}</td>
+        `;
+        trailBody.appendChild(tr);
+      });
+
+      const totalRow = document.createElement('tr');
+      totalRow.className = 'highlight-row';
+      totalRow.innerHTML = `
+        <td class="px-3 py-2 font-bold">Celkem</td>
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold" id="trailTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold" id="trailTotalAnnual">0 Kč</td>
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
+      `;
+      trailBody.appendChild(totalRow);
+    }
+
+    function attachListeners() {
+      const allInputs = document.querySelectorAll('input');
+      allInputs.forEach((input) => {
+        input.addEventListener('input', () => {
+          calculateInitialRows();
+          calculateTrailRows();
+          persistValues();
+        });
+      });
+
+      resetButton.addEventListener('click', () => {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => (input.value = ''));
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => (input.value = ''));
+        coefInput.value = '60';
+        entryFeeInput.value = '0.01';
+        goalInput.value = '1200000';
+        calculateInitialRows();
+        calculateTrailRows();
+        persistValues();
+      });
+    }
+
+    function init() {
+      buildInitialTable();
+      buildTrailTable();
+      loadPersistedValues();
+      calculateInitialRows();
+      calculateTrailRows();
+      attachListeners();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
