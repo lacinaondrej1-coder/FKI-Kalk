@@ -3,58 +3,122 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FKI Report Následků a vstupů HTML</title>
+  <title>FKI – Provize (vstupní a následné)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
     :root {
       color-scheme: light;
-      --color-bg-start: #f6fbff;
-      --color-bg-end: #eef3f9;
+      --color-bg-start: #f7fbff;
+      --color-bg-end: #eef2f7;
       --color-primary: #0d2c54;
-      --color-accent: #4DB1C8;
-      --color-text: #1f2933;
-      --color-muted: #768395;
-      --color-border: #dfe7ef;
-      --color-border-strong: #c8d7e6;
+      --color-accent: #4db1c8;
+      --color-text: #1c2734;
+      --color-muted: #6b7785;
+      --color-border: #dbe4ee;
+      --color-border-strong: #c3cedc;
       --color-card: #ffffff;
-      --color-surface: #f4f7fb;
-      --color-shadow: 0 14px 32px -12px rgba(13, 44, 84, 0.18);
-      --color-shadow-soft: 0 12px 28px -16px rgba(13, 44, 84, 0.12);
+      --color-shadow: 0 20px 45px -25px rgba(13, 44, 84, 0.35);
+      --color-shadow-strong: 0 20px 60px -30px rgba(13, 44, 84, 0.42);
     }
     body {
       font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 12% 15%, rgba(77, 177, 200, 0.08), transparent 30%),
-        radial-gradient(circle at 80% 10%, rgba(13, 44, 84, 0.05), transparent 28%),
-        linear-gradient(180deg, var(--color-bg-start), var(--color-bg-end));
+      background: linear-gradient(180deg, var(--color-bg-start), var(--color-bg-end));
       color: var(--color-text);
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'tnum' 1, 'lnum' 1;
     }
     .card {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 1));
+      background: var(--color-card);
       border: 1px solid var(--color-border);
-      box-shadow: var(--color-shadow-soft);
+      border-radius: 1.5rem;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
-    .table-head { background: linear-gradient(90deg, #f4f7fb, #eef3f9); color: #0d2c54; }
-    .separator-row td { padding: 10px 0; border: none; }
-    .highlight-row { background: #eaf3ff; font-weight: 700; box-shadow: inset 0 1px 0 var(--color-border-strong); }
-    input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0; box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.15); }
-    .pill { background: rgba(77, 177, 200, 0.12); color: #0d2c54; border: 1px solid rgba(77, 177, 200, 0.35); }
-    .badge-soft { background: rgba(13, 44, 84, 0.08); color: #0d2c54; border: 1px solid rgba(13, 44, 84, 0.08); }
-    .glass { backdrop-filter: blur(6px); }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--color-shadow);
+    }
+    .table-head {
+      background: linear-gradient(90deg, rgba(13, 44, 84, 0.06), rgba(77, 177, 200, 0.06));
+      color: var(--color-primary);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .separator-row td { padding: 12px 0; border: none; }
+    .highlight-row {
+      background: rgba(77, 177, 200, 0.12);
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 var(--color-border-strong);
+    }
+    input:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 0;
+      box-shadow: 0 0 0 6px rgba(77, 177, 200, 0.16);
+    }
+    .pill {
+      background: rgba(77, 177, 200, 0.16);
+      color: var(--color-primary);
+      border: 1px solid rgba(77, 177, 200, 0.3);
+      letter-spacing: 0.08em;
+    }
+    .badge-soft {
+      background: rgba(13, 44, 84, 0.08);
+      color: var(--color-primary);
+      border: 1px solid rgba(13, 44, 84, 0.08);
+      letter-spacing: 0.06em;
+    }
+    .glass { backdrop-filter: blur(10px); }
+    .primary-btn,
+    .secondary-btn,
+    .danger-btn {
+      border-radius: 0.9rem;
+      font-weight: 600;
+      padding: 0.85rem 1.35rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .primary-btn {
+      background: linear-gradient(135deg, #0d2c54, #15558a);
+      color: white;
+      box-shadow: 0 10px 30px -14px rgba(13, 44, 84, 0.5);
+    }
+    .primary-btn:hover { transform: translateY(-2px); box-shadow: var(--color-shadow-strong); }
+    .glass-input {
+      border-radius: 0.9rem;
+      border: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.92);
+      padding: 0.75rem 1rem;
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+    .glass-input::placeholder { color: var(--color-muted); }
+    .table-input {
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.8rem;
+      border: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.96);
+      text-align: right;
+      color: var(--color-primary);
+    }
+    tbody tr.data-row:nth-child(even) { background: rgba(13, 44, 84, 0.02); }
+    tbody tr.data-row:hover { background: rgba(77, 177, 200, 0.08); }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    }
   </style>
 </head>
 <body class="min-h-screen">
-  <div class="max-w-7xl mx-auto px-4 py-10 space-y-8">
-    <header class="card glass rounded-3xl border border-white/70 shadow-[0_18px_45px_-22px_rgba(13,44,84,0.35)] p-6 md:p-8 relative overflow-hidden">
+  <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <header class="card glass p-6 md:p-8 relative overflow-hidden">
       <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div class="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,rgba(77,177,200,0.45),transparent_60%)]"></div>
-        <div class="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,rgba(13,44,84,0.12),transparent_60%)]"></div>
+        <div class="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[radial-gradient(circle_at_center,rgba(77,177,200,0.35),transparent_60%)]"></div>
+        <div class="absolute -left-12 bottom-0 h-52 w-52 rounded-full bg-[radial-gradient(circle_at_center,rgba(13,44,84,0.14),transparent_60%)]"></div>
       </div>
       <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div class="space-y-2">
-          <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">FKI Advisory</div>
-          <h1 class="text-3xl md:text-4xl font-semibold text-[var(--color-primary)]">FKI Report Následků a vstupů</h1>
-          <p class="text-[var(--color-muted)] max-w-2xl">Interní kalkulačka pro poradce. Okamžitě přepočítává získatelské i následné provize dle aktuálních vstupů a koeficientů.</p>
+          <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">FKI</div>
+          <h1 class="text-3xl md:text-4xl font-semibold text-[var(--color-primary)]">FKI – Provize (vstupní a následné)</h1>
+          <p class="text-[var(--color-muted)] max-w-2xl">Interní kalkulačka pro výpočet získatelských a následných provizí.</p>
           <div class="flex flex-wrap gap-2 text-xs font-semibold">
             <span class="badge-soft rounded-full px-3 py-1">Denom: 250</span>
             <span class="badge-soft rounded-full px-3 py-1">Bonusy mimo BT přepočet: /1000 * 4</span>
@@ -62,40 +126,42 @@
         </div>
         <div class="flex items-center gap-3">
           <div class="hidden sm:block h-12 w-px bg-gradient-to-b from-transparent via-[var(--color-border-strong)] to-transparent"></div>
-          <button id="resetButton" class="relative inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white bg-[linear-gradient(135deg,#0d2c54,#0f4b7a)] shadow-lg shadow-[rgba(13,44,84,0.25)] hover:translate-y-[-1px] transition-transform">Vymazat hodnoty</button>
+          <button id="resetButton" class="primary-btn">Vymazat hodnoty</button>
         </div>
       </div>
     </header>
 
-    <section class="card rounded-3xl p-6 md:p-8 border border-[var(--color-border)]">
-      <div class="flex flex-col gap-2 mb-4">
-        <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Globální vstupy</p>
+    <section class="card p-6 md:p-8">
+      <div class="flex flex-col gap-2 mb-6">
+        <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Nastavení výpočtu</p>
         <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Nastavení pro výpočet</h2>
         <p class="text-[var(--color-muted)]">Koeficient a vstupní poplatek ovlivní všechny výpočty v obou tabulkách.</p>
       </div>
       <div class="grid gap-4 sm:grid-cols-2">
-        <div class="space-y-2">
+        <div class="card p-4 flex flex-col gap-2">
           <label class="text-sm font-semibold text-[var(--color-muted)]" for="coefInput">Koeficient</label>
-          <input id="coefInput" type="number" step="any" class="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-lg font-semibold text-[var(--color-primary)] shadow-inner shadow-white/60" value="60" />
+          <input id="coefInput" type="number" step="any" class="glass-input" value="60" />
         </div>
-        <div class="space-y-2">
-          <label class="text-sm font-semibold text-[var(--color-muted)]" for="entryFeeInput">Vstupní poplatek (%)</label>
+        <div class="card p-4 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-[var(--color-muted)]" for="entryFeeInput">Vstupní poplatek (%)</label>
+            <span class="text-xs text-[var(--color-muted)]">Zadejte procenta, např. 1,5</span>
+          </div>
           <div class="relative">
-            <input id="entryFeeInput" type="number" step="any" class="w-full rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-lg font-semibold text-[var(--color-primary)] shadow-inner shadow-white/60" value="1" />
-            <span class="absolute inset-y-0 right-4 flex items-center text-[var(--color-muted)] text-sm">%</span>
+            <input id="entryFeeInput" type="number" step="any" class="glass-input pr-10" value="1" />
+            <span class="absolute inset-y-0 right-3 flex items-center text-[var(--color-muted)] font-semibold">%</span>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="card rounded-3xl p-6 md:p-8 space-y-4 border border-[var(--color-border)]">
+    <section class="card p-6 md:p-8 space-y-4">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div class="space-y-1">
-          <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Část A</p>
+          <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část A</div>
           <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Získatelské provize</h2>
-          <p class="text-[var(--color-muted)]">Výpočet z konfigurace INITIAL_FUNDS včetně bonusů BT a mimo BT.</p>
         </div>
-        <span class="inline-flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-[var(--color-primary)] border border-[var(--color-border)]">Aktualizace v reálném čase</span>
+        <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: INITIAL_FUNDS</p>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
@@ -103,11 +169,11 @@
             <tr>
               <th class="px-3 py-2 text-left">#</th>
               <th class="px-3 py-2 text-left">Fond</th>
-              <th class="px-3 py-2 text-left">Objem AÚM (Kč)</th>
-              <th class="px-3 py-2 text-left">Provize z poplatku</th>
-              <th class="px-3 py-2 text-left">Vstupní bonus</th>
-              <th class="px-3 py-2 text-left">Provize celkem</th>
-              <th class="px-3 py-2 text-left">Body</th>
+              <th class="px-3 py-2 text-right">AÚM (Kč)</th>
+              <th class="px-3 py-2 text-right">Provize z poplatku</th>
+              <th class="px-3 py-2 text-right">Vstupní bonus</th>
+              <th class="px-3 py-2 text-right">Provize celkem</th>
+              <th class="px-3 py-2 text-right">Body</th>
               <th class="px-3 py-2 text-left">Poznámka</th>
             </tr>
           </thead>
@@ -116,14 +182,13 @@
       </div>
     </section>
 
-    <section class="card rounded-3xl p-6 md:p-8 space-y-4 border border-[var(--color-border)]">
+    <section class="card p-6 md:p-8 space-y-4">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div class="space-y-1">
-          <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Část B</p>
+          <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část B</div>
           <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Následné provize</h2>
-          <p class="text-[var(--color-muted)]">Automatický přepočet ročních následků a vážené sazby portfolia.</p>
         </div>
-        <span class="inline-flex items-center gap-2 rounded-full bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-[var(--color-primary)] border border-[var(--color-border)]">Dle konfigurace TRAIL_FUNDS</span>
+        <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: TRAIL_FUNDS</p>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
@@ -131,9 +196,9 @@
             <tr>
               <th class="px-3 py-2 text-left">#</th>
               <th class="px-3 py-2 text-left">Fond</th>
-              <th class="px-3 py-2 text-left">Objem AÚM (Kč)</th>
-              <th class="px-3 py-2 text-left">Roční následky</th>
-              <th class="px-3 py-2 text-left">Výše následné provize</th>
+              <th class="px-3 py-2 text-right">AÚM (Kč)</th>
+              <th class="px-3 py-2 text-right">Roční následná provize</th>
+              <th class="px-3 py-2 text-right">Sazba (%)</th>
               <th class="px-3 py-2 text-left">Poznámka</th>
             </tr>
           </thead>
@@ -142,26 +207,26 @@
       </div>
 
       <div class="grid gap-4 md:grid-cols-3">
-        <div class="col-span-2 card rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-start)] p-4">
-          <h3 class="text-lg font-semibold text-[var(--color-primary)] mb-3">Můj cíl následných provizí</h3>
+        <div class="col-span-2 card p-4 bg-[rgba(77,177,200,0.05)]">
+          <h3 class="text-lg font-semibold text-[var(--color-primary)] mb-3">Cíl následných provizí</h3>
           <div class="grid gap-3 md:grid-cols-3">
             <div class="space-y-1">
               <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Cíl ročně (Kč)</label>
-              <input id="goalInput" type="number" step="any" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 font-semibold text-[var(--color-primary)]" value="1200000" />
+              <input id="goalInput" type="number" step="any" class="w-full glass-input" value="1200000" />
             </div>
             <div class="space-y-1">
-              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Měsíční příjem</p>
+              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Odhad měsíčně</p>
               <p id="monthlyIncome" class="text-lg font-semibold text-[var(--color-primary)]">0 Kč</p>
             </div>
             <div class="space-y-1">
-              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Chybí do cíle</p>
+              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Do cíle zbývá</p>
               <p id="goalGap" class="text-lg font-semibold text-[var(--color-primary)]">0 Kč</p>
             </div>
           </div>
         </div>
-        <div class="card rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-start)] p-4 flex flex-col gap-2 justify-center">
-          <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážený průměr sazby portfolia</p>
-          <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">zadáno málo dat k výpočtu</p>
+        <div class="card p-4 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
+          <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia</p>
+          <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
         </div>
       </div>
     </section>
@@ -433,7 +498,7 @@
       document.getElementById('trailTotalAnnual').textContent = formatCurrency(totalTrail);
 
       if (totalAum === 0) {
-        weightedRateEl.textContent = 'zadáno málo dat k výpočtu';
+        weightedRateEl.textContent = 'Zatím není dost dat pro výpočet';
       } else {
         const weightedRate = (weightedNumerator / totalAum) * 100;
         weightedRateEl.textContent = formatPercent(weightedRate) + ' % p.a.';
@@ -457,15 +522,15 @@
           return;
         }
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50';
+        tr.className = 'data-row transition-colors';
         tr.innerHTML = `
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2"><input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
-          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
-          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
-          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
-          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 text-right"><input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full table-input" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
           <td class="px-3 py-2 text-[var(--color-muted)] text-xs md:text-sm">${row.note || ''}</td>
         `;
         initialBody.appendChild(tr);
@@ -476,11 +541,11 @@
       totalRow.innerHTML = `
         <td class="px-3 py-2 font-bold">Celkem</td>
         <td class="px-3 py-2 font-bold"></td>
-        <td class="px-3 py-2 font-bold" id="initialTotalAum">0 Kč</td>
-        <td class="px-3 py-2 font-bold" id="initialTotalFee">0 Kč</td>
-        <td class="px-3 py-2 font-bold" id="initialTotalBonus">0 Kč</td>
-        <td class="px-3 py-2 font-bold" id="initialTotalCommission">0 Kč</td>
-        <td class="px-3 py-2 font-bold" id="initialTotalPoints">0</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalFee">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalBonus">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalCommission">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalPoints">0</td>
         <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
       `;
       initialBody.appendChild(totalRow);
@@ -497,13 +562,13 @@
           return;
         }
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50';
+        tr.className = 'data-row transition-colors';
         tr.innerHTML = `
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2"><input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
-          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="trail-${index}"></td>
-          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="trail-${index}"></td>
+          <td class="px-3 py-2 text-right"><input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full table-input" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="trail-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="trail-${index}"></td>
           <td class="px-3 py-2 text-[var(--color-muted)] text-xs md:text-sm">${row.note || ''}</td>
         `;
         trailBody.appendChild(tr);
@@ -514,8 +579,8 @@
       totalRow.innerHTML = `
         <td class="px-3 py-2 font-bold">Celkem</td>
         <td class="px-3 py-2 font-bold"></td>
-        <td class="px-3 py-2 font-bold" id="trailTotalAum">0 Kč</td>
-        <td class="px-3 py-2 font-bold" id="trailTotalAnnual">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="trailTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="trailTotalAnnual">0 Kč</td>
         <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
       `;
