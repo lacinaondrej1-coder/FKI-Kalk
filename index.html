@@ -235,15 +235,40 @@
       goal: 'fki_goal'
     };
 
+    function recalcAll() {
+      calculateInitialRows();
+      calculateTrailRows();
+      persistValues();
+    }
+
     function sanitizeNumber(value) {
       if (value === undefined || value === null) return 0;
       const raw = String(value).trim();
       if (!raw) return 0;
-      const normalized = raw.replace(/\s+/g, '').replace(/,/g, '.');
-      const parts = normalized.split('.');
-      const first = parts.shift();
-      const decimal = parts.length ? '.' + parts.join('') : '';
-      const num = parseFloat(first + decimal);
+
+      const noSpaces = raw.replace(/\s+/g, '');
+      const separators = noSpaces.match(/[.,]/g) || [];
+
+      if (separators.length === 0) {
+        const num = parseFloat(noSpaces);
+        return isNaN(num) ? 0 : num;
+      }
+
+      const hasComma = noSpaces.includes(',');
+      const hasDot = noSpaces.includes('.');
+
+      if ((hasComma && hasDot) || separators.length === 1) {
+        const lastComma = noSpaces.lastIndexOf(',');
+        const lastDot = noSpaces.lastIndexOf('.');
+        const decimalIndex = Math.max(lastComma, lastDot);
+        const integerPart = noSpaces.slice(0, decimalIndex).replace(/[.,]/g, '');
+        const decimalPart = noSpaces.slice(decimalIndex + 1).replace(/[.,]/g, '');
+        const composed = `${integerPart}.${decimalPart}`;
+        const num = parseFloat(composed);
+        return isNaN(num) ? 0 : num;
+      }
+
+      const num = parseFloat(noSpaces.replace(/[.,]/g, ''));
       return isNaN(num) ? 0 : num;
     }
 
@@ -312,10 +337,12 @@
         }
         const total = feeCommission + bonusCommission;
         let points = 0;
-        if (row.pointsMode === 'cash_bonus_to_points') {
-          points = (feeCommission / coef) + (bonusCommission / 1000) * 4;
-        } else {
-          points = total / coef;
+        if (coef > 0) {
+          if (row.pointsMode === 'cash_bonus_to_points') {
+            points = (feeCommission / coef) + (bonusCommission / 1000) * 4;
+          } else {
+            points = total / coef;
+          }
         }
 
         if (!row.type) {
@@ -397,7 +424,7 @@
         tr.innerHTML = `
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2"><input type="text" data-initial-aum data-key="${index}" data-initial-aum="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2"><input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="initial-${index}"></td>
@@ -437,7 +464,7 @@
         tr.innerHTML = `
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2"><input type="text" data-trail-aum data-key="${index}" data-trail-aum="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2"><input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2" inputmode="decimal" placeholder="0" /></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="trail-${index}"></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]" data-row="trail-${index}"></td>
           <td class="px-3 py-2 text-[var(--color-muted)] text-xs md:text-sm">${row.note || ''}</td>
@@ -459,13 +486,16 @@
     }
 
     function attachListeners() {
-      const allInputs = document.querySelectorAll('input');
-      allInputs.forEach((input) => {
-        input.addEventListener('input', () => {
-          calculateInitialRows();
-          calculateTrailRows();
-          persistValues();
-        });
+      initialBody.addEventListener('input', (event) => {
+        if (event.target.matches('[data-initial-aum]')) recalcAll();
+      });
+
+      trailBody.addEventListener('input', (event) => {
+        if (event.target.matches('[data-trail-aum]')) recalcAll();
+      });
+
+      [coefInput, entryFeeInput, goalInput].forEach((input) => {
+        input.addEventListener('input', recalcAll);
       });
 
       resetButton.addEventListener('click', () => {
@@ -474,9 +504,7 @@
         coefInput.value = '60';
         entryFeeInput.value = '0.01';
         goalInput.value = '1200000';
-        calculateInitialRows();
-        calculateTrailRows();
-        persistValues();
+        recalcAll();
       });
     }
 
@@ -484,8 +512,7 @@
       buildInitialTable();
       buildTrailTable();
       loadPersistedValues();
-      calculateInitialRows();
-      calculateTrailRows();
+      recalcAll();
       attachListeners();
     }
 
