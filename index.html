@@ -9,21 +9,21 @@
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
     :root {
       color-scheme: light;
-      --color-bg-start: #fdfefb;
-      --color-bg-end: #f8f9fa;
+      --color-bg-start: #f8fcff;
+      --color-bg-end: #f3f6fa;
       --color-primary: #0d2c54;
       --color-accent: #4db1c8;
-      --color-text: #1c2734;
-      --color-muted: #6b7785;
-      --color-border: #dbe4ee;
-      --color-border-strong: #c3cedc;
+      --color-text: #1f2a37;
+      --color-muted: #6b7280;
+      --color-border: #e5eaf0;
+      --color-border-strong: #d4dbe5;
       --color-card: #ffffff;
       --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
-      --color-shadow-strong: 0 18px 40px -18px rgba(13, 44, 84, 0.18);
+      --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
     }
     body {
       font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
-      background: linear-gradient(180deg, var(--color-bg-start), var(--color-bg-end));
+      background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
       color: var(--color-text);
       -webkit-font-smoothing: antialiased;
       font-feature-settings: 'tnum' 1, 'lnum' 1;
@@ -32,35 +32,42 @@
       background: var(--color-card);
       border: 1px solid var(--color-border);
       border-radius: 1.45rem;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-    .card:hover {
-      transform: translateY(-3px);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
       box-shadow: var(--color-shadow);
     }
-    .brand-header {
-      background: linear-gradient(135deg, rgba(13, 44, 84, 0.92), rgba(13, 44, 84, 0.82));
-      color: white;
-      border-radius: 1.6rem;
-      position: relative;
-      overflow: hidden;
+    .card:hover {
+      transform: translateY(-2px);
       box-shadow: var(--color-shadow-strong);
     }
-    .brand-header::after {
-      content: '';
+    .brand-header {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0 0 36px 36px;
+    }
+    .brand-backdrop {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 20% 20%, rgba(77, 177, 200, 0.3), transparent 45%),
-        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.08), transparent 38%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.9) 60%, rgba(247, 250, 253, 0.92) 100%);
+      border: 1px solid var(--color-border);
+      border-radius: 0 0 36px 36px;
+      box-shadow: var(--color-shadow);
       pointer-events: none;
     }
+    .brand-header-inner { position: relative; z-index: 1; }
+    .app-shell { max-width: 1160px; margin: 0 auto; padding: 0 1.5rem 2rem; }
+    .hero-badges span { background: #ffffff; border: 1px solid var(--color-border); color: var(--color-primary); }
+    .info-tile { border-radius: 1rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.9); box-shadow: var(--color-shadow); }
+    .info-tile h4 { font-size: 0.85rem; letter-spacing: 0.08em; color: var(--color-muted); }
+    .donut-legend li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; }
+    .donut-legend .label { display: flex; align-items: center; gap: 0.5rem; color: var(--color-text); }
+    .donut-legend .dot { width: 10px; height: 10px; border-radius: 999px; }
     .table-head {
       background: #f3f6fb;
       color: var(--color-primary);
       position: sticky;
       top: 0;
       z-index: 10;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       font-weight: 700;
       font-size: 0.75rem;
@@ -77,46 +84,51 @@
       box-shadow: 0 0 0 6px rgba(77, 177, 200, 0.16);
     }
     .pill {
-      background: rgba(77, 177, 200, 0.16);
+      background: rgba(13, 44, 84, 0.08);
       color: var(--color-primary);
-      border: 1px solid rgba(77, 177, 200, 0.28);
+      border: 1px solid rgba(13, 44, 84, 0.14);
       letter-spacing: 0.1em;
     }
     .badge-soft {
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #ffffff;
+      color: var(--color-primary);
+      border: 1px solid var(--color-border);
       letter-spacing: 0.08em;
     }
     .glass { backdrop-filter: blur(10px); }
     .primary-btn,
     .secondary-btn,
     .danger-btn {
-      border-radius: 0.9rem;
+      border-radius: 9999px;
       font-weight: 600;
-      padding: 0.75rem 1.25rem;
+      padding: 0.7rem 1.35rem;
       transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
     }
     .primary-btn {
-      background: linear-gradient(135deg, #0d2c54, #0fa3b1);
+      background: linear-gradient(120deg, #0d2c54, #4db1c8);
       color: white;
-      box-shadow: 0 10px 25px -14px rgba(13, 44, 84, 0.35);
+      box-shadow: 0 10px 25px -14px rgba(13, 44, 84, 0.28);
     }
     .secondary-btn {
-      background: white;
+      background: #ffffff;
       border: 1px solid var(--color-border);
       color: var(--color-primary);
     }
     .danger-btn {
-      background: linear-gradient(135deg, #e94f37, #c0392b);
-      color: white;
-      box-shadow: 0 10px 25px -14px rgba(233, 79, 55, 0.35);
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #c53030;
     }
     .primary-btn:hover, .secondary-btn:hover, .danger-btn:hover { transform: translateY(-2px); box-shadow: var(--color-shadow-strong); }
     .glass-input {
       border-radius: 0.9rem;
       border: 1px solid var(--color-border);
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.98);
       padding: 0.75rem 1rem;
       color: var(--color-primary);
       font-weight: 600;
@@ -135,12 +147,6 @@
       box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.18);
     }
     .brand-logo span { color: var(--color-accent); }
-    .segmented-active {
-      background: var(--color-primary);
-      color: white !important;
-      border-color: var(--color-primary) !important;
-      box-shadow: var(--color-shadow-strong);
-    }
     .toast {
       position: fixed;
       top: 16px;
@@ -172,54 +178,54 @@
   </style>
 </head>
 <body class="min-h-screen">
-  <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-    <header class="brand-header p-6 md:p-8">
-      <div class="relative z-10 flex flex-col gap-6">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div class="space-y-4">
-            <div class="flex items-center gap-3">
-              <div class="brand-logo text-2xl font-bold tracking-tight leading-none">Fair<span class="text-[var(--color-accent)]">Life</span></div>
-              <span class="badge-soft rounded-full px-3 py-1 text-xs font-semibold uppercase">FKI / Provize</span>
-            </div>
-            <div class="space-y-2">
-              <h1 class="text-3xl md:text-4xl font-semibold tracking-wide uppercase">FKI – Provize (vstupní a následné)</h1>
-              <p class="text-sm md:text-base text-white/80">Interní kalkulačka pro výpočet získatelských a následných provizí.</p>
-              <div class="flex flex-wrap gap-2 text-xs font-semibold text-white/90">
-                <span class="badge-soft rounded-full px-3 py-1">Bodový základ: 250</span>
-                <span class="badge-soft rounded-full px-3 py-1">Mimo BT: body = (bonus Kč / 1000) × 4</span>
-                <span class="badge-soft rounded-full px-3 py-1">Interní použití • FairLife</span>
-              </div>
+  <header class="brand-header">
+    <div class="brand-backdrop"></div>
+    <div class="brand-header-inner app-shell py-8 md:py-12">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+        <div class="space-y-4 max-w-2xl">
+          <div class="flex items-center gap-3">
+            <div class="brand-logo text-2xl font-bold tracking-tight leading-none">Fair<span>Life</span></div>
+            <span class="pill rounded-full px-3 py-1 text-xs font-semibold uppercase">FKI / Provize</span>
+          </div>
+          <div class="space-y-3">
+            <h1 class="text-3xl md:text-4xl font-semibold tracking-wide text-[var(--color-primary)]">FKI – Provize (vstupní a následné)</h1>
+            <p class="text-sm md:text-base text-[var(--color-muted)]">Interní kalkulačka pro výpočet získatelských a následných provizí.</p>
+            <div class="flex flex-wrap gap-2 text-xs font-semibold hero-badges">
+              <span class="rounded-full px-3 py-1">Bodový základ: 250</span>
+              <span class="rounded-full px-3 py-1">Mimo BT: body = (bonus Kč / 1000) × 4</span>
+              <span class="rounded-full px-3 py-1">Interní použití • FairLife</span>
             </div>
           </div>
-          <div class="flex flex-col gap-3 w-full lg:w-auto">
-            <div class="flex flex-wrap gap-3 justify-start lg:justify-end">
-              <button id="exportJsonBtn" class="primary-btn">Export JSON</button>
-              <button id="importJsonBtn" class="secondary-btn bg-white/10 border-white/30 text-white">Import JSON</button>
-              <button id="fillTestButton" class="secondary-btn bg-white/10 border-white/30 text-white">Test: 10 000 000</button>
-              <button id="resetButton" class="danger-btn">Vymazat</button>
+        </div>
+        <div class="flex flex-col gap-4 w-full lg:w-5/12">
+          <div class="flex flex-wrap gap-2 justify-start lg:justify-end">
+            <button id="exportJsonBtn" class="primary-btn">Export JSON</button>
+            <button id="importJsonBtn" class="secondary-btn">Import JSON</button>
+            <button id="fillTestButton" class="secondary-btn">Test: 10 000 000</button>
+            <button id="resetButton" class="danger-btn">Vymazat</button>
+          </div>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <div class="info-tile p-4">
+              <h4 class="uppercase font-semibold">Rychlá práce</h4>
+              <p class="text-sm font-semibold text-[var(--color-text)]">Skrývání fondů, test plnění a export/import portfolia.</p>
             </div>
-            <div class="grid sm:grid-cols-3 gap-3">
-              <div class="card bg-white/10 border-white/20 text-white p-4 backdrop-blur-sm">
-                <p class="text-xs uppercase tracking-wide text-white/70">Rychlá práce</p>
-                <p class="text-sm font-semibold">Skrývání fondů, test plnění a export/import portfolia.</p>
-              </div>
-              <div class="card bg-white/10 border-white/20 text-white p-4 backdrop-blur-sm">
-                <p class="text-xs uppercase tracking-wide text-white/70">Přepočet období</p>
-                <p class="text-sm font-semibold">Roční / kvartální / měsíční pohled pro následky.</p>
-              </div>
-              <div class="card bg-white/10 border-white/20 text-white p-4 backdrop-blur-sm">
-                <p class="text-xs uppercase tracking-wide text-white/70">Formátování</p>
-                <p class="text-sm font-semibold">AÚM s mezerami, podpora zadání 500000+700000.</p>
-              </div>
+            <div class="info-tile p-4">
+              <h4 class="uppercase font-semibold">Přepočet období</h4>
+              <p class="text-sm font-semibold text-[var(--color-text)]">Roční / kvartální / měsíční pohled pro následky.</p>
+            </div>
+            <div class="info-tile p-4">
+              <h4 class="uppercase font-semibold">Formátování</h4>
+              <p class="text-sm font-semibold text-[var(--color-text)]">AÚM s mezerami, podpora zadání 500000+700000.</p>
             </div>
           </div>
         </div>
       </div>
-    </header>
-    <input id="importJsonFile" type="file" accept="application/json" class="hidden" />
-    <div id="toast" class="toast"></div>
+    </div>
+  </header>
+  <input id="importJsonFile" type="file" accept="application/json" class="hidden" />
+  <div id="toast" class="toast"></div>
 
-    <main class="relative -mt-6 space-y-8">
+  <main class="app-shell -mt-12 space-y-8">
       <section class="card p-6 md:p-8">
         <div class="flex flex-col gap-2 mb-6">
           <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Nastavení</p>
@@ -309,35 +315,68 @@
         </table>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-3">
-        <div class="col-span-2 card p-4 bg-[rgba(77,177,200,0.05)]">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Cíl následných provizí</h3>
-            <div class="inline-flex bg-white border border-[var(--color-border)] rounded-full p-1 gap-1" role="group">
-              <button class="secondary-btn text-xs px-3 py-1" data-period="annual">Ročně</button>
-              <button class="secondary-btn text-xs px-3 py-1" data-period="quarterly">Kvartálně</button>
-              <button class="secondary-btn text-xs px-3 py-1" data-period="monthly">Měsíčně</button>
+      <div class="grid gap-6 lg:grid-cols-2 items-start">
+        <div class="card p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <h3 class="text-lg font-semibold text-[var(--color-primary)]">Rozložení portfolia (následky)</h3>
+              <p class="text-sm text-[var(--color-muted)]">Zobrazuje pouze nezakryté fondy s AÚM &gt; 0.</p>
             </div>
           </div>
-          <div class="grid gap-3 md:grid-cols-3">
-            <div class="space-y-1">
-              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Cíl ročně (Kč)</label>
-              <input id="goalInput" type="number" step="any" class="w-full glass-input" value="1200000" />
-              <p class="text-xs text-[var(--color-muted)]" id="goalHelper"></p>
+          <div class="flex flex-col md:flex-row gap-4 md:items-center">
+            <div class="relative mx-auto">
+              <svg id="donutChart" viewBox="0 0 200 200" class="w-56 h-56"></svg>
+              <div id="donutEmpty" class="absolute inset-0 flex items-center justify-center text-[var(--color-muted)] text-sm text-center px-4 hidden">Zatím není co zobrazit</div>
             </div>
-            <div class="space-y-1">
-              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]" id="monthlyIncomeLabel">Odhad kvartálně</p>
-              <p id="monthlyIncome" class="text-lg font-semibold text-[var(--color-primary)]">0 Kč</p>
-            </div>
-            <div class="space-y-1">
-              <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Do cíle zbývá</p>
-              <p id="goalGap" class="text-lg font-semibold text-[var(--color-primary)]">0 Kč</p>
-            </div>
+            <ul id="donutLegend" class="donut-legend flex-1 text-sm"></ul>
           </div>
         </div>
-        <div class="card p-4 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
-          <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia</p>
-          <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
+        <div class="space-y-4">
+          <div class="card p-5 space-y-4">
+            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Cíl následných provizí</h3>
+            <div class="space-y-3">
+              <div class="grid grid-cols-3 gap-3 text-xs uppercase tracking-wide text-[var(--color-muted)]">
+                <span>Cíl</span><span class="text-right">Aktuálně</span><span class="text-right">Zbývá</span>
+              </div>
+              <div class="grid grid-cols-3 gap-3 items-center">
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Ročně</label>
+                  <div class="relative">
+                    <input id="goalInput" type="number" step="any" class="w-full glass-input pr-10" value="1200000" />
+                    <span class="input-suffix">Kč</span>
+                  </div>
+                </div>
+                <p id="currentAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+                <p id="gapAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+              </div>
+              <div class="grid grid-cols-3 gap-3 items-center">
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalQuarterlyInput">Kvartálně</label>
+                  <div class="relative">
+                    <input id="goalQuarterlyInput" type="number" step="any" class="w-full glass-input pr-10" value="300000" />
+                    <span class="input-suffix">Kč</span>
+                  </div>
+                </div>
+                <p id="currentQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+                <p id="gapQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+              </div>
+              <div class="grid grid-cols-3 gap-3 items-center">
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalMonthlyInput">Měsíčně</label>
+                  <div class="relative">
+                    <input id="goalMonthlyInput" type="number" step="any" class="w-full glass-input pr-10" value="100000" />
+                    <span class="input-suffix">Kč</span>
+                  </div>
+                </div>
+                <p id="currentMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+                <p id="gapMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+              </div>
+            </div>
+          </div>
+          <div class="card p-4 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
+            <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia</p>
+            <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
+          </div>
         </div>
       </div>
     </section>
@@ -435,10 +474,14 @@
     const coefInput = document.getElementById('coefInput');
     const entryFeeInput = document.getElementById('entryFeeInput');
     const goalInput = document.getElementById('goalInput');
-    const goalHelper = document.getElementById('goalHelper');
-    const monthlyIncome = document.getElementById('monthlyIncome');
-    const monthlyIncomeLabel = document.getElementById('monthlyIncomeLabel');
-    const goalGap = document.getElementById('goalGap');
+    const goalQuarterlyInput = document.getElementById('goalQuarterlyInput');
+    const goalMonthlyInput = document.getElementById('goalMonthlyInput');
+    const currentAnnual = document.getElementById('currentAnnual');
+    const currentQuarterly = document.getElementById('currentQuarterly');
+    const currentMonthly = document.getElementById('currentMonthly');
+    const gapAnnual = document.getElementById('gapAnnual');
+    const gapQuarterly = document.getElementById('gapQuarterly');
+    const gapMonthly = document.getElementById('gapMonthly');
     const weightedRateEl = document.getElementById('weightedRate');
     const resetButton = document.getElementById('resetButton');
     const fillTestButton = document.getElementById('fillTestButton');
@@ -450,8 +493,9 @@
     const importJsonBtn = document.getElementById('importJsonBtn');
     const importJsonFile = document.getElementById('importJsonFile');
     const toastEl = document.getElementById('toast');
-    const periodButtons = () => document.querySelectorAll('[data-period]');
-    let periodMode = 'quarterly';
+    const donutChart = document.getElementById('donutChart');
+    const donutLegend = document.getElementById('donutLegend');
+    const donutEmpty = document.getElementById('donutEmpty');
 
     const STORAGE_KEYS = {
       coef: 'fki_coef',
@@ -460,8 +504,7 @@
       trailAum: 'fki_trail_aum',
       goal: 'fki_goal',
       hiddenInitial: 'fki_hidden_initial',
-      hiddenTrail: 'fki_hidden_trail',
-      periodMode: 'fki_period_mode'
+      hiddenTrail: 'fki_hidden_trail'
     };
 
     const hiddenState = {
@@ -556,28 +599,6 @@
       return number.toLocaleString('cs-CZ');
     }
 
-    function getPeriodFactor(mode) {
-      if (mode === 'annual') return 1;
-      if (mode === 'monthly') return 1 / 12;
-      return 1 / 4;
-    }
-
-    function setPeriodMode(mode, shouldRecalc = true) {
-      periodMode = mode;
-      localStorage.setItem(STORAGE_KEYS.periodMode, periodMode);
-      periodButtons().forEach((btn) => btn.classList.toggle('segmented-active', btn.dataset.period === periodMode));
-      updateGoalHelper(sanitizeNumber(goalInput.value));
-      if (shouldRecalc) recalcAll();
-    }
-
-    function updateGoalHelper(goalAnnual) {
-      const quarterly = goalAnnual / 4;
-      const monthly = goalAnnual / 12;
-      if (goalHelper) {
-        goalHelper.textContent = `Kvartálně: ${formatCurrency(quarterly).replace(' Kč', '')} Kč • Měsíčně: ${formatCurrency(monthly).replace(' Kč', '')} Kč`;
-      }
-    }
-
     function getAumValue(input) {
       return sanitizeNumber(input?.dataset.value ?? input?.value);
     }
@@ -587,6 +608,19 @@
       input.dataset.value = numericValue;
       input.dataset.lastValid = numericValue;
       input.value = formatAum(numericValue);
+    }
+
+    function syncGoals(source = 'annual') {
+      let annual = sanitizeNumber(goalInput.value);
+      if (source === 'quarterly') {
+        annual = sanitizeNumber(goalQuarterlyInput.value) * 4;
+      } else if (source === 'monthly') {
+        annual = sanitizeNumber(goalMonthlyInput.value) * 12;
+      }
+      annual = Math.max(0, annual);
+      goalInput.value = annual;
+      goalQuarterlyInput.value = annual / 4;
+      goalMonthlyInput.value = annual / 12;
     }
 
     function applyVisibility(type, index) {
@@ -611,7 +645,6 @@
       localStorage.setItem(STORAGE_KEYS.coef, coefInput.value);
       localStorage.setItem(STORAGE_KEYS.entryFee, entryFeeInput.value);
       localStorage.setItem(STORAGE_KEYS.goal, goalInput.value);
-      localStorage.setItem(STORAGE_KEYS.periodMode, periodMode);
       localStorage.setItem(STORAGE_KEYS.initialAum, JSON.stringify(initialAum));
       localStorage.setItem(STORAGE_KEYS.trailAum, JSON.stringify(trailAum));
       localStorage.setItem(STORAGE_KEYS.hiddenInitial, JSON.stringify(hiddenState.initial));
@@ -622,21 +655,18 @@
       const coef = localStorage.getItem(STORAGE_KEYS.coef);
       const entryFee = localStorage.getItem(STORAGE_KEYS.entryFee);
       const goal = localStorage.getItem(STORAGE_KEYS.goal);
-      const storedPeriod = localStorage.getItem(STORAGE_KEYS.periodMode);
       const initialAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.initialAum) || '{}');
       const trailAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.trailAum) || '{}');
       if (coef !== null) coefInput.value = coef;
       if (entryFee !== null) entryFeeInput.value = entryFee;
       if (goal !== null) goalInput.value = goal;
-      if (storedPeriod) periodMode = storedPeriod;
       document.querySelectorAll('[data-initial-aum]').forEach((input) => {
         if (initialAum[input.dataset.key] !== undefined) setAumValue(input, initialAum[input.dataset.key]);
       });
       document.querySelectorAll('[data-trail-aum]').forEach((input) => {
         if (trailAum[input.dataset.key] !== undefined) setAumValue(input, trailAum[input.dataset.key]);
       });
-      periodButtons().forEach((btn) => btn.classList.toggle('segmented-active', btn.dataset.period === periodMode));
-      updateGoalHelper(sanitizeNumber(goalInput.value));
+      syncGoals('annual');
     }
 
     function calculateInitialRows() {
@@ -694,6 +724,7 @@
       const coef = sanitizeNumber(coefInput.value);
       let totalAum = 0, totalTrail = 0;
       let weightedNumerator = 0;
+      const donutData = [];
 
       TRAIL_FUNDS.forEach((row, index) => {
         const input = document.querySelector(`[data-trail-aum="${index}"]`);
@@ -705,6 +736,9 @@
           totalAum += aum;
           totalTrail += annualTrail;
           weightedNumerator += aum * row.annualRate;
+          if (aum > 0) {
+            donutData.push({ label: row.fund, value: aum });
+          }
         }
 
         const cells = document.querySelectorAll(`[data-row="trail-${index}"]`);
@@ -724,24 +758,122 @@
         weightedRateEl.textContent = formatPercent(weightedRate) + ' % p.a.';
       }
       updateGoalOutputs(totalTrail);
+      updateDonutChart(donutData);
     }
 
     function updateGoalOutputs(totalTrail) {
-      const goalAnnual = sanitizeNumber(goalInput.value);
-      const factor = getPeriodFactor(periodMode);
-      const incomePeriod = totalTrail * factor;
-      const goalPeriod = goalAnnual * factor;
-      const gapPeriod = Math.max(goalPeriod - incomePeriod, 0);
+      const goalAnnual = Math.max(0, sanitizeNumber(goalInput.value));
+      const goalQuarterly = goalAnnual / 4;
+      const goalMonthly = goalAnnual / 12;
 
-      const labelMap = {
-        annual: 'Odhad ročně',
-        quarterly: 'Odhad kvartálně',
-        monthly: 'Odhad měsíčně'
+      const currentQuarterlyValue = totalTrail / 4;
+      const currentMonthlyValue = totalTrail / 12;
+
+      currentAnnual.textContent = formatCurrency(totalTrail);
+      currentQuarterly.textContent = formatCurrency(currentQuarterlyValue);
+      currentMonthly.textContent = formatCurrency(currentMonthlyValue);
+
+      gapAnnual.textContent = formatCurrency(Math.max(goalAnnual - totalTrail, 0));
+      gapQuarterly.textContent = formatCurrency(Math.max(goalQuarterly - currentQuarterlyValue, 0));
+      gapMonthly.textContent = formatCurrency(Math.max(goalMonthly - currentMonthlyValue, 0));
+
+      goalQuarterlyInput.value = goalQuarterly;
+      goalMonthlyInput.value = goalMonthly;
+    }
+
+    function updateDonutChart(data = []) {
+      if (!donutChart || !donutLegend || !donutEmpty) return;
+      donutChart.innerHTML = '';
+      donutLegend.innerHTML = '';
+      donutEmpty.classList.add('hidden');
+
+      const filtered = data.filter((item) => item.value > 0);
+      const total = filtered.reduce((sum, item) => sum + item.value, 0);
+      if (total <= 0) {
+        donutEmpty.classList.remove('hidden');
+        return;
+      }
+
+      filtered.sort((a, b) => b.value - a.value);
+      const displayData = filtered.slice(0, 8);
+      if (filtered.length > 8) {
+        const otherValue = filtered.slice(8).reduce((sum, item) => sum + item.value, 0);
+        displayData.push({ label: 'Ostatní', value: otherValue });
+      }
+
+      const colors = ['#0d2c54', '#4db1c8', '#7ab8f5', '#9ad5e1', '#6c6ff5', '#f2a93b', '#d97757', '#7cc29b', '#b8a0ff', '#6f9ce6'];
+      const radius = 70;
+      const center = 100;
+      const circumference = 2 * Math.PI * radius;
+      let offset = 0;
+
+      const baseCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      baseCircle.setAttribute('cx', center);
+      baseCircle.setAttribute('cy', center);
+      baseCircle.setAttribute('r', radius);
+      baseCircle.setAttribute('fill', 'none');
+      baseCircle.setAttribute('stroke', 'rgba(13,44,84,0.08)');
+      baseCircle.setAttribute('stroke-width', '24');
+      donutChart.appendChild(baseCircle);
+
+      displayData.forEach((item, idx) => {
+        const fraction = item.value / total;
+        const dash = fraction * circumference;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', center);
+        circle.setAttribute('cy', center);
+        circle.setAttribute('r', radius);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', colors[idx % colors.length]);
+        circle.setAttribute('stroke-width', '24');
+        circle.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
+        circle.setAttribute('stroke-dashoffset', -offset);
+        circle.setAttribute('class', 'donut-segment');
+        circle.dataset.seg = idx;
+        circle.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+        circle.style.transformOrigin = '100px 100px';
+        donutChart.appendChild(circle);
+        offset += dash;
+      });
+
+      displayData.forEach((item, idx) => {
+        const percent = ((item.value / total) * 100).toFixed(1);
+        const li = document.createElement('li');
+        li.dataset.seg = idx;
+        li.innerHTML = `
+          <div class="label"><span class="dot" style="background:${colors[idx % colors.length]}"></span><span>${item.label}</span></div>
+          <div class="text-right whitespace-nowrap">
+            <div class="font-semibold text-[var(--color-primary)]">${formatCurrency(item.value)}</div>
+            <div class="text-xs text-[var(--color-muted)]">${percent} %</div>
+          </div>
+        `;
+        donutLegend.appendChild(li);
+      });
+
+      const segments = donutChart.querySelectorAll('.donut-segment');
+      const legendItems = donutLegend.querySelectorAll('li');
+
+      const highlight = (active) => {
+        segments.forEach((seg) => {
+          const isActive = active === null || seg.dataset.seg === active;
+          seg.style.opacity = isActive ? '1' : '0.35';
+          seg.style.transform = seg.dataset.seg === active ? 'scale(1.03)' : 'scale(1)';
+        });
+        legendItems.forEach((item) => {
+          const isActive = active === null || item.dataset.seg === active;
+          item.style.opacity = isActive ? '1' : '0.6';
+        });
       };
-      monthlyIncomeLabel.textContent = labelMap[periodMode] || 'Odhad';
-      monthlyIncome.textContent = formatCurrency(incomePeriod);
-      goalGap.textContent = goalPeriod === 0 ? '0 Kč' : formatCurrency(gapPeriod);
-      updateGoalHelper(goalAnnual);
+
+      legendItems.forEach((item) => {
+        item.addEventListener('mouseenter', () => highlight(item.dataset.seg));
+        item.addEventListener('mouseleave', () => highlight(null));
+      });
+
+      segments.forEach((seg) => {
+        seg.addEventListener('mouseenter', () => highlight(seg.dataset.seg));
+        seg.addEventListener('mouseleave', () => highlight(null));
+      });
     }
 
     function buildInitialTable() {
@@ -856,7 +988,7 @@
         coef: sanitizeNumber(coefInput.value),
         entryFeePercent: sanitizeNumber(entryFeeInput.value),
         goalAnnual: sanitizeNumber(goalInput.value),
-        periodMode,
+        periodMode: 'annual',
         initialAum,
         trailAum,
         hiddenInitial: hiddenState.initial,
@@ -872,10 +1004,6 @@
       if (data.coef !== undefined) coefInput.value = data.coef;
       if (data.entryFeePercent !== undefined) entryFeeInput.value = data.entryFeePercent;
       if (data.goalAnnual !== undefined) goalInput.value = data.goalAnnual;
-      if (data.periodMode) {
-        periodMode = data.periodMode;
-        periodButtons().forEach((btn) => btn.classList.toggle('segmented-active', btn.dataset.period === periodMode));
-      }
       if (data.initialAum) {
         document.querySelectorAll('[data-initial-aum]').forEach((input) => {
           if (data.initialAum[input.dataset.key] !== undefined) setAumValue(input, data.initialAum[input.dataset.key]);
@@ -890,7 +1018,7 @@
       hiddenState.trail = data.hiddenTrail || {};
       Object.keys(hiddenState.initial).forEach((key) => applyVisibility('initial', key));
       Object.keys(hiddenState.trail).forEach((key) => applyVisibility('trail', key));
-      updateGoalHelper(sanitizeNumber(goalInput.value));
+      syncGoals('annual');
       recalcAll();
     }
 
@@ -961,9 +1089,13 @@
         }
       });
 
-      [coefInput, entryFeeInput, goalInput].forEach((input) => {
+      [coefInput, entryFeeInput].forEach((input) => {
         input.addEventListener('input', recalcAll);
       });
+
+      goalInput.addEventListener('input', () => { syncGoals('annual'); recalcAll(); });
+      goalQuarterlyInput.addEventListener('input', () => { syncGoals('quarterly'); recalcAll(); });
+      goalMonthlyInput.addEventListener('input', () => { syncGoals('monthly'); recalcAll(); });
 
       resetButton.addEventListener('click', () => {
         document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
@@ -971,7 +1103,7 @@
         coefInput.value = '60';
         entryFeeInput.value = '1';
         goalInput.value = '1200000';
-        setPeriodMode('quarterly', false);
+        syncGoals('annual');
         recalcAll();
       });
 
@@ -1046,10 +1178,6 @@
         } finally {
           event.target.value = '';
         }
-      });
-
-      periodButtons().forEach((btn) => {
-        btn.addEventListener('click', () => setPeriodMode(btn.dataset.period));
       });
     }
 
