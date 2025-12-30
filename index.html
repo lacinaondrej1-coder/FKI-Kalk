@@ -60,6 +60,10 @@
     .donut-legend li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; }
     .donut-legend .label { display: flex; align-items: center; gap: 0.5rem; color: var(--color-text); }
     .donut-legend .dot { width: 10px; height: 10px; border-radius: 999px; }
+    .col-aum { min-width: 220px; width: 220px; }
+    @media (min-width: 768px) {
+      .col-aum { min-width: 240px; width: 240px; }
+    }
     .table-head {
       background: #f3f6fb;
       color: var(--color-primary);
@@ -254,7 +258,7 @@
               <th class="px-3 py-2 text-center">SKRÝT</th>
               <th class="px-3 py-2 text-left">#</th>
               <th class="px-3 py-2 text-left">FOND</th>
-              <th class="px-3 py-2 text-right">AÚM (KČ)</th>
+              <th class="px-3 py-2 text-right col-aum">AÚM (KČ)</th>
               <th class="px-3 py-2 text-right">PROVIZE Z POPLATKU</th>
               <th class="px-3 py-2 text-right">VSTUPNÍ BONUS</th>
               <th class="px-3 py-2 text-right">PROVIZE CELKEM</th>
@@ -288,7 +292,7 @@
               <th class="px-3 py-2 text-center">SKRÝT</th>
               <th class="px-3 py-2 text-left">#</th>
               <th class="px-3 py-2 text-left">FOND</th>
-              <th class="px-3 py-2 text-right">AÚM (KČ)</th>
+              <th class="px-3 py-2 text-right col-aum">AÚM (KČ)</th>
               <th class="px-3 py-2 text-right">ROČNÍ NÁSLEDNÁ PROVIZE</th>
               <th class="px-3 py-2 text-right">SAZBA (%)</th>
               <th class="px-3 py-2 text-left">POZNÁMKA</th>
@@ -307,8 +311,12 @@
         </div>
         <div class="flex flex-col xl:flex-row gap-6 xl:items-start">
           <div class="relative flex items-center justify-center mx-auto">
-            <svg id="donutChart" viewBox="0 0 200 200" class="w-72 h-72 md:w-80 md:h-80 lg:w-96 lg:h-96"></svg>
+            <svg id="donutChart" viewBox="0 0 200 200" class="w-72 h-72 md:w-80 md:h-80 lg:w-[22rem] lg:h-[22rem]"></svg>
             <div id="donutEmpty" class="absolute inset-0 flex items-center justify-center text-[var(--color-muted)] text-sm text-center px-4 hidden">Zatím není co zobrazit</div>
+            <div id="donutTotal" class="absolute inset-0 flex flex-col items-center justify-center text-center text-[var(--color-primary)] font-semibold leading-tight pointer-events-none hidden">
+              <span class="text-[0.7rem] uppercase tracking-wide text-[var(--color-muted)]">Celkem</span>
+              <span class="text-base md:text-lg" id="donutTotalValue">0 Kč</span>
+            </div>
           </div>
           <ul id="donutLegend" class="donut-legend flex-1 text-sm divide-y divide-[var(--color-border)]"></ul>
         </div>
@@ -368,6 +376,16 @@
 
   <script>
     const DENOM = 250;
+    const CHART_COLORS = [
+      '#0d2c54',
+      '#4DB1C8',
+      '#6E7DA2',
+      '#A4C4BC',
+      '#F2D7B6',
+      '#8FA6BF',
+      '#C8D8E4',
+      '#E0A899'
+    ];
     const INITIAL_FUNDS = [
       {"label":"1.","fund":"ČSNF CZK i EUR","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":""},
       {"label":"2.","fund":"R2P","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
@@ -479,6 +497,8 @@
     const donutChart = document.getElementById('donutChart');
     const donutLegend = document.getElementById('donutLegend');
     const donutEmpty = document.getElementById('donutEmpty');
+    const donutTotal = document.getElementById('donutTotal');
+    const donutTotalValue = document.getElementById('donutTotalValue');
 
     const STORAGE_KEYS = {
       coef: 'fki_coef',
@@ -783,21 +803,20 @@
       donutChart.innerHTML = '';
       donutLegend.innerHTML = '';
       donutEmpty.classList.add('hidden');
+      donutTotal?.classList.add('hidden');
 
       const filtered = data.filter((item) => item.value > 0);
       const total = filtered.reduce((sum, item) => sum + item.value, 0);
       if (total <= 0) {
         donutEmpty.classList.remove('hidden');
+        if (donutTotal) donutTotal.classList.add('hidden');
         return;
       }
 
       filtered.sort((a, b) => b.value - a.value);
       const displayData = filtered;
 
-      const getColor = (idx) => {
-        const hue = (idx * 37) % 360;
-        return `hsl(${hue}, 60%, 58%)`;
-      };
+      const getColor = (idx) => CHART_COLORS[(idx) % CHART_COLORS.length];
       const radius = 78;
       const center = 100;
       const circumference = 2 * Math.PI * radius;
@@ -808,7 +827,7 @@
       baseCircle.setAttribute('cy', center);
       baseCircle.setAttribute('r', radius);
       baseCircle.setAttribute('fill', 'none');
-      baseCircle.setAttribute('stroke', 'rgba(13,44,84,0.08)');
+      baseCircle.setAttribute('stroke', 'rgba(77, 177, 200, 0.28)');
       baseCircle.setAttribute('stroke-width', '24');
       donutChart.appendChild(baseCircle);
 
@@ -832,6 +851,15 @@
         offset += dash;
       });
 
+      const innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      innerCircle.setAttribute('cx', center);
+      innerCircle.setAttribute('cy', center);
+      innerCircle.setAttribute('r', '54');
+      innerCircle.setAttribute('fill', '#ffffff');
+      innerCircle.setAttribute('stroke', '#EAECEE');
+      innerCircle.setAttribute('stroke-width', '1.4');
+      donutChart.appendChild(innerCircle);
+
       displayData.forEach((item, idx) => {
         const percent = ((item.value / total) * 100).toFixed(1);
         const li = document.createElement('li');
@@ -845,6 +873,11 @@
         `;
         donutLegend.appendChild(li);
       });
+
+      if (donutTotal && donutTotalValue) {
+        donutTotalValue.textContent = formatCurrency(total);
+        donutTotal.classList.remove('hidden');
+      }
 
       const segments = donutChart.querySelectorAll('.donut-segment');
       const legendItems = donutLegend.querySelectorAll('li');
@@ -889,7 +922,7 @@
           <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-initial-hide="${index}" class="h-4 w-4" aria-label="Skrýt ${row.fund}" /></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2 text-right">
+          <td class="px-3 py-2 text-right col-aum">
             <div class="relative">
               <input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full table-input pr-10" inputmode="numeric" placeholder="0" />
               <span class="input-suffix">Kč</span>
@@ -910,7 +943,7 @@
         <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold">Celkem</td>
         <td class="px-3 py-2 font-bold"></td>
-        <td class="px-3 py-2 font-bold text-right" id="initialTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right col-aum" id="initialTotalAum">0 Kč</td>
         <td class="px-3 py-2 font-bold text-right" id="initialTotalFee">0 Kč</td>
         <td class="px-3 py-2 font-bold text-right" id="initialTotalBonus">0 Kč</td>
         <td class="px-3 py-2 font-bold text-right" id="initialTotalCommission">0 Kč</td>
@@ -939,7 +972,7 @@
           <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-trail-hide="${index}" class="h-4 w-4" aria-label="Skrýt ${row.fund}" /></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2 text-right">
+          <td class="px-3 py-2 text-right col-aum">
             <div class="relative">
               <input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full table-input pr-10" inputmode="numeric" placeholder="0" />
               <span class="input-suffix">Kč</span>
@@ -958,7 +991,7 @@
         <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold">Celkem</td>
         <td class="px-3 py-2 font-bold"></td>
-        <td class="px-3 py-2 font-bold text-right" id="trailTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right col-aum" id="trailTotalAum">0 Kč</td>
         <td class="px-3 py-2 font-bold text-right" id="trailTotalAnnual">0 Kč</td>
         <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
