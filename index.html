@@ -56,8 +56,7 @@
     .brand-header-inner { position: relative; z-index: 1; }
     .app-shell { max-width: 1160px; margin: 0 auto; padding: 0 1.5rem 2rem; }
     .hero-badges span { background: #ffffff; border: 1px solid var(--color-border); color: var(--color-primary); }
-    .info-tile { border-radius: 1rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.9); box-shadow: var(--color-shadow); }
-    .info-tile h4 { font-size: 0.85rem; letter-spacing: 0.08em; color: var(--color-muted); }
+    .donut-legend { max-height: 320px; overflow-y: auto; padding-right: 0.25rem; }
     .donut-legend li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; }
     .donut-legend .label { display: flex; align-items: center; gap: 0.5rem; color: var(--color-text); }
     .donut-legend .dot { width: 10px; height: 10px; border-radius: 999px; }
@@ -191,8 +190,6 @@
             <h1 class="text-3xl md:text-4xl font-semibold tracking-wide text-[var(--color-primary)]">FKI – Provize (vstupní a následné)</h1>
             <p class="text-sm md:text-base text-[var(--color-muted)]">Interní kalkulačka pro výpočet získatelských a následných provizí.</p>
             <div class="flex flex-wrap gap-2 text-xs font-semibold hero-badges">
-              <span class="rounded-full px-3 py-1">Bodový základ: 250</span>
-              <span class="rounded-full px-3 py-1">Mimo BT: body = (bonus Kč / 1000) × 4</span>
               <span class="rounded-full px-3 py-1">Interní použití • FairLife</span>
             </div>
           </div>
@@ -203,20 +200,6 @@
             <button id="importJsonBtn" class="secondary-btn">Import JSON</button>
             <button id="fillTestButton" class="secondary-btn">Test: 10 000 000</button>
             <button id="resetButton" class="danger-btn">Vymazat</button>
-          </div>
-          <div class="grid sm:grid-cols-3 gap-3">
-            <div class="info-tile p-4">
-              <h4 class="uppercase font-semibold">Rychlá práce</h4>
-              <p class="text-sm font-semibold text-[var(--color-text)]">Skrývání fondů, test plnění a export/import portfolia.</p>
-            </div>
-            <div class="info-tile p-4">
-              <h4 class="uppercase font-semibold">Přepočet období</h4>
-              <p class="text-sm font-semibold text-[var(--color-text)]">Roční / kvartální / měsíční pohled pro následky.</p>
-            </div>
-            <div class="info-tile p-4">
-              <h4 class="uppercase font-semibold">Formátování</h4>
-              <p class="text-sm font-semibold text-[var(--color-text)]">AÚM s mezerami, podpora zadání 500000+700000.</p>
-            </div>
           </div>
         </div>
       </div>
@@ -250,7 +233,7 @@
         </div>
       </section>
 
-    <section class="card p-6 md:p-8 space-y-4">
+    <section class="card p-6 md:p-8 space-y-6">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div class="space-y-1">
           <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část A</div>
@@ -315,69 +298,69 @@
         </table>
       </div>
 
-      <div class="grid gap-6 lg:grid-cols-2 items-start">
-        <div class="card p-5 space-y-4">
-          <div class="flex items-center justify-between">
-            <div class="space-y-1">
-              <h3 class="text-lg font-semibold text-[var(--color-primary)]">Rozložení portfolia (následky)</h3>
-              <p class="text-sm text-[var(--color-muted)]">Zobrazuje pouze nezakryté fondy s AÚM &gt; 0.</p>
-            </div>
-          </div>
-          <div class="flex flex-col md:flex-row gap-4 md:items-center">
-            <div class="relative mx-auto">
-              <svg id="donutChart" viewBox="0 0 200 200" class="w-56 h-56"></svg>
-              <div id="donutEmpty" class="absolute inset-0 flex items-center justify-center text-[var(--color-muted)] text-sm text-center px-4 hidden">Zatím není co zobrazit</div>
-            </div>
-            <ul id="donutLegend" class="donut-legend flex-1 text-sm"></ul>
+      <div class="card p-6 md:p-8 space-y-6">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div class="space-y-1">
+            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Rozložení portfolia (následky)</h3>
+            <p class="text-sm text-[var(--color-muted)]">Zobrazuje pouze nezakryté fondy s AÚM &gt; 0.</p>
           </div>
         </div>
-        <div class="space-y-4">
-          <div class="card p-5 space-y-4">
-            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Cíl následných provizí</h3>
-            <div class="space-y-3">
-              <div class="grid grid-cols-3 gap-3 text-xs uppercase tracking-wide text-[var(--color-muted)]">
-                <span>Cíl</span><span class="text-right">Aktuálně</span><span class="text-right">Zbývá</span>
-              </div>
-              <div class="grid grid-cols-3 gap-3 items-center">
-                <div class="space-y-1">
-                  <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Ročně</label>
-                  <div class="relative">
-                    <input id="goalInput" type="number" step="any" class="w-full glass-input pr-10" value="1200000" />
-                    <span class="input-suffix">Kč</span>
-                  </div>
-                </div>
-                <p id="currentAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
-                <p id="gapAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
-              </div>
-              <div class="grid grid-cols-3 gap-3 items-center">
-                <div class="space-y-1">
-                  <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalQuarterlyInput">Kvartálně</label>
-                  <div class="relative">
-                    <input id="goalQuarterlyInput" type="number" step="any" class="w-full glass-input pr-10" value="300000" />
-                    <span class="input-suffix">Kč</span>
-                  </div>
-                </div>
-                <p id="currentQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
-                <p id="gapQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
-              </div>
-              <div class="grid grid-cols-3 gap-3 items-center">
-                <div class="space-y-1">
-                  <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalMonthlyInput">Měsíčně</label>
-                  <div class="relative">
-                    <input id="goalMonthlyInput" type="number" step="any" class="w-full glass-input pr-10" value="100000" />
-                    <span class="input-suffix">Kč</span>
-                  </div>
-                </div>
-                <p id="currentMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
-                <p id="gapMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+        <div class="flex flex-col xl:flex-row gap-6 xl:items-start">
+          <div class="relative flex items-center justify-center mx-auto">
+            <svg id="donutChart" viewBox="0 0 200 200" class="w-72 h-72 md:w-80 md:h-80 lg:w-96 lg:h-96"></svg>
+            <div id="donutEmpty" class="absolute inset-0 flex items-center justify-center text-[var(--color-muted)] text-sm text-center px-4 hidden">Zatím není co zobrazit</div>
+          </div>
+          <ul id="donutLegend" class="donut-legend flex-1 text-sm divide-y divide-[var(--color-border)]"></ul>
+        </div>
+      </div>
+
+      <div class="card p-6 md:p-8 space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-lg font-semibold text-[var(--color-primary)]">Cíl následných provizí</h3>
+        </div>
+        <div class="space-y-5">
+          <div class="grid grid-cols-3 gap-4 text-xs uppercase tracking-wide text-[var(--color-muted)]">
+            <span>Cíl</span><span class="text-right">Aktuálně</span><span class="text-right">Zbývá</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div class="space-y-2">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Ročně</label>
+              <div class="relative">
+                <input id="goalInput" type="text" inputmode="numeric" class="w-full glass-input pr-10" value="1200000" />
+                <span class="input-suffix">Kč</span>
               </div>
             </div>
+            <p id="currentAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+            <p id="gapAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
           </div>
-          <div class="card p-4 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
-            <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia</p>
-            <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div class="space-y-2">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalQuarterlyInput">Kvartálně</label>
+              <div class="relative">
+                <input id="goalQuarterlyInput" type="text" inputmode="numeric" class="w-full glass-input pr-10" value="300000" />
+                <span class="input-suffix">Kč</span>
+              </div>
+            </div>
+            <p id="currentQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+            <p id="gapQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+          </div>
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div class="space-y-2">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalMonthlyInput">Měsíčně</label>
+              <div class="relative">
+                <input id="goalMonthlyInput" type="text" inputmode="numeric" class="w-full glass-input pr-10" value="100000" />
+                <span class="input-suffix">Kč</span>
+              </div>
+            </div>
+            <p id="currentMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+            <p id="gapMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
           </div>
         </div>
+      </div>
+
+      <div class="card p-5 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
+        <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia</p>
+        <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
       </div>
     </section>
     </main>
@@ -558,11 +541,10 @@
 
     function formatAum(value) {
       const num = Math.round(Number(value) || 0);
-      if (!num) return '';
       return num.toLocaleString('cs-CZ');
     }
 
-    function evaluateAumExpression(rawValue) {
+    function evaluateExpression(rawValue) {
       if (rawValue === undefined || rawValue === null) return { valid: true, value: 0 };
       const normalized = String(rawValue).trim();
       if (!normalized) return { valid: true, value: 0 };
@@ -582,6 +564,10 @@
       } catch (e) {
         return { valid: false };
       }
+    }
+
+    function evaluateAumExpression(rawValue) {
+      return evaluateExpression(rawValue);
     }
 
     function formatCurrency(value) {
@@ -610,17 +596,28 @@
       input.value = formatAum(numericValue);
     }
 
+    function getGoalValue(input) {
+      return sanitizeNumber(input?.dataset.value ?? input?.value);
+    }
+
+    function setGoalValue(input, value) {
+      const numericValue = Math.max(0, Math.round(Number(value) || 0));
+      input.dataset.value = numericValue;
+      input.dataset.lastValid = numericValue;
+      input.value = formatAum(numericValue);
+    }
+
     function syncGoals(source = 'annual') {
-      let annual = sanitizeNumber(goalInput.value);
+      let annual = getGoalValue(goalInput);
       if (source === 'quarterly') {
-        annual = sanitizeNumber(goalQuarterlyInput.value) * 4;
+        annual = getGoalValue(goalQuarterlyInput) * 4;
       } else if (source === 'monthly') {
-        annual = sanitizeNumber(goalMonthlyInput.value) * 12;
+        annual = getGoalValue(goalMonthlyInput) * 12;
       }
       annual = Math.max(0, annual);
-      goalInput.value = annual;
-      goalQuarterlyInput.value = annual / 4;
-      goalMonthlyInput.value = annual / 12;
+      setGoalValue(goalInput, annual);
+      setGoalValue(goalQuarterlyInput, annual / 4);
+      setGoalValue(goalMonthlyInput, annual / 12);
     }
 
     function applyVisibility(type, index) {
@@ -644,7 +641,7 @@
       });
       localStorage.setItem(STORAGE_KEYS.coef, coefInput.value);
       localStorage.setItem(STORAGE_KEYS.entryFee, entryFeeInput.value);
-      localStorage.setItem(STORAGE_KEYS.goal, goalInput.value);
+      localStorage.setItem(STORAGE_KEYS.goal, getGoalValue(goalInput));
       localStorage.setItem(STORAGE_KEYS.initialAum, JSON.stringify(initialAum));
       localStorage.setItem(STORAGE_KEYS.trailAum, JSON.stringify(trailAum));
       localStorage.setItem(STORAGE_KEYS.hiddenInitial, JSON.stringify(hiddenState.initial));
@@ -659,7 +656,7 @@
       const trailAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.trailAum) || '{}');
       if (coef !== null) coefInput.value = coef;
       if (entryFee !== null) entryFeeInput.value = entryFee;
-      if (goal !== null) goalInput.value = goal;
+      if (goal !== null) setGoalValue(goalInput, goal);
       document.querySelectorAll('[data-initial-aum]').forEach((input) => {
         if (initialAum[input.dataset.key] !== undefined) setAumValue(input, initialAum[input.dataset.key]);
       });
@@ -737,7 +734,7 @@
           totalTrail += annualTrail;
           weightedNumerator += aum * row.annualRate;
           if (aum > 0) {
-            donutData.push({ label: row.fund, value: aum });
+            donutData.push({ label: row.fund, value: aum, index });
           }
         }
 
@@ -762,7 +759,7 @@
     }
 
     function updateGoalOutputs(totalTrail) {
-      const goalAnnual = Math.max(0, sanitizeNumber(goalInput.value));
+      const goalAnnual = Math.max(0, getGoalValue(goalInput));
       const goalQuarterly = goalAnnual / 4;
       const goalMonthly = goalAnnual / 12;
 
@@ -777,8 +774,8 @@
       gapQuarterly.textContent = formatCurrency(Math.max(goalQuarterly - currentQuarterlyValue, 0));
       gapMonthly.textContent = formatCurrency(Math.max(goalMonthly - currentMonthlyValue, 0));
 
-      goalQuarterlyInput.value = goalQuarterly;
-      goalMonthlyInput.value = goalMonthly;
+      setGoalValue(goalQuarterlyInput, goalQuarterly);
+      setGoalValue(goalMonthlyInput, goalMonthly);
     }
 
     function updateDonutChart(data = []) {
@@ -795,14 +792,13 @@
       }
 
       filtered.sort((a, b) => b.value - a.value);
-      const displayData = filtered.slice(0, 8);
-      if (filtered.length > 8) {
-        const otherValue = filtered.slice(8).reduce((sum, item) => sum + item.value, 0);
-        displayData.push({ label: 'Ostatní', value: otherValue });
-      }
+      const displayData = filtered;
 
-      const colors = ['#0d2c54', '#4db1c8', '#7ab8f5', '#9ad5e1', '#6c6ff5', '#f2a93b', '#d97757', '#7cc29b', '#b8a0ff', '#6f9ce6'];
-      const radius = 70;
+      const getColor = (idx) => {
+        const hue = (idx * 37) % 360;
+        return `hsl(${hue}, 60%, 58%)`;
+      };
+      const radius = 78;
       const center = 100;
       const circumference = 2 * Math.PI * radius;
       let offset = 0;
@@ -824,7 +820,7 @@
         circle.setAttribute('cy', center);
         circle.setAttribute('r', radius);
         circle.setAttribute('fill', 'none');
-        circle.setAttribute('stroke', colors[idx % colors.length]);
+        circle.setAttribute('stroke', getColor(item.index ?? idx));
         circle.setAttribute('stroke-width', '24');
         circle.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
         circle.setAttribute('stroke-dashoffset', -offset);
@@ -841,7 +837,7 @@
         const li = document.createElement('li');
         li.dataset.seg = idx;
         li.innerHTML = `
-          <div class="label"><span class="dot" style="background:${colors[idx % colors.length]}"></span><span>${item.label}</span></div>
+          <div class="label"><span class="dot" style="background:${getColor(item.index ?? idx)}"></span><span>${item.label}</span></div>
           <div class="text-right whitespace-nowrap">
             <div class="font-semibold text-[var(--color-primary)]">${formatCurrency(item.value)}</div>
             <div class="text-xs text-[var(--color-muted)]">${percent} %</div>
@@ -987,7 +983,7 @@
         exportedAt: new Date().toISOString(),
         coef: sanitizeNumber(coefInput.value),
         entryFeePercent: sanitizeNumber(entryFeeInput.value),
-        goalAnnual: sanitizeNumber(goalInput.value),
+        goalAnnual: getGoalValue(goalInput),
         periodMode: 'annual',
         initialAum,
         trailAum,
@@ -1003,7 +999,7 @@
       }
       if (data.coef !== undefined) coefInput.value = data.coef;
       if (data.entryFeePercent !== undefined) entryFeeInput.value = data.entryFeePercent;
-      if (data.goalAnnual !== undefined) goalInput.value = data.goalAnnual;
+      if (data.goalAnnual !== undefined) setGoalValue(goalInput, data.goalAnnual);
       if (data.initialAum) {
         document.querySelectorAll('[data-initial-aum]').forEach((input) => {
           if (data.initialAum[input.dataset.key] !== undefined) setAumValue(input, data.initialAum[input.dataset.key]);
@@ -1073,6 +1069,39 @@
         }
       });
 
+      [goalInput, goalQuarterlyInput, goalMonthlyInput].forEach((input) => {
+        input.addEventListener('focusin', () => {
+          input.value = input.dataset.value ?? '';
+          input.classList.remove('has-error');
+        });
+      });
+
+      function handleGoalBlur(event) {
+        const input = event.target;
+        const result = evaluateExpression(input.value);
+        const source = input === goalQuarterlyInput ? 'quarterly' : input === goalMonthlyInput ? 'monthly' : 'annual';
+        if (!result.valid) {
+          input.classList.add('has-error');
+          const fallback = input.dataset.lastValid ? Number(input.dataset.lastValid) : 0;
+          input.value = formatAum(fallback);
+          return;
+        }
+        input.classList.remove('has-error');
+        setGoalValue(input, result.value);
+        syncGoals(source);
+        recalcAll();
+      }
+
+      [goalInput, goalQuarterlyInput, goalMonthlyInput].forEach((input) => {
+        input.addEventListener('blur', (event) => handleGoalBlur(event));
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.target.blur();
+          }
+        });
+      });
+
       initialBody.addEventListener('change', (event) => {
         if (event.target.matches('[data-initial-hide]')) {
           hiddenState.initial[event.target.dataset.initialHide] = event.target.checked;
@@ -1093,16 +1122,12 @@
         input.addEventListener('input', recalcAll);
       });
 
-      goalInput.addEventListener('input', () => { syncGoals('annual'); recalcAll(); });
-      goalQuarterlyInput.addEventListener('input', () => { syncGoals('quarterly'); recalcAll(); });
-      goalMonthlyInput.addEventListener('input', () => { syncGoals('monthly'); recalcAll(); });
-
       resetButton.addEventListener('click', () => {
         document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
         document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
         coefInput.value = '60';
         entryFeeInput.value = '1';
-        goalInput.value = '1200000';
+        setGoalValue(goalInput, 1200000);
         syncGoals('annual');
         recalcAll();
       });
@@ -1186,7 +1211,11 @@
       buildTrailTable();
       document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
       document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
+      setGoalValue(goalInput, sanitizeNumber(goalInput.value));
+      setGoalValue(goalQuarterlyInput, sanitizeNumber(goalQuarterlyInput.value));
+      setGoalValue(goalMonthlyInput, sanitizeNumber(goalMonthlyInput.value));
       loadPersistedValues();
+      syncGoals('annual');
       recalcAll();
       attachListeners();
     }
