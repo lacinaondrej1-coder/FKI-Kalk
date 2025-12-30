@@ -100,6 +100,20 @@
       text-align: right;
       color: var(--color-primary);
     }
+    .table-input.has-error {
+      border-color: #e53e3e;
+      box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.18);
+    }
+    .input-suffix {
+      position: absolute;
+      inset-y: 0;
+      right: 0.65rem;
+      display: inline-flex;
+      align-items: center;
+      color: var(--color-muted);
+      font-weight: 700;
+      pointer-events: none;
+    }
     tbody tr.data-row:nth-child(even) { background: rgba(13, 44, 84, 0.02); }
     tbody tr.data-row:hover { background: rgba(77, 177, 200, 0.08); }
     @media (prefers-reduced-motion: reduce) {
@@ -126,6 +140,7 @@
         </div>
         <div class="flex items-center gap-3">
           <div class="hidden sm:block h-12 w-px bg-gradient-to-b from-transparent via-[var(--color-border-strong)] to-transparent"></div>
+          <button id="fillTestButton" class="primary-btn bg-[linear-gradient(135deg,#0fa3b1,#0d2c54)]">Test: vyplnit 10 000 000</button>
           <button id="resetButton" class="primary-btn">Vymazat hodnoty</button>
         </div>
       </div>
@@ -161,12 +176,19 @@
           <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část A</div>
           <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Získatelské provize</h2>
         </div>
-        <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: INITIAL_FUNDS</p>
+        <div class="flex flex-col gap-2 items-start md:items-end">
+          <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: INITIAL_FUNDS</p>
+          <div class="flex flex-wrap gap-2">
+            <button id="initialShowAll" class="secondary-btn text-sm px-3 py-2">Zobrazit vše</button>
+            <button id="initialHideZero" class="secondary-btn text-sm px-3 py-2">Skrýt nulové</button>
+          </div>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="table-head">
             <tr>
+              <th class="px-3 py-2 text-center">Skrýt</th>
               <th class="px-3 py-2 text-left">#</th>
               <th class="px-3 py-2 text-left">Fond</th>
               <th class="px-3 py-2 text-right">AÚM (Kč)</th>
@@ -188,12 +210,19 @@
           <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část B</div>
           <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Následné provize</h2>
         </div>
-        <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: TRAIL_FUNDS</p>
+        <div class="flex flex-col gap-2 items-start md:items-end">
+          <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: TRAIL_FUNDS</p>
+          <div class="flex flex-wrap gap-2">
+            <button id="trailShowAll" class="secondary-btn text-sm px-3 py-2">Zobrazit vše</button>
+            <button id="trailHideZero" class="secondary-btn text-sm px-3 py-2">Skrýt nulové</button>
+          </div>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="table-head">
             <tr>
+              <th class="px-3 py-2 text-center">Skrýt</th>
               <th class="px-3 py-2 text-left">#</th>
               <th class="px-3 py-2 text-left">Fond</th>
               <th class="px-3 py-2 text-right">AÚM (Kč)</th>
@@ -327,13 +356,25 @@
     const goalGap = document.getElementById('goalGap');
     const weightedRateEl = document.getElementById('weightedRate');
     const resetButton = document.getElementById('resetButton');
+    const fillTestButton = document.getElementById('fillTestButton');
+    const initialShowAll = document.getElementById('initialShowAll');
+    const initialHideZero = document.getElementById('initialHideZero');
+    const trailShowAll = document.getElementById('trailShowAll');
+    const trailHideZero = document.getElementById('trailHideZero');
 
     const STORAGE_KEYS = {
       coef: 'fki_coef',
       entryFee: 'fki_entry_fee',
       initialAum: 'fki_initial_aum',
       trailAum: 'fki_trail_aum',
-      goal: 'fki_goal'
+      goal: 'fki_goal',
+      hiddenInitial: 'fki_hidden_initial',
+      hiddenTrail: 'fki_hidden_trail'
+    };
+
+    const hiddenState = {
+      initial: JSON.parse(localStorage.getItem(STORAGE_KEYS.hiddenInitial) || '{}'),
+      trail: JSON.parse(localStorage.getItem(STORAGE_KEYS.hiddenTrail) || '{}')
     };
 
     function recalcAll() {
@@ -373,6 +414,34 @@
       return isNaN(num) ? 0 : num;
     }
 
+    function formatAum(value) {
+      const num = Math.round(Number(value) || 0);
+      if (!num) return '';
+      return num.toLocaleString('cs-CZ');
+    }
+
+    function evaluateAumExpression(rawValue) {
+      if (rawValue === undefined || rawValue === null) return { valid: true, value: 0 };
+      const normalized = String(rawValue).trim();
+      if (!normalized) return { valid: true, value: 0 };
+
+      const strippedSeparators = normalized.replace(/[\s.,]/g, '');
+      if (!strippedSeparators) return { valid: true, value: 0 };
+
+      if (/[^0-9+\-()]/.test(strippedSeparators)) {
+        return { valid: false };
+      }
+
+      try {
+        const value = Function('return (' + strippedSeparators + ')')();
+        const numericValue = Number.isFinite(value) ? Math.round(Number(value)) : NaN;
+        if (Number.isNaN(numericValue)) return { valid: false };
+        return { valid: true, value: numericValue };
+      } catch (e) {
+        return { valid: false };
+      }
+    }
+
     function formatCurrency(value) {
       const number = Math.round(value || 0);
       return number.toLocaleString('cs-CZ') + ' Kč';
@@ -388,20 +457,43 @@
       return number.toLocaleString('cs-CZ');
     }
 
+    function getAumValue(input) {
+      return sanitizeNumber(input?.dataset.value ?? input?.value);
+    }
+
+    function setAumValue(input, value) {
+      const numericValue = Math.max(0, Math.round(Number(value) || 0));
+      input.dataset.value = numericValue;
+      input.dataset.lastValid = numericValue;
+      input.value = formatAum(numericValue);
+    }
+
+    function applyVisibility(type, index) {
+      const hidden = Boolean(hiddenState[type]?.[index]);
+      const rowSelector = type === 'initial' ? `[data-initial-row="${index}"]` : `[data-trail-row="${index}"]`;
+      const checkboxSelector = type === 'initial' ? `[data-initial-hide="${index}"]` : `[data-trail-hide="${index}"]`;
+      const row = document.querySelector(rowSelector);
+      const checkbox = document.querySelector(checkboxSelector);
+      if (checkbox) checkbox.checked = hidden;
+      if (row) row.style.display = hidden ? 'none' : '';
+    }
+
     function persistValues() {
       const initialAum = {};
       document.querySelectorAll('[data-initial-aum]').forEach((input) => {
-        initialAum[input.dataset.key] = input.value;
+        initialAum[input.dataset.key] = input.dataset.value ?? '';
       });
       const trailAum = {};
       document.querySelectorAll('[data-trail-aum]').forEach((input) => {
-        trailAum[input.dataset.key] = input.value;
+        trailAum[input.dataset.key] = input.dataset.value ?? '';
       });
       localStorage.setItem(STORAGE_KEYS.coef, coefInput.value);
       localStorage.setItem(STORAGE_KEYS.entryFee, entryFeeInput.value);
       localStorage.setItem(STORAGE_KEYS.goal, goalInput.value);
       localStorage.setItem(STORAGE_KEYS.initialAum, JSON.stringify(initialAum));
       localStorage.setItem(STORAGE_KEYS.trailAum, JSON.stringify(trailAum));
+      localStorage.setItem(STORAGE_KEYS.hiddenInitial, JSON.stringify(hiddenState.initial));
+      localStorage.setItem(STORAGE_KEYS.hiddenTrail, JSON.stringify(hiddenState.trail));
     }
 
     function loadPersistedValues() {
@@ -414,10 +506,10 @@
       if (entryFee !== null) entryFeeInput.value = entryFee;
       if (goal !== null) goalInput.value = goal;
       document.querySelectorAll('[data-initial-aum]').forEach((input) => {
-        if (initialAum[input.dataset.key]) input.value = initialAum[input.dataset.key];
+        if (initialAum[input.dataset.key] !== undefined) setAumValue(input, initialAum[input.dataset.key]);
       });
       document.querySelectorAll('[data-trail-aum]').forEach((input) => {
-        if (trailAum[input.dataset.key]) input.value = trailAum[input.dataset.key];
+        if (trailAum[input.dataset.key] !== undefined) setAumValue(input, trailAum[input.dataset.key]);
       });
     }
 
@@ -429,7 +521,8 @@
 
       INITIAL_FUNDS.forEach((row, index) => {
         const input = document.querySelector(`[data-initial-aum="${index}"]`);
-        const aum = sanitizeNumber(input?.value);
+        if (hiddenState.initial[index]) return;
+        const aum = getAumValue(input);
         const feeCommission = aum * entryFeeDecimal / DENOM * coef;
         let bonusCommission = 0;
         if (row.bonusMode === 'bt_points') {
@@ -478,7 +571,8 @@
 
       TRAIL_FUNDS.forEach((row, index) => {
         const input = document.querySelector(`[data-trail-aum="${index}"]`);
-        const aum = sanitizeNumber(input?.value);
+        if (hiddenState.trail[index]) return;
+        const aum = getAumValue(input);
         const annualTrail = aum * row.annualRate / DENOM * coef;
 
         if (!row.type) {
@@ -517,16 +611,23 @@
         if (row.type === 'separator') {
           const tr = document.createElement('tr');
           tr.className = 'separator-row';
-          tr.innerHTML = '<td colspan="8"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
+          tr.innerHTML = '<td colspan="9"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
           initialBody.appendChild(tr);
           return;
         }
         const tr = document.createElement('tr');
         tr.className = 'data-row transition-colors';
+        tr.setAttribute('data-initial-row', index);
         tr.innerHTML = `
+          <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-initial-hide="${index}" class="h-4 w-4" aria-label="Skrýt ${row.fund}" /></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2 text-right"><input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full table-input" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2 text-right">
+            <div class="relative">
+              <input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full table-input pr-10" inputmode="numeric" placeholder="0" />
+              <span class="input-suffix">Kč</span>
+            </div>
+          </td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
@@ -539,6 +640,7 @@
       const totalRow = document.createElement('tr');
       totalRow.className = 'highlight-row';
       totalRow.innerHTML = `
+        <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold">Celkem</td>
         <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold text-right" id="initialTotalAum">0 Kč</td>
@@ -549,6 +651,8 @@
         <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
       `;
       initialBody.appendChild(totalRow);
+
+      Object.keys(hiddenState.initial).forEach((key) => applyVisibility('initial', key));
     }
 
     function buildTrailTable() {
@@ -557,16 +661,23 @@
         if (row.type === 'separator') {
           const tr = document.createElement('tr');
           tr.className = 'separator-row';
-          tr.innerHTML = '<td colspan="6"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
+          tr.innerHTML = '<td colspan="7"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
           trailBody.appendChild(tr);
           return;
         }
         const tr = document.createElement('tr');
         tr.className = 'data-row transition-colors';
+        tr.setAttribute('data-trail-row', index);
         tr.innerHTML = `
+          <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-trail-hide="${index}" class="h-4 w-4" aria-label="Skrýt ${row.fund}" /></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
           <td class="px-3 py-2">${row.fund}</td>
-          <td class="px-3 py-2 text-right"><input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full table-input" inputmode="decimal" placeholder="0" /></td>
+          <td class="px-3 py-2 text-right">
+            <div class="relative">
+              <input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full table-input pr-10" inputmode="numeric" placeholder="0" />
+              <span class="input-suffix">Kč</span>
+            </div>
+          </td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="trail-${index}"></td>
           <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="trail-${index}"></td>
           <td class="px-3 py-2 text-[var(--color-muted)] text-xs md:text-sm">${row.note || ''}</td>
@@ -577,6 +688,7 @@
       const totalRow = document.createElement('tr');
       totalRow.className = 'highlight-row';
       totalRow.innerHTML = `
+        <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold">Celkem</td>
         <td class="px-3 py-2 font-bold"></td>
         <td class="px-3 py-2 font-bold text-right" id="trailTotalAum">0 Kč</td>
@@ -585,15 +697,75 @@
         <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
       `;
       trailBody.appendChild(totalRow);
+
+      Object.keys(hiddenState.trail).forEach((key) => applyVisibility('trail', key));
     }
 
     function attachListeners() {
-      initialBody.addEventListener('input', (event) => {
-        if (event.target.matches('[data-initial-aum]')) recalcAll();
+      initialBody.addEventListener('focusin', (event) => {
+        if (event.target.matches('[data-initial-aum]')) {
+          event.target.value = event.target.dataset.value ?? '';
+          event.target.classList.remove('has-error');
+        }
       });
 
-      trailBody.addEventListener('input', (event) => {
-        if (event.target.matches('[data-trail-aum]')) recalcAll();
+      trailBody.addEventListener('focusin', (event) => {
+        if (event.target.matches('[data-trail-aum]')) {
+          event.target.value = event.target.dataset.value ?? '';
+          event.target.classList.remove('has-error');
+        }
+      });
+
+      function handleBlur(event) {
+        const input = event.target;
+        const result = evaluateAumExpression(input.value);
+        if (!result.valid) {
+          input.classList.add('has-error');
+          const fallback = input.dataset.lastValid ? Number(input.dataset.lastValid) : 0;
+          input.value = formatAum(fallback);
+          return;
+        }
+        input.classList.remove('has-error');
+        setAumValue(input, result.value);
+        recalcAll();
+      }
+
+      initialBody.addEventListener('blur', (event) => {
+        if (event.target.matches('[data-initial-aum]')) handleBlur(event);
+      }, true);
+
+      trailBody.addEventListener('blur', (event) => {
+        if (event.target.matches('[data-trail-aum]')) handleBlur(event);
+      }, true);
+
+      initialBody.addEventListener('keydown', (event) => {
+        if (event.target.matches('[data-initial-aum]') && event.key === 'Enter') {
+          event.preventDefault();
+          event.target.blur();
+        }
+      });
+
+      trailBody.addEventListener('keydown', (event) => {
+        if (event.target.matches('[data-trail-aum]') && event.key === 'Enter') {
+          event.preventDefault();
+          event.target.blur();
+        }
+      });
+
+      initialBody.addEventListener('change', (event) => {
+        if (event.target.matches('[data-initial-hide]')) {
+          hiddenState.initial[event.target.dataset.initialHide] = event.target.checked;
+          applyVisibility('initial', event.target.dataset.initialHide);
+          recalcAll();
+        }
+      });
+
+      trailBody.addEventListener('change', (event) => {
+        if (event.target.matches('[data-trail-hide]')) {
+          hiddenState.trail[event.target.dataset.trailHide] = event.target.checked;
+          applyVisibility('trail', event.target.dataset.trailHide);
+          recalcAll();
+        }
       });
 
       [coefInput, entryFeeInput, goalInput].forEach((input) => {
@@ -601,11 +773,55 @@
       });
 
       resetButton.addEventListener('click', () => {
-        document.querySelectorAll('[data-initial-aum]').forEach((input) => (input.value = ''));
-        document.querySelectorAll('[data-trail-aum]').forEach((input) => (input.value = ''));
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
         coefInput.value = '60';
         entryFeeInput.value = '1';
         goalInput.value = '1200000';
+        recalcAll();
+      });
+
+      fillTestButton.addEventListener('click', () => {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+          if (!hiddenState.initial[input.dataset.initialAum]) setAumValue(input, 10000000);
+        });
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+          if (!hiddenState.trail[input.dataset.trailAum]) setAumValue(input, 10000000);
+        });
+        recalcAll();
+      });
+
+      initialShowAll.addEventListener('click', () => {
+        hiddenState.initial = {};
+        document.querySelectorAll('[data-initial-hide]').forEach((checkbox) => (checkbox.checked = false));
+        document.querySelectorAll('[data-initial-row]').forEach((row) => (row.style.display = ''));
+        recalcAll();
+      });
+
+      trailShowAll.addEventListener('click', () => {
+        hiddenState.trail = {};
+        document.querySelectorAll('[data-trail-hide]').forEach((checkbox) => (checkbox.checked = false));
+        document.querySelectorAll('[data-trail-row]').forEach((row) => (row.style.display = ''));
+        recalcAll();
+      });
+
+      initialHideZero.addEventListener('click', () => {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+          if (getAumValue(input) === 0) {
+            hiddenState.initial[input.dataset.initialAum] = true;
+            applyVisibility('initial', input.dataset.initialAum);
+          }
+        });
+        recalcAll();
+      });
+
+      trailHideZero.addEventListener('click', () => {
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+          if (getAumValue(input) === 0) {
+            hiddenState.trail[input.dataset.trailAum] = true;
+            applyVisibility('trail', input.dataset.trailAum);
+          }
+        });
         recalcAll();
       });
     }
@@ -613,6 +829,8 @@
     function init() {
       buildInitialTable();
       buildTrailTable();
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
       loadPersistedValues();
       recalcAll();
       attachListeners();
