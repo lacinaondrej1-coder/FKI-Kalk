@@ -302,6 +302,31 @@
         </table>
       </div>
 
+      <div class="card p-6 md:p-8 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="space-y-1">
+            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Vlastní fondy (následky)</h3>
+            <p class="text-sm text-[var(--color-muted)]">Přidejte vlastní fondy mimo pevný seznam.</p>
+          </div>
+          <button id="addCustomFund" class="secondary-btn text-sm px-4 py-2">+ Přidat fond</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="table-head">
+              <tr>
+                <th class="px-3 py-2 text-left">NÁZEV FONDU</th>
+                <th class="px-3 py-2 text-right col-aum">AÚM (KČ)</th>
+                <th class="px-3 py-2 text-right">SAZBA (%)</th>
+                <th class="px-3 py-2 text-right">ROČNÍ NÁSLEDNÁ PROVIZE</th>
+                <th class="px-3 py-2 text-center">SKRÝT</th>
+                <th class="px-3 py-2 text-center">AKCE</th>
+              </tr>
+            </thead>
+            <tbody id="customTrailBody" class="divide-y divide-[var(--color-border)]"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card p-6 md:p-8 space-y-6">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div class="space-y-1">
@@ -367,7 +392,7 @@
       </div>
 
       <div class="card p-5 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
-        <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia</p>
+        <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia (efektivní)</p>
         <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
       </div>
     </section>
@@ -472,6 +497,7 @@
 
     const initialBody = document.getElementById('initialBody');
     const trailBody = document.getElementById('trailBody');
+    const customTrailBody = document.getElementById('customTrailBody');
     const coefInput = document.getElementById('coefInput');
     const entryFeeInput = document.getElementById('entryFeeInput');
     const goalInput = document.getElementById('goalInput');
@@ -490,6 +516,7 @@
     const initialHideZero = document.getElementById('initialHideZero');
     const trailShowAll = document.getElementById('trailShowAll');
     const trailHideZero = document.getElementById('trailHideZero');
+    const addCustomFund = document.getElementById('addCustomFund');
     const exportJsonBtn = document.getElementById('exportJsonBtn');
     const importJsonBtn = document.getElementById('importJsonBtn');
     const importJsonFile = document.getElementById('importJsonFile');
@@ -507,13 +534,16 @@
       trailAum: 'fki_trail_aum',
       goal: 'fki_goal',
       hiddenInitial: 'fki_hidden_initial',
-      hiddenTrail: 'fki_hidden_trail'
+      hiddenTrail: 'fki_hidden_trail',
+      customTrailFunds: 'fki_custom_trail_funds'
     };
 
     const hiddenState = {
       initial: JSON.parse(localStorage.getItem(STORAGE_KEYS.hiddenInitial) || '{}'),
       trail: JSON.parse(localStorage.getItem(STORAGE_KEYS.hiddenTrail) || '{}')
     };
+
+    let customTrailFunds = [];
 
     function showToast(message) {
       if (!toastEl) return;
@@ -605,6 +635,17 @@
       return number.toLocaleString('cs-CZ');
     }
 
+    function getRateValue(input) {
+      return sanitizeNumber(input?.dataset.value ?? input?.value);
+    }
+
+    function setRateValue(input, value) {
+      const numericValue = Math.max(0, Number(value) || 0);
+      input.dataset.value = numericValue;
+      input.dataset.lastValid = numericValue;
+      input.value = formatPercent(numericValue);
+    }
+
     function getAumValue(input) {
       return sanitizeNumber(input?.dataset.value ?? input?.value);
     }
@@ -650,6 +691,24 @@
       if (row) row.style.display = hidden ? 'none' : '';
     }
 
+    function applyCustomVisibility(id) {
+      const row = document.querySelector(`[data-custom-row="${id}"]`);
+      if (row) {
+        const fund = customTrailFunds.find((item) => item.id === id);
+        row.style.display = fund?.hidden ? 'none' : '';
+      }
+    }
+
+    function createCustomFund() {
+      return {
+        id: `custom-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        name: '',
+        aum: 0,
+        annualRate: 0,
+        hidden: false
+      };
+    }
+
     function persistValues() {
       const initialAum = {};
       document.querySelectorAll('[data-initial-aum]').forEach((input) => {
@@ -666,6 +725,7 @@
       localStorage.setItem(STORAGE_KEYS.trailAum, JSON.stringify(trailAum));
       localStorage.setItem(STORAGE_KEYS.hiddenInitial, JSON.stringify(hiddenState.initial));
       localStorage.setItem(STORAGE_KEYS.hiddenTrail, JSON.stringify(hiddenState.trail));
+      localStorage.setItem(STORAGE_KEYS.customTrailFunds, JSON.stringify(customTrailFunds));
     }
 
     function loadPersistedValues() {
@@ -674,6 +734,7 @@
       const goal = localStorage.getItem(STORAGE_KEYS.goal);
       const initialAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.initialAum) || '{}');
       const trailAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.trailAum) || '{}');
+      const customFunds = JSON.parse(localStorage.getItem(STORAGE_KEYS.customTrailFunds) || '[]');
       if (coef !== null) coefInput.value = coef;
       if (entryFee !== null) entryFeeInput.value = entryFee;
       if (goal !== null) setGoalValue(goalInput, goal);
@@ -683,6 +744,16 @@
       document.querySelectorAll('[data-trail-aum]').forEach((input) => {
         if (trailAum[input.dataset.key] !== undefined) setAumValue(input, trailAum[input.dataset.key]);
       });
+      if (Array.isArray(customFunds)) {
+        customTrailFunds = customFunds.map((fund) => ({
+          id: fund.id || createCustomFund().id,
+          name: fund.name || '',
+          aum: Number(fund.aum) || 0,
+          annualRate: Number(fund.annualRate) || 0,
+          hidden: Boolean(fund.hidden)
+        }));
+        buildCustomTrailTable();
+      }
       syncGoals('annual');
     }
 
@@ -740,7 +811,6 @@
     function calculateTrailRows() {
       const coef = sanitizeNumber(coefInput.value);
       let totalAum = 0, totalTrail = 0;
-      let weightedNumerator = 0;
       const donutData = [];
 
       TRAIL_FUNDS.forEach((row, index) => {
@@ -752,7 +822,6 @@
         if (!row.type) {
           totalAum += aum;
           totalTrail += annualTrail;
-          weightedNumerator += aum * row.annualRate;
           if (aum > 0) {
             donutData.push({ label: row.fund, value: aum, index });
           }
@@ -765,14 +834,32 @@
         }
       });
 
+      customTrailFunds.forEach((fund) => {
+        const row = document.querySelector(`[data-custom-row="${fund.id}"]`);
+        const aumInput = row?.querySelector('[data-custom-aum]');
+        const rateInput = row?.querySelector('[data-custom-rate]');
+        if (!aumInput || !rateInput) return;
+        if (fund.hidden) return;
+        const aum = getAumValue(aumInput);
+        const ratePercent = getRateValue(rateInput);
+        const annualTrail = aum * (ratePercent / 100) / DENOM * coef;
+        totalAum += aum;
+        totalTrail += annualTrail;
+        if (aum > 0) {
+          donutData.push({ label: fund.name || 'Vlastní fond', value: aum, index: fund.id });
+        }
+        const output = row.querySelector('[data-custom-output]');
+        if (output) output.textContent = formatCurrency(annualTrail);
+      });
+
       document.getElementById('trailTotalAum').textContent = formatCurrency(totalAum);
       document.getElementById('trailTotalAnnual').textContent = formatCurrency(totalTrail);
 
       if (totalAum === 0) {
         weightedRateEl.textContent = 'Zatím není dost dat pro výpočet';
       } else {
-        const weightedRate = (weightedNumerator / totalAum) * 100;
-        weightedRateEl.textContent = formatPercent(weightedRate) + ' % p.a.';
+        const effectiveRate = (totalTrail / totalAum) * 100;
+        weightedRateEl.textContent = formatPercent(effectiveRate) + ' % p.a.';
       }
       updateGoalOutputs(totalTrail);
       updateDonutChart(donutData);
@@ -816,7 +903,16 @@
       filtered.sort((a, b) => b.value - a.value);
       const displayData = filtered;
 
-      const getColor = (idx) => CHART_COLORS[(idx) % CHART_COLORS.length];
+      const hashToIndex = (value) => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        const stringValue = String(value || '');
+        let hash = 0;
+        for (let i = 0; i < stringValue.length; i += 1) {
+          hash = (hash * 31 + stringValue.charCodeAt(i)) % 997;
+        }
+        return hash;
+      };
+      const getColor = (idx) => CHART_COLORS[(hashToIndex(idx)) % CHART_COLORS.length];
       const radius = 78;
       const center = 100;
       const circumference = 2 * Math.PI * radius;
@@ -1001,6 +1097,49 @@
       Object.keys(hiddenState.trail).forEach((key) => applyVisibility('trail', key));
     }
 
+    function buildCustomTrailTable() {
+      if (!customTrailBody) return;
+      customTrailBody.innerHTML = '';
+      if (!Array.isArray(customTrailFunds)) customTrailFunds = [];
+
+      customTrailFunds.forEach((fund) => {
+        const tr = document.createElement('tr');
+        tr.className = 'data-row transition-colors';
+        tr.setAttribute('data-custom-row', fund.id);
+        tr.innerHTML = `
+          <td class="px-3 py-2">
+            <input type="text" data-custom-name="${fund.id}" class="w-full table-input text-left" placeholder="Název fondu" />
+          </td>
+          <td class="px-3 py-2 text-right col-aum">
+            <div class="relative">
+              <input type="text" data-custom-aum="${fund.id}" class="w-full table-input pr-10" inputmode="numeric" placeholder="0" />
+              <span class="input-suffix">Kč</span>
+            </div>
+          </td>
+          <td class="px-3 py-2 text-right">
+            <div class="relative">
+              <input type="text" data-custom-rate="${fund.id}" class="w-full table-input pr-8" inputmode="decimal" placeholder="0,00" />
+              <span class="input-suffix">%</span>
+            </div>
+          </td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-custom-output="${fund.id}">0 Kč</td>
+          <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-custom-hide="${fund.id}" class="h-4 w-4" aria-label="Skrýt ${fund.name || 'fond'}" /></td>
+          <td class="px-3 py-2 text-center"><button type="button" data-custom-delete="${fund.id}" class="danger-btn text-xs px-3 py-1">Smazat</button></td>
+        `;
+        customTrailBody.appendChild(tr);
+
+        const nameInput = tr.querySelector('[data-custom-name]');
+        const aumInput = tr.querySelector('[data-custom-aum]');
+        const rateInput = tr.querySelector('[data-custom-rate]');
+        const hideInput = tr.querySelector('[data-custom-hide]');
+        if (nameInput) nameInput.value = fund.name || '';
+        if (aumInput) setAumValue(aumInput, fund.aum || 0);
+        if (rateInput) setRateValue(rateInput, fund.annualRate || 0);
+        if (hideInput) hideInput.checked = Boolean(fund.hidden);
+        applyCustomVisibility(fund.id);
+      });
+    }
+
     function buildSnapshot() {
       const initialAum = {};
       document.querySelectorAll('[data-initial-aum]').forEach((input) => {
@@ -1021,7 +1160,8 @@
         initialAum,
         trailAum,
         hiddenInitial: hiddenState.initial,
-        hiddenTrail: hiddenState.trail
+        hiddenTrail: hiddenState.trail,
+        customTrailFunds
       };
     }
 
@@ -1043,10 +1183,21 @@
           if (data.trailAum[input.dataset.key] !== undefined) setAumValue(input, data.trailAum[input.dataset.key]);
         });
       }
+      if (Array.isArray(data.customTrailFunds)) {
+        customTrailFunds = data.customTrailFunds.map((fund) => ({
+          id: fund.id || createCustomFund().id,
+          name: fund.name || '',
+          aum: Number(fund.aum) || 0,
+          annualRate: Number(fund.annualRate) || 0,
+          hidden: Boolean(fund.hidden)
+        }));
+        buildCustomTrailTable();
+      }
       hiddenState.initial = data.hiddenInitial || {};
       hiddenState.trail = data.hiddenTrail || {};
       Object.keys(hiddenState.initial).forEach((key) => applyVisibility('initial', key));
       Object.keys(hiddenState.trail).forEach((key) => applyVisibility('trail', key));
+      customTrailFunds.forEach((fund) => applyCustomVisibility(fund.id));
       syncGoals('annual');
       recalcAll();
     }
@@ -1065,6 +1216,15 @@
           event.target.classList.remove('has-error');
         }
       });
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('focusin', (event) => {
+          if (event.target.matches('[data-custom-aum]') || event.target.matches('[data-custom-rate]')) {
+            event.target.value = event.target.dataset.value ?? '';
+            event.target.classList.remove('has-error');
+          }
+        });
+      }
 
       function handleBlur(event) {
         const input = event.target;
@@ -1088,6 +1248,19 @@
         if (event.target.matches('[data-trail-aum]')) handleBlur(event);
       }, true);
 
+      if (customTrailBody) {
+        customTrailBody.addEventListener('blur', (event) => {
+          if (event.target.matches('[data-custom-aum]')) {
+            handleBlur(event);
+            const input = event.target;
+            const fund = customTrailFunds.find((item) => item.id === input.dataset.customAum);
+            if (fund) {
+              fund.aum = getAumValue(input);
+            }
+          }
+        }, true);
+      }
+
       initialBody.addEventListener('keydown', (event) => {
         if (event.target.matches('[data-initial-aum]') && event.key === 'Enter') {
           event.preventDefault();
@@ -1101,6 +1274,15 @@
           event.target.blur();
         }
       });
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('keydown', (event) => {
+          if (event.target.matches('[data-custom-aum]') && event.key === 'Enter') {
+            event.preventDefault();
+            event.target.blur();
+          }
+        });
+      }
 
       [goalInput, goalQuarterlyInput, goalMonthlyInput].forEach((input) => {
         input.addEventListener('focusin', () => {
@@ -1150,6 +1332,57 @@
           recalcAll();
         }
       });
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('input', (event) => {
+          if (event.target.matches('[data-custom-name]')) {
+            const fund = customTrailFunds.find((item) => item.id === event.target.dataset.customName);
+            if (fund) {
+              fund.name = event.target.value;
+              recalcAll();
+            }
+          }
+        });
+
+        customTrailBody.addEventListener('blur', (event) => {
+          if (event.target.matches('[data-custom-rate]')) {
+            const input = event.target;
+            const fund = customTrailFunds.find((item) => item.id === input.dataset.customRate);
+            if (!fund) return;
+            const numericValue = Math.max(0, sanitizeNumber(input.value));
+            fund.annualRate = numericValue;
+            setRateValue(input, numericValue);
+            recalcAll();
+          }
+        }, true);
+
+        customTrailBody.addEventListener('keydown', (event) => {
+          if (event.target.matches('[data-custom-rate]') && event.key === 'Enter') {
+            event.preventDefault();
+            event.target.blur();
+          }
+        });
+
+        customTrailBody.addEventListener('change', (event) => {
+          if (event.target.matches('[data-custom-hide]')) {
+            const fund = customTrailFunds.find((item) => item.id === event.target.dataset.customHide);
+            if (fund) {
+              fund.hidden = event.target.checked;
+              applyCustomVisibility(fund.id);
+              recalcAll();
+            }
+          }
+        });
+
+        customTrailBody.addEventListener('click', (event) => {
+          if (event.target.matches('[data-custom-delete]')) {
+            const id = event.target.dataset.customDelete;
+            customTrailFunds = customTrailFunds.filter((fund) => fund.id !== id);
+            buildCustomTrailTable();
+            recalcAll();
+          }
+        });
+      }
 
       [coefInput, entryFeeInput].forEach((input) => {
         input.addEventListener('input', recalcAll);
@@ -1209,6 +1442,14 @@
         recalcAll();
       });
 
+      if (addCustomFund) {
+        addCustomFund.addEventListener('click', () => {
+          customTrailFunds.push(createCustomFund());
+          buildCustomTrailTable();
+          recalcAll();
+        });
+      }
+
       exportJsonBtn.addEventListener('click', () => {
         const snapshot = buildSnapshot();
         const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
@@ -1242,8 +1483,10 @@
     function init() {
       buildInitialTable();
       buildTrailTable();
+      buildCustomTrailTable();
       document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
       document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
+      document.querySelectorAll('[data-custom-aum]').forEach((input) => setAumValue(input, 0));
       setGoalValue(goalInput, sanitizeNumber(goalInput.value));
       setGoalValue(goalQuarterlyInput, sanitizeNumber(goalQuarterlyInput.value));
       setGoalValue(goalMonthlyInput, sanitizeNumber(goalMonthlyInput.value));
