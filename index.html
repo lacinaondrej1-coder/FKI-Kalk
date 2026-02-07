@@ -1,0 +1,2915 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report investičního portfolia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    :root {
+        color-scheme: light;
+        --color-bg-start: #FDFEFF;
+        --color-bg-end: #F8F9FA;
+        --color-primary: #0d2c54;
+        --color-accent: #4DB1C8;
+        --color-text: #33373D;
+        --color-muted: #888B90;
+        --color-border: #EAECEE;
+        --color-border-strong: #D0E0E8;
+        --color-card: #FFFFFF;
+        --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
+        --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
+    }
+
+    html, body {
+        font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Helvetica Neue', sans-serif;
+        scroll-behavior: smooth;
+        min-height: 100%;
+        background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+        color: var(--color-text);
+    }
+
+    .tabular { font-variant-numeric: tabular-nums; }
+    .hidden { display: none !important; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .editable[contenteditable="true"]:empty:before {
+        content: attr(data-ph);
+        color: var(--color-muted);
+        pointer-events: none;
+        display: block;
+    }
+    .editable {
+        outline: none;
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+        padding: 0.6rem 0.75rem;
+        background: #fff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .editable:focus {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+    @keyframes fadeOut {
+        from { opacity: 1; transform: scale(0.95); }
+        to { opacity: 0; transform: scale(1); }
+    }
+    .fade-out { animation: fadeOut 0.3s ease-in forwards; }
+
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary .summary-arrow { transition: transform 0.2s; }
+    details[open] > summary .summary-arrow { transform: rotate(90deg); }
+
+    #toast-container {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.9rem 1.15rem;
+        border-radius: 1rem;
+        box-shadow: var(--color-shadow);
+        border: 1px solid var(--color-border);
+        background-color: var(--color-card);
+        color: var(--color-text);
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.35s cubic-bezier(0.21, 1.02, 0.73, 1);
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .toast-success { background-color: rgba(77, 177, 200, 0.12); border-color: rgba(77, 177, 200, 0.35); color: var(--color-primary); }
+    .toast-error { background-color: rgba(220, 53, 69, 0.14); border-color: rgba(220, 53, 69, 0.35); color: #b91c1c; }
+
+    #chart-tooltip {
+        position: absolute;
+        z-index: 20;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+        border-radius: 0.75rem;
+        box-shadow: var(--color-shadow);
+        padding: 0.5rem 0.75rem;
+        opacity: 0;
+        max-width: min(320px, 90vw);
+        overflow-wrap: anywhere;
+    }
+
+    .card {
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        border-radius: 1.5rem;
+        box-shadow: none;
+        padding: 1.5rem;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    @media (min-width: 640px) {
+        .card { padding: 2rem; }
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        border-color: var(--color-border-strong);
+        box-shadow: var(--color-shadow);
+    }
+
+    .primary-btn, .secondary-btn, .danger-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.9rem;
+        padding: 0.65rem 1.1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .primary-btn {
+        background: var(--color-primary);
+        color: #fff;
+        border: 1px solid var(--color-primary);
+        box-shadow: var(--color-shadow);
+    }
+    .primary-btn:hover {
+        box-shadow: var(--color-shadow-strong);
+        background: #143d76;
+        border-color: #143d76;
+    }
+
+    .secondary-btn {
+        background: rgba(77, 177, 200, 0.12);
+        color: var(--color-primary);
+        border: 1px solid rgba(77, 177, 200, 0.4);
+    }
+    .secondary-btn:hover {
+        background: rgba(77, 177, 200, 0.18);
+        border-color: rgba(77, 177, 200, 0.55);
+    }
+
+    .danger-btn {
+        background: rgba(220, 53, 69, 0.08);
+        color: #b91c1c;
+        border: 1px solid rgba(220, 53, 69, 0.35);
+    }
+    .danger-btn:hover {
+        background: rgba(220, 53, 69, 0.14);
+        border-color: rgba(220, 53, 69, 0.45);
+    }
+
+    .glass-input {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+        padding: 0.6rem 0.75rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .glass-input::placeholder {
+        color: var(--color-muted);
+    }
+    .glass-input:focus {
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
+        outline: none;
+    }
+
+    .form-checkbox {
+        width: 1.05rem;
+        height: 1.05rem;
+        border-radius: 0.35rem;
+        border: 1px solid var(--color-border);
+        accent-color: var(--color-accent);
+    }
+
+    h1.report-title {
+        font-size: 3.333rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    h2.section-title {
+        font-size: 2.167rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        margin: 0;
+    }
+    h3.card-subtitle {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--color-text);
+        margin: 0;
+    }
+    p {
+        font-size: 1.167rem;
+        line-height: 1.6;
+        color: var(--color-text);
+    }
+    .muted-text { color: var(--color-muted); font-size: 0.85rem; }
+    .text-body { color: var(--color-text); }
+    .text-muted { color: var(--color-muted); }
+    .text-primary { color: var(--color-primary); }
+    .text-accent { color: var(--color-accent); }
+    .stat-value { font-size: 4rem; font-weight: 700; color: var(--color-accent); }
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 1.1rem;
+        border-radius: 999px;
+        background: rgba(13, 44, 84, 0.08);
+        color: var(--color-primary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .border-subtle { border-color: var(--color-border) !important; }
+    .border-accent-soft { border-color: rgba(77, 177, 200, 0.35) !important; }
+    .bg-accent-soft { background: rgba(77, 177, 200, 0.12); }
+    #pie-time-slider { accent-color: var(--color-accent); }
+
+    .report-header {
+        padding: 4rem 1.5rem 2.5rem;
+    }
+    .report-header__inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+    .brand-logo {
+        font-size: 1.9rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--color-primary);
+    }
+    .brand-logo span { color: var(--color-accent); }
+
+    .hero-layout {
+        display: grid;
+        gap: 2.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        align-items: start;
+    }
+    .hero-intro { display: flex; flex-direction: column; gap: 1.5rem; }
+    .hero-badges { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .hero-badge {
+        background: rgba(13, 44, 84, 0.08);
+        color: var(--color-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .hero-disclaimer { font-size: 0.9rem; color: var(--color-muted); display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+    .feature-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+    .feature-card {
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        border-radius: 1.5rem;
+        padding: 1.3rem 1.4rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--color-border-strong);
+        box-shadow: var(--color-shadow);
+    }
+    .feature-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 1rem;
+        background: rgba(77, 177, 200, 0.15);
+        color: var(--color-primary);
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+    /* PATCH */
+    .benefit-icon {
+        width: 28px;
+        height: 28px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    /* PATCH */
+    .benefit-icon > svg {
+        width: 18px;
+        height: 18px;
+        color: var(--color-primary);
+        stroke-width: 2;
+    }
+    .feature-text { display: flex; flex-direction: column; gap: 0.35rem; }
+    .feature-title { font-weight: 600; color: var(--color-primary); font-size: 1rem; }
+    .feature-desc { font-size: 0.95rem; color: var(--color-text); line-height: 1.5; }
+
+    .input-highlight {
+        border-color: var(--color-accent) !important;
+        box-shadow: 0 0 0 1px var(--color-accent);
+    }
+
+    .delete-row-button {
+        color: var(--color-muted);
+    }
+    .delete-row-button:hover {
+        color: #B2403D;
+        background: rgba(178, 64, 61, 0.08);
+    }
+
+    .divider { height: 1px; background: var(--color-border); }
+
+    .bg-card-soft { background: rgba(255, 255, 255, 0.85); }
+    .bg-card-muted { background: rgba(255, 255, 255, 0.7); }
+    .bg-divider { background: rgba(13, 44, 84, 0.12); }
+
+    /* PATCH */
+    .fund-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-transform: uppercase;
+        box-shadow: var(--color-shadow);
+        background: var(--color-primary);
+        flex-shrink: 0;
+    }
+    .fund-card__header { display: grid; gap: 1.4rem; grid-template-columns: auto 1fr; align-items: center; }
+    .fund-card__name { font-size: 1.35rem; font-weight: 600; color: var(--color-primary); overflow-wrap: anywhere; }
+    .fund-card__dot { width: 0.8rem; height: 0.8rem; border-radius: 999px; box-shadow: 0 0 0 3px rgba(13,44,84,0.1); }
+    .fund-card__meta { display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.92rem; color: var(--color-muted); }
+    .fund-card__meta span { padding: 0.35rem 0.75rem; border-radius: 999px; background: rgba(77,177,200,0.14); color: var(--color-primary); font-weight: 500; }
+    .fund-card__metrics { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .fund-card__metric { background: rgba(13,44,84,0.04); border: 1px solid rgba(13,44,84,0.08); border-radius: 1.1rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .fund-card__metric .metric-label { color: var(--color-muted); }
+    .fund-card__metric .metric-value { color: var(--color-primary); font-weight: 600; }
+    .fund-card__transactions { border-radius: 1.2rem; border: 1px solid var(--color-border); background: rgba(255,255,255,0.85); overflow: hidden; }
+    .fund-card__transactions summary { padding: 0.75rem 1.1rem; display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; font-weight: 600; color: var(--color-primary); cursor: pointer; background: rgba(77,177,200,0.08); }
+    .fund-card__transactions summary:hover { background: rgba(77,177,200,0.14); }
+
+    /* PATCH */
+    .pie-segment,
+    .pie-slice {
+        cursor: pointer;
+        transition: transform 0.25s ease, filter 0.25s ease;
+        transform-origin: 50px 50px;
+    }
+    .pie-segment:hover,
+    .pie-slice:hover {
+        transform: scale(1.05);
+        filter: drop-shadow(0 4px 8px rgba(13, 44, 84, 0.15));
+    }
+    .pie-segment:focus,
+    .pie-segment:focus-visible,
+    .pie-slice:focus,
+    .pie-slice:focus-visible { outline: none; }
+    .pie-segment:focus path,
+    .pie-segment:focus-visible path,
+    .pie-segment:focus circle,
+    .pie-segment:focus-visible circle,
+    .pie-slice:focus path,
+    .pie-slice:focus-visible path {
+        transform: scale(1.05);
+        filter: drop-shadow(0 4px 8px rgba(13, 44, 84, 0.18));
+    }
+    .line-chart-grid-line { stroke: #E5E8EE; stroke-dasharray: 2 3; }
+    .line-chart-axis-text { font-size: 12px; fill: var(--color-muted); }
+    .line-chart-dot { cursor: pointer; transition: r 0.2s; outline: none; }
+    .line-chart-dot:hover { r: 7; }
+    .line-chart-dot:focus-visible { r: 7; outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+    .text-positive { color: var(--color-accent); }
+    .text-negative { color: #B2403D; }
+    .muted { color: var(--color-muted); }
+
+    /* Export report styling */
+    .export-shell {
+        max-width: 1080px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+        padding: 3.5rem 2rem 4rem;
+        background: linear-gradient(180deg, rgba(253,254,255,0.92) 0%, rgba(248,249,250,0.95) 100%);
+    }
+    .export-hero {
+        background: var(--color-card);
+        border-radius: 1.9rem;
+        border: 2px solid var(--color-primary);
+        padding: 3rem;
+        box-shadow: none;
+    }
+    .export-hero__layout {
+        display: grid;
+        gap: 2.5rem;
+    }
+    .export-hero__content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+    }
+    .export-hero__features {
+        display: grid;
+        gap: 1rem;
+    }
+    .export-hero__features .feature-card { height: 100%; }
+    @media (min-width: 960px) {
+        .export-hero__layout { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); align-items: start; }
+    }
+    .export-hero__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        background: rgba(13,44,84,0.08);
+        color: var(--color-primary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .export-hero__title { font-size: 3.1rem; font-weight: 700; color: var(--color-primary); letter-spacing: 0.08em; text-transform: uppercase; margin: 0; overflow-wrap: anywhere; }
+    .export-hero__lead { color: var(--color-text); line-height: 1.6; font-size: 1.1rem; margin: 0; }
+    .export-hero__meta { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .export-hero__meta-item {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid var(--color-border);
+        border-radius: 1.2rem;
+        padding: 1rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+    .meta-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
+    .meta-value { font-size: 1.1rem; font-weight: 600; color: var(--color-primary); }
+    .export-hero__disclaimer { font-size: 0.9rem; color: var(--color-muted); line-height: 1.6; margin: 0; }
+
+    .narrative { display: flex; flex-direction: column; gap: 1rem; background: var(--color-card); border-radius: 1.5rem; border: 1px solid var(--color-border); padding: 1.8rem 2.1rem; }
+    .narrative h2 { margin: 0; font-size: 1.35rem; font-weight: 600; color: var(--color-primary); }
+    .narrative p { margin: 0; font-size: 1rem; color: var(--color-text); }
+
+    .section-heading { display: flex; flex-direction: column; gap: 0.5rem; }
+    .section-heading .pill { align-self: flex-start; }
+    .section-heading h2 { margin: 0; font-size: 2rem; font-weight: 700; color: var(--color-primary); overflow-wrap: anywhere; }
+    .section-heading p { margin: 0; font-size: 1rem; color: var(--color-text); }
+    .section-meta { margin: 0; font-size: 0.85rem; color: var(--color-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    @media (min-width: 900px) {
+        .section-heading { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 0.5rem 1.25rem; }
+        .section-heading h2 { margin: 0; }
+        .section-heading .section-meta { align-self: center; justify-self: end; }
+        .section-heading .pill { grid-column: 1 / -1; }
+    }
+
+    .summary-grid { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .summary-card { padding: 1.4rem 1.5rem; border-radius: 1.4rem; border: 1px solid var(--color-border); background: var(--color-card); display: flex; flex-direction: column; justify-content: space-between; gap: 0.65rem; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: none; }
+    .summary-card:hover { transform: translateY(-3px); border-color: var(--color-border-strong); box-shadow: var(--color-shadow); }
+    .summary-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: var(--color-muted); font-weight: 600; }
+    .summary-value {
+        font-size: clamp(1.8rem, 5vw, 2.4rem);
+        font-weight: 700;
+        color: var(--color-primary);
+        line-height: 1.1;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1, "lnum" 1;
+    }
+    .summary-note { font-size: 0.9rem; color: var(--color-muted); margin: 0; }
+    .summary-warning { margin-bottom: 1rem; padding: 1rem 1.25rem; border-radius: 1rem; border: 1px solid rgba(220,53,69,0.25); background: rgba(220,53,69,0.08); color: #7f1d1d; font-size: 0.95rem; line-height: 1.5; }
+
+    .fund-export-grid { display: flex; flex-direction: column; gap: 1.65rem; }
+    .fund-export { background: var(--color-card); border-radius: 1.6rem; border: 1px solid var(--color-border); padding: 1.85rem; display: flex; flex-direction: column; gap: 1.4rem; }
+    .fund-export__header { display: grid; gap: 1.2rem; grid-template-columns: auto 1fr; align-items: center; }
+    .fund-export__title { display: flex; flex-direction: column; gap: 0.5rem; overflow-wrap: anywhere; }
+    .fund-export__meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.85rem; color: var(--color-muted); }
+    .fund-export__meta span { padding: 0.4rem 0.7rem; border-radius: 999px; background: rgba(77,177,200,0.12); color: var(--color-primary); font-weight: 500; }
+    .fund-export__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; }
+    .fund-export__metric { background: rgba(77,177,200,0.08); border: 1px solid rgba(77,177,200,0.2); border-radius: 1.15rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-muted); font-weight: 600; }
+    .metric-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1, "lnum" 1;
+        white-space: nowrap;
+    }
+    .metric-sub { font-size: 0.78rem; color: var(--color-muted); }
+
+    .fund-export__table-wrapper { overflow-x: auto; border-radius: 1.15rem; border: 1px solid var(--color-border); background: rgba(248,249,250,0.9); mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
+    .fund-export__table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .fund-export__table th,
+    .fund-export__table td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(234,236,238,0.7); }
+    .fund-export__table th { text-align: left; font-weight: 600; color: var(--color-muted); background: rgba(242,244,246,0.8); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem; position: sticky; top: 0; z-index: 1; }
+    .fund-export__table th.text-right,
+    .fund-export__table td.text-right { text-align: right; }
+
+    .line-export { display: flex; flex-direction: column; gap: 1.35rem; border-radius: 1.55rem; padding: 2rem; background: var(--color-card); border: 1px solid var(--color-border); }
+    .line-canvas { border-radius: 1.25rem; overflow: hidden; background: #ffffff; border: 1px solid var(--color-border); }
+    .line-canvas svg { width: 100%; height: auto; display: block; }
+    .line-legend { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+    .legend-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid transparent; max-width: 100%; }
+    .legend-pill span, .legend-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .legend-pill:focus-visible { outline: 2px solid rgba(13,44,84,0.45); outline-offset: 3px; }
+    .legend-pill--base { background: rgba(51,55,61,0.1); color: var(--color-text); border-color: rgba(51,55,61,0.2); }
+    .legend-pill--value { background: rgba(77,177,200,0.18); color: var(--color-primary); border-color: rgba(77,177,200,0.35); }
+    .legend-pill--projection { background: rgba(13,44,84,0.1); color: var(--color-primary); border-color: rgba(13,44,84,0.25); }
+    .chart-footnote { margin: 0; font-size: 0.9rem; color: var(--color-muted); line-height: 1.6; }
+
+    .export-footer { margin-top: 2rem; text-align: center; font-size: 0.85rem; color: var(--color-muted); }
+    /* PATCH */
+    .footer-note { margin: 0; font-size: 0.85rem; color: var(--color-muted); }
+
+    @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+    }
+
+    @page { margin: 14mm; }
+
+    @media print {
+        body { background: #ffffff !important; }
+        .export-shell { background: #ffffff; padding: 0; }
+        .card { box-shadow: none !important; border-color: #d7dbe0; page-break-inside: avoid; break-inside: avoid; }
+        .summary-card, .fund-export, .line-export, .pie-export, .export-hero { page-break-inside: avoid; break-inside: avoid; }
+        #chart-tooltip { display: none !important; }
+    }
+
+    .pie-export { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: center; }
+    .pie-canvas { display: flex; justify-content: center; }
+    .pie-canvas svg { max-width: 320px; width: 100%; height: auto; }
+    .pie-legend { display: flex; flex-direction: column; gap: 0.85rem; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; font-size: 0.95rem; color: var(--color-text); padding: 0.7rem 1rem; border-radius: 0.9rem; background: var(--color-card); border: 1px solid var(--color-border); }
+    .legend-dot { width: 0.9rem; height: 0.9rem; border-radius: 999px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(13,44,84,0.1); }
+    .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .legend-value { font-weight: 600; color: var(--color-primary); }
+
+    .export-explanations { display: grid; gap: 1.3rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); font-size: 0.96rem; color: var(--color-text); }
+    .export-explanations article { background: var(--color-card); border-radius: 1.3rem; border: 1px solid var(--color-border); padding: 1.45rem; display: flex; flex-direction: column; gap: 0.8rem; }
+    .export-explanations h3 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--color-primary); }
+
+    .disclaimer-block { display: flex; flex-direction: column; gap: 0.9rem; background: rgba(255,255,255,0.95); border: 1px solid rgba(220,53,69,0.25); border-radius: 1.2rem; padding: 1.35rem 1.5rem; }
+    .disclaimer-title { font-size: 0.88rem; font-weight: 600; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
+    .disclaimer-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+    .disclaimer-item { display: flex; gap: 0.75rem; font-size: 0.9rem; color: var(--color-text); line-height: 1.6; }
+
+    @media (max-width: 768px) {
+        .report-header { padding: 3rem 1rem 2rem; }
+        .export-hero { padding: 2.2rem; }
+        h1.report-title { font-size: 2.6rem; }
+        h2.section-title { font-size: 1.9rem; }
+    }
+  </style>
+</head>
+<body class="antialiased text-body">
+  <header class="report-header">
+    <div class="report-header__inner">
+      <div class="brand-logo">Fair<span>Life</span></div>
+      <div class="hero-layout">
+        <div class="hero-intro">
+          <div class="hero-badges">
+            <span class="hero-badge">Report investičního portfolia</span>
+          </div>
+          <h1 class="report-title">Přehled vašeho finančního světa</h1>
+          <p>Sledujte výkonnost fondů, analyzujte cashflow a připravte pro klienty precizní výstupy v jednom elegantním prostředí.</p>
+          <div class="hero-disclaimer">
+            <span>© <span id="current-year"></span> Ondřej Lacina</span>
+            <span>Toto dílo je chráněno autorským právem dle zákona č. 121/2000 Sb.</span>
+            <span>Šíření mimo strukturu Fair-life je zakázáno.</span>
+          </div>
+        </div>
+        <div class="feature-stack">
+            <div class="feature-card">
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-diverzifikace" /></svg>
+              </div>
+            <div class="feature-text">
+              <span class="feature-title">Interaktivní řízení</span>
+              <span class="feature-desc">Import, export i validace dat v reálném čase na jednom místě.</span>
+            </div>
+          </div>
+            <div class="feature-card">
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-rust" /></svg>
+              </div>
+            <div class="feature-text">
+              <span class="feature-title">Pokročilé analýzy</span>
+              <span class="feature-desc">XIRR, projekce výnosů i vizualizace portfolia bez nutnosti dalších nástrojů.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tooltip for charts -->
+  <div id="chart-tooltip" class="hidden"></div>
+
+  <!-- Toast container for notifications -->
+  <div id="toast-container"></div>
+
+  <main class="relative px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-7xl mx-auto space-y-12">
+
+      <!-- === SELF-TESTS & STATUS NOTIFICATIONS === -->
+      <div id="status-container" class="space-y-4"></div>
+
+      <!-- === FX & OUTPUT CONTROLS === -->
+      <div class="grid gap-6 xl:grid-cols-3">
+        <section class="card p-6 sm:p-7 xl:col-span-2">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div class="space-y-2">
+              <h2 class="section-title">Nastavení měny</h2>
+              <p class="text-sm text-muted">Zadejte kurz EUR/CZK a zvolte výstupní měnu reportu.</p>
+            </div>
+            <div class="flex items-center gap-4 flex-wrap">
+              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-body">
+                <span class="font-medium text-primary whitespace-nowrap">Kurz (CZK za 1 EUR)</span>
+                <input id="fx-rate" type="number" step="0.0001" placeholder="např. 25.30" class="glass-input px-3 py-2 rounded-xl border w-[170px] tabular text-right text-primary placeholder:text-muted" />
+              </label>
+              <div class="hidden sm:block w-px h-9 bg-divider"></div>
+              <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-body">
+                <span class="font-medium text-primary">Výstup v měně</span>
+                <select id="out-curr" class="glass-input px-3 py-2 rounded-xl border bg-white text-primary">
+                  <option value="CZK" selected>CZK</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- === DATA MANAGEMENT === -->
+        <section class="card p-6 sm:p-7">
+          <div class="space-y-5">
+            <div class="space-y-2">
+              <h3 class="card-subtitle">Správa dat</h3>
+              <p class="text-sm text-muted">Synchronizujte portfolio jedním kliknutím.</p>
+            </div>
+            <div class="flex flex-col gap-3 text-sm">
+              <label class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span class="font-medium text-primary whitespace-nowrap">Jméno a příjmení klienta (1. pád)</span>
+                <input id="client-name" type="text" placeholder="např. Jan Novák" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[260px] text-primary placeholder:text-muted" />
+              </label>
+              <label class="flex flex-col gap-1">
+                <span class="font-medium text-primary">Oslovení klienta (5. pád)</span>
+                <input id="client-salutation" type="text" placeholder="např. Pepo" class="glass-input px-3 py-2 rounded-xl border w-full sm:w-[260px] text-primary placeholder:text-muted" />
+                <span class="text-xs text-muted">Tip: Pepo, Jano, paní Nováková…</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-body">
+                <input id="client-prefer-vykanie" type="checkbox" class="form-checkbox" />
+                <span>Preferovat vykání v reportu</span>
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button data-action="export-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Exportovat do .json</button>
+                <button data-action="import-json" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Importovat z .json</button>
+                <button data-action="export-html" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 10.5l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 3.5v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Exportovat report pro klienta (.html)
+                </button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+              </div>
+              <div id="last-saved-indicator" class="text-xs text-muted sm:ml-auto"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- === INPUT SECTIONS (PROVIDERS) === -->
+      <section class="space-y-6">
+        <div class="space-y-3">
+          <span class="pill">Vstupní data</span>
+          <div class="space-y-2">
+            <h2 class="section-title">Správa poskytovatelů a transakcí</h2>
+            <p class="text-sm text-body max-w-3xl">Importujte nebo přepisujte data jednotlivých platforem, kontrolujte jejich konzistenci a sledujte výsledky okamžitě po zadání.</p>
+          </div>
+        </div>
+        <div id="provider-sections" class="flex flex-col gap-6"></div>
+      </section>
+
+      <div class="divider"></div>
+      
+      <!-- === RESULTS BY FUND (REDESIGNED) === -->
+      <section class="card p-7 sm:p-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="section-title">Výsledky po fondech</h2>
+            <p class="text-sm text-muted">Detailní rozpad portfolia včetně XIRR pro jednotlivé fondy.</p>
+          </div>
+          <div id="amount-note-funds" class="text-xs font-medium uppercase tracking-[0.2em] text-muted">Částky v CZK</div>
+        </div>
+        <div id="funds-by-card-container" class="space-y-4">
+        </div>
+      </section>
+
+      <!-- === PORTFOLIO SUMMARY === -->
+      <section class="card p-7 sm:p-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="section-title">Souhrn Vašeho portfolia</h2>
+            <p class="text-sm text-muted">Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.</p>
+          </div>
+          <div id="amount-note-portfolio" class="text-xs font-medium uppercase tracking-[0.2em] text-muted">Částky v CZK</div>
+        </div>
+        <div id="portfolio-summary-content" class="text-sm">
+        </div>
+      </section>
+
+      <!-- === CHARTS & VISUALIZATIONS === -->
+      <section id="charts-section" class="space-y-8">
+        <div id="line-chart-card" class="card p-7 sm:p-8" style="display: none;">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="section-title">Vývoj hodnoty portfolia s predikcí do roku 2035</h2>
+            <p class="text-sm text-muted max-w-md">Simulace navazuje na aktuální XIRR a ukazuje odhad dalšího růstu při zachování tempa.</p>
+          </div>
+          <div id="line-chart-container" class="relative mt-6"></div>
+        </div>
+        <div id="pie-chart-card" class="card p-7 sm:p-8" style="display: none;">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="section-title">Alokace portfolia v čase</h2>
+            <p class="text-sm text-muted max-w-md">Prozkoumejte rozložení kapitálu v jednotlivých fondech k libovolnému datu.</p>
+          </div>
+          <div id="pie-chart-container" class="max-w-xl w-full mx-auto mt-6"></div>
+           <div class="mt-6">
+               <input type="range" id="pie-time-slider" class="w-full">
+               <div class="flex justify-between text-xs text-muted mt-2">
+                   <span id="slider-start-date-label"></span>
+                   <span id="slider-current-date-label" class="font-semibold text-accent"></span>
+                   <span id="slider-end-date-label"></span>
+               </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- === ANNUITY CALCULATOR === -->
+      <section id="annuity-calculator-section" class="card p-7 sm:p-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="section-title">Kalkulačka nekonečné renty</h2>
+            <p class="text-sm text-muted">Zjistěte, jak velký kapitál je potřeba pro pasivní příjem z portfolia.</p>
+          </div>
+        </div>
+        <div class="mt-5 flex items-center gap-4 flex-wrap">
+            <label class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span class="text-sm font-medium text-primary whitespace-nowrap">Požadovaná měsíční renta</span>
+                <input id="annuity-input" type="text" placeholder="např. 10 000" class="glass-input px-3 py-2 rounded-xl border w-[200px] tabular text-right text-primary placeholder:text-muted" />
+            </label>
+            <div id="annuity-annual-equivalent" class="text-sm text-muted"></div>
+        </div>
+        <div id="annuity-result" class="mt-5 text-sm text-primary bg-accent-soft border border-accent-soft rounded-xl p-5" style="display: none;"></div>
+        <p id="annuity-disclaimer" class="mt-3 text-xs text-muted italic" style="display: none;">
+          *Tento výpočet předpokládá, že si z portfolia každý rok vyberete pouze vygenerovaný výnos (zhodnocení) a jistina zůstane nedotčena, aby mohla generovat další výnos v následujícím roce.
+        </p>
+      </section>
+
+      <!-- === EXPLANATIONS === -->
+      <section id="explanations-section" class="card p-7 sm:p-8">
+        <details class="group">
+          <summary class="text-lg font-semibold cursor-pointer flex items-center justify-between text-primary">
+            <span>Vysvětlivky a použité metriky</span>
+            <svg class="summary-arrow w-5 h-5 transition-transform group-open:rotate-90 text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+            </svg>
+          </summary>
+          <div class="mt-4 pt-4 border-t border-subtle text-sm text-body space-y-5">
+            <div>
+              <h4 class="font-semibold text-primary">Co je to XIRR a jak funguje?</h4>
+               <p class="mt-2 leading-relaxed">
+                Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.
+              </p>
+            </div>
+             <div class="pt-4 border-t border-subtle">
+              <h4 class="font-semibold text-primary">Co je kumulativní zhodnocení?</h4>
+               <p class="mt-2 leading-relaxed">
+                Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.
+              </p>
+            </div>
+          </div>
+        </details>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- /* PATCH */ -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <symbol id="ico-diverzifikace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M12 3a9 9 0 0 1 7 3" />
+        <path d="M21 12a9 9 0 0 1-3 7" />
+        <path d="M12 21a9 9 0 0 1-7-3" />
+        <path d="M3 12a9 9 0 0 1 3-7" />
+        <path d="M12 3v5.5" />
+        <path d="M21 12h-5.5" />
+        <path d="M12 21v-5.5" />
+        <path d="M3 12h5.5" />
+      </symbol>
+      <symbol id="ico-rust" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M12 21v-7" />
+        <path d="M12 14c-2.6 0-4.6-2-5.4-4.8 2.8-.5 4.7.7 5.4 2.9" />
+        <path d="M12 14c2.6 0 4.6-2 5.4-4.8-2.8-.5-4.7.7-5.4 2.9" />
+        <path d="M9 11l4-4 3 3 3-3" />
+        <path d="M16 7h3v3" />
+      </symbol>
+    </defs>
+  </svg>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const state = { 
+      rows: { avant: [], codya: [], atris: [], jt: [] },
+      lastProcessedData: { funds: [], hasMixedCurrencies: false, portfolioSummary: {} },
+      fundColorMap: {},
+      clientName: '',
+      clientSalutation: '',
+      clientPreferVykanie: false
+  };
+  const elements = {};
+  let rowSeq = 0;
+  let rafId = 0;
+
+  const PROVIDERS = { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' };
+  const CHART_COLORS = [
+      '#0d2c54', '#4DB1C8', '#6E7DA2', '#A4C4BC', '#F2D7B6', '#8FA6BF', '#C8D8E4', '#E0A899'
+  ];
+  const SCRIPT_CLOSE_TAG = '<' + '/script>';
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const PROJECTION_END_YEAR = 2035;
+  const getColor = (fundName) => {
+      if (!state.fundColorMap[fundName]) {
+          const colorIndex = Object.keys(state.fundColorMap).length % CHART_COLORS.length;
+          state.fundColorMap[fundName] = CHART_COLORS[colorIndex];
+      }
+      return state.fundColorMap[fundName];
+  };
+  const getFundInitials = (name) => {
+      return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(part => part.charAt(0).toUpperCase())
+        .join('') || 'FL';
+  };
+  
+  const htmlEscape = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const utils = {
+    nf: (d = 2, opts = {}) => new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: d, maximumFractionDigits: d, ...opts }),
+    toDate: (s) => { if (!s) return null; const t = String(s).trim(); if (/^\d{4}-\d{2}-\d{2}$/.test(t)) { const d = new Date(t); return isNaN(d.getTime()) ? null : d; } const m = t.match(/^([0-3]?\d)\.?\s*([01]?\d)\.?\s*(\d{4})$/); if (m) { const d = new Date(`${m[3]}-${m[2]}-${m[1]}`); return isNaN(d.getTime()) ? null : d; } const genericDate = new Date(t); return isNaN(genericDate.getTime()) ? null : genericDate; },
+    monthsDiff: (d1, d2) => { if (!(d1 instanceof Date && d2 instanceof Date && !isNaN(d1) && !isNaN(d2))) return NaN; const days = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24); return Math.max(0, days / (365.2425 / 12)); },
+    numCZ: (v) => { if (v === null || v === undefined) return NaN; let t = String(v).replace(/\u00A0/g, ' ').trim(); if (t === '') return NaN; t = t.replace(/\s*\b(Kč|CZK|€|EUR)\b\s*/gi, ''); t = t.replace(/[\u2212\u2013\u2014]/g, '-'); let isNegative = false; if (t.startsWith('(') && t.endsWith(')')) { isNegative = true; t = t.substring(1, t.length - 1); } t = t.replace(/\s/g, ''); const lastComma = t.lastIndexOf(','); const lastDot = t.lastIndexOf('.'); if (lastComma > lastDot) { t = t.replace(/\./g, '').replace(',', '.'); } else if (lastDot > -1 && t.length - lastDot - 1 > 2) { t = t.replace(/,/g, ''); } else { t = t.replace(/,/g, ''); } const num = parseFloat(t); if (isNaN(num)) return NaN; return isNegative ? -Math.abs(num) : num; },
+    normName: s => String(s || '').replace(/[\u00A0\s]+/g, ' ').trim(),
+    convertAmount: (amt, from, to, fxRate) => { if (!isFinite(amt)) return NaN; if (from === to) return amt; const k = fxRate; if (!isFinite(k) || k <= 0) return NaN; if (from === 'EUR' && to === 'CZK') return amt * k; if (from === 'CZK' && to === 'EUR') return amt / k; return NaN; }
+  };
+  const formatDate = (date) => (date instanceof Date && !isNaN(date)) ? date.toLocaleDateString('cs-CZ') : '—';
+
+  const fmt2 = utils.nf(2); const fmt4 = utils.nf(4); const fmt1 = utils.nf(1); const fmt0 = utils.nf(0);
+  const cellNum = (v, d = 2) => { if(!isFinite(v)) return '—'; if(d === 4) return fmt4.format(v); if(d === 1) return fmt1.format(v); if(d === 0) return fmt0.format(v); return fmt2.format(v); };
+  const cellPct = v => isFinite(v) ? fmt2.format(v * 100) + '\u202F%' : '—';
+  /* PATCH */
+  const formatCurrency = (value, decimals = 2) => {
+      if (!isFinite(value)) return '—';
+      if (decimals === 0) return cellNum(value, 0);
+      if (decimals === 1) return cellNum(value, 1);
+      if (decimals === 4) return cellNum(value, 4);
+      return cellNum(value, 2);
+  };
+  /* PATCH */
+  const formatPercent = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)}\u202F%` : '—';
+  /* PATCH */
+  const formatXirr = (value, decimals = 2) => isFinite(value) ? `${utils.nf(decimals).format(value * 100)}\u202F%\u00A0p.a.` : '—';
+  /* PATCH */
+  const formatMonths = (value, decimals = 1) => isFinite(value) ? `${utils.nf(decimals).format(value)}\u00A0měs.` : '—';
+  const parseClientName = (fullName = '') => {
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) {
+          return { firstName: '', lastName: '' };
+      }
+      if (parts.length === 1) {
+          return { firstName: parts[0], lastName: '' };
+      }
+      return { firstName: parts[0], lastName: parts[parts.length - 1] };
+  };
+  const toVocative = (name = '') => {
+      const trimmed = name.trim();
+      if (!trimmed) return '';
+      const lower = trimmed.toLocaleLowerCase('cs-CZ');
+      const overrides = {
+          'pepa': 'pepo',
+          'jan': 'jane',
+          'honza': 'honzo',
+          'pavel': 'pavle',
+          'ondřej': 'ondřeji',
+          'lukáš': 'lukáši',
+          'tomáš': 'tomáši',
+          'jiří': 'jiří',
+          'karel': 'karle',
+          'martin': 'martine',
+          'michal': 'michale',
+          'radek': 'radku',
+          'marek': 'marku',
+          'adam': 'adame',
+          'alena': 'aleno',
+          'jana': 'jano',
+          'eva': 'evo',
+          'lenka': 'lenko',
+          'petra': 'petro',
+          'veronika': 'veroniko'
+      };
+      const override = overrides[lower];
+      if (override) {
+          return override.charAt(0).toLocaleUpperCase('cs-CZ') + override.slice(1);
+      }
+      const applyCasing = (base) => {
+          if (!base) return '';
+          const first = trimmed.charAt(0);
+          const rest = base.slice(1);
+          const firstConverted = base.charAt(0).toLocaleUpperCase('cs-CZ');
+          return first === first.toLocaleUpperCase('cs-CZ')
+              ? firstConverted + rest
+              : base.toLocaleLowerCase('cs-CZ');
+      };
+      const replaceEnding = (replacement) => applyCasing(replacement);
+      if (lower.endsWith('a')) {
+          return replaceEnding(lower.slice(0, -1) + 'o');
+      }
+      if (lower.endsWith('ek')) {
+          return replaceEnding(lower.slice(0, -2) + 'ku');
+      }
+      if (lower.endsWith('el')) {
+          return replaceEnding(lower.slice(0, -2) + 'le');
+      }
+      if (lower.endsWith('er')) {
+          return replaceEnding(lower.slice(0, -2) + 'ře');
+      }
+      if (lower.endsWith('as')) {
+          return replaceEnding(lower + 'i');
+      }
+      if (lower.endsWith('áš')) {
+          return replaceEnding(lower + 'i');
+      }
+      if (lower.endsWith('us')) {
+          return replaceEnding(lower.slice(0, -2) + 'e');
+      }
+      if (lower.endsWith('k')) {
+          return replaceEnding(lower + 'u');
+      }
+      if (lower.endsWith('o')) {
+          return replaceEnding(lower + 'u');
+      }
+      return replaceEnding(lower + 'e');
+  };
+  /* PATCH */
+  const formatSalutation = ({ firstName = '', lastName = '', preferVykanie = false, manualSalutation = '' }) => {
+      const manual = manualSalutation.trim();
+      if (manual) return manual;
+      const first = firstName.trim();
+      const last = lastName.trim();
+      if (preferVykanie) {
+          if (last) {
+              if (/ová$/i.test(last)) {
+                  return `paní ${last}`;
+              }
+              return `pane ${toVocative(last) || last}`;
+          }
+          if (first) {
+              return `pane ${toVocative(first) || first}`;
+          }
+          return 'Vážený kliente';
+      }
+      if (first) {
+          return toVocative(first) || first;
+      }
+      if (last) {
+          return toVocative(last) || last;
+      }
+      return 'milý kliente';
+  };
+  
+  const finance = (() => {
+    function xnpv(rate, cfs) { if (!isFinite(rate)) return NaN; const sortedCfs = cfs.slice().sort((a, b) => a.date - b.date); const t0 = sortedCfs[0]?.date; if (!t0) return NaN; return sortedCfs.reduce((sum, cf) => { const days = (cf.date - t0) / 86400000; return sum + cf.amount / Math.pow(1 + rate, days / 365.25); }, 0); }
+    function xirr(cfs, iterations = 100) { if (!Array.isArray(cfs) || cfs.length < 2) return NaN; let hasPos = false, hasNeg = false; for (const cf of cfs) { if (cf.amount > 0) hasPos = true; if (cf.amount < 0) hasNeg = true; } if (!hasPos || !hasNeg) return NaN; let low = -0.9999, high = 10.0; let mid; for (let i = 0; i < iterations; i++) { mid = (low + high) / 2; const npv = xnpv(mid, cfs); if (Math.abs(npv) < 1e-6) break; if (npv > 0) { low = mid; } else { high = mid; } } return isFinite(mid) ? mid : NaN; }
+    return { xnpv, xirr };
+  })();
+  
+  const scheduleRecalc = () => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(recalculateAndRender); };
+  const showToast = (message, type = 'success') => {
+      const container = elements.toastContainer || document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<svg class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">${type === 'success' ? `<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />` : `<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />`}</svg><span>${message}</span>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+          toast.classList.add('show');
+      });
+      setTimeout(() => {
+          toast.classList.remove('show');
+          toast.addEventListener('transitionend', () => toast.remove());
+      }, 3000);
+  };
+
+  const saveState = () => {
+      try {
+          localStorage.setItem('investmentCalculatorState', JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientPreferVykanie: state.clientPreferVykanie }));
+          if (elements.lastSavedIndicator) {
+              elements.lastSavedIndicator.textContent = `Uloženo v ${new Date().toLocaleTimeString('cs-CZ')}`;
+          }
+      } catch (e) {
+          console.error("Failed to save state:", e);
+          showToast("Chyba při ukládání dat.", 'error');
+      }
+  };
+  const loadState = () => { try { const savedStateJSON = localStorage.getItem('investmentCalculatorState'); if (savedStateJSON) { const savedState = JSON.parse(savedStateJSON); if (savedState && typeof savedState.rows === 'object') { Object.keys(PROVIDERS).forEach(key => { state.rows[key] = savedState.rows[key] || []; }); state.clientName = typeof savedState.clientName === 'string' ? savedState.clientName : ''; state.clientSalutation = typeof savedState.clientSalutation === 'string' ? savedState.clientSalutation : ''; state.clientPreferVykanie = Boolean(savedState.clientPreferVykanie); const allIds = Object.values(state.rows).flat().map(r => r.id); rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0; showToast("Data byla úspěšně načtena z prohlížeče."); } } } catch (e) { console.error("Failed to load state:", e); showToast("Nepodařilo se načíst uložená data.", 'error'); } renderAllInputs(); if (elements.clientNameInput) { elements.clientNameInput.value = state.clientName; } if (elements.clientSalutationInput) { elements.clientSalutationInput.value = state.clientSalutation; } if (elements.clientPreferVykanieInput) { elements.clientPreferVykanieInput.checked = state.clientPreferVykanie; } scheduleRecalc(); };
+  const exportState = () => { const stateString = JSON.stringify({ rows: state.rows, clientName: state.clientName, clientSalutation: state.clientSalutation, clientPreferVykanie: state.clientPreferVykanie }, null, 2); const blob = new Blob([stateString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("Data byla úspěšně exportována."); };
+  const importState = (file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          try {
+              const importedState = JSON.parse(e.target.result);
+              if (importedState && typeof importedState.rows === 'object') {
+                  Object.keys(PROVIDERS).forEach(key => {
+                      state.rows[key] = importedState.rows[key] || [];
+                  });
+                  state.clientName = typeof importedState.clientName === 'string' ? importedState.clientName : '';
+                  state.clientSalutation = typeof importedState.clientSalutation === 'string' ? importedState.clientSalutation : '';
+                  state.clientPreferVykanie = Boolean(importedState.clientPreferVykanie);
+                  const allIds = Object.values(state.rows).flat().map(r => r.id);
+                  rowSeq = allIds.length > 0 ? Math.max(...allIds) : 0;
+                  if (elements.clientNameInput) {
+                      elements.clientNameInput.value = state.clientName;
+                  }
+                  if (elements.clientSalutationInput) {
+                      elements.clientSalutationInput.value = state.clientSalutation;
+                  }
+                  if (elements.clientPreferVykanieInput) {
+                      elements.clientPreferVykanieInput.checked = state.clientPreferVykanie;
+                  }
+                  saveState();
+                  renderAllInputs();
+                  scheduleRecalc();
+                  showToast("Data byla úspěšně importována.");
+              } else {
+                  throw new Error("Invalid file structure.");
+              }
+          } catch (err) {
+              console.error("Failed to import state:", err);
+              showToast("Chyba při importu: neplatný formát souboru.", 'error');
+          }
+      };
+      reader.readAsText(file);
+  };
+
+  const createProviderSection = (providerKey) => {
+      const providerName = PROVIDERS[providerKey];
+      const isAtris = providerKey === 'atris';
+      let specialTooltip = '';
+      if(isAtris) {
+          specialTooltip = `<div class="relative group"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg><div class="absolute bottom-full mb-2 w-64 bg-white text-body text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-accent-soft">Upozornění: Pro fondy ATRIS se jako datum zainvestování pro výpočet použije 5. den následujícího měsíce po datu připsání.</div></div>`;
+      }
+      const section = document.createElement('section');
+      section.className = 'card p-7 sm:p-8 space-y-6';
+      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">Spravujte transakce a sledujte výkonnost jednotlivých fondů.</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      return section;
+  };
+  const createInputRow = (providerKey, rowData) => {
+      const tr = document.createElement('tr');
+      tr.className = 'fade-in';
+      tr.dataset.id = rowData.id;
+      const nameCell = document.createElement('td');
+      nameCell.className = 'py-1 pr-3';
+      const nameWrap = document.createElement('div');
+      nameWrap.className = 'relative flex items-center';
+      const nameDiv = document.createElement('div');
+      nameDiv.contentEditable = true;
+      nameDiv.className = 'editable flex-1 min-w-0';
+      nameDiv.textContent = rowData.fund || '';
+      nameDiv.dataset.ph = 'Název fondu...';
+      nameDiv.dataset.key = 'fund';
+      nameWrap.appendChild(nameDiv);
+      nameCell.appendChild(nameWrap);
+      const createCell = (content) => { const td = document.createElement('td'); td.className = 'py-1 align-middle'; td.appendChild(content); return td; };
+      const createInput = (key, type, extraClass = '') => {
+          const input = document.createElement('input');
+          input.type = type;
+          input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full transition-all text-primary ${extraClass}`;
+          let displayValue = rowData[key] || '';
+          if (['invest', 'totalCurrent'].includes(key)) {
+              const num = utils.numCZ(displayValue);
+              if (isFinite(num)) {
+                  displayValue = fmt0.format(num);
+              }
+          }
+          input.value = displayValue;
+          if (type === 'text' && key.toLowerCase().includes('date')) { input.placeholder = 'dd.mm.rrrr'; }
+          input.dataset.key = key;
+          return input;
+      };
+      const createSelect = (key) => {
+          const select = document.createElement('select');
+          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-primary';
+          select.dataset.key = key;
+          ['CZK', 'EUR'].forEach(c => {
+              const option = document.createElement('option');
+              option.value = c;
+              option.textContent = c;
+              if (c === rowData[key]) option.selected = true;
+              select.appendChild(option);
+          });
+          return select;
+      };
+      const delBtnCell = document.createElement('td');
+      delBtnCell.className = 'py-1 text-right';
+      const delBtn = document.createElement('button');
+      delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
+      delBtn.className = 'p-1.5 rounded-lg transition-colors delete-row-button';
+      delBtn.title = "Smazat řádek";
+      delBtn.dataset.action = 'delete-row';
+      delBtn.dataset.id = rowData.id;
+      delBtn.dataset.provider = providerKey;
+      delBtnCell.appendChild(delBtn);
+      tr.append(
+          nameCell,
+          createCell(createInput('invest', 'text', 'tabular text-right')),
+          createCell(createInput('dateIn', 'text')),
+          createCell(createInput('qty', 'text', 'tabular text-right')),
+          createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-subtle')),
+          createCell(createInput('currNav', 'text', 'tabular text-right')),
+          createCell(createInput('totalCurrent', 'text', 'tabular text-right')),
+          createCell(createInput('currDate', 'text', 'border-l border-subtle')),
+          createCell(createSelect('curr')),
+          delBtnCell
+      );
+      return tr;
+  };
+  const renderProviderInputs = (providerKey, newRowId = null) => {
+      const tbody = document.querySelector(`[data-tbody-for="${providerKey}"]`);
+      if (!tbody) return;
+      const fragment = document.createDocumentFragment();
+      state.rows[providerKey].forEach(row => { fragment.appendChild(createInputRow(providerKey, row)); });
+      tbody.innerHTML = '';
+      tbody.appendChild(fragment);
+      if (newRowId) {
+          const newRowEl = tbody.querySelector(`[data-id="${newRowId}"]`);
+          if (newRowEl) { newRowEl.querySelector('[data-key="fund"]').focus(); }
+      }
+  };
+  const renderAllInputs = () => { Object.keys(PROVIDERS).forEach(key => renderProviderInputs(key)); };
+
+  const parseRow = r => ({
+      id: r.id,
+      fund: utils.normName(r.fund),
+      invest: utils.numCZ(r.invest),
+      totalCurrent: utils.numCZ(r.totalCurrent),
+      dateIn: utils.toDate(r.dateIn),
+      qty: utils.numCZ(r.qty),
+      issueNav: utils.numCZ(r.issueNav),
+      currNav: utils.numCZ(r.currNav),
+      currDate: utils.toDate(r.currDate),
+      curr: r.curr || 'CZK',
+  });
+  const getRowStatus = (p) => {
+      let missing = [];
+      let conflicts = [];
+      const hasTotalPath = isFinite(p.invest) && p.invest > 0 && isFinite(p.totalCurrent) && p.totalCurrent > 0 && p.dateIn && p.currDate;
+      const hasUnitPath = isFinite(p.issueNav) && p.issueNav > 0 && isFinite(p.currNav) && p.currNav > 0 && (isFinite(p.qty) || isFinite(p.invest)) && p.dateIn && p.currDate;
+      if (!p.fund) missing.push('název fondu');
+      if (!p.dateIn) missing.push('datum připsání');
+      if (!p.currDate) missing.push('datum ocenění');
+      if (!hasTotalPath && !hasUnitPath) missing.push('min. vstupů');
+      const calculatedInvest = p.qty * p.issueNav;
+      if(isFinite(p.invest) && isFinite(calculatedInvest) && Math.abs(p.invest - calculatedInvest) > 1e-2) conflicts.push(`Investice ≠ Počet CP × Upis. NAV`);
+      const calculatedCurrent = p.qty * p.currNav;
+      if(isFinite(p.totalCurrent) && isFinite(calculatedCurrent) && Math.abs(p.totalCurrent - calculatedCurrent) > 1e-2) conflicts.push(`Akt. hodnota ≠ Počet CP × Posl. NAV`);
+      if (conflicts.length > 0) return ['conflict', conflicts.join('; ')];
+      if (missing.length > 0) return ['error', `Chybějící pole: ${missing.join(', ')}`];
+      return ['ok', ''];
+  };
+  const processAllRows = () => {
+      const processedFunds = [];
+      const allCurrencies = new Set();
+      Object.entries(state.rows).forEach(([providerKey, providerRows]) => {
+          providerRows.forEach(rawRow => {
+              allCurrencies.add(rawRow.curr || 'CZK');
+              let p = parseRow(rawRow);
+              const [status, _] = getRowStatus(p);
+              if (status === 'error') return;
+              let effectiveDateIn = p.dateIn;
+              if (providerKey === 'atris' && p.dateIn) {
+                  effectiveDateIn = new Date(p.dateIn.getFullYear(), p.dateIn.getMonth() + 1, 5);
+              }
+              let invest = p.invest;
+              let qty = p.qty;
+              let current = p.totalCurrent;
+              if (!isFinite(qty) && isFinite(p.invest) && isFinite(p.issueNav) && p.issueNav > 0) qty = p.invest / p.issueNav;
+              if (!isFinite(invest) && isFinite(p.qty) && isFinite(p.issueNav) && p.issueNav > 0) invest = p.qty * p.issueNav;
+              if (!isFinite(current) && isFinite(qty) && isFinite(p.currNav) && p.currNav > 0) current = qty * p.currNav;
+              if (!isFinite(invest) || !isFinite(current) || !effectiveDateIn || !p.currDate) return;
+              const months = utils.monthsDiff(effectiveDateIn, p.currDate);
+              const ret = (isFinite(invest) && invest > 0 && isFinite(current)) ? (current / invest - 1) : NaN;
+              const irr = (isFinite(invest) && isFinite(current) && effectiveDateIn && p.currDate) ? finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: p.currDate, amount: current }]) : NaN;
+              processedFunds.push({
+                  ...p,
+                  invest, qty, current,
+                  pnl: isFinite(invest) && isFinite(current) ? current - invest : NaN,
+                  ret, months, irr,
+                  dateIn: effectiveDateIn,
+                  originalDateIn: p.dateIn
+              });
+          });
+      });
+      const { funds, hasMixedCurrencies: hasMixed } = { funds: processedFunds, hasMixedCurrencies: allCurrencies.size > 1 };
+      const outCurr = elements.outCurrency?.value || 'CZK';
+      const fxRate = utils.numCZ(elements.fxRate?.value);
+      const portfolioSummary = calculateSummary(funds, outCurr, fxRate);
+      state.lastProcessedData = { funds, hasMixedCurrencies: hasMixed, portfolioSummary };
+      return state.lastProcessedData;
+  };
+
+  const recalculateAndRender = () => {
+    const { funds, hasMixedCurrencies, portfolioSummary } = processAllRows();
+    const outCurr = elements.outCurrency?.value || 'CZK';
+    const fxRate = utils.numCZ(elements.fxRate?.value);
+    const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
+    const statusContainer = elements.statusContainer || document.getElementById('status-container');
+    if (statusContainer) {
+        if (hasMixedCurrencies && !hasValidFx) {
+            statusContainer.innerHTML = `<div class="rounded-2xl border border-accent-soft bg-accent-soft p-5 text-sm text-body"><strong class="text-primary">Chybějící kurz:</strong> Pro správné zobrazení výsledků v cílové měně ${outCurr} je potřeba vyplnit směnný kurz EUR/CZK.</div>`;
+        } else {
+            statusContainer.innerHTML = '';
+        }
+    }
+    renderResults(funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
+    calculateAnnuity();
+  };
+  const renderResults = (funds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
+    const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+    const groupedFunds = funds.reduce((acc, f) => { if(!f.fund) return acc; const key = f.fund; if (!acc[key]) acc[key] = []; acc[key].push(f); return acc; }, {});
+    Object.values(groupedFunds).forEach(group => group.sort((a, b) => a.dateIn - b.dateIn));
+    Object.keys(groupedFunds).forEach(name => getColor(name));
+    renderFundsByCard(groupedFunds, outCurr, fxRate);
+    const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
+    renderSummary(portfolioSummary, outCurr, { hasMixedCurrencies, hasFx: hasValidFx });
+    renderCharts(groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioSummary.portfolioIrr);
+  };
+
+  const calculateSummary = (funds, outCurr, fxRate) => {
+    const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+    let totalInvestConverted = 0, totalCurrentConverted = 0;
+    let cfsForIrr = [];
+    let latestDate = null;
+    let weightedDurationSum = 0;
+    let minValuationDate = null;
+    let maxValuationDate = null;
+    funds.forEach(r => {
+        const convertedInvest = convert(r.invest, r.curr);
+        const convertedCurrent = convert(r.current, r.curr);
+        if (isFinite(convertedInvest)) {
+            totalInvestConverted += convertedInvest;
+            cfsForIrr.push({ date: r.dateIn, amount: -convertedInvest });
+            if (isFinite(r.months)) {
+                weightedDurationSum += convertedInvest * r.months;
+            }
+        }
+        if (isFinite(convertedCurrent)) {
+            totalCurrentConverted += convertedCurrent;
+        }
+        if (r.currDate) {
+            if (!minValuationDate || r.currDate < minValuationDate) minValuationDate = r.currDate;
+            if (!maxValuationDate || r.currDate > maxValuationDate) maxValuationDate = r.currDate;
+        }
+        if (r.currDate && (!latestDate || r.currDate > latestDate)) {
+            latestDate = r.currDate;
+        }
+    });
+    if (isFinite(totalCurrentConverted) && latestDate) {
+        cfsForIrr.push({ date: latestDate, amount: totalCurrentConverted });
+    }
+    const totalPnl = totalCurrentConverted - totalInvestConverted;
+    const totalRet = totalInvestConverted > 0 ? (totalPnl / totalInvestConverted) : NaN;
+    const portfolioIrr = finance.xirr(cfsForIrr);
+    const weightedAvgMonths = totalInvestConverted > 0 ? weightedDurationSum / totalInvestConverted : NaN;
+    return {
+        totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths,
+        minValuationDate, maxValuationDate,
+        hasData: totalInvestConverted > 0 || totalCurrentConverted > 0
+    };
+  };
+
+  const renderFundsByCard = (groupedFunds, outCurr, fxRate, options = {}) => {
+      const { isStaticExport = false, container: providedContainer } = options;
+      const container = providedContainer || elements.fundsContainer || document.getElementById('funds-by-card-container');
+      if (!isStaticExport && !container) return '';
+
+      const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+      const fundEntries = Object.entries(groupedFunds);
+
+      if (!isStaticExport && elements.amountNoteFunds) {
+          elements.amountNoteFunds.textContent = `Částky v ${outCurr}`;
+      }
+
+      if (fundEntries.length === 0) {
+          const emptyState = `<div class="card p-6 text-center muted-text">Nejsou k dispozici žádná data pro výpočet.</div>`;
+          if (isStaticExport) {
+              return emptyState;
+          }
+          container.innerHTML = emptyState;
+          return;
+      }
+
+      const buildMetrics = (metrics, variant = 'interactive') => metrics.map(({ label, value, extraClass = '', note = '' }) => {
+          if (variant === 'interactive') {
+              return `<div class="fund-card__metric"><span class="metric-label">${label}</span><span class="metric-value ${extraClass}">${value}</span>${note ? `<span class="metric-sub">${note}</span>` : ''}</div>`;
+          }
+          return `<div class="fund-export__metric"><span class="metric-label">${label}</span><span class="metric-value ${extraClass}">${value}</span>${note ? `<span class="metric-sub">${note}</span>` : ''}</div>`;
+      }).join('');
+
+      const cards = fundEntries.map(([name, investments]) => {
+          investments.sort((a, b) => a.dateIn - b.dateIn);
+          let totalInvest = 0;
+          let totalCurrent = 0;
+          let weightedDurationSum = 0;
+          const cfs = [];
+
+          investments.forEach(inv => {
+              const invConverted = convert(inv.invest, inv.curr);
+              const currConverted = convert(inv.current, inv.curr);
+              if (isFinite(invConverted)) {
+                  totalInvest += invConverted;
+                  cfs.push({ date: inv.dateIn, amount: -invConverted });
+                  if (isFinite(inv.months)) {
+                      weightedDurationSum += invConverted * inv.months;
+                  }
+              }
+              if (isFinite(currConverted)) {
+                  totalCurrent += currConverted;
+              }
+          });
+
+          const latestDate = investments.reduce((max, entry) => (entry.currDate && entry.currDate > max ? entry.currDate : max), new Date(0));
+          if (isFinite(totalCurrent) && investments.length > 0 && latestDate.getTime() > 0) {
+              cfs.push({ date: latestDate, amount: totalCurrent });
+          }
+
+          const fundIrr = finance.xirr(cfs);
+          const pnl = totalCurrent - totalInvest;
+          const weightedAvgMonths = totalInvest > 0 ? weightedDurationSum / totalInvest : NaN;
+          const fundColor = getColor(name);
+          const pnlClass = pnl >= 0 ? 'text-positive' : 'text-negative';
+          const irrClass = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
+          const safeName = htmlEscape(name);
+
+          const metrics = [
+              { label: 'Investováno', value: formatCurrency(totalInvest) },
+              { label: 'Aktuální hodnota', value: formatCurrency(totalCurrent) },
+              { label: 'Čistý výnos', value: formatCurrency(pnl), extraClass: pnlClass },
+              { label: 'Průměrný roční výnos (XIRR)', value: formatXirr(fundIrr), extraClass: irrClass },
+              { label: 'Průměrná doba investice', value: formatMonths(weightedAvgMonths) }
+          ];
+
+          const transactionRows = investments.map((inv, index) => {
+              const convertedCurrent = convert(inv.current, inv.curr);
+              const convertedInvest = convert(inv.invest, inv.curr);
+              const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
+              const displayDate = inv.originalDateIn || inv.dateIn;
+              return `<tr>
+                <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
+                <td class="text-right">${formatCurrency(convertedInvest)}</td>
+                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency(convertedPnl)}</td>
+                <td class="text-right">${formatCurrency(convertedCurrent)}</td>
+                <td class="text-right">${formatMonths(inv.months)}</td>
+                <td class="text-right">${formatXirr(inv.irr)}</td>
+              </tr>`;
+          }).join('');
+
+          if (isStaticExport) {
+              const metricsHtml = buildMetrics(metrics, 'static');
+              const initials = getFundInitials(name);
+              const metaChips = [
+                  `Transakcí ${investments.length}`,
+                  latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
+                  `Cílová měna ${outCurr}`
+              ].filter(Boolean).map(chip => `<span>${chip}</span>`).join('');
+
+              return `<article class="fund-export">
+  <div class="fund-export__header">
+    <div class="fund-avatar" style="background:${fundColor}">${initials}</div>
+    <div class="fund-export__title">
+      <div class="fund-card__name">${safeName}</div>
+      <div class="fund-export__meta">${metaChips}</div>
+    </div>
+  </div>
+  <div class="fund-export__metrics">${metricsHtml}</div>
+  <div class="fund-export__table-wrapper">
+    <table class="fund-export__table">
+      <thead>
+        <tr>
+          <th>Transakce</th>
+          <th class="text-right">Investice</th>
+          <th class="text-right">Výnos</th>
+          <th class="text-right">Aktuální hodnota</th>
+          <th class="text-right">Doba držení</th>
+          <th class="text-right">Prům. roční výnos</th>
+        </tr>
+      </thead>
+      <tbody>${transactionRows}</tbody>
+    </table>
+  </div>
+</article>`;
+          }
+
+          const metricsHtml = buildMetrics(metrics);
+          const initials = getFundInitials(name);
+          const metaChips = [
+              `Transakcí ${investments.length}`,
+              latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
+              `Cílová měna ${outCurr}`
+          ].filter(Boolean).map(chip => `<span>${chip}</span>`).join('');
+
+          return `<div class="card p-6 sm:p-7">
+  <div class="flex flex-col gap-5">
+    <div class="fund-card__header">
+      <div class="fund-avatar" style="background:${fundColor}">${initials}</div>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <span class="fund-card__dot" style="background-color: ${fundColor}"></span>
+          <span class="fund-card__name" title="${safeName}">${safeName}</span>
+        </div>
+        <div class="fund-card__meta">${metaChips}</div>
+      </div>
+    </div>
+    <div class="fund-card__metrics">${metricsHtml}</div>
+    <details class="fund-card__transactions">
+      <summary>Zobrazit transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
+      <div class="fund-export__table-wrapper">
+        <table class="fund-export__table">
+          <thead>
+            <tr>
+              <th>Transakce</th>
+              <th class="text-right">Investice</th>
+              <th class="text-right">Výnos</th>
+              <th class="text-right">Aktuální hodnota</th>
+              <th class="text-right">Doba držení</th>
+              <th class="text-right">Prům. roční výnos</th>
+            </tr>
+          </thead>
+          <tbody>${transactionRows}</tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+</div>`;
+      });
+
+      if (isStaticExport) {
+          return cards.join('');
+      }
+
+      container.innerHTML = cards.join('');
+  };
+  const renderSummary = (summaryData, outCurr, options = {}) => {
+    const { isStaticExport = false, hasMixedCurrencies = false, hasFx = true } = options;
+    const summaryContainer = options.container || elements.portfolioSummary || document.getElementById('portfolio-summary-content');
+
+    if (!isStaticExport && elements.amountNotePortfolio) {
+        elements.amountNotePortfolio.textContent = `Částky v ${outCurr}`;
+    }
+
+    if (!summaryData.hasData) {
+        const empty = `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Žádná data pro souhrn.</div>`;
+        if (isStaticExport) {
+            return empty;
+        }
+        if (summaryContainer) {
+            summaryContainer.innerHTML = empty;
+        }
+        return;
+    }
+
+    const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
+    const pnlClassInteractive = totalPnl >= 0 ? 'text-positive' : 'text-negative';
+    const pnlClassExport = totalPnl >= 0 ? 'text-positive' : 'text-negative';
+    const irrClassInteractive = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
+    const irrClassExport = isFinite(portfolioIrr) && portfolioIrr >= 0 ? 'text-positive' : 'text-negative';
+    let dateDisclaimer = '';
+    if (minValuationDate && maxValuationDate) {
+        const minStr = minValuationDate.toLocaleDateString('cs-CZ');
+        const maxStr = maxValuationDate.toLocaleDateString('cs-CZ');
+        dateDisclaimer = minStr === maxStr
+            ? `Hodnoty jsou platné k ${maxStr}.`
+            : `Hodnoty jsou platné k posledním známým datům v rozmezí ${minStr} – ${maxStr}.`;
+    }
+
+    if (isStaticExport) {
+        /* PATCH */
+        const formatted = {
+            totalInvest: formatCurrency(totalInvestConverted),
+            totalCurrent: formatCurrency(totalCurrentConverted),
+            totalPnl: formatCurrency(totalPnl),
+            totalRet: formatPercent(totalRet),
+            irr: formatXirr(portfolioIrr),
+            weightedMonths: formatMonths(weightedAvgMonths)
+        };
+        /* PATCH */
+        if (options.formattedTotals) {
+            if (options.formattedTotals.totalInvest) formatted.totalInvest = options.formattedTotals.totalInvest;
+            if (options.formattedTotals.totalCurrent) formatted.totalCurrent = options.formattedTotals.totalCurrent;
+            if (options.formattedTotals.totalPnl) formatted.totalPnl = options.formattedTotals.totalPnl;
+            if (options.formattedTotals.totalRet) formatted.totalRet = options.formattedTotals.totalRet;
+            if (options.formattedTotals.irr) formatted.irr = options.formattedTotals.irr;
+            if (options.formattedTotals.weightedMonths) formatted.weightedMonths = options.formattedTotals.weightedMonths;
+        }
+        /* PATCH */
+        if (options.captureFormatted && typeof options.captureFormatted === 'object') {
+            Object.assign(options.captureFormatted, formatted);
+        }
+        const summaryMetrics = [
+            { label: 'VAŠE CELKOVÉ VKLADY', value: formatted.totalInvest },
+            { label: 'AKTUÁLNÍ HODNOTA', value: formatted.totalCurrent },
+            { label: 'ČISTÝ VÝNOS', value: formatted.totalPnl, toneClass: pnlClassExport },
+            { label: 'CELKOVÉ ZHODNOCENÍ', value: formatted.totalRet, toneClass: pnlClassExport },
+            { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: formatted.irr, toneClass: irrClassExport },
+            { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: formatted.weightedMonths }
+        ];
+
+        const cards = summaryMetrics.map(({ label, value, toneClass }) => `
+            <div class="summary-card">
+              <span class="summary-label">${label}</span>
+              <span class="summary-value ${toneClass ? toneClass : ''}">${value}</span>
+            </div>
+        `).join('');
+
+        const exportContent = `<div class="summary-export">
+          <div class="summary-grid">${cards}</div>
+          ${dateDisclaimer ? `<p class="summary-note">${htmlEscape(dateDisclaimer)}</p>` : ''}
+        </div>`;
+        return exportContent;
+    }
+
+    const formattedInteractive = {
+        totalInvest: formatCurrency(totalInvestConverted),
+        totalCurrent: formatCurrency(totalCurrentConverted),
+        totalPnl: formatCurrency(totalPnl),
+        totalRet: formatPercent(totalRet),
+        irr: formatXirr(portfolioIrr),
+        weightedMonths: formatMonths(weightedAvgMonths)
+    };
+    const showMixWarning = !isStaticExport && hasMixedCurrencies && !hasFx;
+    const mixWarningHtml = showMixWarning
+        ? `<div class="summary-warning">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
+        : '';
+    const interactiveMetrics = [
+      { label: 'VAŠE CELKOVÉ VKLADY', value: formattedInteractive.totalInvest },
+      { label: 'AKTUÁLNÍ HODNOTA', value: formattedInteractive.totalCurrent },
+      { label: 'ČISTÝ VÝNOS', value: formattedInteractive.totalPnl, toneClass: pnlClassInteractive },
+      { label: 'CELKOVÉ ZHODNOCENÍ', value: formattedInteractive.totalRet, toneClass: pnlClassInteractive },
+      { label: 'PRŮMĚRNÝ ROČNÍ VÝNOS (XIRR)', value: formattedInteractive.irr, toneClass: irrClassInteractive },
+      { label: 'PRŮMĚRNÁ DOBA INVESTICE', value: formattedInteractive.weightedMonths }
+    ];
+    const interactiveCards = interactiveMetrics.map(({ label, value, toneClass }) => `
+      <div class="summary-card">
+        <span class="summary-label">${label}</span>
+        <span class="summary-value ${toneClass ? toneClass : ''}">${value}</span>
+      </div>
+    `).join('');
+    const content = `<div class="summary-export">
+      ${mixWarningHtml}
+      <div class="summary-grid">${interactiveCards}</div>
+      ${dateDisclaimer ? `<p class="summary-note">${htmlEscape(dateDisclaimer)}</p>` : ''}
+    </div>`;
+
+    if (summaryContainer) {
+        summaryContainer.innerHTML = content;
+    }
+  };
+
+  const renderCharts = (groupedFunds, outCurr, fxRate, hasMixedCurrencies, funds, portfolioIrr) => {
+    const chartsSection = elements.chartsSection || document.getElementById('charts-section');
+    const lineCard = elements.lineChartCard || document.getElementById('line-chart-card');
+    const pieCard = elements.pieChartCard || document.getElementById('pie-chart-card');
+    if (funds.length > 0) {
+        lineCard.style.display = 'block';
+        const lineContainer = elements.lineChartContainer || document.getElementById('line-chart-container');
+        if (lineContainer) {
+            renderLineChart(lineContainer, funds, portfolioIrr, outCurr, fxRate);
+        }
+    } else {
+        lineCard.style.display = 'none';
+    }
+    const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
+    if (!hasMixedCurrencies || hasValidFx) {
+        const chartData = Object.values(groupedFunds).flat();
+        if (chartData.length > 0) {
+            pieCard.style.display = 'block';
+            setupTimeSlider(funds);
+        } else {
+            pieCard.style.display = 'none';
+        }
+    } else {
+        pieCard.style.display = 'block';
+        const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
+        if (pieContainer) {
+        pieContainer.innerHTML = `<div class="text-center py-10 text-muted">Pro zobrazení grafu doplňte směnný kurz.</div>`;
+    }
+    }
+    if (chartsSection) {
+        chartsSection.style.display = (pieCard.style.display === 'block' || lineCard.style.display === 'block') ? 'block' : 'none';
+    }
+  };
+
+  const renderLineChart = (container, funds, portfolioIrr, outCurr, fxRate, options = {}) => {
+    const { isStaticExport = false, conversionReady = true, formattedTodayValue: formattedTodayValueOverride = null } = options;
+
+    if (isStaticExport) {
+        const exportChart = buildLineChartForExport(funds, outCurr, fxRate, portfolioIrr, conversionReady, formattedTodayValueOverride);
+        if (!exportChart.available) {
+            if (exportChart.reason === 'conversion') {
+                return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Liniový graf nelze vytvořit bez platného převodu měn.</div>`;
+            }
+            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Pro liniový graf nejsou k dispozici údaje.</div>`;
+        }
+        const legend = exportChart.hasIrr
+            ? `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">Kumulované vklady</span><span class="legend-pill legend-pill--value" tabindex="0">Odhad hodnoty</span>${exportChart.irrPositive ? '<span class="legend-pill legend-pill--projection" tabindex="0">Projekce</span>' : ''}</div>`
+            : `<div class="line-legend"><span class="legend-pill legend-pill--base" tabindex="0">Kumulované vklady</span></div>`;
+        const footnote = exportChart.footnote ? `<p class="chart-footnote">${htmlEscape(exportChart.footnote)}</p>` : '';
+        const ariaAttr = htmlEscape(exportChart.ariaLabel || 'Vývoj portfolia');
+        return `<div class="line-export">${legend}<div class="line-canvas" role="img" aria-label="${ariaAttr}">${exportChart.svg}</div>${footnote}</div>`;
+    }
+
+    if (!container) return;
+    container.innerHTML = "";
+    const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+    const deposits = funds.map(f => ({ date: f.dateIn, amount: convert(f.invest, f.curr), fund: f.fund })).filter(d => isFinite(d.amount)).sort((a,b) => a.date - b.date);
+    if (deposits.length === 0) return;
+    const displayIrr = isFinite(portfolioIrr) ? portfolioIrr : 0;
+    const dailyRate = Math.pow(1 + displayIrr, 1 / 365.25) - 1;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const firstDate = deposits[0].date;
+    const futureEndDate = new Date('2035-12-31');
+    const totalTimeSpan = futureEndDate - firstDate;
+    if (totalTimeSpan <= 0) {
+      container.innerHTML = `<div class="text-center py-10 text-muted">Pro vykreslení grafu je potřeba delší časový horizont.</div>`;
+      return;
+    }
+    const allPoints = [];
+    let runningValue = 0;
+    let lastDate = firstDate;
+    let cumulativeContributions = 0;
+    allPoints.push({ date: firstDate, value: 0, contributions: 0 });
+    for (const deposit of deposits) {
+      const daysSinceLast = (deposit.date - lastDate) / (1000 * 60 * 60 * 24);
+      if (daysSinceLast > 0) {
+        runningValue *= Math.pow(1 + dailyRate, daysSinceLast);
+        allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
+      }
+      runningValue += deposit.amount;
+      cumulativeContributions += deposit.amount;
+      allPoints.push({ date: deposit.date, value: runningValue, contributions: cumulativeContributions });
+      lastDate = deposit.date;
+    }
+    const valueAtToday = runningValue * Math.pow(1 + dailyRate, (today - lastDate) / (1000 * 60 * 60 * 24));
+    allPoints.push({ date: today, value: valueAtToday, contributions: cumulativeContributions });
+    const projectionPoints = [{ date: today, value: valueAtToday }];
+    for (let year = today.getFullYear() + 1; year <= 2035; year++) {
+      const nextDate = new Date(`${year}-12-31`);
+      const daysFromToday = (nextDate - today) / (1000 * 60 * 60 * 24);
+      const projectedValue = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
+      projectionPoints.push({ date: nextDate, value: projectedValue });
+    }
+    const width = options.isForPdf ? 800 : container.clientWidth;
+    const height = 400;
+    const margin = {top: 20, right: 20, bottom: 60, left: 70};
+    const boundedWidth = width - margin.left - margin.right;
+    const boundedHeight = height - margin.top - margin.bottom;
+    const maxValue = Math.max(...allPoints.map(p => p.value), ...projectionPoints.map(p => p.value));
+    const yMax = Math.ceil(maxValue / 100000) * 100000 || 100000;
+    const xScale = (date) => margin.left + ((date - firstDate) / totalTimeSpan) * boundedWidth;
+    const yScale = (value) => margin.top + boundedHeight - (value / yMax) * boundedHeight;
+    const xToDate = (x) => new Date(firstDate.getTime() + ((x - margin.left) / boundedWidth) * totalTimeSpan);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', height);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    let innerHTML = '';
+    const yAxisTicks = 5;
+    for (let i = 0; i <= yAxisTicks; i++) {
+      const val = (yMax / yAxisTicks) * i;
+      const y = yScale(val);
+      innerHTML += `<line class="line-chart-grid-line" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>`;
+      innerHTML += `<text class="line-chart-axis-text" x="${margin.left - 10}" y="${y + 4}" text-anchor="end">${val/1000000} M</text>`;
+    }
+    for (let year = firstDate.getFullYear(); year <= 2035; year+=2) {
+      if(year < firstDate.getFullYear()) continue;
+      const date = new Date(`${year}-01-01`);
+      const x = xScale(date);
+      innerHTML += `<text class="line-chart-axis-text" x="${x}" y="${height - 25}" text-anchor="middle">${year}</text>`;
+    }
+    const historicalPoints = allPoints.filter(p => p.date <= today);
+    const contributionPath = "M" + historicalPoints.map(p => `${xScale(p.date)},${yScale(p.contributions)}`).join(" L");
+    const valuePath = "M" + historicalPoints.map(p => `${xScale(p.date)},${yScale(p.value)}`).join(" L");
+    const projectionPath = "M" + projectionPoints.map(p => `${xScale(p.date)},${yScale(p.value)}`).join(" L");
+    innerHTML += `<path d="${contributionPath}" fill="none" stroke="rgba(51,55,61,0.55)" stroke-width="2"></path>`;
+    innerHTML += `<path d="${valuePath}" fill="none" stroke="#4DB1C8" stroke-width="2.5"></path>`;
+    innerHTML += `<path d="${projectionPath}" fill="none" stroke="#0d2c54" stroke-width="2.5" stroke-dasharray="5 5"></path>`;
+    const xToday = xScale(today);
+    /* PATCH */
+    const formattedTodayValue = formattedTodayValueOverride ?? formatCurrency(valueAtToday);
+    const snapPoints = [{x: xToday, y: yScale(valueAtToday), date: today, value: valueAtToday, isToday: true}];
+    if (!options.isForPdf) {
+        const depositsByDay = deposits.reduce((acc, deposit) => {
+            const day = deposit.date.toISOString().split('T')[0];
+            if (!acc[day]) acc[day] = { date: deposit.date, dailyDeposits: [] };
+            acc[day].dailyDeposits.push(deposit);
+            return acc;
+        }, {});
+        const sortedDays = Object.values(depositsByDay).sort((a,b) => a.date - b.date);
+        let runningValueForDots = 0;
+        let lastDateForDots = firstDate;
+        sortedDays.forEach(dayData => {
+            const daysSinceLast = (dayData.date - lastDateForDots) / (1000 * 60 * 60 * 24);
+            if(daysSinceLast > 0){
+                 runningValueForDots *= Math.pow(1 + dailyRate, daysSinceLast);
+            }
+            const totalDayInvestment = dayData.dailyDeposits.reduce((sum, d) => sum + d.amount, 0);
+            runningValueForDots += totalDayInvestment;
+            const x = xScale(dayData.date);
+            const y = yScale(runningValueForDots);
+            let tooltipText = '';
+            if (dayData.dailyDeposits.length > 1) {
+            tooltipText = `<div class="font-bold text-primary">Vklady (${dayData.date.toLocaleDateString('cs-CZ')})</div>` +
+                    dayData.dailyDeposits.map(d => `<div class="text-sm text-body">${d.fund}: ${formatCurrency(d.amount)} ${outCurr}</div>`).join('');
+            } else {
+                const d = dayData.dailyDeposits[0];
+                tooltipText = `<div class="text-primary">Vklad (${d.fund}): ${formatCurrency(d.amount)} ${outCurr} (${d.date.toLocaleDateString('cs-CZ')})</div>`;
+            }
+            const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
+            const ariaLabel = dayData.dailyDeposits.length > 1
+                ? `Vklady ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits.map(d => `${d.fund} ${formatCurrency(d.amount)} ${outCurr}`).join(', ')}`
+                : `Vklad ${dayData.date.toLocaleDateString('cs-CZ')}: ${dayData.dailyDeposits[0].fund} ${formatCurrency(dayData.dailyDeposits[0].amount)} ${outCurr}`;
+            const escapedAriaLabel = htmlEscape(ariaLabel);
+            innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#4DB1C8" tabindex="0" aria-label="${escapedAriaLabel}" data-tooltip-text='${escapedTooltipText}'></circle>`;
+            snapPoints.push({
+                x,
+                y,
+                date: dayData.date,
+                value: runningValueForDots,
+                isDeposit: true,
+                tooltipText: tooltipText
+            });
+            lastDateForDots = dayData.date;
+        });
+    }
+    innerHTML += `<line x1="${xToday}" y1="${margin.top}" x2="${xToday}" y2="${height - margin.bottom}" stroke="#0d2c54" stroke-width="1.5"></line>`;
+    const todayLabel = `Dopočítaná hodnota ke dnešnímu dni dle XIRR: ${formattedTodayValue} ${outCurr}`;
+    innerHTML += `<circle class="line-chart-dot line-chart-dot--today" cx="${xToday}" cy="${yScale(valueAtToday)}" r="5" fill="#0d2c54" stroke="white" stroke-width="2" tabindex="0" aria-label="${htmlEscape(todayLabel)}" data-tooltip-text="${htmlEscape(todayLabel)}"></circle>`;
+    innerHTML += `<g transform="translate(${margin.left}, ${height - 10})"><circle cx="0" cy="-4" r="4" fill="#4DB1C8"></circle><text class="line-chart-axis-text" x="10" y="0">Hodnota</text><line x1="65" y1="-4" x2="85" y2="-4" stroke="#4DB1C8" stroke-dasharray="3 3" stroke-width="2"></line><text class="line-chart-axis-text" x="95" y="0">Predikce</text><line x1="160" y1="-4" x2="180" y2="-4" stroke="rgba(51,55,61,0.55)" stroke-width="2"></line><text class="line-chart-axis-text" x="190" y="0">Vklady</text></g>`;
+    if (options.isForPdf) {
+        const fixedTooltipPoints = [ { date: today, label: 'Dnes' } ];
+        const endOfYear = new Date(today.getFullYear(), 11, 31);
+        if (endOfYear > today) {
+            fixedTooltipPoints.push({ date: endOfYear, label: endOfYear.getFullYear().toString() });
+        }
+        for (let year = today.getFullYear() + 3; year <= 2035; year += 3) {
+            const date = new Date(year, 11, 31);
+            if (date <= futureEndDate) {
+                fixedTooltipPoints.push({ date, label: year.toString() });
+            }
+        }
+        fixedTooltipPoints.forEach(point => {
+            const daysFromToday = (point.date - today) / (1000 * 60 * 60 * 24);
+            const value = valueAtToday * Math.pow(1 + dailyRate, daysFromToday);
+            const x = xScale(point.date);
+            const y = yScale(value);
+            innerHTML += `<g transform="translate(${x}, ${y})">
+                <circle r="5" fill="#0d2c54" stroke="white" stroke-width="2"></circle>
+                <rect x="-40" y="-35" width="80" height="20" rx="5" fill="rgba(255,255,255,0.8)"></rect>
+                <text text-anchor="middle" y="-20" font-size="10px" fill="#1f2937">
+                    <tspan x="0" dy="0">${point.label}: ${formatCurrency(value, 0)}</tspan>
+                </text>
+            </g>`;
+        });
+    }
+    svg.innerHTML = innerHTML;
+    const startLabel = formatDate(firstDate);
+    const endLabel = formatDate(today);
+    const ariaSummary = isFinite(portfolioIrr)
+        ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatXirr(portfolioIrr)}`
+        : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
+    svg.setAttribute('role', 'img');
+    let svgTitle = svg.querySelector('title');
+    if (!svgTitle) {
+        svgTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        svg.insertBefore(svgTitle, svg.firstChild);
+    }
+    svgTitle.textContent = ariaSummary;
+    if (container) {
+        container.setAttribute('role', 'img');
+        container.setAttribute('aria-label', ariaSummary);
+    }
+    if (!options.isForPdf) {
+        const interactionLayer = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        interactionLayer.setAttribute('width', boundedWidth);
+        interactionLayer.setAttribute('height', boundedHeight);
+        interactionLayer.setAttribute('x', margin.left);
+        interactionLayer.setAttribute('y', margin.top);
+        interactionLayer.setAttribute('fill', 'transparent');
+        const guideLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        guideLine.setAttribute('stroke', '#9ca3af');
+        guideLine.setAttribute('stroke-width', '1');
+        guideLine.style.opacity = 0;
+        const guideCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        guideCircle.setAttribute('r', '4');
+        guideCircle.setAttribute('fill', '#4b5563');
+        guideCircle.style.opacity = 0;
+        svg.appendChild(guideLine);
+        svg.appendChild(guideCircle);
+        svg.appendChild(interactionLayer);
+        interactionLayer.addEventListener('mousemove', (e) => {
+            const x = e.offsetX;
+            const snapThreshold = 10;
+            let finalX = x, finalY, finalDate, finalValue, tooltipText;
+            let closestSnapPoint = null;
+            let minDistance = snapThreshold;
+            snapPoints.forEach(p => {
+                const dist = Math.abs(x - p.x);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestSnapPoint = p;
+                }
+            });
+            if (closestSnapPoint) {
+                finalX = closestSnapPoint.x;
+                finalY = closestSnapPoint.y;
+                finalDate = closestSnapPoint.date;
+                finalValue = closestSnapPoint.value;
+                if (closestSnapPoint.isToday) {
+                tooltipText = `<div class="font-bold text-primary">Dnes: ${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">Dopočítaná hodnota: ${formatCurrency(finalValue)} ${outCurr}</div>`;
+                } else {
+                    tooltipText = closestSnapPoint.tooltipText;
+                }
+            } else {
+                finalDate = xToDate(x);
+                const fullData = [...allPoints.filter(p => p.date <= today), ...projectionPoints];
+                const nextPoint = fullData.find(p => p.date > finalDate);
+                const prevPoint = fullData[fullData.indexOf(nextPoint) - 1];
+                if(prevPoint && nextPoint){
+                    const t = (finalDate - prevPoint.date) / (nextPoint.date - prevPoint.date);
+                    finalValue = prevPoint.value + t * (nextPoint.value - prevPoint.value);
+                } else {
+                    finalValue = allPoints[allPoints.length-1].value;
+                }
+                finalY = yScale(finalValue);
+                tooltipText = `<div class="font-bold text-primary">${finalDate.toLocaleDateString('cs-CZ')}</div><div class="text-body">${formatCurrency(finalValue)} ${outCurr}</div>`;
+            }
+            guideLine.setAttribute('x1', finalX);
+            guideLine.setAttribute('y1', finalY);
+            guideLine.setAttribute('x2', finalX);
+            guideLine.setAttribute('y2', height - margin.bottom);
+            guideCircle.setAttribute('cx', finalX);
+            guideCircle.setAttribute('cy', finalY);
+            guideLine.style.opacity = 1;
+            guideCircle.style.opacity = 1;
+            const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+            if (tooltip) {
+                tooltip.innerHTML = tooltipText;
+                tooltip.classList.remove('hidden');
+                tooltip.style.opacity = '1';
+            }
+        });
+        interactionLayer.addEventListener('mouseout', () => {
+            guideLine.style.opacity = 0;
+            guideCircle.style.opacity = 0;
+            const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+            if (tooltip) {
+                tooltip.classList.add('hidden');
+                tooltip.style.opacity = '0';
+            }
+        });
+    }
+    container.appendChild(svg);
+  };
+
+  const setupTimeSlider = (funds) => {
+    const slider = elements.pieSlider || document.getElementById('pie-time-slider');
+    if (!slider) return;
+    const deposits = funds.map(f => f.dateIn).sort((a,b) => a - b);
+    if(deposits.length === 0) return;
+    const firstDate = deposits[0];
+    const endDate = new Date('2035-12-31');
+    const today = new Date();
+    slider.min = firstDate.getTime();
+    slider.max = endDate.getTime();
+    if (!slider.dataset.initialized) {
+        slider.value = today.getTime();
+        slider.dataset.initialized = 'true';
+    }
+    if (elements.sliderStartLabel) {
+        elements.sliderStartLabel.textContent = firstDate.toLocaleDateString('cs-CZ');
+    }
+    if (elements.sliderEndLabel) {
+        elements.sliderEndLabel.textContent = endDate.toLocaleDateString('cs-CZ');
+    }
+    updatePieChartFromSlider();
+  };
+  const updatePieChartFromSlider = () => {
+    const { funds } = state.lastProcessedData;
+    const outCurr = elements.outCurrency?.value || 'CZK';
+    const fxRate = utils.numCZ(elements.fxRate?.value);
+    const slider = elements.pieSlider || document.getElementById('pie-time-slider');
+    if (!slider) return;
+    const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
+    const currentDate = new Date(parseInt(slider.value));
+    if (elements.sliderCurrentLabel) {
+        elements.sliderCurrentLabel.textContent = currentDate.toLocaleDateString('cs-CZ');
+    }
+    const dataForDate = Object.entries(funds.reduce((acc, f) => { if (!acc[f.fund]) acc[f.fund] = { investments: [], irr: null }; acc[f.fund].investments.push(f); if (isFinite(f.irr)) acc[f.fund].irr = f.irr; return acc; }, {})).map(([name, {investments, irr}]) => {
+        let value = 0;
+        const cfs = investments
+            .filter(inv => inv.dateIn <= currentDate)
+            .map(inv => ({ date: inv.dateIn, amount: -convert(inv.invest, inv.curr) }))
+            .sort((a,b) => a.date - b.date);
+        if (cfs.length > 0) {
+            const fundIrr = investments[0]?.irr;
+            if (isFinite(fundIrr)) {
+                const dailyRate = Math.pow(1 + fundIrr, 1 / 365.25) - 1;
+                let runningValue = 0;
+                let lastDate = cfs[0].date;
+                cfs.forEach(cf => {
+                    const days = (cf.date - lastDate) / (1000 * 60 * 60 * 24);
+                    runningValue *= Math.pow(1 + dailyRate, days);
+                    runningValue += -cf.amount;
+                    lastDate = cf.date;
+                });
+                const daysFinal = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
+                value = runningValue * Math.pow(1 + dailyRate, daysFinal);
+            }
+        }
+        return { name, totalCurrent: value };
+    }).filter(d => d.totalCurrent > 0);
+    const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
+    if (pieContainer) {
+        renderPieChart(pieContainer, dataForDate, outCurr);
+    }
+  };
+  const renderPieChart = (container, data, outCurr, options = {}) => {
+    const { isStaticExport = false } = options;
+    const pieTotal = data.reduce((sum, d) => sum + d.totalCurrent, 0);
+
+    if (isStaticExport) {
+        if (!data.length || !(pieTotal > 0)) {
+            return `<div class="rounded-2xl border border-subtle bg-card-muted py-10 text-center text-muted">Nejsou k dispozici data pro koláčový graf.</div>`;
+        }
+        const slices = data.map(d => ({ name: d.name, value: d.totalCurrent, color: getColor(d.name) }));
+        const svg = buildStaticPieChartSvg(slices, pieTotal);
+        const legend = slices.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span><span class="legend-name">${htmlEscape(d.name)}</span><span class="legend-value">${formatPercent(d.value / pieTotal)}</span></div>`).join('');
+        return `<div class="pie-export"><div class="pie-canvas">${svg}</div><div class="pie-legend">${legend}</div></div>`;
+    }
+
+    if (!container) return;
+    container.innerHTML = '';
+    if(data.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-muted">Pro zvolené datum nejsou data.</div>`;
+        return;
+    }
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute('viewBox', '0 0 100 100');
+    let angle = -90; const outerRadius = 48; const innerRadius = 24;
+    if (data.length === 1 && pieTotal > 0) {
+        const d = data[0];
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.classList.add('pie-segment');
+        g.setAttribute('tabindex', '0');
+        g.setAttribute('aria-label', `${d.name}: ${formatCurrency(d.totalCurrent)} ${outCurr} (${formatPercent(d.totalCurrent / pieTotal)})`);
+        g.dataset.name = d.name;
+        g.dataset.value = `${formatCurrency(d.totalCurrent)} ${outCurr}`;
+        g.dataset.percent = formatPercent(d.totalCurrent / pieTotal);
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute('cx', 50);
+        circle.setAttribute('cy', 50);
+        circle.setAttribute('r', (outerRadius + innerRadius) / 2);
+        circle.setAttribute('stroke', getColor(d.name));
+        circle.setAttribute('stroke-width', outerRadius - innerRadius);
+        circle.setAttribute('fill', 'none');
+        g.appendChild(circle);
+        svg.appendChild(g);
+    } else {
+        data.forEach((d) => {
+            const percent = d.totalCurrent / pieTotal; if (percent === 0) return;
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.classList.add('pie-segment');
+            g.setAttribute('tabindex', '0');
+            g.setAttribute('aria-label', `${d.name}: ${formatCurrency(d.totalCurrent)} ${outCurr} (${formatPercent(d.totalCurrent / pieTotal)})`);
+            g.dataset.name = d.name; g.dataset.value = `${formatCurrency(d.totalCurrent)} ${outCurr}`; g.dataset.percent = formatPercent(d.totalCurrent / pieTotal);
+            const startAngleRad = (angle * Math.PI) / 180; angle += percent * 360; const endAngleRad = (angle * Math.PI) / 180;
+            const x1_outer = 50 + outerRadius * Math.cos(startAngleRad); const y1_outer = 50 + outerRadius * Math.sin(startAngleRad);
+            const x2_outer = 50 + outerRadius * Math.cos(endAngleRad); const y2_outer = 50 + outerRadius * Math.sin(endAngleRad);
+            const x1_inner = 50 + innerRadius * Math.cos(startAngleRad); const y1_inner = 50 + innerRadius * Math.sin(startAngleRad);
+            const x2_inner = 50 + innerRadius * Math.cos(endAngleRad); const y2_inner = 50 + innerRadius * Math.sin(endAngleRad);
+            const largeArc = percent > 0.5 ? 1 : 0;
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute('d', `M ${x1_outer},${y1_outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2_outer},${y2_outer} L ${x2_inner},${y2_inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1_inner},${y1_inner} Z`);
+            path.setAttribute('fill', getColor(d.name)); path.setAttribute('stroke', '#fff'); path.setAttribute('stroke-width', '2');
+            g.appendChild(path); svg.appendChild(g);
+        });
+    }
+    const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    centerCircle.setAttribute('cx', 50);
+    centerCircle.setAttribute('cy', 50);
+    centerCircle.setAttribute('r', innerRadius - 3);
+    centerCircle.setAttribute('fill', '#ffffff');
+    centerCircle.setAttribute('stroke', '#EAECEE');
+    centerCircle.setAttribute('stroke-width', '2');
+    centerCircle.setAttribute('pointer-events', 'none');
+    svg.appendChild(centerCircle);
+    const legend = data.map(d => `<div class="legend-item"><span class="legend-dot" style="background:${getColor(d.name)}"></span><span class="legend-name">${d.name}</span><span class="legend-value">${formatPercent(d.totalCurrent / pieTotal)}</span></div>`).join('');
+    container.innerHTML = `<div class="pie-export"><div class="pie-canvas"></div><div class="pie-legend">${legend}</div></div>`;
+    container.querySelector('.pie-canvas').appendChild(svg);
+  };
+
+  const buildStaticPieChartSvg = (slices, total) => {
+      if (!slices.length || !(total > 0)) return '';
+      const outerRadius = 48;
+      const innerRadius = 24;
+      let angle = -90;
+      const parts = slices.map(({ name, value, color }) => {
+          const percent = value / total;
+          if (percent <= 0) return '';
+          const start = angle;
+          angle += percent * 360;
+          const startRad = (start * Math.PI) / 180;
+          const endRad = (angle * Math.PI) / 180;
+          const largeArc = percent > 0.5 ? 1 : 0;
+          const x1Outer = 50 + outerRadius * Math.cos(startRad);
+          const y1Outer = 50 + outerRadius * Math.sin(startRad);
+          const x2Outer = 50 + outerRadius * Math.cos(endRad);
+          const y2Outer = 50 + outerRadius * Math.sin(endRad);
+          const x1Inner = 50 + innerRadius * Math.cos(startRad);
+          const y1Inner = 50 + innerRadius * Math.sin(startRad);
+          const x2Inner = 50 + innerRadius * Math.cos(endRad);
+          const y2Inner = 50 + innerRadius * Math.sin(endRad);
+          const tooltip = `${name} • ${formatCurrency(value)} (${formatPercent(percent)})`;
+          return `<g class="pie-slice" tabindex="0" aria-label="${htmlEscape(tooltip)}" data-tooltip-text="${htmlEscape(tooltip)}">
+            <path d="M ${x1Outer},${y1Outer} A ${outerRadius},${outerRadius} 0 ${largeArc},1 ${x2Outer},${y2Outer} L ${x2Inner},${y2Inner} A ${innerRadius},${innerRadius} 0 ${largeArc},0 ${x1Inner},${y1Inner} Z" fill="${color}" stroke="#fff" stroke-width="2" />
+            <title>${htmlEscape(tooltip)}</title>
+          </g>`;
+      }).join('');
+      const backdrop = `<circle cx="50" cy="50" r="${outerRadius}" fill="rgba(240,253,250,0.65)" />`;
+      const inner = `<circle cx="50" cy="50" r="${innerRadius - 3}" fill="#ffffff" stroke="rgba(148,163,184,0.35)" stroke-width="1.5" />`;
+      return `<svg viewBox="0 0 100 100" role="img" aria-label="Alokace portfolia">${backdrop}${parts}${inner}</svg>`;
+  };
+
+  const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady, formattedTodayValueOverride = null) => {
+      if (!conversionReady) {
+          return { available: false, reason: 'conversion' };
+      }
+      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
+      const grouped = new Map();
+      funds.forEach(fund => {
+          if (!fund.dateIn) return;
+          const amount = convert(fund.invest, fund.curr);
+          if (!Number.isFinite(amount) || amount === 0) return;
+          const date = new Date(fund.dateIn.getFullYear(), fund.dateIn.getMonth(), fund.dateIn.getDate());
+          const key = date.getTime();
+          if (!grouped.has(key)) {
+              grouped.set(key, { date, entries: [] });
+          }
+          grouped.get(key).entries.push({ amount, fund: fund.fund });
+      });
+      const groups = Array.from(grouped.values()).sort((a, b) => a.date - b.date);
+      if (!groups.length) {
+          return { available: false, reason: 'empty' };
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const projectionEnd = new Date(`${PROJECTION_END_YEAR}-12-31`);
+      const hasIrr = Number.isFinite(irr);
+      const irrPositive = hasIrr && irr > 0;
+      const dailyRate = hasIrr ? Math.pow(1 + irr, 1 / 365.25) - 1 : 0;
+      const firstDate = groups[0].date;
+      let runningValue = 0;
+      let cumulative = 0;
+      let lastDate = firstDate;
+      const contributionPoints = [{ date: firstDate, value: 0 }];
+      const valuePoints = hasIrr ? [{ date: firstDate, value: 0 }] : [];
+      const depositPoints = [];
+
+      groups.forEach(group => {
+          const amount = group.entries.reduce((sum, entry) => sum + entry.amount, 0);
+          const days = Math.max(0, (group.date - lastDate) / MS_PER_DAY);
+
+          if (hasIrr && days > 0) {
+              runningValue *= Math.pow(1 + dailyRate, days);
+              valuePoints.push({ date: group.date, value: runningValue });
+          }
+
+          contributionPoints.push({ date: group.date, value: cumulative });
+
+          runningValue += amount;
+          cumulative += amount;
+
+          contributionPoints.push({ date: group.date, value: cumulative });
+
+          if (hasIrr) {
+              valuePoints.push({ date: group.date, value: runningValue });
+          }
+
+          depositPoints.push({
+              date: group.date,
+              amount,
+              value: hasIrr ? runningValue : null,
+              contributions: cumulative,
+              breakdown: group.entries
+          });
+          lastDate = group.date;
+      });
+
+      const daysToToday = Math.max(0, (today - lastDate) / MS_PER_DAY);
+      const valueAtToday = hasIrr ? runningValue * Math.pow(1 + dailyRate, daysToToday) : cumulative;
+      contributionPoints.push({ date: today, value: cumulative });
+      if (hasIrr) {
+          if (daysToToday > 0) {
+              valuePoints.push({ date: today, value: valueAtToday });
+          } else {
+              valuePoints.push({ date: today, value: runningValue });
+          }
+      }
+
+      const projectionPoints = [];
+      if (irrPositive) {
+          let stepYear = today.getFullYear() + 4;
+          while (stepYear <= PROJECTION_END_YEAR) {
+              const future = new Date(today);
+              future.setFullYear(stepYear);
+              if (future > projectionEnd) break;
+              const daysAhead = Math.max(0, (future - today) / MS_PER_DAY);
+              const futureValue = valueAtToday * Math.pow(1 + dailyRate, daysAhead);
+              projectionPoints.push({ date: future, value: futureValue });
+              stepYear += 4;
+          }
+      }
+
+      const timelineEnd = irrPositive ? projectionEnd : today;
+      const span = Math.max(1, timelineEnd - firstDate);
+      const valuesForMax = contributionPoints.map(p => p.value);
+      if (hasIrr) valuesForMax.push(...valuePoints.map(p => p.value));
+      if (projectionPoints.length) valuesForMax.push(...projectionPoints.map(p => p.value));
+      const yMaxRaw = Math.max(...valuesForMax, 0);
+      const yMax = yMaxRaw > 0 ? Math.ceil(yMaxRaw / 1000) * 1000 : 1000;
+
+      const width = 820;
+      const height = 380;
+      const margin = { top: 32, right: 36, bottom: 78, left: 88 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+      const xScale = (date) => margin.left + ((date - firstDate) / span) * chartWidth;
+      const yScale = (value) => margin.top + chartHeight - (value / yMax) * chartHeight;
+      const formatCoord = (value) => Number(value.toFixed(2));
+
+      const pathFromPoints = (points) => points.length ? `M${points.map(p => `${formatCoord(xScale(p.date))},${formatCoord(yScale(p.value))}`).join(' L')}` : '';
+      const contributionsPath = pathFromPoints(contributionPoints);
+      const valuePath = hasIrr ? pathFromPoints(valuePoints) : '';
+      const projectionPath = projectionPoints.length ? pathFromPoints([{ date: today, value: valueAtToday }, ...projectionPoints]) : '';
+      const baselineY = formatCoord(yScale(0));
+      const areaPath = hasIrr && valuePoints.length > 1
+          ? (() => {
+              const coords = valuePoints.map(p => `${formatCoord(xScale(p.date))},${formatCoord(yScale(p.value))}`).join(' L ');
+              const last = valuePoints[valuePoints.length - 1];
+              const firstVal = valuePoints[0];
+              return `M${coords} L${formatCoord(xScale(last.date))},${baselineY} L${formatCoord(xScale(firstVal.date))},${baselineY} Z`;
+          })()
+          : '';
+      const defs = `
+        <defs>
+          <linearGradient id="chartBackdrop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f8fafc" />
+            <stop offset="100%" stop-color="#ffffff" />
+          </linearGradient>
+          <linearGradient id="chartValueStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#4DB1C8" />
+            <stop offset="100%" stop-color="#0d2c54" />
+          </linearGradient>
+          <linearGradient id="chartProjectionStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0d2c54" />
+            <stop offset="100%" stop-color="#A4C4BC" />
+          </linearGradient>
+          <linearGradient id="chartAreaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4DB1C8" stop-opacity="0.25" />
+            <stop offset="100%" stop-color="#4DB1C8" stop-opacity="0" />
+          </linearGradient>
+        </defs>`;
+      const todayLine = hasIrr ? `<line x1="${formatCoord(xScale(today))}" y1="${margin.top}" x2="${formatCoord(xScale(today))}" y2="${margin.top + chartHeight}" stroke="#4DB1C8" stroke-width="1.5" stroke-dasharray="6 6" stroke-opacity="0.7" />` : '';
+
+      const yTicks = [];
+      const tickCount = 5;
+      for (let i = 0; i <= tickCount; i++) {
+          yTicks.push((yMax / tickCount) * i);
+      }
+
+      const xLabels = [];
+      const startYear = firstDate.getFullYear();
+      const endYear = timelineEnd.getFullYear();
+      const yearSpan = endYear - startYear;
+      const maxTicks = 6;
+      const yearStep = Math.max(1, Math.ceil((yearSpan + 1) / maxTicks));
+      for (let year = startYear; year <= endYear; year += yearStep) {
+          const date = new Date(year, 0, 1);
+          if (date < firstDate) continue;
+          if (date > timelineEnd) break;
+          xLabels.push(date);
+      }
+      if (!xLabels.length || xLabels[xLabels.length - 1].getFullYear() !== endYear) {
+          xLabels.push(new Date(endYear, 0, 1));
+      }
+
+      const depositMarkers = depositPoints.map(point => {
+          const dateLabel = formatDate(point.date);
+          const amountLabel = formatCurrency(point.amount);
+          const breakdownText = point.breakdown.map(item => `${htmlEscape(item.fund)} (${formatCurrency(item.amount)})`).join(' • ');
+          const tooltip = `${dateLabel} • ${amountLabel} ${outCurr}${breakdownText ? `\n${breakdownText}` : ''}`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(hasIrr ? point.value : point.contributions))}" r="4" fill="#0d2c54" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+      }).join('');
+
+      const projectionMarkers = projectionPoints.map(point => {
+          const dateLabel = formatDate(point.date);
+          const tooltip = `Odhad ${dateLabel}: ${formatCurrency(point.value)} ${outCurr}`;
+          return `<circle cx="${formatCoord(xScale(point.date))}" cy="${formatCoord(yScale(point.value))}" r="4" fill="#4DB1C8" stroke="#ffffff" stroke-width="1.5" data-tooltip-text="${htmlEscape(tooltip)}"><title>${htmlEscape(tooltip)}</title></circle>`;
+      }).join('');
+
+      /* PATCH */
+      const formattedTodayValue = formattedTodayValueOverride || formatCurrency(valueAtToday);
+      const todayTooltip = `Dnes (${formatDate(today)}): ${formattedTodayValue} ${outCurr}`;
+      const todayMarker = hasIrr ? `<circle cx="${formatCoord(xScale(today))}" cy="${formatCoord(yScale(valueAtToday))}" r="6" fill="#4DB1C8" stroke="#ffffff" stroke-width="2" data-tooltip-text="${htmlEscape(todayTooltip)}"><title>${htmlEscape(todayTooltip)}</title></circle>` : '';
+
+      const startLabel = formatDate(firstDate);
+      const endLabel = formatDate(timelineEnd);
+      const ariaLabel = hasIrr
+          ? `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR ${formatXirr(irr)}`
+          : `Vývoj portfolia v období ${startLabel} – ${endLabel}; dnešní hodnota ${formattedTodayValue} ${outCurr}; XIRR není k dispozici.`;
+      const svg = `
+        <svg viewBox="0 0 ${width} ${height}">
+          <title>${htmlEscape(ariaLabel)}</title>
+          ${defs}
+          <rect x="0" y="0" width="${width}" height="${height}" fill="url(#chartBackdrop)" rx="26" />
+          <rect x="${margin.left - 8}" y="${margin.top - 12}" width="${chartWidth + 16}" height="${chartHeight + 24}" rx="22" fill="rgba(255,255,255,0.78)" stroke="rgba(148,163,184,0.25)" />
+          ${yTicks.map(tick => {
+              const y = formatCoord(yScale(tick));
+              return `<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="4 4" />
+              <text x="${margin.left - 14}" y="${y + 5}" text-anchor="end" font-size="12" fill="#64748b">${formatCurrency(tick, 0)}</text>`;
+          }).join('')}
+          ${xLabels.map(date => `<text x="${formatCoord(xScale(date))}" y="${height - 24}" text-anchor="middle" font-size="11" fill="#64748b">${date.getFullYear()}</text>`).join('')}
+          ${areaPath ? `<path d="${areaPath}" fill="url(#chartAreaFill)" />` : ''}
+          ${contributionsPath ? `<path d="${contributionsPath}" fill="none" stroke="rgba(51,55,61,0.55)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${hasIrr && valuePath ? `<path d="${valuePath}" fill="none" stroke="url(#chartValueStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+          ${irrPositive && projectionPath ? `<path d="${projectionPath}" fill="none" stroke="url(#chartProjectionStroke)" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />` : ''}
+          ${todayLine}
+          ${depositMarkers}
+          ${todayMarker}
+            ${projectionMarkers}
+        </svg>
+      `;
+
+      let footnote = '';
+      if (!hasIrr) {
+          footnote = 'Graf zachycuje pouze kumulované vklady, protože pro portfolio zatím nelze spolehlivě určit míru XIRR.';
+      } else if (!irrPositive) {
+          footnote = 'Odhad aktuální hodnoty vycházejí z vypočtené XIRR, projekce nejsou zobrazeny, protože míra výnosu je nulová nebo záporná.';
+      } else {
+          footnote = 'Projekce navazují na aktuální roční míru XIRR. Historické výsledky nejsou zárukou výnosů budoucích.';
+      }
+
+      return {
+          available: true,
+          svg,
+          hasIrr,
+          irrPositive,
+          footnote,
+          ariaLabel
+      };
+  };
+
+  const exportToStaticHTML = () => {
+      const clientName = (state.clientName || '').trim();
+      if (!clientName) {
+          showToast('Před exportem vyplňte jméno klienta.', 'error');
+          elements.clientNameInput?.focus();
+          return;
+      }
+
+      const manualSalutation = (state.clientSalutation || '').trim();
+      const nameParts = parseClientName(clientName);
+      const salutation = formatSalutation({
+          firstName: nameParts.firstName,
+          lastName: nameParts.lastName,
+          preferVykanie: !!state.clientPreferVykanie,
+          manualSalutation
+      });
+      if (!salutation) {
+          showToast('Před exportem vyplňte oslovení klienta.', 'error');
+          elements.clientSalutationInput?.focus();
+          return;
+      }
+
+      if (document.activeElement && document.activeElement.isContentEditable) {
+          document.activeElement.blur();
+      }
+
+      const snapshot = processAllRows();
+      const outCurr = elements.outCurrency?.value || 'CZK';
+      const fxRate = utils.numCZ(elements.fxRate?.value);
+      const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
+      const conversionReady = !(snapshot.hasMixedCurrencies && !hasValidFx);
+
+      if (!snapshot.funds.length) {
+          showToast('Pro export je potřeba zadat alespoň jeden platný fond.', 'error');
+          return;
+      }
+
+      /* PATCH */
+      const formattedOverrides = {
+          totalCurrent: formatCurrency(snapshot.portfolioSummary.totalCurrentConverted)
+      };
+      /* PATCH */
+      const formattedCapture = {};
+      /* PATCH */
+      const summaryBlock = renderSummary(snapshot.portfolioSummary, outCurr, { isStaticExport: true, formattedTotals: formattedOverrides, captureFormatted: formattedCapture });
+
+      /* PATCH */
+      const sharedFormattedTotals = {
+          totalCurrent: formattedCapture.totalCurrent || formattedOverrides.totalCurrent
+      };
+
+      const groupedFunds = snapshot.funds.reduce((acc, fund) => {
+          if (!fund.fund) return acc;
+          if (!acc[fund.fund]) acc[fund.fund] = [];
+          acc[fund.fund].push(fund);
+          return acc;
+      }, {});
+
+      const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true });
+
+      const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
+      const allocationData = Object.entries(groupedFunds).map(([name, entries]) => {
+          const totalCurrent = entries.reduce((sum, entry) => {
+              const converted = convert(entry.current, entry.curr);
+              return Number.isFinite(converted) ? sum + converted : sum;
+          }, 0);
+          return { name, totalCurrent };
+      }).filter(item => item.totalCurrent > 0);
+
+      const pieBlock = allocationData.length
+          ? renderPieChart(null, allocationData, outCurr, { isStaticExport: true })
+          : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">Pro koláčový graf nejsou dostupná data.</div>`;
+
+      const lineBlock = renderLineChart(null, snapshot.funds, snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, { isStaticExport: true, conversionReady, formattedTodayValue: sharedFormattedTotals.totalCurrent });
+
+      const explanationsBlock = `<div class="export-explanations">
+        <article>
+          <h3>Co je XIRR a jak funguje?</h3>
+          <p>Jde o klíčový ukazatel reálné výkonnosti Vašeho portfolia. Na rozdíl od jednoduchého průměru totiž XIRR spravedlivě zohledňuje, <strong>kdy a jaké částky</strong> jste do portfolia vkládal. Výsledné procento Vám tak dává přesný obraz o tom, jak efektivně Vaše peníze v průměru každý rok pracovaly.</p>
+        </article>
+        <article>
+          <h3>Co znamená kumulativní zhodnocení?</h3>
+          <p>Tento údaj Vám poskytuje rychlý a celkový pohled na dosavadní úspěšnost portfolia. Jednoduše řečeno, vyjadřuje Váš <strong>celkový čistý výnos jako procento ze všech Vašich vkladů</strong>. Je to souhrnné číslo, které ukazuje celkový růst od začátku investování až po dnešek.</p>
+        </article>
+      </div>`;
+
+      const rawStyle = document.querySelector('style')?.textContent || '';
+      const styleContent = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');\n${rawStyle.replace(/@import[^;]+;\s*/g, '')}`;
+      /* PATCH */
+      const generatedAt = new Date();
+      /* PATCH */
+      const generatedTimestamp = generatedAt.getTime();
+      /* PATCH */
+      const generatedDateLabel = generatedAt.toLocaleDateString('cs-CZ');
+      const fundCount = Object.keys(groupedFunds).length;
+      const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
+          ? `<div class="alert">Portfolio obsahuje více měn bez zadaného kurzu. Částky nelze spolehlivě převést do ${htmlEscape(outCurr)}.</div>`
+          : '';
+
+      const narrativeSection = `<section class="narrative">
+        <h2>Vítejte ve Vašem reportu</h2>
+        <p>Na následujících stránkách najdete klíčové souhrny, detailní pohled na jednotlivé fondy a také výhled do budoucna. Berte to jako takovou 'mapu' naší společné cesty za Vašimi finančními cíli.</p>
+      </section>`;
+
+      const summarySection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">SOUHRN</span>
+          <h2>Souhrn Vašeho portfolia</h2>
+          <p class="section-meta">Částky v ${htmlEscape(outCurr)}</p>
+          <p>Klíčové ukazatele, které Vám v kostce ukážou celkové zdraví a výkon Vašich investic.</p>
+        </div>
+        ${summaryBlock}
+      </section>`;
+
+      const fundsSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">DETAIL FONDŮ</span>
+          <h2>Výsledky po fondech</h2>
+          <p class="section-meta">Částky v ${htmlEscape(outCurr)}</p>
+          <p>Přehled všech sledovaných fondů včetně výkonu, ziskovosti a časové rozlohy investic.</p>
+        </div>
+        <div class="fund-export-grid">${fundsBlock}</div>
+      </section>`;
+
+      const pieSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">ALOKACE</span>
+          <h2>Alokace portfolia</h2>
+          <p>Rozložení kapitálu mezi jednotlivé fondy k datu exportu.</p>
+        </div>
+        ${pieBlock}
+      </section>`;
+
+      const lineSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">VÝVOJ</span>
+          <h2>Vývoj hodnoty portfolia</h2>
+          <p>Historický vývoj a projekce při zachování aktuální míry zhodnocení portfolia.</p>
+        </div>
+        ${lineBlock}
+      </section>`;
+
+      const disclaimerSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">POZNÁMKY</span>
+          <h2>Důležitá upozornění</h2>
+          <p>Prosíme věnujte pozornost následujícím informacím a limitům výpočtů.</p>
+        </div>
+        <div class="disclaimer-block">
+          <h3 class="disclaimer-title">Klíčové poznámky</h3>
+          <ul class="disclaimer-list">
+            <li class="disclaimer-item">Historické výnosy nejsou zárukou výsledků budoucích. Projekce vycházejí z aktuálního vývoje portfolia.</li>
+            <li class="disclaimer-item">Veškeré částky platí k datu generování reportu a mohou se v čase měnit podle tržních podmínek.</li>
+            <li class="disclaimer-item">Výpočty vycházejí z dat poskytnutých poradcem; v případě neúplných nebo nepřesných údajů mohou být výsledky zkreslené.</li>
+          </ul>
+        </div>
+      </section>`;
+
+      const explanationsSection = `<section class="card">
+        <div class="section-heading">
+          <span class="pill">VYSVĚTLIVKY</span>
+          <h2>Vysvětlivky a použité metriky</h2>
+          <p>Stručná rekapitulace klíčových pojmů pro rychlou orientaci nad výsledky.</p>
+        </div>
+        ${explanationsBlock}
+      </section>`;
+
+      /* PATCH */
+      const footerSection = `<footer class="export-footer"><p class="footer-note">© <span id="year"></span> Ondřej Lacina</p></footer>`;
+
+      const fxMeta = Number.isFinite(fxRate) && fxRate > 0
+          ? `<div class="export-hero__meta-item"><span class="meta-label">Kurz EUR/CZK</span><span class="meta-value">${formatCurrency(fxRate, 4)}</span></div>`
+          : '';
+
+      const leadTemplate = 'Dobrý den, [Oslovení klienta], připravil jsem pro Vás tento přehledný report, kde jednoduše uvidíte, jak se daří Vašim investicím. Věřím, že je vše maximálně srozumitelné, ale pokud byste se chtěl na cokoliv zeptat, jsem tu pro Vás.';
+      const leadCopy = leadTemplate.replace('[Oslovení klienta]', htmlEscape(salutation));
+
+      const heroSection = `<header class="export-hero">
+        <div class="export-hero__layout">
+          <div class="export-hero__content">
+            <div class="brand-logo">Fair<span>Life</span></div>
+            <span class="export-hero__badge">Klientský report</span>
+            <h1 class="export-hero__title">Report investičního portfolia</h1>
+            <p class="export-hero__lead">${leadCopy}</p>
+            <div class="export-hero__meta">
+              <div class="export-hero__meta-item"><span class="meta-label">Klient</span><span class="meta-value">${htmlEscape(clientName)}</span></div>
+              <!-- /* PATCH */ -->
+              <div class="export-hero__meta-item"><span class="meta-label">DATUM REPORTU</span><span class="meta-value"><span id="report-date" data-ts="${generatedTimestamp}">${htmlEscape(generatedDateLabel)}</span></span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">Měna výstupu</span><span class="meta-value">${htmlEscape(outCurr)}</span></div>
+              <div class="export-hero__meta-item"><span class="meta-label">Počet fondů</span><span class="meta-value">${fundCount}</span></div>
+              ${fxMeta}
+            </div>
+          </div>
+          <div class="export-hero__features">
+            <div class="feature-card">
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-diverzifikace" /></svg>
+              </div>
+              <div class="feature-text">
+                <span class="feature-title">Diverzifikované portfolio</span>
+                <span class="feature-desc">Vaše investice jsou rozloženy pro optimální růst a bezpečnost.</span>
+              </div>
+            </div>
+            <div class="feature-card">
+              <!-- /* PATCH */ -->
+              <div class="benefit-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-rust" /></svg>
+              </div>
+              <div class="feature-text">
+                <span class="feature-title">Dlouhodobý růst</span>
+                <span class="feature-desc">Strategie je nastavena s ohledem na dlouhodobé zhodnocení Vašeho majetku.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>`;
+
+      /* PATCH */
+      const iconSprite = `<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden"><defs><symbol id="ico-diverzifikace" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3a9 9 0 0 1 7 3"/><path d="M21 12a9 9 0 0 1-3 7"/><path d="M12 21a9 9 0 0 1-7-3"/><path d="M3 12a9 9 0 0 1 3-7"/><path d="M12 3v5.5"/><path d="M21 12h-5.5"/><path d="M12 21v-5.5"/><path d="M3 12h5.5"/></symbol><symbol id="ico-rust" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 21v-7"/><path d="M12 14c-2.6 0-4.6-2-5.4-4.8 2.8-.5 4.7.7 5.4 2.9"/><path d="M12 14c2.6 0 4.6-2 5.4-4.8-2.8-.5-4.7.7-5.4 2.9"/><path d="M9 11l4-4 3 3 3-3"/><path d="M16 7h3v3"/></symbol></defs></svg>`;
+      /* PATCH */
+      const reportDateScript = "(function(){var el=document.getElementById('report-date');if(!el)return;var src=el.getAttribute('data-ts');var d=src?new Date(Number(src)||src):new Date();if(isNaN(d))d=new Date();el.textContent=d.toLocaleDateString('cs-CZ');})();";
+      /* PATCH */
+      const footerYearScript = "(function(){var y=document.getElementById('year');if(y)y.textContent=new Date().getFullYear();})();";
+      const tooltipScript = `document.addEventListener('DOMContentLoaded',()=>{const tooltip=document.createElement('div');tooltip.style.position='fixed';tooltip.style.pointerEvents='none';tooltip.style.padding='0.4rem 0.6rem';tooltip.style.background='rgba(15,23,42,0.92)';tooltip.style.color='#f8fafc';tooltip.style.fontSize='0.75rem';tooltip.style.borderRadius='0.5rem';tooltip.style.opacity='0';tooltip.style.transition='opacity 0.15s ease';tooltip.style.zIndex='50';document.body.appendChild(tooltip);let active=false;const move=e=>{if(!active)return;tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';};const hide=()=>{active=false;tooltip.style.opacity='0';};document.addEventListener('mousemove',move);document.addEventListener('mouseover',e=>{const target=e.target.closest('[data-tooltip-text]');if(!target)return;tooltip.textContent=target.getAttribute('data-tooltip-text')||'';tooltip.style.left=e.clientX+12+'px';tooltip.style.top=e.clientY+12+'px';tooltip.style.opacity='1';active=true;});document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tooltip-text]'))return;hide();});});`;
+      /* PATCH */
+      const scriptBundle = `${reportDateScript}${footerYearScript}${tooltipScript}`;
+
+      const html = `<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report portfolia – ${htmlEscape(clientName)}</title>
+  <style>${styleContent}</style>
+</head>
+<body>
+  <div class="export-shell">
+    ${heroSection}
+    ${currencyWarning}
+    ${narrativeSection}
+    ${summarySection}
+    ${fundsSection}
+    ${pieSection}
+    ${lineSection}
+    ${disclaimerSection}
+    ${explanationsSection}
+    ${footerSection}
+    ${iconSprite}
+  </div>
+  <script>${scriptBundle}${SCRIPT_CLOSE_TAG}
+</body>
+</html>`;
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeName = clientName.toLowerCase().replace(/[^\p{L}\p{N}\s-]+/gu, '').trim().replace(/\s+/g, '-');
+      anchor.href = url;
+      anchor.download = `report-${safeName || 'klient'}-${generatedAt.toISOString().split('T')[0]}.html`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      showToast('Report byl exportován.');
+  };
+
+  const calculateAnnuity = () => {
+      const { portfolioSummary, funds } = state.lastProcessedData;
+      const { portfolioIrr, totalCurrentConverted } = portfolioSummary;
+      const monthlyAnnuity = utils.numCZ(elements.annuityInput?.value);
+      const resultDiv = elements.annuityResult || document.getElementById('annuity-result');
+      const annualDiv = elements.annuityAnnual || document.getElementById('annuity-annual-equivalent');
+      const disclaimer = elements.annuityDisclaimer || document.getElementById('annuity-disclaimer');
+      if (!resultDiv || !annualDiv || !disclaimer) {
+          return;
+      }
+      if (!isFinite(monthlyAnnuity) || monthlyAnnuity <= 0) {
+          resultDiv.style.display = 'none';
+          annualDiv.textContent = '';
+          disclaimer.style.display = 'none';
+          return;
+      }
+      disclaimer.style.display = 'block';
+      const annualAnnuity = monthlyAnnuity * 12;
+      annualDiv.textContent = `(což odpovídá ${cellNum(annualAnnuity, 0)} Kč ročně)`;
+      if (!isFinite(portfolioIrr) || portfolioIrr <= 0 || funds.length === 0) {
+          resultDiv.innerHTML = 'Pro výpočet renty je potřeba mít v portfoliu data s kladným zhodnocením (XIRR).';
+          resultDiv.style.display = 'block';
+          return;
+      }
+      const targetCapital = annualAnnuity / portfolioIrr;
+      if (totalCurrentConverted >= targetCapital) {
+          resultDiv.innerHTML = `<strong>Gratulujeme!</strong> Vaše portfolio s aktuální hodnotou <strong>${cellNum(totalCurrentConverted, 0)} Kč</strong> je již nyní dostatečně velké, aby generovalo požadovanou roční rentu.`;
+          resultDiv.style.display = 'block';
+          return;
+      }
+      const dailyRate = Math.pow(1 + portfolioIrr, 1 / 365.25) - 1;
+      let days = 0;
+      let futureValue = totalCurrentConverted;
+      for (let i = 0; i < 365 * 100; i++) {
+          futureValue *= (1 + dailyRate);
+          days++;
+          if (futureValue >= targetCapital) break;
+      }
+      if (futureValue < targetCapital) {
+          resultDiv.innerHTML = `Při současném tempu růstu se Vám nepodaří dosáhnout cílové částky v rozumném časovém horizontu.`;
+          resultDiv.style.display = 'block';
+          return;
+      }
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + days);
+      const monthNames = ["ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října", "listopadu", "prosince"];
+      const formattedDate = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
+      resultDiv.innerHTML = `Pro měsíční rentu <strong>${cellNum(monthlyAnnuity, 0)} Kč</strong> potřebujete kapitál o velikosti přibližně <strong>${cellNum(targetCapital, 0)} Kč</strong>. Při současném tempu růstu byste této částky mohli dosáhnout okolo <strong>${formattedDate}</strong>.`;
+      resultDiv.style.display = 'block';
+  };
+
+  const handleInputChange = (e) => {
+    const target = e.target;
+    const key = target.dataset.key;
+    if (!key) return;
+    const tr = target.closest('tr');
+    if (!tr) return;
+    const id = parseInt(tr.dataset.id, 10);
+    const providerKey = tr.closest('tbody').dataset.tbodyFor;
+    const row = state.rows[providerKey].find(r => r.id === id);
+    if (!row) return;
+    if (target.type === 'checkbox') {
+        row[key] = target.checked;
+    } else {
+        row[key] = target.isContentEditable ? target.textContent : target.value;
+    }
+    if (['invest', 'qty', 'issueNav', 'currNav', 'totalCurrent'].includes(key)) {
+        const p = parseRow(row);
+        if (isFinite(p.invest) && isFinite(p.issueNav) && p.issueNav > 0 && (!row.qty || utils.numCZ(row.qty) <= 0)) {
+            row.qty = String(p.invest / p.issueNav);
+            tr.querySelector('[data-key="qty"]').value = row.qty;
+        } else if (isFinite(p.qty) && isFinite(p.issueNav) && p.qty > 0 && (!row.invest || utils.numCZ(row.invest) <= 0)) {
+            row.invest = String(p.qty * p.issueNav);
+            tr.querySelector('[data-key="invest"]').value = row.invest;
+        }
+        if (isFinite(p.qty) && isFinite(p.currNav) && p.currNav > 0 && (!row.totalCurrent || utils.numCZ(row.totalCurrent) <= 0)) {
+             row.totalCurrent = String(p.qty * p.currNav);
+             tr.querySelector('[data-key="totalCurrent"]').value = row.totalCurrent;
+        }
+    }
+    updateInputHighlights(tr, row);
+    scheduleRecalc();
+    saveState();
+  };
+
+  const updateInputHighlights = (tr, row) => {
+      const parsed = parseRow(row || {});
+      const fields = ['invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'totalCurrent', 'currDate'];
+      fields.forEach(field => {
+          const input = tr.querySelector(`[data-key="${field}"]`);
+          if (input) input.classList.remove('input-highlight');
+      });
+      if (!parsed || !parsed.fund) {
+          return;
+      }
+      const markMissing = (...keys) => {
+          keys.forEach(field => {
+              const input = tr.querySelector(`[data-key="${field}"]`);
+              if (!input) return;
+              const currentValue = row?.[field];
+              if (currentValue === undefined || String(currentValue).trim() === '') {
+                  input.classList.add('input-highlight');
+              }
+          });
+      };
+      if (!parsed.dateIn) markMissing('dateIn');
+      if (!parsed.currDate) markMissing('currDate');
+      const hasInvest = Number.isFinite(parsed.invest) && parsed.invest > 0;
+      const hasQty = Number.isFinite(parsed.qty) && parsed.qty > 0;
+      const hasIssueNav = Number.isFinite(parsed.issueNav) && parsed.issueNav > 0;
+      const hasCurrent = Number.isFinite(parsed.totalCurrent);
+      const hasNav = Number.isFinite(parsed.currNav) && parsed.currNav > 0;
+      if (!hasInvest && !hasQty) {
+          markMissing('invest');
+      } else if (!hasInvest && hasQty && !hasIssueNav) {
+          markMissing('issueNav');
+      }
+      if (!hasCurrent && !hasNav) {
+          markMissing('currNav', 'totalCurrent');
+      }
+  };
+
+  const init = () => {
+    elements.fxRate = document.getElementById('fx-rate');
+    elements.outCurrency = document.getElementById('out-curr');
+    elements.statusContainer = document.getElementById('status-container');
+    elements.toastContainer = document.getElementById('toast-container');
+    elements.lastSavedIndicator = document.getElementById('last-saved-indicator');
+    elements.providerSections = document.getElementById('provider-sections');
+    elements.fundsContainer = document.getElementById('funds-by-card-container');
+    elements.amountNoteFunds = document.getElementById('amount-note-funds');
+    elements.portfolioSummary = document.getElementById('portfolio-summary-content');
+    elements.amountNotePortfolio = document.getElementById('amount-note-portfolio');
+    elements.lineChartCard = document.getElementById('line-chart-card');
+    elements.pieChartCard = document.getElementById('pie-chart-card');
+    elements.chartsSection = document.getElementById('charts-section');
+    elements.lineChartContainer = document.getElementById('line-chart-container');
+    elements.pieChartContainer = document.getElementById('pie-chart-container');
+    elements.pieSlider = document.getElementById('pie-time-slider');
+    elements.sliderStartLabel = document.getElementById('slider-start-date-label');
+    elements.sliderCurrentLabel = document.getElementById('slider-current-date-label');
+    elements.sliderEndLabel = document.getElementById('slider-end-date-label');
+    elements.annuityInput = document.getElementById('annuity-input');
+    elements.annuityAnnual = document.getElementById('annuity-annual-equivalent');
+    elements.annuityResult = document.getElementById('annuity-result');
+    elements.annuityDisclaimer = document.getElementById('annuity-disclaimer');
+    elements.chartTooltip = document.getElementById('chart-tooltip');
+    elements.importFile = document.getElementById('import-file-input');
+    elements.clientNameInput = document.getElementById('client-name');
+    elements.clientSalutationInput = document.getElementById('client-salutation');
+    elements.clientPreferVykanieInput = document.getElementById('client-prefer-vykanie');
+    if (elements.clientNameInput) {
+        elements.clientNameInput.value = state.clientName;
+    }
+    if (elements.clientSalutationInput) {
+        elements.clientSalutationInput.value = state.clientSalutation;
+    }
+    if (elements.clientPreferVykanieInput) {
+        elements.clientPreferVykanieInput.checked = state.clientPreferVykanie;
+    }
+    const currentYearEl = document.getElementById('current-year');
+    if (currentYearEl) {
+        currentYearEl.textContent = new Date().getFullYear();
+    }
+    const providerContainer = elements.providerSections;
+    if (providerContainer) {
+        Object.keys(PROVIDERS).forEach(key => providerContainer.appendChild(createProviderSection(key)));
+    }
+    document.addEventListener('click', (e) => {
+        const button = e.target.closest('button[data-action]'); if (!button) return;
+        const { action, provider, id } = button.dataset;
+        if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: 'CZK' }); renderProviderInputs(provider, newId); }
+        if (action === 'delete-row') { const rowElement = button.closest('tr'); rowElement.className = 'fade-out'; rowElement.addEventListener('animationend', () => { state.rows[provider] = state.rows[provider].filter(r => r.id !== parseInt(id,10)); rowElement.remove(); scheduleRecalc(); saveState(); }); }
+        if (action === 'delete-all') { if (confirm(`Opravdu chcete smazat všechny řádky pro ${PROVIDERS[provider]}?`)) { state.rows[provider] = []; renderProviderInputs(provider); scheduleRecalc(); saveState(); } }
+        if (action === 'export-json') exportState();
+        if (action === 'import-json') elements.importFile?.click();
+        if (action === 'export-html') exportToStaticHTML();
+        if (action === 'add-sample') {
+            const today = new Date().toISOString().split('T')[0];
+            const SAMPLES = {
+                avant: [ { id: ++rowSeq, fund: 'r2p invest SICAV, a.s.', invest: '100000', dateIn: '15.03.2021', issueNav: '1.05', currNav: '1.25', currDate: today, curr: 'CZK' } ],
+                codya: [ { id: ++rowSeq, fund: 'CODYA Real Estate Fund', invest: '250000', dateIn: '20.11.2020', issueNav: '10.0', currNav: '14.2', currDate: today, curr: 'CZK' }, { id: ++rowSeq, fund: 'CODYA Opportunity', invest: '120000', dateIn: '10.01.2023', issueNav: '100', currNav: '118', currDate: today, curr: 'CZK' } ],
+                atris: [ { id: ++rowSeq, fund: 'ATRIS Global Equities', invest: '15000', dateIn: '30.05.2022', issueNav: '150', currNav: '195', currDate: today, curr: 'EUR' } ],
+                jt: [ { id: ++rowSeq, fund: 'J&T Opportunity CZK', invest: '500000', dateIn: '01.07.2019', issueNav: '1.0', currNav: '1.48', currDate: today, curr: 'CZK' } ]
+            };
+            const sampleData = SAMPLES[provider].map(s => ({...s, qty: '', totalCurrent: ''}));
+            state.rows[provider].push(...sampleData);
+            renderProviderInputs(provider); scheduleRecalc(); showToast(`Ukázková data pro ${PROVIDERS[provider]} byla načtena.`); saveState();
+        }
+    });
+    elements.fxRate?.addEventListener('input', scheduleRecalc);
+    elements.outCurrency?.addEventListener('change', scheduleRecalc);
+    elements.annuityInput?.addEventListener('input', calculateAnnuity);
+    elements.clientNameInput?.addEventListener('input', (e) => {
+        state.clientName = e.target.value;
+        saveState();
+    });
+    elements.clientNameInput?.addEventListener('blur', (e) => {
+        const trimmed = e.target.value.trim();
+        if (trimmed !== e.target.value) {
+            e.target.value = trimmed;
+        }
+        state.clientName = trimmed;
+        saveState();
+    });
+    elements.clientSalutationInput?.addEventListener('input', (e) => {
+        state.clientSalutation = e.target.value;
+        saveState();
+    });
+    elements.clientSalutationInput?.addEventListener('blur', (e) => {
+        const trimmed = e.target.value.trim();
+        if (trimmed !== e.target.value) {
+            e.target.value = trimmed;
+        }
+        state.clientSalutation = trimmed;
+        saveState();
+    });
+    elements.clientPreferVykanieInput?.addEventListener('change', (e) => {
+        state.clientPreferVykanie = e.target.checked;
+        saveState();
+    });
+    const providerSections = elements.providerSections;
+    if (providerSections) {
+        providerSections.addEventListener('input', (e) => {
+            if (e.target.matches('input, select')) handleInputChange(e);
+        });
+        providerSections.addEventListener('focusout', (e) => {
+            if (e.target.isContentEditable) handleInputChange(e);
+            const key = e.target.dataset.key;
+            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+                const num = utils.numCZ(e.target.value);
+                if (isFinite(num)) {
+                    e.target.value = fmt0.format(num);
+                } else {
+                    e.target.value = '';
+                }
+            }
+        });
+        providerSections.addEventListener('focusin', (e) => {
+            const key = e.target.dataset.key;
+            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+                const num = utils.numCZ(e.target.value);
+                if (isFinite(num)) {
+                    e.target.value = num;
+                }
+            }
+        });
+        providerSections.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); } });
+    }
+    elements.annuityInput?.addEventListener('focusin', (e) => {
+        const num = utils.numCZ(e.target.value);
+        if (isFinite(num)) {
+            e.target.value = num;
+        }
+    });
+    elements.annuityInput?.addEventListener('focusout', (e) => {
+        const num = utils.numCZ(e.target.value);
+        if (isFinite(num)) {
+            e.target.value = fmt0.format(num);
+        } else {
+            e.target.value = '';
+        }
+    });
+    elements.importFile?.addEventListener('change', (e) => { if (e.target.files.length > 0) { importState(e.target.files[0]); e.target.value = ''; } });
+    elements.pieSlider?.addEventListener('input', updatePieChartFromSlider);
+    const tooltip = elements.chartTooltip || document.getElementById('chart-tooltip');
+    document.addEventListener('mousemove', e => {
+        let newLeft = e.pageX + 15;
+        let newTop = e.pageY + 15;
+        if (tooltip.offsetWidth && newLeft + tooltip.offsetWidth > window.innerWidth) {
+            newLeft = e.pageX - tooltip.offsetWidth - 15;
+        }
+        tooltip.style.left = `${newLeft}px`;
+        tooltip.style.top = `${newTop}px`;
+    });
+    document.addEventListener('mouseover', e => {
+        const segment = e.target.closest('.pie-segment');
+        const dot = e.target.closest('.line-chart-dot, circle[data-tooltip-text]');
+        if (segment) {
+            tooltip.innerHTML = `<div class="font-bold text-primary">${segment.dataset.name}</div><div class="text-body">${segment.dataset.value} (${segment.dataset.percent})</div>`;
+            tooltip.classList.remove('hidden');
+            tooltip.style.opacity = '1';
+        } else if (dot && dot.dataset.tooltipText) {
+            tooltip.innerHTML = dot.dataset.tooltipText.replace(/&quot;/g, '"');
+            tooltip.classList.remove('hidden');
+            tooltip.style.opacity = '1';
+        }
+    });
+    document.addEventListener('mouseout', e => {
+        if (e.target.closest('.pie-segment, .line-chart-dot, circle[data-tooltip-text]')) {
+            tooltip.classList.add('hidden');
+            tooltip.style.opacity = '0';
+        }
+    });
+    loadState();
+  };
+  init();
+});
+</script>
+</body>
+</html>
