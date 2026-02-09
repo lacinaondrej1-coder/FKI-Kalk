@@ -961,6 +961,10 @@ document.addEventListener('DOMContentLoaded', () => {
       chart: { snapThresholdPx: 10, guideLineWidth: 1, dotRadius: 4 },
       sections: ['avant', 'codya', 'atris', 'jt'],
       providers: { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' },
+      transactionTypes: [
+          { value: 'payment', label: 'Platba', sign: 1 },
+          { value: 'redemption', label: 'Odkup', sign: -1 }
+      ],
       texts: {
           pageTitle: 'Report investičního portfolia',
           inputsHint: 'Spravujte transakce a sledujte výkonnost jednotlivých fondů.'
@@ -1519,7 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const section = document.createElement('section');
       section.className = 'card p-7 sm:p-8 space-y-6';
-      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">${CONFIG.texts.inputsHint}</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Upis. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">${CONFIG.texts.inputsHint}</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-left">Typ transakce</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum transakce</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Trans. NAV</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
       return section;
   };
   const createInputRow = (providerKey, rowData) => {
@@ -1555,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', () => {
           input.type = type;
           input.className = `glass-input px-2.5 py-1.5 rounded-lg border w-full transition-all text-primary ${extraClass}`;
           let displayValue = rowData[key] || '';
-          if (['invest', 'totalCurrent'].includes(key)) {
+          if (['invest'].includes(key)) {
               const num = utils.numCZ(displayValue);
               if (isFinite(num)) {
                   displayValue = fmt0.format(num);
@@ -1579,6 +1583,19 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           return select;
       };
+      const createTransactionTypeSelect = () => {
+          const select = document.createElement('select');
+          select.className = 'glass-input px-2.5 py-1.5 rounded-lg border w-full bg-white text-primary';
+          select.dataset.key = 'txType';
+          CONFIG.transactionTypes.forEach(type => {
+              const option = document.createElement('option');
+              option.value = type.value;
+              option.textContent = type.label;
+              if ((rowData.txType || 'payment') === type.value) option.selected = true;
+              select.appendChild(option);
+          });
+          return select;
+      };
       const delBtnCell = document.createElement('td');
       delBtnCell.className = 'py-1 text-right';
       const delBtn = document.createElement('button');
@@ -1591,12 +1608,12 @@ document.addEventListener('DOMContentLoaded', () => {
       delBtnCell.appendChild(delBtn);
       tr.append(
           nameCell,
+          createCell(createTransactionTypeSelect()),
           createCell(createInput('invest', 'text', 'tabular text-right')),
           createCell(createInput('dateIn', 'text')),
           createCell(createInput('qty', 'text', 'tabular text-right')),
           createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-subtle')),
           createCell(createInput('currNav', 'text', 'tabular text-right')),
-          createCell(createInput('totalCurrent', 'text', 'tabular text-right')),
           createCell(createInput('currDate', 'text', 'border-l border-subtle')),
           createCell(createSelect('curr')),
           delBtnCell
@@ -1621,35 +1638,39 @@ document.addEventListener('DOMContentLoaded', () => {
       id: r.id,
       fund: utils.normName(r.fund),
       invest: utils.numCZ(r.invest),
-      totalCurrent: utils.numCZ(r.totalCurrent),
       dateIn: utils.toDate(r.dateIn),
       qty: utils.numCZ(r.qty),
       issueNav: utils.numCZ(r.issueNav),
       currNav: utils.numCZ(r.currNav),
       currDate: utils.toDate(r.currDate),
       curr: r.curr || CONFIG.currency.default,
+      txType: r.txType || 'payment',
       /* PATCH */
       freeze: !!r.freeze,
   });
+  const getTransactionSign = (txType) => {
+      const match = CONFIG.transactionTypes.find(type => type.value === txType);
+      return match ? match.sign : 1;
+  };
   const getRowStatus = (p) => {
       let missing = [];
       let conflicts = [];
-      const hasTotalPath = isFinite(p.invest) && p.invest > 0 && isFinite(p.totalCurrent) && p.totalCurrent > 0 && p.dateIn && p.currDate;
       const hasUnitPath = isFinite(p.issueNav) && p.issueNav > 0 && isFinite(p.currNav) && p.currNav > 0 && (isFinite(p.qty) || isFinite(p.invest)) && p.dateIn && p.currDate;
       if (!p.fund) missing.push('název fondu');
-      if (!p.dateIn) missing.push('datum připsání');
+      if (!p.dateIn) missing.push('datum transakce');
       if (!p.currDate) missing.push('datum ocenění');
-      if (!hasTotalPath && !hasUnitPath) missing.push('min. vstupů');
-      const calculatedInvest = p.qty * p.issueNav;
-      if(isFinite(p.invest) && isFinite(calculatedInvest) && Math.abs(p.invest - calculatedInvest) > 1e-2) conflicts.push(`Investice ≠ Počet CP × Upis. NAV`);
-      const calculatedCurrent = p.qty * p.currNav;
-      if(isFinite(p.totalCurrent) && isFinite(calculatedCurrent) && Math.abs(p.totalCurrent - calculatedCurrent) > 1e-2) conflicts.push(`Akt. hodnota ≠ Počet CP × Posl. NAV`);
+      if (!hasUnitPath) missing.push('min. vstupů');
+      const txSign = getTransactionSign(p.txType);
+      const normalizedInvest = isFinite(p.invest) ? Math.abs(p.invest) * txSign : NaN;
+      const normalizedQty = isFinite(p.qty) ? Math.abs(p.qty) * txSign : NaN;
+      const calculatedInvest = normalizedQty * p.issueNav;
+      if(isFinite(normalizedInvest) && isFinite(calculatedInvest) && Math.abs(normalizedInvest - calculatedInvest) > 1e-2) conflicts.push(`Investice ≠ Počet CP × Trans. NAV`);
       if (conflicts.length > 0) return ['conflict', conflicts.join('; ')];
       if (missing.length > 0) return ['error', `Chybějící pole: ${missing.join(', ')}`];
       return ['ok', ''];
   };
   const processAllRows = () => {
-      const processedFunds = [];
+      const transactions = [];
       const allCurrencies = new Set();
       Object.entries(state.rows).forEach(([providerKey, providerRows]) => {
           providerRows.forEach(rawRow => {
@@ -1661,62 +1682,97 @@ document.addEventListener('DOMContentLoaded', () => {
               if (providerKey === 'atris' && p.dateIn) {
                   effectiveDateIn = new Date(p.dateIn.getFullYear(), p.dateIn.getMonth() + 1, 5);
               }
+              const txSign = getTransactionSign(p.txType);
               let invest = p.invest;
               let qty = p.qty;
-              let current = p.totalCurrent;
-              if (!isFinite(qty) && isFinite(p.invest) && isFinite(p.issueNav) && p.issueNav > 0) qty = p.invest / p.issueNav;
-              if (!isFinite(invest) && isFinite(p.qty) && isFinite(p.issueNav) && p.issueNav > 0) invest = p.qty * p.issueNav;
-              if (!isFinite(current) && isFinite(qty) && isFinite(p.currNav) && p.currNav > 0) current = qty * p.currNav;
-              if (!isFinite(invest) || !isFinite(current) || !effectiveDateIn || !p.currDate) return;
-            /* PATCH */
-            const valuationDate = p.currDate;
-            /* PATCH */
-            const hasValidValuation = !!(effectiveDateIn && valuationDate && valuationDate >= effectiveDateIn);
-            const months = utils.monthsDiff(effectiveDateIn, valuationDate);
-            const ret = (isFinite(invest) && invest > 0 && isFinite(current)) ? (current / invest - 1) : NaN;
-            /* PATCH */
-            const irr = (hasValidValuation && isFinite(invest) && invest > 0 && isFinite(current))
-                ? finance.xirr([{ date: effectiveDateIn, amount: -invest }, { date: valuationDate, amount: current }])
-                : NaN;
-            processedFunds.push({
-                ...p,
-                invest, qty, current,
-                pnl: isFinite(invest) && isFinite(current) ? current - invest : NaN,
-                ret, months, irr,
-                dateIn: effectiveDateIn,
-                originalDateIn: p.dateIn,
-                /* PATCH */ hasValidValuation,
-                /* PATCH */ freeze: !!p.freeze
-            });
-        });
-    });
-      const { funds, hasMixedCurrencies: hasMixed } = { funds: processedFunds, hasMixedCurrencies: allCurrencies.size > 1 };
+              if (isFinite(invest)) invest = Math.abs(invest) * txSign;
+              if (isFinite(qty)) qty = Math.abs(qty) * txSign;
+              if (!isFinite(qty) && isFinite(invest) && isFinite(p.issueNav) && p.issueNav > 0) qty = invest / p.issueNav;
+              if (!isFinite(invest) && isFinite(qty) && isFinite(p.issueNav) && p.issueNav > 0) invest = qty * p.issueNav;
+              if (!isFinite(invest) || !isFinite(qty) || !effectiveDateIn || !p.currDate || !isFinite(p.currNav) || !isFinite(p.issueNav)) return;
+              transactions.push({
+                  ...p,
+                  invest,
+                  qty,
+                  dateIn: effectiveDateIn,
+                  originalDateIn: p.dateIn,
+                  freeze: !!p.freeze
+              });
+          });
+      });
+      const grouped = transactions.reduce((acc, tx) => {
+          if (!tx.fund) return acc;
+          if (!acc[tx.fund]) acc[tx.fund] = [];
+          acc[tx.fund].push(tx);
+          return acc;
+      }, {});
+      const funds = Object.entries(grouped).map(([fundName, txs]) => {
+          const sortedTxs = txs.slice().sort((a, b) => a.dateIn - b.dateIn);
+          const latestValuation = sortedTxs.reduce((latest, tx) => {
+              if (!tx.currDate) return latest;
+              if (!latest || tx.currDate > latest.currDate) return { currDate: tx.currDate, currNav: tx.currNav };
+              return latest;
+          }, null);
+          const valuationDate = latestValuation?.currDate || null;
+          const valuationNav = latestValuation?.currNav;
+          const remainingQty = sortedTxs.reduce((sum, tx) => sum + (Number.isFinite(tx.qty) ? tx.qty : 0), 0);
+          const investedTotal = sortedTxs.reduce((sum, tx) => sum + (tx.invest > 0 ? tx.invest : 0), 0);
+          const redeemedTotal = sortedTxs.reduce((sum, tx) => sum + (tx.invest < 0 ? Math.abs(tx.invest) : 0), 0);
+          const currentValue = Number.isFinite(remainingQty) && Number.isFinite(valuationNav) ? remainingQty * valuationNav : NaN;
+          const hasValidValuation = !!(valuationDate && sortedTxs[0]?.dateIn && valuationDate >= sortedTxs[0].dateIn);
+          const cfs = sortedTxs
+              .filter(tx => tx.dateIn instanceof Date && !isNaN(tx.dateIn) && Number.isFinite(tx.invest))
+              .map(tx => ({ date: tx.dateIn, amount: -tx.invest }));
+          if (hasValidValuation && Number.isFinite(currentValue)) {
+              cfs.push({ date: valuationDate, amount: currentValue });
+          }
+          const fundIrr = cfs.length > 1 ? finance.xirr(cfs) : NaN;
+          const investedForDuration = sortedTxs.filter(tx => Number.isFinite(tx.invest) && tx.invest > 0);
+          const weightedDurationSum = investedForDuration.reduce((sum, tx) => {
+              if (!valuationDate) return sum;
+              const months = utils.monthsDiff(tx.dateIn, valuationDate);
+              return sum + (tx.invest * months);
+          }, 0);
+          const weightedAvgMonths = investedTotal > 0 ? weightedDurationSum / investedTotal : NaN;
+          const isFrozenFund = sortedTxs.every(tx => tx.freeze);
+          return {
+              fund: fundName,
+              curr: sortedTxs[0]?.curr || CONFIG.currency.default,
+              currNav: valuationNav,
+              currDate: valuationDate,
+              remainingQty,
+              currentValue,
+              investedTotal,
+              redeemedTotal,
+              netProfit: (Number.isFinite(currentValue) ? currentValue : 0) + redeemedTotal - investedTotal,
+              irr: fundIrr,
+              weightedAvgMonths,
+              transactions: sortedTxs,
+              freeze: isFrozenFund
+          };
+      });
       const outCurr = getOutCurrency();
       const fxRate = utils.numCZ(elements.fxRate?.value);
-      const portfolioSummary = calculateSummary(funds, outCurr, fxRate);
+      const portfolioSummary = calculateSummary(funds, transactions, outCurr, fxRate);
       const activeFunds = funds.filter(f => !f.freeze);
-      state.lastProcessedData = { funds, activeFunds, hasMixedCurrencies: hasMixed, portfolioSummary };
+      const activeTransactions = transactions.filter(tx => !tx.freeze);
+      const hasMixed = allCurrencies.size > 1;
+      state.lastProcessedData = { funds, transactions, activeFunds, activeTransactions, hasMixedCurrencies: hasMixed, portfolioSummary };
       return state.lastProcessedData;
   };
 
   const validateData = (funds, { hasMixedCurrencies = false, fxRate = NaN } = {}) => {
       const issues = [];
-      const hasAnyAmount = funds.some(f => (isFinite(f.invest) && f.invest !== 0) || (isFinite(f.current) && f.current !== 0));
+      const hasAnyAmount = funds.some(f => (isFinite(f.investedTotal) && f.investedTotal !== 0) || (isFinite(f.redeemedTotal) && f.redeemedTotal !== 0) || (isFinite(f.currentValue) && f.currentValue !== 0));
       if (!hasAnyAmount) {
           issues.push('Zadaná data neobsahují žádné investice ani aktuální hodnoty.');
       }
       if (hasMixedCurrencies && !(Number.isFinite(fxRate) && fxRate > 0)) {
           issues.push('Při více měnách je nutné doplnit kurz EUR/CZK.');
       }
-      let seenDeposit = false;
-      const illogicalFlow = funds.some(f => {
-          if (isFinite(f.invest) && f.invest > 0) {
-              seenDeposit = true;
-          }
-          return !seenDeposit && isFinite(f.current) && f.current < 0;
-      });
-      if (illogicalFlow) {
-          issues.push('Detekováno nelogické cashflow: záporná hodnota před prvním vkladem.');
+      const negativePosition = funds.some(f => Number.isFinite(f.remainingQty) && f.remainingQty < 0);
+      if (negativePosition) {
+          issues.push('Detekována záporná pozice fondu: odkup přesahuje počet držených CP.');
       }
       return issues;
   };
@@ -1742,6 +1798,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const sumInvest = dataSample.reduce((s, r) => s + r.invest, 0);
       const sumCurrent = dataSample.reduce((s, r) => s + r.current, 0);
       addResult('Součet vkladů a hodnot', sumInvest === 1500 && sumCurrent === 1650, `Investováno ${sumInvest}, hodnota ${sumCurrent}`);
+      const testTransactions = [
+          { invest: 1000, qty: 100, issueNav: 10, currNav: 12 },
+          { invest: -200, qty: -20, issueNav: 10, currNav: 12 }
+      ];
+      const remainingQty = testTransactions.reduce((sum, t) => sum + t.qty, 0);
+      const currentValue = remainingQty * 12;
+      const cashflows = testTransactions.map(t => -t.invest);
+      const cashflowSignsOk = cashflows[0] < 0 && cashflows[1] > 0;
+      addResult('Platba + odkup + aktuální hodnota', remainingQty === 80 && currentValue === 960 && cashflowSignsOk, `Qty ${remainingQty}, hodnota ${currentValue}, CF ${cashflows.join(', ')}`);
       console.groupCollapsed('Self-test výsledky');
       results.forEach(r => console.log(`${r.pass ? '✅' : '❌'} ${r.name}`, r.detail));
       console.groupEnd();
@@ -1762,7 +1827,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const recalculateAndRender = () => {
-    const { funds, activeFunds, hasMixedCurrencies, portfolioSummary } = processAllRows();
+    const { funds, transactions, activeFunds, activeTransactions, hasMixedCurrencies, portfolioSummary } = processAllRows();
     const outCurr = getOutCurrency();
     const fxRate = utils.numCZ(elements.fxRate?.value);
     const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
@@ -1775,25 +1840,25 @@ document.addEventListener('DOMContentLoaded', () => {
             statusContainer.innerHTML = '';
         }
     }
-    renderResults(funds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
+    renderResults(funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
     calculateAnnuity();
   };
-  const renderResults = (funds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
-    const groupedFunds = funds.reduce((acc, f) => { if(!f.fund) return acc; const key = f.fund; if (!acc[key]) acc[key] = []; acc[key].push(f); return acc; }, {});
-    Object.values(groupedFunds).forEach(group => group.sort((a, b) => a.dateIn - b.dateIn));
-    Object.keys(groupedFunds).forEach(name => getColor(name));
-    renderFundsByCard(groupedFunds, outCurr, fxRate);
+  const renderResults = (funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
+    funds.forEach(fund => getColor(fund.fund));
+    renderFundsByCard(funds, outCurr, fxRate);
     const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
     renderSummary(portfolioSummary, outCurr, { hasMixedCurrencies, hasFx: hasValidFx });
-    renderCharts(groupedFunds, funds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
+    renderCharts(funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
   };
 
-  const calculateSummary = (funds, outCurr, fxRate) => {
+  const calculateSummary = (funds, transactions, outCurr, fxRate) => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     const activeFunds = funds.filter(f => !f.freeze);
     let totalInvestAll = 0;
+    let totalRedeemedAll = 0;
     let totalCurrentAll = 0;
     let totalInvestActive = 0;
+    let totalRedeemedActive = 0;
     let totalCurrentActive = 0;
     let weightedDurationSum = 0;
     let minValuationDate = null;
@@ -1804,46 +1869,48 @@ document.addEventListener('DOMContentLoaded', () => {
     let irrCurrentTotal = 0;
     const cfsForIrr = [];
     funds.forEach(r => {
-        const convertedInvest = convert(r.invest, r.curr);
-        const convertedCurrent = convert(r.current, r.curr);
-        if (isFinite(convertedInvest)) {
-            totalInvestAll += convertedInvest;
-        }
-        if (isFinite(convertedCurrent)) {
-            totalCurrentAll += convertedCurrent;
-        }
+        const convertedInvest = convert(r.investedTotal, r.curr);
+        const convertedRedeemed = convert(r.redeemedTotal, r.curr);
+        const convertedCurrent = convert(r.currentValue, r.curr);
+        if (isFinite(convertedInvest)) totalInvestAll += convertedInvest;
+        if (isFinite(convertedRedeemed)) totalRedeemedAll += convertedRedeemed;
+        if (isFinite(convertedCurrent)) totalCurrentAll += convertedCurrent;
         if (r.currDate) {
             if (!minValuationDate || r.currDate < minValuationDate) minValuationDate = r.currDate;
             if (!maxValuationDate || r.currDate > maxValuationDate) maxValuationDate = r.currDate;
         }
     });
     activeFunds.forEach(r => {
-        const convertedInvest = convert(r.invest, r.curr);
-        const convertedCurrent = convert(r.current, r.curr);
+        const convertedInvest = convert(r.investedTotal, r.curr);
+        const convertedRedeemed = convert(r.redeemedTotal, r.curr);
+        const convertedCurrent = convert(r.currentValue, r.curr);
         if (isFinite(convertedInvest)) {
             totalInvestActive += convertedInvest;
-            if (r.hasValidValuation) {
-                cfsForIrr.push({ date: r.dateIn, amount: -convertedInvest });
-                if (isFinite(r.months)) {
-                    weightedDurationSum += convertedInvest * r.months;
-                }
+            if (isFinite(r.weightedAvgMonths)) {
+                weightedDurationSum += convertedInvest * r.weightedAvgMonths;
             }
         }
+        if (isFinite(convertedRedeemed)) totalRedeemedActive += convertedRedeemed;
         if (isFinite(convertedCurrent)) {
             totalCurrentActive += convertedCurrent;
-            if (r.hasValidValuation) {
-                irrCurrentTotal += convertedCurrent;
-                if (r.currDate && (!latestIrrDate || r.currDate > latestIrrDate)) {
-                    latestIrrDate = r.currDate;
-                }
+            irrCurrentTotal += convertedCurrent;
+            if (r.currDate && (!latestIrrDate || r.currDate > latestIrrDate)) {
+                latestIrrDate = r.currDate;
             }
+        }
+    });
+    const irrTransactions = Array.isArray(transactions) ? transactions : [];
+    irrTransactions.filter(tx => !tx.freeze).forEach(tx => {
+        const convertedAmount = convert(tx.invest, tx.curr);
+        if (Number.isFinite(convertedAmount) && tx.dateIn instanceof Date && !isNaN(tx.dateIn)) {
+            cfsForIrr.push({ date: tx.dateIn, amount: -convertedAmount });
         }
     });
     if (cfsForIrr.length > 0 && isFinite(irrCurrentTotal) && latestIrrDate) {
         cfsForIrr.push({ date: latestIrrDate, amount: irrCurrentTotal });
     }
-    const totalPnlAll = totalCurrentAll - totalInvestAll;
-    const totalPnlActive = totalCurrentActive - totalInvestActive;
+    const totalPnlAll = totalCurrentAll + totalRedeemedAll - totalInvestAll;
+    const totalPnlActive = totalCurrentActive + totalRedeemedActive - totalInvestActive;
     /* PATCH */
     const totalRetAll = totalInvestAll > 0 ? (totalPnlAll / totalInvestAll) : NaN;
     /* PATCH */
@@ -1852,6 +1919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const weightedAvgMonths = totalInvestActive > 0 ? weightedDurationSum / totalInvestActive : NaN;
     return {
         totalInvestConverted: totalInvestAll,
+        totalRedeemedConverted: totalRedeemedAll,
         totalCurrentConverted: totalCurrentAll,
         totalPnl: totalPnlAll,
         /* PATCH */
@@ -1860,9 +1928,11 @@ document.addEventListener('DOMContentLoaded', () => {
         weightedAvgMonths,
         minValuationDate,
         maxValuationDate,
-        hasData: totalInvestAll > 0 || totalCurrentAll > 0,
+        hasData: totalInvestAll > 0 || totalCurrentAll > 0 || totalRedeemedAll > 0,
         /* PATCH */
         totalInvestActive,
+        /* PATCH */
+        totalRedeemedActive,
         /* PATCH */
         totalCurrentActive,
         /* PATCH */
@@ -1870,13 +1940,13 @@ document.addEventListener('DOMContentLoaded', () => {
         /* PATCH */
         totalRetActive,
         /* PATCH */
-        hasActive: totalInvestActive > 0 || totalCurrentActive > 0,
+        hasActive: totalInvestActive > 0 || totalCurrentActive > 0 || totalRedeemedActive > 0,
         /* PATCH */
         hasFrozen: activeFunds.length !== funds.length
     };
   };
 
-  const renderFundsByCard = (groupedFunds, outCurr, fxRate, options = {}) => {
+  const renderFundsByCard = (funds, outCurr, fxRate, options = {}) => {
       const { isStaticExport = false, container: providedContainer } = options;
       const container = providedContainer || elements.fundsContainer || document.getElementById('funds-by-card-container');
       if (!isStaticExport && !container) return '';
@@ -1895,7 +1965,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const languageOverride = isStaticExport ? (options.language || 'cs') : 'cs';
 
       const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
-      const fundEntries = Object.entries(groupedFunds);
+      const fundEntries = Array.isArray(funds) ? funds : [];
 
       if (!isStaticExport && elements.amountNoteFunds) {
           elements.amountNoteFunds.textContent = `Částky v ${outCurr}`;
@@ -1918,71 +1988,28 @@ document.addEventListener('DOMContentLoaded', () => {
           return `<div class="fund-export__metric"><span class="metric-label">${label}</span><span class="metric-value ${extraClass}">${value}</span>${note ? `<span class="metric-sub">${note}</span>` : ''}</div>`;
       }).join('');
 
-      const cards = fundEntries.map(([name, investments]) => {
-          investments.sort((a, b) => a.dateIn - b.dateIn);
-          let totalInvest = 0;
-          let totalCurrent = 0;
-          let weightedDurationSum = 0;
-          /* PATCH */
-          const cfs = [];
-          /* PATCH */
-          let irrCurrentTotal = 0;
-
-          investments.forEach(inv => {
-              const invConverted = convert(inv.invest, inv.curr);
-              const currConverted = convert(inv.current, inv.curr);
-              if (isFinite(invConverted)) {
-                  totalInvest += invConverted;
-                  /* PATCH */
-                  if (inv.hasValidValuation) {
-                      cfs.push({ date: inv.dateIn, amount: -invConverted });
-                  }
-                  if (isFinite(inv.months)) {
-                      weightedDurationSum += invConverted * inv.months;
-                  }
-              }
-              if (isFinite(currConverted)) {
-                  totalCurrent += currConverted;
-                  /* PATCH */
-                  if (inv.hasValidValuation) {
-                      irrCurrentTotal += currConverted;
-                  }
-              }
-          });
-
-          const latestDate = investments.reduce((max, entry) => (entry.currDate && entry.currDate > max ? entry.currDate : max), new Date(0));
-          /* PATCH */
-          const latestValidDate = investments.reduce((max, entry) => {
-              if (entry.hasValidValuation && entry.currDate && (!max || entry.currDate > max)) {
-                  return entry.currDate;
-              }
-              return max;
-          }, null);
-          /* PATCH */
-          if (cfs.length > 0 && latestValidDate) {
-              cfs.push({ date: latestValidDate, amount: irrCurrentTotal });
-          }
-
-          /* PATCH */
-          const fundIrr = cfs.length > 1 ? finance.xirr(cfs) : NaN;
-          const pnl = totalCurrent - totalInvest;
-          /* PATCH */
-          const isFrozenFund = investments.every(inv => inv.freeze);
-          /* PATCH */
+      const cards = fundEntries.map((fund) => {
+          const transactions = Array.isArray(fund.transactions) ? fund.transactions : [];
+          const totalInvest = convert(fund.investedTotal, fund.curr);
+          const totalRedeemed = convert(fund.redeemedTotal, fund.curr);
+          const totalCurrent = convert(fund.currentValue, fund.curr);
+          const pnl = (Number.isFinite(totalCurrent) ? totalCurrent : 0) + (Number.isFinite(totalRedeemed) ? totalRedeemed : 0) - (Number.isFinite(totalInvest) ? totalInvest : 0);
+          const fundIrr = fund.irr;
+          const weightedAvgMonths = fund.weightedAvgMonths;
+          const isFrozenFund = !!fund.freeze;
           const frozenLabel = languageOverride === 'en' ? 'Frozen' : 'Zmrazeno';
-          /* PATCH */
           const freezeBadgeInteractive = isFrozenFund ? `<span class="freeze-badge">${frozenLabel}</span>` : '';
-          /* PATCH */
           const freezeBadgeExport = freezeBadgeInteractive;
-          const weightedAvgMonths = totalInvest > 0 ? weightedDurationSum / totalInvest : NaN;
-          const fundColor = getColor(name);
+          const fundColor = getColor(fund.fund);
           const pnlClass = pnl >= 0 ? 'text-positive' : 'text-negative';
           const irrClass = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
-          const safeName = htmlEscape(name);
+          const safeName = htmlEscape(fund.fund);
+          const latestDate = fund.currDate || null;
 
           const metrics = isStaticExport && staticCopy
               ? [
                   { label: staticCopy.metrics.invested, value: formatCurrency0(totalInvest, outCurr, currencyFormat) },
+                  { label: staticCopy.metrics.redeemed, value: formatCurrency0(totalRedeemed, outCurr, currencyFormat) },
                   { label: staticCopy.metrics.current, value: formatCurrency0(totalCurrent, outCurr, currencyFormat) },
                   { label: staticCopy.metrics.pnl, value: formatCurrency0(pnl, outCurr, currencyFormat), extraClass: pnlClass },
                   { label: staticCopy.metrics.irr, value: formatXirr1(fundIrr, { ...percentFormat, language: languageOverride }), extraClass: irrClass },
@@ -1990,51 +2017,47 @@ document.addEventListener('DOMContentLoaded', () => {
               ]
               : [
                   { label: 'Investováno', value: formatCurrency0(totalInvest, outCurr) },
+                  { label: 'Odkoupeno', value: formatCurrency0(totalRedeemed, outCurr) },
                   { label: 'Aktuální hodnota', value: formatCurrency0(totalCurrent, outCurr) },
-                  { label: 'Čistý výnos', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
+                  { label: 'Čistý zisk po odkupech', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
                   { label: 'Průměrný roční výnos (XIRR)', value: formatXirr1(fundIrr) , extraClass: irrClass },
                   { label: 'Průměrná doba investice', value: formatMonths0(weightedAvgMonths) }
               ];
 
-          const transactionRows = investments.map((inv, index) => {
-              const convertedCurrent = convert(inv.current, inv.curr);
-              const convertedInvest = convert(inv.invest, inv.curr);
-              const convertedPnl = isFinite(convertedCurrent) && isFinite(convertedInvest) ? convertedCurrent - convertedInvest : NaN;
-              const displayDate = inv.originalDateIn || inv.dateIn;
+          const transactionRows = transactions.map((tx, index) => {
+              const convertedInvest = convert(tx.invest, tx.curr);
+              const convertedQty = tx.qty;
+              const displayDate = tx.originalDateIn || tx.dateIn;
+              const typeLabel = (CONFIG.transactionTypes.find(type => type.value === tx.txType)?.label) || 'Platba';
               if (isStaticExport && staticCopy) {
-                  const rowLabel = index === 0 ? staticCopy.transactionFirst : staticCopy.transactionNext(index);
                   const dateLabel = displayDate ? formatDateByLanguage(displayDate, languageOverride) : 'N/A';
                   return `<tr>
-                <td>${htmlEscape(rowLabel)} <span class="muted">(${htmlEscape(dateLabel)})</span></td>
+                <td>${htmlEscape(typeLabel)} <span class="muted">(${htmlEscape(dateLabel)})</span></td>
                 <td class="text-right">${formatCurrency0(convertedInvest, outCurr, currencyFormat)}</td>
-                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency0(convertedPnl, outCurr, currencyFormat)}</td>
-                <td class="text-right">${formatCurrency0(convertedCurrent, outCurr, currencyFormat)}</td>
-                <td class="text-right">${formatMonths0(inv.months, { ...monthsFormat, language: languageOverride })}</td>
-                <td class="text-right">${formatXirr1(inv.irr, { ...percentFormat, language: languageOverride })}</td>
+                <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
+                <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr, currencyFormat)}</td>
               </tr>`;
               }
               return `<tr>
-                <td>${index === 0 ? 'První vklad' : `Dokup #${index}`} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
+                <td>${typeLabel} <span class="muted">(${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'})</span></td>
                 <td class="text-right">${formatCurrency0(convertedInvest, outCurr)}</td>
-                <td class="text-right ${convertedPnl >= 0 ? 'text-positive' : 'text-negative'}">${formatCurrency0(convertedPnl, outCurr)}</td>
-                <td class="text-right">${formatCurrency0(convertedCurrent, outCurr)}</td>
-                <td class="text-right">${formatMonths0(inv.months)}</td>
-                <td class="text-right">${formatXirr1(inv.irr)}</td>
+                <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
+                <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr)}</td>
               </tr>`;
           }).join('');
 
           if (isStaticExport) {
               const metricsHtml = buildMetrics(metrics, 'static');
-              const initials = getFundInitials(name);
+              const initials = getFundInitials(fund.fund);
               /* PATCH */
               const metaChipSource = staticCopy?.metaChips
                   ? [
-                      staticCopy.metaChips.transactions(investments.length),
+                      staticCopy.metaChips.transactions(transactions.length),
                       latestDate ? staticCopy.metaChips.valuation(formatDateByLanguage(latestDate, languageOverride)) : null,
                       staticCopy.metaChips.currency(outCurr)
                   ]
                   : [
-                      `Transakcí ${investments.length}`,
+                      `Transakcí ${transactions.length}`,
                       latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
                       `Cílová měna ${outCurr}`
                   ];
@@ -2057,11 +2080,9 @@ document.addEventListener('DOMContentLoaded', () => {
       <thead>
         <tr>
           <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.transaction) : 'Transakce'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.invested) : 'Investice'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.pnl) : 'Výnos'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.current) : 'Aktuální hodnota'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.months) : 'Doba držení'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.irr) : 'Prům. roční výnos'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.amount) : 'Částka'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.qty) : 'Počet CP'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.nav) : 'Trans. NAV'}</th>
         </tr>
       </thead>
       <tbody>${transactionRows}</tbody>
@@ -2071,10 +2092,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           const metricsHtml = buildMetrics(metrics);
-          const initials = getFundInitials(name);
+          const initials = getFundInitials(fund.fund);
           /* PATCH */
           const metaChipList = [
-              `Transakcí ${investments.length}`,
+              `Transakcí ${transactions.length}`,
               latestDate ? `Ocenění ${latestDate.toLocaleDateString('cs-CZ')}` : null,
               `Cílová měna ${outCurr}`
           ];
@@ -2104,11 +2125,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <thead>
             <tr>
               <th>Transakce</th>
-              <th class="text-right">Investice</th>
-              <th class="text-right">Výnos</th>
-              <th class="text-right">Aktuální hodnota</th>
-              <th class="text-right">Doba držení</th>
-              <th class="text-right">Prům. roční výnos</th>
+              <th class="text-right">Částka</th>
+              <th class="text-right">Počet CP</th>
+              <th class="text-right">Trans. NAV</th>
             </tr>
           </thead>
           <tbody>${transactionRows}</tbody>
@@ -2160,7 +2179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { totalInvestConverted, totalCurrentConverted, totalPnl, totalRet, portfolioIrr, weightedAvgMonths, minValuationDate, maxValuationDate } = summaryData;
     /* PATCH */
     const displayRetAll = (isFinite(totalInvestConverted) && totalInvestConverted > 0)
-        ? ((totalCurrentConverted - totalInvestConverted) / totalInvestConverted)
+        ? (totalPnl / totalInvestConverted)
         : totalRet;
     const pnlClassInteractive = totalPnl >= 0 ? 'text-positive' : 'text-negative';
     const pnlClassExport = totalPnl >= 0 ? 'text-positive' : 'text-negative';
@@ -2305,20 +2324,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const renderCharts = (groupedFunds, funds, activeFunds, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
+  const renderCharts = (funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
     const chartsSection = elements.chartsSection || document.getElementById('charts-section');
     const lineCard = elements.lineChartCard || document.getElementById('line-chart-card');
     const pieCard = elements.pieChartCard || document.getElementById('pie-chart-card');
     /* PATCH */
     const activeDataset = Array.isArray(activeFunds) ? activeFunds : [];
     /* PATCH */
-    const allDataset = Array.isArray(funds) ? funds : [];
-    if (allDataset.length > 0) {
+    const allTransactions = Array.isArray(transactions) ? transactions : [];
+    const activeTransactionsSet = Array.isArray(activeTransactions) ? activeTransactions : allTransactions.filter(tx => !tx.freeze);
+    if (allTransactions.length > 0) {
         lineCard.style.display = 'block';
         const lineContainer = elements.lineChartContainer || document.getElementById('line-chart-container');
         if (lineContainer) {
-            renderLineChart(lineContainer, allDataset, portfolioSummary.portfolioIrr, outCurr, fxRate, {
+            renderLineChart(lineContainer, allTransactions, portfolioSummary.portfolioIrr, outCurr, fxRate, {
                 /* PATCH */ activeFunds: activeDataset,
+                /* PATCH */ activeTransactions: activeTransactionsSet,
                 /* PATCH */ frozenTotal: (portfolioSummary.totalCurrentConverted || 0) - (portfolioSummary.totalCurrentActive || 0)
             });
         }
@@ -2330,7 +2351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const chartData = activeDataset;
         if (chartData.length > 0) {
             pieCard.style.display = 'block';
-            setupTimeSlider(activeDataset);
+            setupTimeSlider(allTransactions);
         } else {
             pieCard.style.display = 'none';
         }
@@ -2356,6 +2377,7 @@ document.addEventListener('DOMContentLoaded', () => {
         format = {},
         language = 'cs',
         /* PATCH */ activeFunds: activeFundsOption = null,
+        /* PATCH */ activeTransactions: activeTransactionsOption = null,
         /* PATCH */ frozenTotal: frozenTotalOption = null
     } = options;
 
@@ -2367,7 +2389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             portfolioIrr,
             conversionReady,
             formattedTodayValueOverride,
-            /* PATCH */ { copy: lineCopy, format, language }
+            /* PATCH */ { copy: lineCopy, format, language, activeFunds: activeFundsOption, activeTransactions: activeTransactionsOption, frozenTotal: frozenTotalOption }
         );
         if (!exportChart.available) {
             /* PATCH */
@@ -2400,7 +2422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
     /* PATCH */
     const allEvents = funds
-        .map(f => ({ date: f.dateIn, amount: convert(f.invest, f.curr), fund: f.fund, freeze: !!f.freeze }))
+        .map(tx => ({ date: tx.dateIn, amount: convert(tx.invest, tx.curr), fund: tx.fund, freeze: !!tx.freeze, txType: tx.txType }))
         .filter(evt => evt.date instanceof Date && !isNaN(evt.date) && Number.isFinite(evt.amount) && evt.amount !== 0)
         .sort((a, b) => a.date - b.date);
     if (allEvents.length === 0) {
@@ -2408,7 +2430,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     /* PATCH */
-    const activeSet = Array.isArray(activeFundsOption) && activeFundsOption.length ? activeFundsOption : funds.filter(f => !f.freeze);
+    const activeSet = Array.isArray(activeTransactionsOption) && activeTransactionsOption.length
+        ? activeTransactionsOption
+        : funds.filter(tx => !tx.freeze);
     /* PATCH */
     const msPerDay = 1000 * 60 * 60 * 24;
     const today = new Date(); today.setHours(0,0,0,0);
@@ -2451,7 +2475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dayEntry.contributions = cumulativeContributions;
         dayEntry.value = valueAfter;
         dayEntry.frozenValue = runningFrozen;
-        dayEntry.entries.push({ fund: evt.fund, amount: evt.amount, freeze: evt.freeze });
+        dayEntry.entries.push({ fund: evt.fund, amount: evt.amount, freeze: evt.freeze, txType: evt.txType });
         depositsByDay.set(dayKey, dayEntry);
     });
     const daysToToday = (today - lastGrowthDate) / msPerDay;
@@ -2459,9 +2483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         runningActive *= Math.pow(1 + dailyRate, daysToToday);
     }
     /* PATCH */
-    const frozenCurrentTotal = Number.isFinite(frozenTotalOption)
-        ? frozenTotalOption
-        : funds.reduce((sum, f) => f.freeze ? sum + (Number.isFinite(convert(f.current, f.curr)) ? convert(f.current, f.curr) : 0) : sum, 0);
+    const frozenCurrentTotal = Number.isFinite(frozenTotalOption) ? frozenTotalOption : 0;
     /* PATCH */
     const frozenAdjustment = frozenCurrentTotal - runningFrozen;
     if (frozenAdjustment !== 0) {
@@ -2544,17 +2566,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = yScale(entry.value);
             const dateLabel = entry.date.toLocaleDateString('cs-CZ');
             let tooltipText = '';
+            const hasPositive = entry.entries.some(item => item.amount > 0);
+            const hasNegative = entry.entries.some(item => item.amount < 0);
+            const listLabel = hasPositive && hasNegative ? 'Vklady a odkupy' : (hasNegative ? 'Odkupy' : 'Vklady');
             if (entry.entries.length > 1) {
-                tooltipText = `<div class="font-bold text-primary">Vklady (${dateLabel})</div>`
+                tooltipText = `<div class="font-bold text-primary">${listLabel} (${dateLabel})</div>`
                     + entry.entries.map(d => `<div class="text-sm text-body">${htmlEscape(d.fund)}: ${formatCurrency0(d.amount, outCurr)}</div>`).join('');
             } else {
                 const d = entry.entries[0];
-                tooltipText = `<div class="text-primary">Vklad (${htmlEscape(d.fund)}): ${formatCurrency0(d.amount, outCurr)} (${dateLabel})</div>`;
+                const singleLabel = d.amount < 0 ? 'Odkup' : 'Vklad';
+                tooltipText = `<div class="text-primary">${singleLabel} (${htmlEscape(d.fund)}): ${formatCurrency0(d.amount, outCurr)} (${dateLabel})</div>`;
             }
             const escapedTooltipText = tooltipText.replace(/"/g, '&quot;');
             const ariaLabel = entry.entries.length > 1
-                ? `Vklady ${dateLabel}: ${entry.entries.map(d => `${d.fund} ${formatCurrency0(d.amount, outCurr)}`).join(', ')}`
-                : `Vklad ${dateLabel}: ${entry.entries[0].fund} ${formatCurrency0(entry.entries[0].amount, outCurr)}`;
+                ? `${listLabel} ${dateLabel}: ${entry.entries.map(d => `${d.fund} ${formatCurrency0(d.amount, outCurr)}`).join(', ')}`
+                : `${entry.entries[0].amount < 0 ? 'Odkup' : 'Vklad'} ${dateLabel}: ${entry.entries[0].fund} ${formatCurrency0(entry.entries[0].amount, outCurr)}`;
             innerHTML += `<circle class='line-chart-dot' cx="${x}" cy="${y}" r="4" fill="#4DB1C8" tabindex="0" aria-label="${htmlEscape(ariaLabel)}" data-tooltip-text='${escapedTooltipText}'></circle>`;
             snapPoints.push({
                 x,
@@ -2697,10 +2723,10 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(svg);
   };
 
-  const setupTimeSlider = (funds) => {
+  const setupTimeSlider = (transactions) => {
     const slider = elements.pieSlider || document.getElementById('pie-time-slider');
     if (!slider) return;
-    const deposits = funds.map(f => f.dateIn).sort((a,b) => a - b);
+    const deposits = (Array.isArray(transactions) ? transactions : []).map(f => f.dateIn).sort((a,b) => a - b);
     if(deposits.length === 0) return;
     const firstDate = deposits[0];
     const endDate = new Date('2035-12-31');
@@ -2721,7 +2747,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const updatePieChartFromSlider = () => {
     /* PATCH */
-    const { funds: allFunds = [] } = state.lastProcessedData;
+    const { funds: allFunds = [], transactions: allTransactions = [] } = state.lastProcessedData;
     const outCurr = getOutCurrency();
     const fxRate = utils.numCZ(elements.fxRate?.value);
     const slider = elements.pieSlider || document.getElementById('pie-time-slider');
@@ -2731,38 +2757,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.sliderCurrentLabel) {
         elements.sliderCurrentLabel.textContent = currentDate.toLocaleDateString('cs-CZ');
     }
-    /* PATCH */
     const collection = Array.isArray(allFunds) ? allFunds : [];
-    /* PATCH */
-    const grouped = collection.reduce((acc, fund) => {
-        if (!fund.fund) return acc;
-        if (!acc[fund.fund]) acc[fund.fund] = [];
-        acc[fund.fund].push(fund);
+    const txCollection = Array.isArray(allTransactions) ? allTransactions : [];
+    const groupedTx = txCollection.reduce((acc, tx) => {
+        if (!tx.fund) return acc;
+        if (!acc[tx.fund]) acc[tx.fund] = [];
+        acc[tx.fund].push(tx);
         return acc;
     }, {});
-    /* PATCH */
-    const dataForDate = Object.entries(grouped).map(([name, entries]) => {
+    const dataForDate = collection.map(fund => {
+        const fundTxs = groupedTx[fund.fund] || [];
+        const qtyAtDate = fundTxs.reduce((sum, tx) => {
+            if (!(tx.dateIn instanceof Date) || currentDate < tx.dateIn) return sum;
+            return sum + (Number.isFinite(tx.qty) ? tx.qty : 0);
+        }, 0);
         let value = 0;
-        entries.forEach(entry => {
-            if (!(entry.dateIn instanceof Date) || currentDate < entry.dateIn) return;
-            const convertedInvest = convert(entry.invest, entry.curr);
-            const convertedCurrent = convert(entry.current, entry.curr);
-            const hasValuation = entry.currDate instanceof Date && entry.currDate >= entry.dateIn;
-            if (hasValuation && Number.isFinite(convertedCurrent)) {
-                if (entry.freeze) {
-                    value += convertedCurrent;
-                } else if (Number.isFinite(entry.irr)) {
-                    const dailyRate = Math.pow(1 + entry.irr, 1 / 365.25) - 1;
-                    const days = Math.max(0, (currentDate - entry.currDate) / MS_PER_DAY);
-                    value += convertedCurrent * Math.pow(1 + dailyRate, days);
+        if (qtyAtDate > 0 && Number.isFinite(fund.currNav)) {
+            if (fund.currDate instanceof Date && currentDate >= fund.currDate) {
+                const baseValue = fund.currentValue;
+                if (!fund.freeze && Number.isFinite(fund.irr)) {
+                    const dailyRate = Math.pow(1 + fund.irr, 1 / 365.25) - 1;
+                    const days = Math.max(0, (currentDate - fund.currDate) / MS_PER_DAY);
+                    value = baseValue * Math.pow(1 + dailyRate, days);
                 } else {
-                    value += convertedCurrent;
+                    value = baseValue;
                 }
-            } else if (Number.isFinite(convertedInvest)) {
-                value += convertedInvest;
+            } else {
+                value = qtyAtDate * fund.currNav;
             }
-        });
-        return { name, totalCurrent: value };
+        }
+        const convertedValue = convert(value, fund.curr);
+        return { name: fund.fund, totalCurrent: Number.isFinite(convertedValue) ? convertedValue : 0 };
     }).filter(d => Number.isFinite(d.totalCurrent) && d.totalCurrent > 0);
     const pieContainer = elements.pieChartContainer || document.getElementById('pie-chart-container');
     if (pieContainer) {
@@ -2895,7 +2920,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const buildLineChartForExport = (funds, outCurr, fxRate, irr, conversionReady, formattedTodayValueOverride = null, options = {}) => {
       /* PATCH */
-      const { copy = {}, format = {}, language = 'cs', activeFunds = [], frozenTotal = null } = options;
+      const { copy = {}, format = {}, language = 'cs', activeFunds = [], activeTransactions = [], frozenTotal = null } = options;
       /* PATCH */
       const currencyFormat = format.currency || {};
       /* PATCH */
@@ -2906,13 +2931,16 @@ document.addEventListener('DOMContentLoaded', () => {
           return { available: false, reason: 'conversion' };
       }
       const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
-      const activeSet = Array.isArray(activeFunds) && activeFunds.length ? activeFunds : funds.filter(f => !f.freeze);
+      const activeSet = Array.isArray(activeTransactions) && activeTransactions.length
+          ? activeTransactions
+          : (Array.isArray(activeFunds) && activeFunds.length ? activeFunds : funds.filter(f => !f.freeze));
       const events = funds
           .map(fund => ({
               date: fund.dateIn instanceof Date ? fund.dateIn : utils.toDate(fund.dateIn),
               amount: convert(fund.invest, fund.curr),
               fund: fund.fund,
-              freeze: !!fund.freeze
+              freeze: !!fund.freeze,
+              txType: fund.txType
           }))
           .filter(evt => evt.date instanceof Date && !isNaN(evt.date) && Number.isFinite(evt.amount) && evt.amount !== 0)
           .sort((a, b) => a.date - b.date);
@@ -2960,7 +2988,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const entry = depositsByDay.get(key) || { date: evt.date, amount: 0, breakdown: [], contributions: 0, value: 0 };
           entry.date = evt.date;
           entry.amount += evt.amount;
-          entry.breakdown.push({ fund: evt.fund, amount: evt.amount });
+          entry.breakdown.push({ fund: evt.fund, amount: evt.amount, txType: evt.txType });
           entry.contributions = cumulative;
           entry.value = valueAfter;
           depositsByDay.set(key, entry);
@@ -2971,9 +2999,7 @@ document.addEventListener('DOMContentLoaded', () => {
           runningActive *= Math.pow(1 + dailyRate, daysToToday);
       }
 
-      const frozenCurrentTotal = Number.isFinite(frozenTotal)
-          ? frozenTotal
-          : funds.reduce((sum, fund) => fund.freeze ? sum + (Number.isFinite(convert(fund.current, fund.curr)) ? convert(fund.current, fund.curr) : 0) : sum, 0);
+      const frozenCurrentTotal = Number.isFinite(frozenTotal) ? frozenTotal : 0;
       const frozenAdjustment = frozenCurrentTotal - runningFrozen;
       if (frozenAdjustment !== 0) {
           valuePoints.forEach(point => { point.value += frozenAdjustment; });
@@ -3082,6 +3108,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const formatDepositTooltip = (point) => {
           const dateLabel = formatDateLocal(point.date);
           const amountLabel = formatCurrency0(point.amount, outCurr, currencyFormat);
+          const hasPositive = point.breakdown.some(item => item.amount > 0);
+          const hasNegative = point.breakdown.some(item => item.amount < 0);
+          const multiLabel = hasPositive && hasNegative
+              ? (tooltipCopy.depositMixed || (language === 'en' ? 'Contributions and redemptions' : 'Vklady a odkupy'))
+              : (hasNegative
+                  ? (tooltipCopy.redemptionMulti || (language === 'en' ? 'Redemptions' : 'Odkupy'))
+                  : (tooltipCopy.depositMultiLabel || (language === 'en' ? 'Contributions' : 'Vklady')));
           if (point.breakdown.length > 1) {
               const breakdown = point.breakdown
                   .map(item => `<div class="text-sm text-body">${htmlEscape(item.fund)}: ${formatCurrency0(item.amount, outCurr, currencyFormat)}</div>`)
@@ -3089,12 +3122,18 @@ document.addEventListener('DOMContentLoaded', () => {
               const breakdownLabel = point.breakdown
                   .map(item => `${item.fund}: ${formatCurrency0(item.amount, outCurr, currencyFormat)}`)
                   .join(' • ');
-              const heading = tooltipCopy.depositMulti ? tooltipCopy.depositMulti(dateLabel, breakdownLabel) : `Vklady ${dateLabel}`;
+              const heading = tooltipCopy.depositMulti ? tooltipCopy.depositMulti(dateLabel, breakdownLabel, multiLabel) : `${multiLabel} ${dateLabel}`;
               return `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-accent">${amountLabel}</div>${breakdown}`;
           }
           if (point.breakdown.length === 1) {
               const entry = point.breakdown[0];
-              const heading = tooltipCopy.depositSingle ? tooltipCopy.depositSingle(entry.fund, amountLabel, dateLabel) : `Vklad ${htmlEscape(entry.fund)} • ${dateLabel}`;
+              const isRedemption = entry.amount < 0;
+              const singleLabel = isRedemption
+                  ? (tooltipCopy.redemptionSingle || (language === 'en' ? 'Redemption' : 'Odkup'))
+                  : (tooltipCopy.depositSingleLabel || (language === 'en' ? 'Contribution' : 'Vklad'));
+              const heading = tooltipCopy.depositSingle
+                  ? tooltipCopy.depositSingle(entry.fund, amountLabel, dateLabel, singleLabel)
+                  : `${singleLabel} ${htmlEscape(entry.fund)} • ${dateLabel}`;
               return `<div class="font-semibold text-primary">${heading}</div><div class="font-semibold text-accent">${amountLabel}</div>`;
           }
           if (tooltipCopy.generic) {
@@ -3303,8 +3342,9 @@ document.addEventListener('DOMContentLoaded', () => {
                   description: 'Přehled všech sledovaných fondů včetně výkonu, ziskovosti a časové rozlohy investic.',
                   metrics: {
                       invested: 'Investováno',
+                      redeemed: 'Odkoupeno',
                       current: 'Aktuální hodnota',
-                      pnl: toneIsInformal ? 'Tvůj čistý výnos' : 'Čistý výnos',
+                      pnl: toneIsInformal ? 'Tvůj čistý zisk po odkupech' : 'Čistý zisk po odkupech',
                       irr: 'Průměrný roční výnos (XIRR)',
                       months: 'Průměrná doba investice'
                   },
@@ -3315,14 +3355,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   },
                   tableHeaders: {
                       transaction: 'Transakce',
-                      invested: 'Investice',
-                      pnl: 'Výnos',
-                      current: 'Aktuální hodnota',
-                      months: 'Doba držení',
-                      irr: 'Prům. roční výnos'
+                      amount: 'Částka',
+                      qty: 'Počet CP',
+                      nav: 'Trans. NAV'
                   },
-                  transactionFirst: 'První vklad',
-                  transactionNext: (index) => `Dokup #${index}`,
                   showTransactions: 'Zobrazit transakce',
                   noData: 'Nejsou k dispozici žádná data pro výpočet.'
               },
@@ -3353,8 +3389,13 @@ document.addEventListener('DOMContentLoaded', () => {
                   },
                   /* PATCH */
                   tooltip: {
-                      depositSingle: (fund, amount, date) => `Vklad (${fund}): ${amount} (${date})`,
-                      depositMulti: (date, list) => `Vklady ${date}: ${list}`,
+                      depositSingle: (fund, amount, date, label) => `${label} (${fund}): ${amount} (${date})`,
+                      depositMulti: (date, list, label) => `${label} ${date}: ${list}`,
+                      depositMixed: 'Vklady a odkupy',
+                      redemptionSingle: 'Odkup',
+                      redemptionMulti: 'Odkupy',
+                      depositSingleLabel: 'Vklad',
+                      depositMultiLabel: 'Vklady',
                       today: (date, value) => `Dnes: ${date}\nDopočítaná hodnota: ${value}`,
                       generic: (date, value) => `${date}\n${value}`,
                       projection: (date, value) => `Odhad ${date}: ${value}`
@@ -3456,8 +3497,9 @@ document.addEventListener('DOMContentLoaded', () => {
               description: 'Overview of each tracked fund including performance, profitability and time in the market.',
               metrics: {
                   invested: 'Invested',
+                  redeemed: 'Redeemed',
                   current: 'Current value',
-                  pnl: 'Net gain',
+                  pnl: 'Net gain after redemptions',
                   irr: 'Average annual return (XIRR)',
                   months: 'Average holding period'
               },
@@ -3468,14 +3510,10 @@ document.addEventListener('DOMContentLoaded', () => {
               },
               tableHeaders: {
                   transaction: 'Transaction',
-                  invested: 'Contribution',
-                  pnl: 'Return',
-                  current: 'Current value',
-                  months: 'Holding period',
-                  irr: 'Avg. annual return'
+                  amount: 'Amount',
+                  qty: 'Units',
+                  nav: 'Txn NAV'
               },
-              transactionFirst: 'Initial contribution',
-              transactionNext: (index) => `Top-up #${index}`,
               showTransactions: 'Show transactions',
               noData: 'No data available for calculation.'
           },
@@ -3506,8 +3544,13 @@ document.addEventListener('DOMContentLoaded', () => {
               },
               /* PATCH */
               tooltip: {
-                  depositSingle: (fund, amount, date) => `Contribution (${fund}): ${amount} (${date})`,
-                  depositMulti: (date, list) => `Contributions on ${date}: ${list}`,
+                  depositSingle: (fund, amount, date, label) => `${label} (${fund}): ${amount} (${date})`,
+                  depositMulti: (date, list, label) => `${label} on ${date}: ${list}`,
+                  depositMixed: 'Contributions and redemptions',
+                  redemptionSingle: 'Redemption',
+                  redemptionMulti: 'Redemptions',
+                  depositSingleLabel: 'Contribution',
+                  depositMultiLabel: 'Contributions',
                   today: (date, value) => `Today: ${date}\nEstimated value: ${value}`,
                   generic: (date, value) => `${date}\n${value}`,
                   projection: (date, value) => `Projection for ${date}: ${value}`
@@ -3616,25 +3659,14 @@ document.addEventListener('DOMContentLoaded', () => {
           /* PATCH */ language: copy.language
       });
 
-      /* PATCH */
-      const groupedFunds = snapshot.funds.reduce((acc, fund) => {
-          if (!fund.fund) return acc;
-          if (!acc[fund.fund]) acc[fund.fund] = [];
-          acc[fund.fund].push(fund);
-          return acc;
-      }, {});
-
-      const fundsBlock = renderFundsByCard(groupedFunds, outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
+      const fundsBlock = renderFundsByCard(snapshot.funds || [], outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
 
       /* PATCH */
       const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
       /* PATCH */
-      const allocationData = Object.entries(groupedFunds).map(([name, entries]) => {
-          const totalCurrent = entries.reduce((sum, entry) => {
-              const converted = convert(entry.current, entry.curr);
-              return Number.isFinite(converted) ? sum + converted : sum;
-          }, 0);
-          return { name, totalCurrent };
+      const allocationData = (snapshot.funds || []).map((entry) => {
+          const converted = convert(entry.currentValue, entry.curr);
+          return { name: entry.fund, totalCurrent: Number.isFinite(converted) ? converted : 0 };
       }).filter(item => item.totalCurrent > 0);
 
       const pieBlock = allocationData.length
@@ -3642,13 +3674,14 @@ document.addEventListener('DOMContentLoaded', () => {
           : `<div class="rounded-2xl border border-subtle bg-card-muted py-6 text-center text-muted">${htmlEscape(copy.pie.noData)}</div>`;
 
       const frozenForExport = (snapshot.portfolioSummary.totalCurrentConverted || 0) - (snapshot.portfolioSummary.totalCurrentActive || 0);
-      const lineBlock = renderLineChart(null, snapshot.funds || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
+      const lineBlock = renderLineChart(null, snapshot.transactions || [], snapshot.portfolioSummary.portfolioIrr, outCurr, fxRate, {
         isStaticExport: true,
         conversionReady,
         /* PATCH */ copy: copy.line,
         /* PATCH */ format: copy.format,
         /* PATCH */ language: copy.language,
         /* PATCH */ activeFunds: snapshot.activeFunds || [],
+        /* PATCH */ activeTransactions: snapshot.activeTransactions || [],
         /* PATCH */ frozenTotal: frozenForExport
       });
 
@@ -3686,7 +3719,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const generatedTimestamp = generatedAt.getTime();
       /* PATCH */
       const generatedDateLabel = generatedAt.toLocaleDateString(copy.locale.date);
-      const fundCount = Object.keys(groupedFunds).length;
+      const fundCount = (snapshot.funds || []).length;
       const currencyWarning = (!conversionReady && snapshot.hasMixedCurrencies)
           ? `<div class="alert">${htmlEscape(copy.currencyWarning(outCurr))}</div>`
           : '';
@@ -3910,18 +3943,34 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         row[key] = target.isContentEditable ? target.textContent : target.value;
     }
-    if (['invest', 'qty', 'issueNav', 'currNav', 'totalCurrent'].includes(key)) {
+    if (['invest', 'qty', 'issueNav', 'currNav', 'txType'].includes(key)) {
         const p = parseRow(row);
-        if (isFinite(p.invest) && isFinite(p.issueNav) && p.issueNav > 0 && (!row.qty || utils.numCZ(row.qty) <= 0)) {
-            row.qty = String(p.invest / p.issueNav);
-            tr.querySelector('[data-key="qty"]').value = row.qty;
-        } else if (isFinite(p.qty) && isFinite(p.issueNav) && p.qty > 0 && (!row.invest || utils.numCZ(row.invest) <= 0)) {
-            row.invest = String(p.qty * p.issueNav);
-            tr.querySelector('[data-key="invest"]').value = row.invest;
+        const txSign = getTransactionSign(p.txType);
+        const normalizeSigned = (value) => {
+            if (!isFinite(value)) return NaN;
+            if (value === 0) return 0;
+            return Math.abs(value) * txSign;
+        };
+        const signedInvest = normalizeSigned(p.invest);
+        const signedQty = normalizeSigned(p.qty);
+        if (isFinite(p.issueNav) && p.issueNav > 0) {
+            if (isFinite(signedInvest) && (!row.qty || !isFinite(p.qty))) {
+                row.qty = String(signedInvest / p.issueNav);
+                const qtyInput = tr.querySelector('[data-key="qty"]');
+                if (qtyInput) qtyInput.value = row.qty;
+            } else if (isFinite(signedQty) && (!row.invest || !isFinite(p.invest))) {
+                row.invest = String(signedQty * p.issueNav);
+                const investInput = tr.querySelector('[data-key="invest"]');
+                if (investInput) investInput.value = row.invest;
+            }
         }
-        if (isFinite(p.qty) && isFinite(p.currNav) && p.currNav > 0 && (!row.totalCurrent || utils.numCZ(row.totalCurrent) <= 0)) {
-             row.totalCurrent = String(p.qty * p.currNav);
-             tr.querySelector('[data-key="totalCurrent"]').value = row.totalCurrent;
+        if (key === 'txType') {
+            if (isFinite(p.invest)) row.invest = String(signedInvest);
+            if (isFinite(p.qty)) row.qty = String(signedQty);
+            const investInput = tr.querySelector('[data-key="invest"]');
+            const qtyInput = tr.querySelector('[data-key="qty"]');
+            if (investInput && isFinite(p.invest)) investInput.value = row.invest;
+            if (qtyInput && isFinite(p.qty)) qtyInput.value = row.qty;
         }
     }
     updateInputHighlights(tr, row);
@@ -3931,7 +3980,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateInputHighlights = (tr, row) => {
       const parsed = parseRow(row || {});
-      const fields = ['invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'totalCurrent', 'currDate'];
+      const fields = ['invest', 'dateIn', 'qty', 'issueNav', 'currNav', 'currDate'];
       fields.forEach(field => {
           const input = tr.querySelector(`[data-key="${field}"]`);
           if (input) input.classList.remove('input-highlight');
@@ -3951,18 +4000,17 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       if (!parsed.dateIn) markMissing('dateIn');
       if (!parsed.currDate) markMissing('currDate');
-      const hasInvest = Number.isFinite(parsed.invest) && parsed.invest > 0;
-      const hasQty = Number.isFinite(parsed.qty) && parsed.qty > 0;
+      const hasInvest = Number.isFinite(parsed.invest) && Math.abs(parsed.invest) > 0;
+      const hasQty = Number.isFinite(parsed.qty) && Math.abs(parsed.qty) > 0;
       const hasIssueNav = Number.isFinite(parsed.issueNav) && parsed.issueNav > 0;
-      const hasCurrent = Number.isFinite(parsed.totalCurrent);
       const hasNav = Number.isFinite(parsed.currNav) && parsed.currNav > 0;
       if (!hasInvest && !hasQty) {
           markMissing('invest');
       } else if (!hasInvest && hasQty && !hasIssueNav) {
           markMissing('issueNav');
       }
-      if (!hasCurrent && !hasNav) {
-          markMissing('currNav', 'totalCurrent');
+      if (!hasNav) {
+          markMissing('currNav');
       }
   };
 
@@ -4021,7 +4069,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         const button = e.target.closest('button[data-action]'); if (!button) return;
         const { action, provider, id } = button.dataset;
-        if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: CONFIG.currency.default, freeze: false }); renderProviderInputs(provider, newId); }
+        if (action === 'add-row') { const newId = ++rowSeq; state.rows[provider].push({ id: newId, fund: '', curr: CONFIG.currency.default, txType: 'payment', freeze: false }); renderProviderInputs(provider, newId); }
         if (action === 'delete-row') { const rowElement = button.closest('tr'); rowElement.className = 'fade-out'; rowElement.addEventListener('animationend', () => { state.rows[provider] = state.rows[provider].filter(r => r.id !== parseInt(id,10)); rowElement.remove(); scheduleRecalc(); saveState(); }); }
         if (action === 'delete-all') { if (confirm(`Opravdu chcete smazat všechny řádky pro ${PROVIDERS[provider]}?`)) { state.rows[provider] = []; renderProviderInputs(provider); scheduleRecalc(); saveState(); } }
         /* PATCH */
@@ -4042,12 +4090,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (action === 'add-sample') {
             const today = new Date().toISOString().split('T')[0];
             const SAMPLES = {
-                avant: [ { id: ++rowSeq, fund: 'r2p invest SICAV, a.s.', invest: '100000', dateIn: '15.03.2021', issueNav: '1.05', currNav: '1.25', currDate: today, curr: 'CZK', freeze: false } ],
-                codya: [ { id: ++rowSeq, fund: 'CODYA Real Estate Fund', invest: '250000', dateIn: '20.11.2020', issueNav: '10.0', currNav: '14.2', currDate: today, curr: 'CZK', freeze: false }, { id: ++rowSeq, fund: 'CODYA Opportunity', invest: '120000', dateIn: '10.01.2023', issueNav: '100', currNav: '118', currDate: today, curr: 'CZK', freeze: false } ],
-                atris: [ { id: ++rowSeq, fund: 'ATRIS Global Equities', invest: '15000', dateIn: '30.05.2022', issueNav: '150', currNav: '195', currDate: today, curr: 'EUR', freeze: false } ],
-                jt: [ { id: ++rowSeq, fund: 'J&T Opportunity CZK', invest: '500000', dateIn: '01.07.2019', issueNav: '1.0', currNav: '1.48', currDate: today, curr: 'CZK', freeze: false } ]
+                avant: [ { id: ++rowSeq, fund: 'r2p invest SICAV, a.s.', txType: 'payment', invest: '100000', dateIn: '15.03.2021', issueNav: '1.05', currNav: '1.25', currDate: today, curr: 'CZK', freeze: false } ],
+                codya: [ { id: ++rowSeq, fund: 'CODYA Real Estate Fund', txType: 'payment', invest: '250000', dateIn: '20.11.2020', issueNav: '10.0', currNav: '14.2', currDate: today, curr: 'CZK', freeze: false }, { id: ++rowSeq, fund: 'CODYA Opportunity', txType: 'payment', invest: '120000', dateIn: '10.01.2023', issueNav: '100', currNav: '118', currDate: today, curr: 'CZK', freeze: false } ],
+                atris: [ { id: ++rowSeq, fund: 'ATRIS Global Equities', txType: 'payment', invest: '15000', dateIn: '30.05.2022', issueNav: '150', currNav: '195', currDate: today, curr: 'EUR', freeze: false } ],
+                jt: [ { id: ++rowSeq, fund: 'J&T Opportunity CZK', txType: 'payment', invest: '500000', dateIn: '01.07.2019', issueNav: '1.0', currNav: '1.48', currDate: today, curr: 'CZK', freeze: false } ]
             };
-            const sampleData = SAMPLES[provider].map(s => ({...s, qty: '', totalCurrent: ''}));
+            const sampleData = SAMPLES[provider].map(s => ({...s, qty: ''}));
             state.rows[provider].push(...sampleData);
             renderProviderInputs(provider); scheduleRecalc(); showToast(`Ukázková data pro ${PROVIDERS[provider]} byla načtena.`); saveState();
         }
@@ -4113,7 +4161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         providerSections.addEventListener('focusout', (e) => {
             if (e.target.isContentEditable) handleInputChange(e);
             const key = e.target.dataset.key;
-            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+            if (key === 'invest' || e.target.id === 'annuity-input') {
                 const num = utils.numCZ(e.target.value);
                 if (isFinite(num)) {
                     e.target.value = fmt0.format(num);
@@ -4124,7 +4172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         providerSections.addEventListener('focusin', (e) => {
             const key = e.target.dataset.key;
-            if (key === 'invest' || key === 'totalCurrent' || e.target.id === 'annuity-input') {
+            if (key === 'invest' || e.target.id === 'annuity-input') {
                 const num = utils.numCZ(e.target.value);
                 if (isFinite(num)) {
                     e.target.value = num;
