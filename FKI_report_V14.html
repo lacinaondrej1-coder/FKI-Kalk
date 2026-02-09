@@ -144,6 +144,26 @@
         max-width: min(320px, 90vw);
         overflow-wrap: anywhere;
     }
+    .auto-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.4rem;
+        border-radius: 999px;
+        background: rgba(77, 177, 200, 0.12);
+        color: var(--color-primary);
+        border: 1px solid rgba(77, 177, 200, 0.3);
+        align-self: flex-end;
+    }
+    .input-readonly {
+        background: rgba(241,245,249,0.7);
+    }
+    .row-message {
+        margin-top: 0.35rem;
+        font-size: 0.72rem;
+        color: #b91c1c;
+    }
 
     /* Export-only tooltip override */
     body:not(.antialiased) #chart-tooltip {
@@ -1523,7 +1543,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const section = document.createElement('section');
       section.className = 'card p-7 sm:p-8 space-y-6';
-      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">${CONFIG.texts.inputsHint}</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Fond</th><th class="py-3 pr-3 font-semibold text-left">Třída akcie</th><th class="py-3 pr-3 font-semibold text-left">Typ transakce</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice</th><th class="py-3 pr-3 font-semibold text-left">Datum transakce</th><th class="py-3 pr-3 font-semibold text-right">Počet CP</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Trans. NAV</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota</th><th class="py-3 pr-3 font-semibold text-right">Poslední NAV</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum ocenění</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
+      section.innerHTML = `<div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"><div class="space-y-1.5"><h2 class="text-xl font-semibold text-primary flex items-center gap-2"><span>Vstupy – ${providerName.replace('&', '&amp;')}</span>${specialTooltip}</h2><p class="text-sm text-muted">${CONFIG.texts.inputsHint}</p></div><div class="flex flex-wrap gap-2 text-sm"><button data-provider="${providerKey}" data-action="add-row" type="button" class="primary-btn px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2"><span>+ Přidat řádek</span></button><button data-provider="${providerKey}" data-action="add-sample" type="button" class="secondary-btn px-4 py-2 rounded-xl text-sm font-medium">Ukázka</button><button data-provider="${providerKey}" data-action="delete-all" type="button" class="danger-btn px-4 py-2 rounded-xl text-sm font-medium">Smazat vše</button></div></div><details class="card p-5 bg-card-soft border border-subtle"><summary class="font-semibold text-primary flex items-center gap-2 cursor-pointer">Jak zadávat transakce <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary><div class="mt-3 text-sm text-body space-y-2"><p><strong>Zjednodušené zadání (bez odkupů):</strong> vyplň Typ transakce = Platba, Datum připsání platby, Čistá investice, Aktuální hodnota investice, Datum poslední schválené hodnoty.</p><p><strong>Zadání s odkupem:</strong> jakmile zadáš Odkup, všechny transakce fondu/třídy musí mít Počet CP + Upisovací hodnotu + Poslední schválenou hodnotu CP + Datum ocenění; kalkulačka neumožní export, dokud to není doplněno.</p></div></details><div class="space-y-3" data-provider-alerts="${providerKey}"></div><div class="overflow-x-auto rounded-2xl border border-accent-soft bg-card-soft"><table class="w-full text-sm border-separate border-spacing-x-2 text-body"><thead><tr class="text-xs uppercase tracking-[0.18em] text-muted"><th class="py-3 pr-3 font-semibold text-left w-[260px]">Název fondu</th><th class="py-3 pr-3 font-semibold text-left">Třída akcie</th><th class="py-3 pr-3 font-semibold text-left">Typ transakce</th><th class="py-3 pr-3 font-semibold text-left">Datum připsání platby</th><th class="py-3 pr-3 font-semibold text-right">Čistá investice (Kč)</th><th class="py-3 pr-3 font-semibold text-right">Počet vydaných cenných papírů</th><th class="py-3 pr-3 font-semibold text-right border-l border-subtle">Upisovací hodnota</th><th class="py-3 pr-3 font-semibold text-right">Poslední schválená hodnota CP</th><th class="py-3 pr-3 font-semibold text-left border-l border-subtle">Datum poslední schválené hodnoty</th><th class="py-3 pr-3 font-semibold text-right">Aktuální hodnota investice (Kč)</th><th class="py-3 pr-3 font-semibold text-left">Měna</th><th class="py-3 font-semibold w-[60px]"></th></tr></thead><tbody data-tbody-for="${providerKey}"></tbody></table></div>`;
       return section;
   };
   const createInputRow = (providerKey, rowData) => {
@@ -1553,6 +1573,12 @@ document.addEventListener('DOMContentLoaded', () => {
       freezeBtn.textContent = isFrozen ? 'Odmrazit' : 'Zmrazit';
       nameWrap.appendChild(freezeBtn);
       nameCell.appendChild(nameWrap);
+      if (rowData.rowMessage) {
+          const msg = document.createElement('div');
+          msg.className = 'row-message';
+          msg.textContent = rowData.rowMessage;
+          nameCell.appendChild(msg);
+      }
       const createCell = (content) => { const td = document.createElement('td'); td.className = 'py-1 align-middle'; td.appendChild(content); return td; };
       const createInput = (key, type, extraClass = '') => {
           const input = document.createElement('input');
@@ -1635,6 +1661,21 @@ document.addEventListener('DOMContentLoaded', () => {
       delBtn.dataset.id = rowData.id;
       delBtn.dataset.provider = providerKey;
       delBtnCell.appendChild(delBtn);
+      const totalCurrentInput = createInput('totalCurrent', 'text', 'tabular text-right');
+      if (rowData.requiresUnits) {
+          totalCurrentInput.readOnly = true;
+          totalCurrentInput.classList.add('input-readonly');
+      }
+      const totalCurrentWrap = document.createElement('div');
+      totalCurrentWrap.className = 'flex flex-col gap-1';
+      totalCurrentWrap.appendChild(totalCurrentInput);
+      const autoBadge = document.createElement('span');
+      autoBadge.className = 'auto-badge';
+      autoBadge.textContent = 'AUTO';
+      if (!rowData.totalCurrentAuto) {
+          autoBadge.classList.add('hidden');
+      }
+      totalCurrentWrap.appendChild(autoBadge);
       tr.append(
           nameCell,
           createCell((() => {
@@ -1645,13 +1686,13 @@ document.addEventListener('DOMContentLoaded', () => {
               return wrapper;
           })()),
           createCell(createTransactionTypeSelect()),
-          createCell(createInput('invest', 'text', 'tabular text-right')),
           createCell(createInput('dateIn', 'text')),
+          createCell(createInput('invest', 'text', 'tabular text-right')),
           createCell(createInput('qty', 'text', 'tabular text-right')),
           createCell(createInput('issueNav', 'text', 'tabular text-right border-l border-subtle')),
-          createCell(createInput('totalCurrent', 'text', 'tabular text-right')),
           createCell(createInput('currNav', 'text', 'tabular text-right')),
           createCell(createInput('currDate', 'text', 'border-l border-subtle')),
+          createCell(totalCurrentWrap),
           createCell(createSelect('curr')),
           delBtnCell
       );
@@ -1660,8 +1701,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderProviderInputs = (providerKey, newRowId = null) => {
       const tbody = document.querySelector(`[data-tbody-for="${providerKey}"]`);
       if (!tbody) return;
+      const requiresUnitsMap = computeRequiresUnitsByFundKey();
       const fragment = document.createDocumentFragment();
-      state.rows[providerKey].forEach(row => { fragment.appendChild(createInputRow(providerKey, row)); });
+      state.rows[providerKey].forEach(row => {
+          row.requiresUnits = !!requiresUnitsMap[buildFundKey(row)];
+          const parsed = parseRow(row);
+          if (row.requiresUnits && Number.isFinite(parsed.qty) && Number.isFinite(parsed.currNav)) {
+              row.totalCurrent = String(parsed.qty * parsed.currNav);
+              row.totalCurrentAuto = true;
+          } else if (!row.requiresUnits) {
+              row.totalCurrentAuto = false;
+          }
+          fragment.appendChild(createInputRow(providerKey, row));
+      });
       tbody.innerHTML = '';
       tbody.appendChild(fragment);
       if (newRowId) {
@@ -1701,15 +1753,30 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return 'Prioritní investiční akcie';
   };
-  const getRowStatus = (p) => {
+  const buildFundKey = (row) => `${utils.normName(row.fund)}|${resolveShareClassLabel(row)}`;
+  const computeRequiresUnitsByFundKey = () => {
+      const map = {};
+      Object.values(state.rows).flat().forEach(rawRow => {
+          const p = parseRow(rawRow);
+          if (!p.fund) return;
+          const fundKey = buildFundKey(p);
+          if (p.txType === 'redemption') {
+              map[fundKey] = true;
+          }
+      });
+      return map;
+  };
+  const getRowStatus = (p, requiresUnits = false) => {
       let missing = [];
       let conflicts = [];
       const hasUnitPath = isFinite(p.issueNav) && p.issueNav > 0 && isFinite(p.currNav) && p.currNav > 0 && (isFinite(p.qty) || isFinite(p.invest)) && p.dateIn && p.currDate;
       const hasTotalPath = isFinite(p.invest) && isFinite(p.totalCurrent) && p.dateIn && p.currDate;
       if (!p.fund) missing.push('název fondu');
-      if (!p.dateIn) missing.push('datum transakce');
+      if (!p.dateIn) missing.push('datum připsání platby (u odkupu datum připsání odkupní platby)');
       if (!p.currDate) missing.push('datum ocenění');
-      if (p.txType === 'redemption') {
+      if (requiresUnits) {
+          if (!hasUnitPath) return ['mixed', 'Fond obsahuje odkup → tento řádek musí být zadán přes CP/NAV.'];
+      } else if (p.txType === 'redemption') {
           if (!hasUnitPath) missing.push('min. vstupů');
       } else if (!hasUnitPath && !hasTotalPath) {
           missing.push('min. vstupů');
@@ -1727,11 +1794,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const transactions = [];
       const allCurrencies = new Set();
       const warnings = [];
+      const requiresUnitsByFundKey = computeRequiresUnitsByFundKey();
+      let hasMixedModeError = false;
       Object.entries(state.rows).forEach(([providerKey, providerRows]) => {
           providerRows.forEach(rawRow => {
               allCurrencies.add(rawRow.curr || 'CZK');
               let p = parseRow(rawRow);
-              const [status, _] = getRowStatus(p);
+              const fundKey = buildFundKey(p);
+              const requiresUnits = !!requiresUnitsByFundKey[fundKey];
+              rawRow.requiresUnits = requiresUnits;
+              const [status, statusMessage] = getRowStatus(p, requiresUnits);
+              rawRow.rowMessage = '';
+              rawRow.mixedError = false;
+              if (status === 'mixed') {
+                  rawRow.rowMessage = statusMessage;
+                  rawRow.mixedError = true;
+                  hasMixedModeError = true;
+                  warnings.push(statusMessage);
+                  return;
+              }
               if (status === 'error') return;
               let effectiveDateIn = p.dateIn;
               if (providerKey === 'atris' && p.dateIn) {
@@ -1748,6 +1829,13 @@ document.addEventListener('DOMContentLoaded', () => {
               if (!isFinite(invest) || !effectiveDateIn || !p.currDate) return;
               const hasUnitPath = isFinite(p.issueNav) && p.issueNav > 0 && isFinite(p.currNav) && p.currNav > 0 && isFinite(qty);
               const hasTotalPath = isFinite(p.totalCurrent);
+              if (requiresUnits && !hasUnitPath) {
+                  rawRow.rowMessage = 'Fond obsahuje odkup → tento řádek musí být zadán přes CP/NAV.';
+                  rawRow.mixedError = true;
+                  hasMixedModeError = true;
+                  warnings.push(rawRow.rowMessage);
+                  return;
+              }
               if (p.txType === 'redemption' && !hasUnitPath) return;
               transactions.push({
                   ...p,
@@ -1757,7 +1845,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   dateIn: effectiveDateIn,
                   originalDateIn: p.dateIn,
                   shareClassLabel,
-                  fundKey: `${p.fund}|${shareClassLabel}`,
+                  fundKey,
                   freeze: !!p.freeze,
                   useUnitPath: hasUnitPath,
                   useTotalPath: hasTotalPath
@@ -1776,9 +1864,9 @@ document.addEventListener('DOMContentLoaded', () => {
           fundNavCheck.set(key, entry);
       });
       fundNavCheck.forEach((entry, key) => {
-          if (entry.navs.size > 1 && entry.missingClass) {
+          if (entry.navs.size > 1) {
               const fundName = key.split('|')[0];
-              warnings.push(`Fond ${fundName} má více tříd akcií (různé NAV). Vyplň třídu (Prioritní/Výkonnostní), jinak bude ocenění špatně.`);
+              warnings.push(`Fond ${fundName} má více tříd akcií (různé NAV). Zkontroluj, že má každá transakce správnou třídu (Prioritní/Výkonnostní).`);
           }
       });
 
@@ -1864,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeFunds = funds.filter(f => !f.freeze);
       const activeTransactions = transactions.filter(tx => !tx.freeze);
       const hasMixed = allCurrencies.size > 1;
-      state.lastProcessedData = { funds, transactions, activeFunds, activeTransactions, hasMixedCurrencies: hasMixed, portfolioSummary, validationIssues: warnings };
+      state.lastProcessedData = { funds, transactions, activeFunds, activeTransactions, hasMixedCurrencies: hasMixed, portfolioSummary, validationIssues: warnings, requiresUnitsByFundKey, hasMixedModeError };
       return state.lastProcessedData;
   };
 
@@ -1959,6 +2047,7 @@ document.addEventListener('DOMContentLoaded', () => {
             statusContainer.innerHTML = '';
         }
     }
+    renderProviderAlerts();
     renderResults(funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
     calculateAnnuity();
   };
@@ -2065,6 +2154,37 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   };
 
+  const renderProviderAlerts = () => {
+      const { requiresUnitsByFundKey = {}, hasMixedModeError = false } = state.lastProcessedData || {};
+      const alertContainers = document.querySelectorAll('[data-provider-alerts]');
+      alertContainers.forEach(container => {
+          const providerKey = container.getAttribute('data-provider-alerts');
+          const rows = state.rows[providerKey] || [];
+          const fundGroups = rows.reduce((acc, row) => {
+              if (!row.fund) return acc;
+              const fundKey = buildFundKey(row);
+              if (!acc[fundKey]) acc[fundKey] = [];
+              acc[fundKey].push(row);
+              return acc;
+          }, {});
+          const alerts = Object.entries(fundGroups).filter(([fundKey, groupRows]) => requiresUnitsByFundKey[fundKey]).map(([fundKey, groupRows]) => {
+              const fundName = utils.normName(groupRows[0]?.fund || '');
+              const shareClassLabel = resolveShareClassLabel(groupRows[0] || {});
+              const hasMixed = groupRows.some(r => r.mixedError);
+              const message = `U fondu ${fundName} (třída ${shareClassLabel}) je zadán odkup → všechny transakce musí být zadány přes CP/NAV (qty + upisovací hodnota + poslední schválená hodnota CP).`;
+              const convertButton = `<button type="button" class="secondary-btn px-3 py-1.5 rounded-lg text-xs font-semibold" data-action="convert-units" data-provider="${providerKey}" data-fund-key="${htmlEscape(fundKey)}">Převést zjednodušené řádky na CP/NAV</button>`;
+              return `<div class="rounded-2xl border border-accent-soft bg-accent-soft p-4 text-sm text-body flex flex-col gap-3">
+  <div><strong class="text-primary">Kontrola fondu:</strong> ${htmlEscape(message)}</div>
+  <div class="flex flex-wrap gap-2 items-center">
+    ${convertButton}
+    ${hasMixed ? `<span class="text-negative font-semibold">Nejsou splněny požadavky CP/NAV – export bude zablokován.</span>` : ''}
+  </div>
+</div>`;
+          });
+          container.innerHTML = alerts.join('');
+      });
+  };
+
   const renderFundsByCard = (funds, outCurr, fxRate, options = {}) => {
       const { isStaticExport = false, container: providedContainer } = options;
       const container = providedContainer || elements.fundsContainer || document.getElementById('funds-by-card-container');
@@ -2148,15 +2268,23 @@ document.addEventListener('DOMContentLoaded', () => {
               const convertedInvest = convert(tx.invest, tx.curr);
               const convertedQty = tx.qty;
               const displayDate = tx.originalDateIn || tx.dateIn;
+              const valuationDate = tx.currDate;
               const typeLabel = (CONFIG.transactionTypes.find(type => type.value === tx.txType)?.label) || 'Platba';
+              const computedCurrent = Number.isFinite(tx.qty) && Number.isFinite(tx.currNav)
+                  ? tx.qty * tx.currNav
+                  : (Number.isFinite(tx.totalCurrent) ? tx.totalCurrent : NaN);
               if (isStaticExport && staticCopy) {
                   const dateLabel = displayDate ? formatDateByLanguage(displayDate, languageOverride) : 'N/A';
+                  const valuationLabel = valuationDate ? formatDateByLanguage(valuationDate, languageOverride) : 'N/A';
                   return `<tr>
                 <td>${htmlEscape(typeLabel)}</td>
                 <td>${htmlEscape(dateLabel)}</td>
                 <td class="text-right">${formatCurrency0(convertedInvest, outCurr, currencyFormat)}</td>
                 <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
                 <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr, currencyFormat)}</td>
+                <td class="text-right">${formatCurrency0(tx.currNav, tx.curr, currencyFormat)}</td>
+                <td>${htmlEscape(valuationLabel)}</td>
+                <td class="text-right">${formatCurrency0(computedCurrent, outCurr, currencyFormat)}</td>
                 <td>${htmlEscape(tx.shareClassLabel || '')}</td>
               </tr>`;
               }
@@ -2166,6 +2294,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="text-right">${formatCurrency0(convertedInvest, outCurr)}</td>
                 <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
                 <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr)}</td>
+                <td class="text-right">${formatCurrency0(tx.currNav, tx.curr)}</td>
+                <td>${valuationDate ? valuationDate.toLocaleDateString('cs-CZ') : 'N/A'}</td>
+                <td class="text-right">${formatCurrency0(computedCurrent, outCurr)}</td>
                 <td>${htmlEscape(tx.shareClassLabel || '')}</td>
               </tr>`;
           }).join('');
@@ -2207,7 +2338,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.date) : 'Datum'}</th>
           <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.amount) : 'Částka'}</th>
           <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.qty) : 'Počet CP'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.nav) : 'Trans. NAV'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.nav) : 'Upisovací hodnota'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.currNav) : 'Poslední schválená hodnota CP'}</th>
+          <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.currDate) : 'Datum poslední schválené hodnoty'}</th>
+          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.current) : 'Aktuální hodnota investice (Kč)'}</th>
           <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.shareClass) : 'Třída akcie'}</th>
         </tr>
       </thead>
@@ -2254,7 +2388,10 @@ document.addEventListener('DOMContentLoaded', () => {
               <th>Datum</th>
               <th class="text-right">Částka</th>
               <th class="text-right">Počet CP</th>
-              <th class="text-right">Trans. NAV</th>
+              <th class="text-right">Upisovací hodnota</th>
+              <th class="text-right">Poslední schválená hodnota CP</th>
+              <th>Datum poslední schválené hodnoty</th>
+              <th class="text-right">Aktuální hodnota investice (Kč)</th>
               <th>Třída akcie</th>
             </tr>
           </thead>
@@ -3482,11 +3619,14 @@ document.addEventListener('DOMContentLoaded', () => {
                       currency: (currency) => `Cílová měna ${currency}`
                   },
                   tableHeaders: {
-                      transaction: 'Transakce',
-                      date: 'Datum',
-                      amount: 'Částka',
-                      qty: 'Počet CP',
-                      nav: 'Trans. NAV',
+                      transaction: 'Typ transakce',
+                      date: 'Datum připsání platby',
+                      amount: 'Čistá investice (Kč)',
+                      qty: 'Počet vydaných cenných papírů',
+                      nav: 'Upisovací hodnota',
+                      currNav: 'Poslední schválená hodnota CP',
+                      currDate: 'Datum poslední schválené hodnoty',
+                      current: 'Aktuální hodnota investice (Kč)',
                       shareClass: 'Třída akcie'
                   },
                   showTransactions: 'Zobrazit transakce',
@@ -3639,11 +3779,14 @@ document.addEventListener('DOMContentLoaded', () => {
                   currency: (currency) => `Reporting currency ${currency}`
               },
               tableHeaders: {
-                  transaction: 'Transaction',
-                  date: 'Date',
-                  amount: 'Amount',
-                  qty: 'Units',
-                  nav: 'Txn NAV',
+                  transaction: 'Transaction type',
+                  date: 'Payment date',
+                  amount: 'Net investment (CZK)',
+                  qty: 'Issued units',
+                  nav: 'Subscription NAV',
+                  currNav: 'Latest approved NAV',
+                  currDate: 'NAV approval date',
+                  current: 'Current investment value (CZK)',
                   shareClass: 'Share class'
               },
               showTransactions: 'Show transactions',
@@ -3762,6 +3905,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const snapshot = processAllRows();
+      if (snapshot.hasMixedModeError) {
+          showToast('Export nelze vytvořit: Fond obsahuje odkup, ale některé řádky nejsou zadány přes CP/NAV.', 'error');
+          return;
+      }
       const outCurr = getOutCurrency();
       const fxRate = utils.numCZ(elements.fxRate?.value);
       const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
@@ -4075,9 +4222,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         row[key] = target.isContentEditable ? target.textContent : target.value;
     }
-      if (['invest', 'qty', 'issueNav', 'currNav', 'txType'].includes(key)) {
-          const p = parseRow(row);
-          const txSign = getTransactionSign(p.txType);
+    if (['invest', 'qty', 'issueNav', 'currNav', 'txType'].includes(key)) {
+        const p = parseRow(row);
+        const txSign = getTransactionSign(p.txType);
         const normalizeSigned = (value) => {
             if (!isFinite(value)) return NaN;
             if (value === 0) return 0;
@@ -4124,6 +4271,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    const requiresUnitsMap = computeRequiresUnitsByFundKey();
+    row.requiresUnits = !!requiresUnitsMap[buildFundKey(row)];
+    const parsed = parseRow(row);
+    const totalInput = tr.querySelector('[data-key="totalCurrent"]');
+    const badge = totalInput?.parentElement?.querySelector('.auto-badge');
+    if (row.requiresUnits) {
+        if (Number.isFinite(parsed.qty) && Number.isFinite(parsed.currNav)) {
+            const totalCurrent = parsed.qty * parsed.currNav;
+            row.totalCurrent = String(totalCurrent);
+            row.totalCurrentAuto = true;
+            if (totalInput) {
+                totalInput.value = fmt0.format(totalCurrent);
+            }
+            if (badge) badge.classList.remove('hidden');
+        } else {
+            row.totalCurrentAuto = false;
+            if (badge) badge.classList.add('hidden');
+        }
+        if (totalInput) {
+            totalInput.readOnly = true;
+            totalInput.classList.add('input-readonly');
+        }
+    } else {
+        row.totalCurrentAuto = false;
+        if (totalInput) {
+            totalInput.readOnly = false;
+            totalInput.classList.remove('input-readonly');
+        }
+        if (badge) badge.classList.add('hidden');
+    }
     updateInputHighlights(tr, row);
     scheduleRecalc();
     saveState();
@@ -4156,14 +4333,73 @@ document.addEventListener('DOMContentLoaded', () => {
       const hasIssueNav = Number.isFinite(parsed.issueNav) && parsed.issueNav > 0;
       const hasTotalCurrent = Number.isFinite(parsed.totalCurrent);
       const hasNav = Number.isFinite(parsed.currNav) && parsed.currNav > 0;
+      const requiresUnitsMap = computeRequiresUnitsByFundKey();
+      const requiresUnits = !!requiresUnitsMap[buildFundKey(parsed)];
+      const hasUnitPath = hasIssueNav && hasNav && hasQty && parsed.dateIn && parsed.currDate;
       if (!hasInvest && !hasQty) {
           markMissing('invest');
       } else if (!hasInvest && hasQty && !hasIssueNav) {
           markMissing('issueNav');
       }
-      if (!hasNav && !hasTotalCurrent) {
+      if (requiresUnits) {
+          if (!hasNav) markMissing('currNav');
+          if (!hasIssueNav) markMissing('issueNav');
+          if (!hasQty) markMissing('qty');
+      } else if (!hasNav && !hasTotalCurrent) {
           markMissing('currNav', 'totalCurrent');
       }
+      const nameCell = tr.querySelector('td');
+      if (nameCell) {
+          let msg = nameCell.querySelector('.row-message');
+          if (requiresUnits && !hasUnitPath) {
+              row.rowMessage = 'Fond obsahuje odkup → tento řádek musí být zadán přes CP/NAV.';
+              if (!msg) {
+                  msg = document.createElement('div');
+                  msg.className = 'row-message';
+                  nameCell.appendChild(msg);
+              }
+              msg.textContent = row.rowMessage;
+          } else if (row.convertError) {
+              row.rowMessage = row.convertError;
+              if (!msg) {
+                  msg = document.createElement('div');
+                  msg.className = 'row-message';
+                  nameCell.appendChild(msg);
+              }
+              msg.textContent = row.rowMessage;
+          } else if (msg) {
+              msg.remove();
+              row.rowMessage = '';
+          }
+      }
+  };
+
+  const convertRowsToUnits = (providerKey, fundKey) => {
+      const rows = state.rows[providerKey] || [];
+      rows.forEach(row => {
+          if (buildFundKey(row) !== fundKey) return;
+          row.convertError = '';
+          const parsed = parseRow(row);
+          const txSign = getTransactionSign(parsed.txType);
+          const hasRequired = Number.isFinite(parsed.invest) && Number.isFinite(parsed.totalCurrent) && Number.isFinite(parsed.currNav) && parsed.currNav > 0 && parsed.dateIn && parsed.currDate;
+          if (!hasRequired) {
+              row.convertError = 'Nelze převést – doplň Poslední schválenou hodnotu CP a Datum poslední schválené hodnoty.';
+              row.rowMessage = row.convertError;
+              return;
+          }
+          const qty = (parsed.totalCurrent / parsed.currNav) * txSign;
+          const issueNav = Number.isFinite(parsed.invest) ? parsed.invest / qty : NaN;
+          if (!Number.isFinite(qty) || !Number.isFinite(issueNav)) {
+              row.convertError = 'Nelze převést – doplň Poslední schválenou hodnotu CP a Datum poslední schválené hodnoty.';
+              row.rowMessage = row.convertError;
+              return;
+          }
+          row.qty = String(qty);
+          row.issueNav = String(issueNav);
+          row.totalCurrent = String(qty * parsed.currNav);
+          row.totalCurrentAuto = true;
+          row.rowMessage = '';
+      });
   };
 
   const init = () => {
@@ -4231,6 +4467,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = list.find(r => r.id === targetId);
             if (row) {
                 row.freeze = !row.freeze;
+                renderProviderInputs(provider);
+                scheduleRecalc();
+                saveState();
+            }
+        }
+        if (action === 'convert-units') {
+            const fundKey = button.dataset.fundKey;
+            if (fundKey) {
+                convertRowsToUnits(provider, fundKey);
                 renderProviderInputs(provider);
                 scheduleRecalc();
                 saveState();
