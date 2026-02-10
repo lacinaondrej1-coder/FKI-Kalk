@@ -2327,10 +2327,30 @@ document.addEventListener('DOMContentLoaded', () => {
               const computedCurrent = Number.isFinite(tx.qty) && Number.isFinite(tx.currNav)
                   ? tx.qty * tx.currNav
                   : (Number.isFinite(tx.totalCurrent) ? tx.totalCurrent : NaN);
+              const convertedCurrent = convert(computedCurrent, tx.curr);
               const holdingMonths = (tx.dateIn instanceof Date && !isNaN(tx.dateIn) && valuationDate instanceof Date && !isNaN(valuationDate) && tx.txType === 'payment')
                   ? utils.monthsDiff(tx.dateIn, valuationDate)
                   : NaN;
               const currentValueLabel = tx.txType === 'payment' ? computedCurrent : NaN;
+              const rowYield = (tx.txType === 'payment'
+                  && Number.isFinite(convertedInvest)
+                  && Number.isFinite(convertedCurrent)
+                  && convertedInvest > 0
+                  && convertedCurrent > 0)
+                  ? (convertedCurrent - convertedInvest)
+                  : NaN;
+              const days = (tx.dateIn instanceof Date && !isNaN(tx.dateIn) && valuationDate instanceof Date && !isNaN(valuationDate))
+                  ? ((valuationDate.getTime() - tx.dateIn.getTime()) / 86400000)
+                  : NaN;
+              const rowIrr = (tx.txType === 'payment'
+                  && Number.isFinite(convertedInvest)
+                  && Number.isFinite(convertedCurrent)
+                  && convertedInvest > 0
+                  && convertedCurrent > 0
+                  && Number.isFinite(days)
+                  && days > 0)
+                  ? (Math.pow(convertedCurrent / convertedInvest, 365 / days) - 1)
+                  : NaN;
               const investDisplay = tx.txType === 'redemption'
                   ? formatCurrency0(Math.abs(convertedInvest), outCurr, isStaticExport ? currencyFormat : {})
                   : formatCurrency0(convertedInvest, outCurr, isStaticExport ? currencyFormat : {});
@@ -2340,20 +2360,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${htmlEscape(typeLabel)}</td>
                 <td>${htmlEscape(dateLabel)}</td>
                 <td class="text-right">${investDisplay}</td>
-                <td class="text-right">—</td>
+                <td class="text-right">${Number.isFinite(rowYield) ? formatCurrency0(rowYield, outCurr, currencyFormat) : '—'}</td>
                 <td class="text-right">${Number.isFinite(currentValueLabel) ? formatCurrency0(currentValueLabel, outCurr, currencyFormat) : '—'}</td>
                 <td class="text-right">${Number.isFinite(holdingMonths) ? formatMonths0(holdingMonths, { ...monthsFormat, language: languageOverride }) : '—'}</td>
-                <td class="text-right">—</td>
+                <td class="text-right">${Number.isFinite(rowIrr) ? formatXirr1(rowIrr, { ...percentFormat, language: languageOverride }) : '—'}</td>
               </tr>`;
               }
               return `<tr>
                 <td>${typeLabel}</td>
                 <td>${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'}</td>
                 <td class="text-right">${investDisplay}</td>
-                <td class="text-right">—</td>
+                <td class="text-right">${Number.isFinite(rowYield) ? formatCurrency0(rowYield, outCurr) : '—'}</td>
                 <td class="text-right">${Number.isFinite(currentValueLabel) ? formatCurrency0(currentValueLabel, outCurr) : '—'}</td>
                 <td class="text-right">${Number.isFinite(holdingMonths) ? formatMonths0(holdingMonths) : '—'}</td>
-                <td class="text-right">—</td>
+                <td class="text-right">${Number.isFinite(rowIrr) ? formatXirr1(rowIrr) : '—'}</td>
               </tr>`;
           }).join('');
 
