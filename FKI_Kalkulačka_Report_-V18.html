@@ -883,6 +883,19 @@
         </div>
       </section>
 
+      <!-- === CLOSED POSITIONS === -->
+      <section id="closed-funds-section" class="card p-7 sm:p-8" style="display: none;">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="section-title">Ukončené pozice (historie)</h2>
+            <p class="text-sm text-muted">Pozice, které byly plně odkoupeny, jsou evidovány zvlášť jako historické.</p>
+          </div>
+          <div class="text-xs font-medium uppercase tracking-[0.2em] text-muted">Částky v CZK</div>
+        </div>
+        <div id="closed-funds-container" class="space-y-4">
+        </div>
+      </section>
+
       <!-- === PORTFOLIO SUMMARY === -->
       <section class="card p-7 sm:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -979,6 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: { default: 'CZK', supported: ['CZK', 'EUR'] },
       locale: { primary: 'cs-CZ' },
       chart: { snapThresholdPx: 10, guideLineWidth: 1, dotRadius: 4 },
+      portfolio: { epsQty: 1e-6, epsCzk: 1 },
       sections: ['avant', 'codya', 'atris', 'jt'],
       providers: { avant: 'AVANT', codya: 'CODYA', atris: 'ATRIS', jt: 'J&T' },
       transactionTypes: [
@@ -1882,6 +1896,7 @@ document.addEventListener('DOMContentLoaded', () => {
           acc[baseName].add(txs[0]?.shareClassLabel || 'Prioritní investiční akcie');
           return acc;
       }, {});
+      const { epsQty, epsCzk } = CONFIG.portfolio || { epsQty: 1e-6, epsCzk: 1 };
       const funds = Object.entries(grouped).flatMap(([fundKey, txs]) => {
           const sortedTxs = txs.slice().sort((a, b) => a.dateIn - b.dateIn);
           const baseName = sortedTxs[0]?.fund || '';
@@ -1909,6 +1924,9 @@ document.addEventListener('DOMContentLoaded', () => {
                   if (Number.isFinite(tx.qty) && Number.isFinite(tx.currNav)) return sum + tx.qty * tx.currNav;
                   return sum;
               }, 0);
+          const isClosed = redeemedTotal > 0
+              && ((Number.isFinite(remainingQty) && Math.abs(remainingQty) <= epsQty)
+              || (Number.isFinite(currentValue) && Math.abs(currentValue) <= epsCzk));
           const hasValidValuation = !!(valuationDate && sortedTxs[0]?.dateIn && valuationDate >= sortedTxs[0].dateIn);
           const cfs = sortedTxs
               .filter(tx => tx.dateIn instanceof Date && !isNaN(tx.dateIn) && Number.isFinite(tx.invest))
@@ -1932,6 +1950,7 @@ document.addEventListener('DOMContentLoaded', () => {
               fund: baseName,
               shareClassLabel,
               displayName,
+              fundKey,
               curr: sortedTxs[0]?.curr || CONFIG.currency.default,
               currNav: valuationNav,
               currDate: valuationDate,
@@ -1943,16 +1962,19 @@ document.addEventListener('DOMContentLoaded', () => {
               irr: fundIrr,
               weightedAvgMonths,
               transactions: sortedTxs,
+              isClosed,
               freeze: isFrozenFund
           }];
       });
       const outCurr = getOutCurrency();
       const fxRate = utils.numCZ(elements.fxRate?.value);
-      const portfolioSummary = calculateSummary(funds, transactions, outCurr, fxRate);
-      const activeFunds = funds.filter(f => !f.freeze);
-      const activeTransactions = transactions.filter(tx => !tx.freeze);
+      const activeFunds = funds.filter(f => !f.freeze && !f.isClosed && Number.isFinite(f.currentValue) && f.currentValue > epsCzk);
+      const activeFundKeys = new Set(activeFunds.map(f => f.fundKey));
+      const activeTransactions = transactions.filter(tx => !tx.freeze && activeFundKeys.has(tx.fundKey));
+      const closedFunds = funds.filter(f => f.isClosed);
+      const portfolioSummary = calculateSummary(funds, transactions, outCurr, fxRate, { activeFunds, activeTransactions });
       const hasMixed = allCurrencies.size > 1;
-      state.lastProcessedData = { funds, transactions, activeFunds, activeTransactions, hasMixedCurrencies: hasMixed, portfolioSummary, validationIssues: warnings, requiresUnitsByFundKey, hasMixedModeError };
+      state.lastProcessedData = { funds, transactions, activeFunds, activeTransactions, closedFunds, hasMixedCurrencies: hasMixed, portfolioSummary, validationIssues: warnings, requiresUnitsByFundKey, hasMixedModeError };
       return state.lastProcessedData;
   };
 
@@ -2053,15 +2075,22 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const renderResults = (funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary) => {
     funds.forEach(fund => getColor(fund.fund));
-    renderFundsByCard(funds, outCurr, fxRate);
+    const closedFunds = funds.filter(fund => fund.isClosed);
+    const openFunds = funds.filter(fund => !fund.isClosed);
+    renderFundsByCard(openFunds, outCurr, fxRate);
+    renderClosedFunds(closedFunds, outCurr, fxRate);
     const hasValidFx = Number.isFinite(fxRate) && fxRate > 0;
     renderSummary(portfolioSummary, outCurr, { hasMixedCurrencies, hasFx: hasValidFx });
     renderCharts(funds, transactions, activeFunds, activeTransactions, outCurr, fxRate, hasMixedCurrencies, portfolioSummary);
   };
 
-  const calculateSummary = (funds, transactions, outCurr, fxRate) => {
+  const calculateSummary = (funds, transactions, outCurr, fxRate, { activeFunds: activeOverride, activeTransactions: activeTxOverride } = {}) => {
     const convert = (amt, from) => utils.convertAmount(amt, from, outCurr, fxRate);
-    const activeFunds = funds.filter(f => !f.freeze);
+    const { epsCzk } = CONFIG.portfolio || { epsCzk: 1 };
+    const activeFunds = Array.isArray(activeOverride)
+        ? activeOverride
+        : funds.filter(f => !f.freeze && !f.isClosed && Number.isFinite(f.currentValue) && f.currentValue > epsCzk);
+    const activeFundKeys = new Set(activeFunds.map(f => f.fundKey));
     let totalInvestAll = 0;
     let totalRedeemedAll = 0;
     let totalCurrentAll = 0;
@@ -2107,7 +2136,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    const irrTransactions = Array.isArray(transactions) ? transactions : [];
+    const irrTransactions = Array.isArray(activeTxOverride)
+        ? activeTxOverride
+        : (Array.isArray(transactions) ? transactions.filter(tx => activeFundKeys.has(tx.fundKey)) : []);
     irrTransactions.filter(tx => !tx.freeze).forEach(tx => {
         const convertedAmount = convert(tx.invest, tx.curr);
         if (Number.isFinite(convertedAmount) && tx.dateIn instanceof Date && !isNaN(tx.dateIn)) {
@@ -2227,6 +2258,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return `<div class="fund-export__metric"><span class="metric-label">${label}</span><span class="metric-value ${extraClass}">${value}</span>${note ? `<span class="metric-sub">${note}</span>` : ''}</div>`;
       }).join('');
 
+      const sectionType = options.section || 'active';
       const cards = fundEntries.map((fund) => {
           const transactions = Array.isArray(fund.transactions) ? fund.transactions : [];
           const totalInvest = convert(fund.investedTotal, fund.curr);
@@ -2236,9 +2268,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const fundIrr = fund.irr;
           const weightedAvgMonths = fund.weightedAvgMonths;
           const isFrozenFund = !!fund.freeze;
+          const isClosedFund = !!fund.isClosed;
           const frozenLabel = languageOverride === 'en' ? 'Frozen' : 'Zmrazeno';
           const freezeBadgeInteractive = isFrozenFund ? `<span class="freeze-badge">${frozenLabel}</span>` : '';
           const freezeBadgeExport = freezeBadgeInteractive;
+          const closedBadgeLabel = languageOverride === 'en' ? 'Closed (100% redeemed)' : 'Ukončeno (100% odkup)';
+          const closedBadge = isClosedFund ? `<span class="freeze-badge">${closedBadgeLabel}</span>` : '';
           const fundColor = getColor(fund.fund);
           const pnlClass = pnl >= 0 ? 'text-positive' : 'text-negative';
           const irrClass = isFinite(fundIrr) && fundIrr >= 0 ? 'text-positive' : 'text-negative';
@@ -2246,58 +2281,108 @@ document.addEventListener('DOMContentLoaded', () => {
           const safeName = htmlEscape(displayName);
           const latestDate = fund.currDate || null;
 
-          const metrics = isStaticExport && staticCopy
-              ? [
-                  { label: staticCopy.metrics.invested, value: formatCurrency0(totalInvest, outCurr, currencyFormat) },
-                  { label: staticCopy.metrics.redeemed, value: formatCurrency0(totalRedeemed, outCurr, currencyFormat) },
-                  { label: staticCopy.metrics.current, value: formatCurrency0(totalCurrent, outCurr, currencyFormat) },
-                  { label: staticCopy.metrics.pnl, value: formatCurrency0(pnl, outCurr, currencyFormat), extraClass: pnlClass },
-                  { label: staticCopy.metrics.irr, value: formatXirr1(fundIrr, { ...percentFormat, language: languageOverride }), extraClass: irrClass },
-                  { label: staticCopy.metrics.months, value: formatMonths0(weightedAvgMonths, { ...monthsFormat, language: languageOverride }) }
-              ]
-              : [
+          const metrics = (() => {
+              if (sectionType === 'closed') {
+                  if (isStaticExport && staticCopy) {
+                      return [
+                          { label: staticCopy.metrics.invested, value: formatCurrency0(totalInvest, outCurr, currencyFormat) },
+                          { label: staticCopy.metrics.redeemed, value: formatCurrency0(totalRedeemed, outCurr, currencyFormat) },
+                          { label: staticCopy.metrics.pnl, value: formatCurrency0(pnl, outCurr, currencyFormat), extraClass: pnlClass },
+                          { label: languageOverride === 'en' ? 'Historical XIRR' : 'Historické XIRR', value: formatXirr1(fundIrr, { ...percentFormat, language: languageOverride }), extraClass: irrClass }
+                      ];
+                  }
+                  return [
+                      { label: 'Investováno', value: formatCurrency0(totalInvest, outCurr) },
+                      { label: 'Odkoupeno', value: formatCurrency0(totalRedeemed, outCurr) },
+                      { label: 'Realizovaný čistý zisk', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
+                      { label: 'Historické XIRR', value: formatXirr1(fundIrr) , extraClass: irrClass }
+                  ];
+              }
+              if (isStaticExport && staticCopy) {
+                  return [
+                      { label: staticCopy.metrics.invested, value: formatCurrency0(totalInvest, outCurr, currencyFormat) },
+                      { label: staticCopy.metrics.redeemed, value: formatCurrency0(totalRedeemed, outCurr, currencyFormat) },
+                      { label: staticCopy.metrics.current, value: formatCurrency0(totalCurrent, outCurr, currencyFormat) },
+                      { label: staticCopy.metrics.pnl, value: formatCurrency0(pnl, outCurr, currencyFormat), extraClass: pnlClass },
+                      { label: staticCopy.metrics.irr, value: formatXirr1(fundIrr, { ...percentFormat, language: languageOverride }), extraClass: irrClass },
+                      { label: staticCopy.metrics.months, value: formatMonths0(weightedAvgMonths, { ...monthsFormat, language: languageOverride }) }
+                  ];
+              }
+              return [
                   { label: 'Investováno', value: formatCurrency0(totalInvest, outCurr) },
                   { label: 'Odkoupeno', value: formatCurrency0(totalRedeemed, outCurr) },
                   { label: 'Aktuální hodnota', value: formatCurrency0(totalCurrent, outCurr) },
                   { label: 'Čistý zisk po odkupech', value: formatCurrency0(pnl, outCurr), extraClass: pnlClass },
-                  { label: 'Průměrný roční výnos (XIRR)', value: formatXirr1(fundIrr) , extraClass: irrClass },
+                  { label: isClosedFund ? 'Historické XIRR' : 'Průměrný roční výnos (XIRR)', value: formatXirr1(fundIrr) , extraClass: irrClass },
                   { label: 'Průměrná doba investice', value: formatMonths0(weightedAvgMonths) }
               ];
+          })();
 
           const transactionRows = transactions.map((tx, index) => {
-              const convertedInvest = convert(tx.invest, tx.curr);
-              const convertedQty = tx.qty;
+              const parseRowNumber = (value) => {
+                  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+                  if (value === null || value === undefined) return NaN;
+                  if (value === '—') return NaN;
+                  return utils.numCZ(value);
+              };
+              const parsedInvest = parseRowNumber(tx.invest);
+              const parsedQty = parseRowNumber(tx.qty);
+              const parsedCurrNav = parseRowNumber(tx.currNav);
+              const parsedTotalCurrent = parseRowNumber(tx.totalCurrent);
+              const convertedInvest = convert(parsedInvest, tx.curr);
               const displayDate = tx.originalDateIn || tx.dateIn;
               const valuationDate = tx.currDate;
               const typeLabel = (CONFIG.transactionTypes.find(type => type.value === tx.txType)?.label) || 'Platba';
-              const computedCurrent = Number.isFinite(tx.qty) && Number.isFinite(tx.currNav)
-                  ? tx.qty * tx.currNav
-                  : (Number.isFinite(tx.totalCurrent) ? tx.totalCurrent : NaN);
+              const computedCurrent = Number.isFinite(parsedQty) && Number.isFinite(parsedCurrNav)
+                  ? parsedQty * parsedCurrNav
+                  : parsedTotalCurrent;
+              const convertedCurrent = convert(computedCurrent, tx.curr);
+              const holdingMonths = (tx.dateIn instanceof Date && !isNaN(tx.dateIn) && valuationDate instanceof Date && !isNaN(valuationDate) && tx.txType === 'payment')
+                  ? utils.monthsDiff(tx.dateIn, valuationDate)
+                  : NaN;
+              const currentValueLabel = tx.txType === 'payment' && Number.isFinite(computedCurrent) ? computedCurrent : NaN;
+              const rowYield = (tx.txType === 'payment'
+                  && Number.isFinite(convertedInvest)
+                  && Number.isFinite(convertedCurrent)
+                  && convertedInvest > 0
+                  && convertedCurrent > 0)
+                  ? (convertedCurrent - convertedInvest)
+                  : NaN;
+              const days = (tx.dateIn instanceof Date && !isNaN(tx.dateIn) && valuationDate instanceof Date && !isNaN(valuationDate))
+                  ? ((valuationDate.getTime() - tx.dateIn.getTime()) / 86400000)
+                  : NaN;
+              const rowIrr = (tx.txType === 'payment'
+                  && Number.isFinite(convertedInvest)
+                  && Number.isFinite(convertedCurrent)
+                  && convertedInvest > 0
+                  && convertedCurrent > 0
+                  && Number.isFinite(days)
+                  && days > 0)
+                  ? (Math.pow(convertedCurrent / convertedInvest, 365 / days) - 1)
+                  : NaN;
+              const investDisplay = tx.txType === 'redemption'
+                  ? formatCurrency0(Math.abs(convertedInvest), outCurr, isStaticExport ? currencyFormat : {})
+                  : formatCurrency0(convertedInvest, outCurr, isStaticExport ? currencyFormat : {});
               if (isStaticExport && staticCopy) {
                   const dateLabel = displayDate ? formatDateByLanguage(displayDate, languageOverride) : 'N/A';
-                  const valuationLabel = valuationDate ? formatDateByLanguage(valuationDate, languageOverride) : 'N/A';
                   return `<tr>
                 <td>${htmlEscape(typeLabel)}</td>
                 <td>${htmlEscape(dateLabel)}</td>
-                <td class="text-right">${formatCurrency0(convertedInvest, outCurr, currencyFormat)}</td>
-                <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
-                <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr, currencyFormat)}</td>
-                <td class="text-right">${formatCurrency0(tx.currNav, tx.curr, currencyFormat)}</td>
-                <td>${htmlEscape(valuationLabel)}</td>
-                <td class="text-right">${formatCurrency0(computedCurrent, outCurr, currencyFormat)}</td>
-                <td>${htmlEscape(tx.shareClassLabel || '')}</td>
+                <td class="text-right">${investDisplay}</td>
+                <td class="text-right">${Number.isFinite(rowYield) ? formatCurrency0(rowYield, outCurr, currencyFormat) : '—'}</td>
+                <td class="text-right">${Number.isFinite(currentValueLabel) ? formatCurrency0(currentValueLabel, outCurr, currencyFormat) : '—'}</td>
+                <td class="text-right">${Number.isFinite(holdingMonths) ? formatMonths0(holdingMonths, { ...monthsFormat, language: languageOverride }) : '—'}</td>
+                <td class="text-right">${Number.isFinite(rowIrr) ? formatXirr1(rowIrr, { ...percentFormat, language: languageOverride }) : '—'}</td>
               </tr>`;
               }
               return `<tr>
                 <td>${typeLabel}</td>
                 <td>${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'}</td>
-                <td class="text-right">${formatCurrency0(convertedInvest, outCurr)}</td>
-                <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
-                <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr)}</td>
-                <td class="text-right">${formatCurrency0(tx.currNav, tx.curr)}</td>
-                <td>${valuationDate ? valuationDate.toLocaleDateString('cs-CZ') : 'N/A'}</td>
-                <td class="text-right">${formatCurrency0(computedCurrent, outCurr)}</td>
-                <td>${htmlEscape(tx.shareClassLabel || '')}</td>
+                <td class="text-right">${investDisplay}</td>
+                <td class="text-right">${Number.isFinite(rowYield) ? formatCurrency0(rowYield, outCurr) : '—'}</td>
+                <td class="text-right">${Number.isFinite(currentValueLabel) ? formatCurrency0(currentValueLabel, outCurr) : '—'}</td>
+                <td class="text-right">${Number.isFinite(holdingMonths) ? formatMonths0(holdingMonths) : '—'}</td>
+                <td class="text-right">${Number.isFinite(rowIrr) ? formatXirr1(rowIrr) : '—'}</td>
               </tr>`;
           }).join('');
 
@@ -2325,7 +2410,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="fund-export__header">
     <div class="fund-avatar" style="background:${fundColor}">${initials}</div>
     <div class="fund-export__title">
-      <div class="fund-card__name">${safeName} ${freezeBadgeExport}</div>
+      <div class="fund-card__name">${safeName} ${freezeBadgeExport} ${closedBadge}</div>
       <div class="fund-export__meta">${metaChips}</div>
     </div>
   </div>
@@ -2334,15 +2419,13 @@ document.addEventListener('DOMContentLoaded', () => {
     <table class="fund-export__table">
       <thead>
         <tr>
-          <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.transaction) : 'Transakce'}</th>
-          <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.date) : 'Datum'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.amount) : 'Částka'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.qty) : 'Počet CP'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.nav) : 'Upisovací hodnota'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.currNav) : 'Poslední schválená hodnota CP'}</th>
-          <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.currDate) : 'Datum poslední schválené hodnoty'}</th>
-          <th class="text-right">${staticCopy ? htmlEscape(staticCopy.tableHeaders.current) : 'Aktuální hodnota investice (Kč)'}</th>
-          <th>${staticCopy ? htmlEscape(staticCopy.tableHeaders.shareClass) : 'Třída akcie'}</th>
+          <th>Transakce</th>
+          <th>Datum připsání platby</th>
+          <th class="text-right">Investice</th>
+          <th class="text-right">Výnos</th>
+          <th class="text-right">Aktuální hodnota</th>
+          <th class="text-right">Doba držení</th>
+          <th class="text-right">Prům. roční výnos (XIRR)</th>
         </tr>
       </thead>
       <tbody>${transactionRows}</tbody>
@@ -2373,6 +2456,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="fund-card__dot" style="background-color: ${fundColor}"></span>
           <span class="fund-card__name" title="${safeName}">${safeName}</span>
           ${freezeBadgeInteractive}
+          ${closedBadge}
         </div>
         <div class="fund-card__meta">${metaChips}</div>
       </div>
@@ -2385,14 +2469,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <thead>
             <tr>
               <th>Transakce</th>
-              <th>Datum</th>
-              <th class="text-right">Částka</th>
-              <th class="text-right">Počet CP</th>
-              <th class="text-right">Upisovací hodnota</th>
-              <th class="text-right">Poslední schválená hodnota CP</th>
-              <th>Datum poslední schválené hodnoty</th>
-              <th class="text-right">Aktuální hodnota investice (Kč)</th>
-              <th>Třída akcie</th>
+              <th>Datum připsání platby</th>
+              <th class="text-right">Investice</th>
+              <th class="text-right">Výnos</th>
+              <th class="text-right">Aktuální hodnota</th>
+              <th class="text-right">Doba držení</th>
+              <th class="text-right">Prům. roční výnos (XIRR)</th>
             </tr>
           </thead>
           <tbody>${transactionRows}</tbody>
@@ -2408,6 +2490,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       container.innerHTML = cards.join('');
+  };
+
+  const renderClosedFunds = (funds, outCurr, fxRate) => {
+      const section = elements.closedFundsSection || document.getElementById('closed-funds-section');
+      const container = elements.closedFundsContainer || document.getElementById('closed-funds-container');
+      if (!section || !container) return;
+      const closedFunds = Array.isArray(funds) ? funds : [];
+      if (closedFunds.length === 0) {
+          section.style.display = 'none';
+          container.innerHTML = '';
+          return;
+      }
+      section.style.display = '';
+      renderFundsByCard(closedFunds, outCurr, fxRate, { container, section: 'closed' });
   };
   const renderSummary = (summaryData, outCurr, options = {}) => {
     const { isStaticExport = false, hasMixedCurrencies = false, hasFx = true } = options;
@@ -3937,13 +4033,17 @@ document.addEventListener('DOMContentLoaded', () => {
           /* PATCH */ format: copy.format,
           /* PATCH */ language: copy.language
       });
-
-      const fundsBlock = renderFundsByCard(snapshot.funds || [], outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
+      const activeFundsForExport = Array.isArray(snapshot.activeFunds) ? snapshot.activeFunds : (snapshot.funds || []);
+      const closedFundsForExport = Array.isArray(snapshot.closedFunds) ? snapshot.closedFunds : (snapshot.funds || []).filter(f => f.isClosed);
+      const fundsBlock = renderFundsByCard(activeFundsForExport, outCurr, fxRate, { isStaticExport: true, /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language });
+      const closedFundsBlock = closedFundsForExport.length
+          ? renderFundsByCard(closedFundsForExport, outCurr, fxRate, { isStaticExport: true, section: 'closed', /* PATCH */ copy: copy.funds, /* PATCH */ format: copy.format, /* PATCH */ language: copy.language })
+          : '';
 
       /* PATCH */
       const convert = (amt, curr) => utils.convertAmount(amt, curr, outCurr, fxRate);
       /* PATCH */
-      const allocationData = (snapshot.funds || []).map((entry) => {
+      const allocationData = activeFundsForExport.map((entry) => {
           const converted = convert(entry.currentValue, entry.curr);
           return { name: entry.displayName || entry.fund, totalCurrent: Number.isFinite(converted) ? converted : 0 };
       }).filter(item => item.totalCurrent > 0);
@@ -4028,6 +4128,17 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="fund-export-grid">${fundsBlock}</div>
       </section>`;
+      const closedFundsSection = closedFundsForExport.length
+          ? `<section class="card">
+        <div class="section-heading">
+          <span class="pill">${htmlEscape(copy.funds.pill)}</span>
+          <h2>${htmlEscape(copy.language === 'en' ? 'Closed positions (history)' : 'Ukončené pozice (historie)')}</h2>
+          <p class="section-meta">${htmlEscape(copy.summary.metaLabel(outCurr))}</p>
+          <p>${htmlEscape(copy.language === 'en' ? 'Positions that were fully redeemed are listed separately as historical outcomes.' : 'Pozice, které byly plně odkoupeny, jsou evidovány zvlášť jako historické.')}</p>
+        </div>
+        <div class="fund-export-grid">${closedFundsBlock}</div>
+      </section>`
+          : '';
 
       const pieSection = `<section class="card">
         <div class="section-heading">
@@ -4132,6 +4243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ${narrativeSection}
     ${summarySection}
     ${fundsSection}
+    ${closedFundsSection}
     ${pieSection}
     ${lineSection}
     ${disclaimerSection}
@@ -4411,6 +4523,8 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.providerSections = document.getElementById('provider-sections');
     elements.fundsContainer = document.getElementById('funds-by-card-container');
     elements.amountNoteFunds = document.getElementById('amount-note-funds');
+    elements.closedFundsSection = document.getElementById('closed-funds-section');
+    elements.closedFundsContainer = document.getElementById('closed-funds-container');
     elements.portfolioSummary = document.getElementById('portfolio-summary-content');
     elements.amountNotePortfolio = document.getElementById('amount-note-portfolio');
     elements.lineChartCard = document.getElementById('line-chart-card');
