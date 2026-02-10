@@ -2319,19 +2319,28 @@ document.addEventListener('DOMContentLoaded', () => {
           })();
 
           const transactionRows = transactions.map((tx, index) => {
-              const convertedInvest = convert(tx.invest, tx.curr);
-              const convertedQty = tx.qty;
+              const parseRowNumber = (value) => {
+                  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+                  if (value === null || value === undefined) return NaN;
+                  if (value === '—') return NaN;
+                  return utils.numCZ(value);
+              };
+              const parsedInvest = parseRowNumber(tx.invest);
+              const parsedQty = parseRowNumber(tx.qty);
+              const parsedCurrNav = parseRowNumber(tx.currNav);
+              const parsedTotalCurrent = parseRowNumber(tx.totalCurrent);
+              const convertedInvest = convert(parsedInvest, tx.curr);
               const displayDate = tx.originalDateIn || tx.dateIn;
               const valuationDate = tx.currDate;
               const typeLabel = (CONFIG.transactionTypes.find(type => type.value === tx.txType)?.label) || 'Platba';
-              const computedCurrent = Number.isFinite(tx.qty) && Number.isFinite(tx.currNav)
-                  ? tx.qty * tx.currNav
-                  : (Number.isFinite(tx.totalCurrent) ? tx.totalCurrent : NaN);
+              const computedCurrent = Number.isFinite(parsedQty) && Number.isFinite(parsedCurrNav)
+                  ? parsedQty * parsedCurrNav
+                  : parsedTotalCurrent;
               const convertedCurrent = convert(computedCurrent, tx.curr);
               const holdingMonths = (tx.dateIn instanceof Date && !isNaN(tx.dateIn) && valuationDate instanceof Date && !isNaN(valuationDate) && tx.txType === 'payment')
                   ? utils.monthsDiff(tx.dateIn, valuationDate)
                   : NaN;
-              const currentValueLabel = tx.txType === 'payment' ? computedCurrent : NaN;
+              const currentValueLabel = tx.txType === 'payment' && Number.isFinite(computedCurrent) ? computedCurrent : NaN;
               const rowYield = (tx.txType === 'payment'
                   && Number.isFinite(convertedInvest)
                   && Number.isFinite(convertedCurrent)
@@ -2374,35 +2383,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="text-right">${Number.isFinite(currentValueLabel) ? formatCurrency0(currentValueLabel, outCurr) : '—'}</td>
                 <td class="text-right">${Number.isFinite(holdingMonths) ? formatMonths0(holdingMonths) : '—'}</td>
                 <td class="text-right">${Number.isFinite(rowIrr) ? formatXirr1(rowIrr) : '—'}</td>
-              </tr>`;
-          }).join('');
-
-          const technicalRows = transactions.map((tx) => {
-              const convertedQty = tx.qty;
-              const displayDate = tx.originalDateIn || tx.dateIn;
-              const valuationDate = tx.currDate;
-              const typeLabel = (CONFIG.transactionTypes.find(type => type.value === tx.txType)?.label) || 'Platba';
-              if (isStaticExport && staticCopy) {
-                  const dateLabel = displayDate ? formatDateByLanguage(displayDate, languageOverride) : 'N/A';
-                  const valuationLabel = valuationDate ? formatDateByLanguage(valuationDate, languageOverride) : 'N/A';
-                  return `<tr>
-                <td>${htmlEscape(typeLabel)}</td>
-                <td>${htmlEscape(dateLabel)}</td>
-                <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
-                <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr, currencyFormat)}</td>
-                <td class="text-right">${formatCurrency0(tx.currNav, tx.curr, currencyFormat)}</td>
-                <td>${htmlEscape(valuationLabel)}</td>
-                <td>${htmlEscape(tx.shareClassLabel || '')}</td>
-              </tr>`;
-              }
-              return `<tr>
-                <td>${typeLabel}</td>
-                <td>${displayDate ? displayDate.toLocaleDateString('cs-CZ') : 'N/A'}</td>
-                <td class="text-right">${Number.isFinite(convertedQty) ? convertedQty.toFixed(4) : '—'}</td>
-                <td class="text-right">${formatCurrency0(tx.issueNav, tx.curr)}</td>
-                <td class="text-right">${formatCurrency0(tx.currNav, tx.curr)}</td>
-                <td>${valuationDate ? valuationDate.toLocaleDateString('cs-CZ') : 'N/A'}</td>
-                <td>${htmlEscape(tx.shareClassLabel || '')}</td>
               </tr>`;
           }).join('');
 
@@ -2451,25 +2431,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <tbody>${transactionRows}</tbody>
     </table>
   </div>
-  <details class="fund-card__transactions mt-4">
-    <summary>Technické údaje (CP/NAV) <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
-    <div class="fund-export__table-wrapper">
-      <table class="fund-export__table">
-        <thead>
-          <tr>
-            <th>Transakce</th>
-            <th>Datum připsání platby</th>
-            <th class="text-right">Počet vydaných cenných papírů</th>
-            <th class="text-right">Upisovací hodnota</th>
-            <th class="text-right">Poslední schválená hodnota CP</th>
-            <th>Datum poslední schválené hodnoty</th>
-            <th>Třída akcie</th>
-          </tr>
-        </thead>
-        <tbody>${technicalRows}</tbody>
-      </table>
-    </div>
-  </details>
 </article>`;
           }
 
@@ -2517,25 +2478,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>
           </thead>
           <tbody>${transactionRows}</tbody>
-        </table>
-      </div>
-    </details>
-    <details class="fund-card__transactions">
-      <summary>Technické údaje (CP/NAV) <svg class="summary-arrow w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></summary>
-      <div class="fund-export__table-wrapper">
-        <table class="fund-export__table">
-          <thead>
-            <tr>
-              <th>Transakce</th>
-              <th>Datum připsání platby</th>
-              <th class="text-right">Počet vydaných cenných papírů</th>
-              <th class="text-right">Upisovací hodnota</th>
-              <th class="text-right">Poslední schválená hodnota CP</th>
-              <th>Datum poslední schválené hodnoty</th>
-              <th>Třída akcie</th>
-            </tr>
-          </thead>
-          <tbody>${technicalRows}</tbody>
         </table>
       </div>
     </details>
