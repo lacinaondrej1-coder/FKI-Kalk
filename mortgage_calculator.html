@@ -87,6 +87,20 @@
       font-size: .9rem;
     }
 
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: .35rem .7rem;
+      color: var(--color-primary);
+      font-weight: 600;
+      background: rgba(77,177,200,.16);
+      border: 1px solid rgba(77,177,200,.35);
+    }
+
     .layout {
       display: grid;
       gap: 1rem;
@@ -207,10 +221,21 @@
       justify-content: space-between;
       gap: .7rem;
       font-size: .86rem;
+      align-items: baseline;
+      flex-wrap: wrap;
     }
 
-    .line span:first-child { color: var(--color-muted); }
-    .line strong { color: var(--color-primary); text-align: right; }
+    .line span:first-child {
+      color: var(--color-muted);
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .line strong {
+      color: var(--color-primary);
+      text-align: right;
+      white-space: nowrap;
+      margin-left: auto;
+    }
 
     .legend-controls {
       display: flex;
@@ -296,6 +321,7 @@
       align-items: center;
       gap: .6rem;
     }
+    .mini-grid > * { min-width: 0; }
 
     @media (max-width: 700px) {
       .mini-grid { grid-template-columns: 1fr; }
@@ -323,7 +349,8 @@
 
     table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       font-size: .84rem;
     }
 
@@ -339,12 +366,13 @@
     thead th {
       position: sticky;
       top: 0;
-      z-index: 2;
-      background: rgba(77,177,200,.13);
+      z-index: 5;
+      background: #E6F4F8;
       color: var(--color-primary);
       font-size: .78rem;
       text-transform: uppercase;
       letter-spacing: .05em;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.04);
     }
 
     tbody tr:nth-child(2n) { background: rgba(13,44,84,.02); }
@@ -376,11 +404,15 @@
             </div>
             <div class="field">
               <label for="yearsInput">Počet let splácení</label>
-              <input class="input" id="yearsInput" type="number" min="1" max="40" step="1" value="30" />
+              <input class="input int-input" id="yearsInput" type="text" inputmode="numeric" pattern="[0-9]*" value="30" />
             </div>
             <div class="field">
               <label for="annualRate">Úrok p.a. (%)</label>
               <input class="input percent-input" id="annualRate" type="text" inputmode="decimal" value="4,89" />
+            </div>
+            <div class="field">
+              <label for="propertyGrowthPct">Odhad růstu hodnoty nemovitosti p.a. (%)</label>
+              <input class="input percent-input" id="propertyGrowthPct" type="text" inputmode="decimal" value="3,0" />
             </div>
           </div>
           <label class="switch"><input id="useAct360" type="checkbox" /> Česká spořitelna (ACT/360)</label>
@@ -409,7 +441,6 @@
         </div>
 
         <div class="actions">
-          <button id="calculateBtn" class="btn btn-primary" type="button">Spočítat</button>
           <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
         </div>
         <div id="error" class="subtitle" style="color:#b91c1c;min-height:1.2rem;"></div>
@@ -423,6 +454,13 @@
           <div class="line"><span>Možná doba splatnosti</span><strong id="possibleRepaymentValue">—</strong></div>
           <div class="line"><span>Celková splatná částka</span><strong id="totalPaidValue">—</strong></div>
           <div class="line"><span>Hodnota investice</span><strong id="finalInvestmentValue">—</strong></div>
+        </div>
+
+        <div class="mini-card" style="margin-top:.8rem;">
+          <div class="pill" style="display:inline-flex;">Výsledek</div>
+          <div id="insightTitle" class="section-title" style="margin:.35rem 0 .3rem;font-size:.98rem;">—</div>
+          <div id="insightText" class="subtitle" style="margin:0 0 .45rem;">—</div>
+          <div id="insightLines" style="display:grid;gap:.4rem;"></div>
         </div>
       </aside>
     </section>
@@ -441,7 +479,7 @@
         <div class="mini-grid">
           <div class="field" style="margin:0;">
             <label for="yearsToCheck">Za kolik let (1–N)?</label>
-            <input id="yearsToCheck" class="input" type="number" min="1" step="1" value="10" />
+            <input id="yearsToCheck" class="input int-input" type="text" inputmode="numeric" pattern="[0-9]*" value="10" />
           </div>
           <div style="display:grid;gap:.5rem;">
             <div class="line"><span id="interestXLabel">Úroky celkem za 10 let</span><strong id="interestInXValue">—</strong></div>
@@ -500,18 +538,21 @@
       loanAmount: byId('loanAmount'),
       yearsInput: byId('yearsInput'),
       annualRate: byId('annualRate'),
+      propertyGrowthPct: byId('propertyGrowthPct'),
       useAct360: byId('useAct360'),
       lumpSum: byId('lumpSum'),
       monthlyContribution: byId('monthlyContribution'),
       investmentAnnualReturn: byId('investmentAnnualReturn'),
       entryFeePct: byId('entryFeePct'),
-      calculateBtn: byId('calculateBtn'),
       resetBtn: byId('resetBtn'),
       error: byId('error'),
       monthlyPaymentValue: byId('monthlyPaymentValue'),
       possibleRepaymentValue: byId('possibleRepaymentValue'),
       totalPaidValue: byId('totalPaidValue'),
       finalInvestmentValue: byId('finalInvestmentValue'),
+      insightTitle: byId('insightTitle'),
+      insightText: byId('insightText'),
+      insightLines: byId('insightLines'),
       yearsToCheck: byId('yearsToCheck'),
       interestXLabel: byId('interestXLabel'),
       principalXLabel: byId('principalXLabel'),
@@ -530,20 +571,25 @@
       debt: { label: 'Zůstatek dluhu', color: getComputedStyle(document.documentElement).getPropertyValue('--series-debt').trim(), defaultOn: true },
       investment: { label: 'Hodnota investice', color: getComputedStyle(document.documentElement).getPropertyValue('--series-investment').trim(), defaultOn: true },
       invested: { label: 'Investováno celkem', color: getComputedStyle(document.documentElement).getPropertyValue('--series-invested').trim(), defaultOn: true },
-      profit: { label: 'Výnos', color: getComputedStyle(document.documentElement).getPropertyValue('--series-profit').trim(), defaultOn: false }
+      profit: { label: 'Výnos', color: getComputedStyle(document.documentElement).getPropertyValue('--series-profit').trim(), defaultOn: false },
+      property: { label: 'Hodnota nemovitosti', color: '#64748b', defaultOn: false }
     };
 
     const chartState = {
       enabled: Object.fromEntries(Object.entries(seriesConfig).map(([k, v]) => [k, v.defaultOn])),
       hoverYear: null,
       data: null,
-      padding: { left: 102, right: 26, top: 22, bottom: 54 },
+      padding: { left: 112, right: 26, top: 22, bottom: 54 },
       width: 1000,
       height: 470
     };
 
     function sanitizeMoneyInput(el) {
       el.value = el.value.replace(/[^\d ]/g, '');
+    }
+
+    function sanitizeIntInput(el) {
+      el.value = el.value.replace(/[^\d]/g, '');
     }
 
     function sanitizePercentInput(el) {
@@ -623,15 +669,16 @@
     function calculateData() {
       const propertyValue = parseIntCz(els.propertyValue.value);
       const loanAmount = parseIntCz(els.loanAmount.value);
-      const years = Number(els.yearsInput.value);
+      const years = parseIntCz(els.yearsInput.value);
       const annualRatePct = parseFloatCz(els.annualRate.value);
+      const propertyGrowthPct = parseFloatCz(els.propertyGrowthPct.value);
       const lumpSum = parseIntCz(els.lumpSum.value);
       const monthlyContribution = parseIntCz(els.monthlyContribution.value);
       const investmentAnnualReturn = parseFloatCz(els.investmentAnnualReturn.value);
       const entryFeePct = parseFloatCz(els.entryFeePct.value);
       const basis = els.useAct360.checked ? 360 : 365;
 
-      if ([propertyValue, loanAmount, years, annualRatePct, lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct]
+      if ([propertyValue, loanAmount, years, annualRatePct, propertyGrowthPct, lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct]
         .some((v) => Number.isNaN(v) || v < 0) || propertyValue <= 0 || loanAmount <= 0 || years <= 0) {
         return { error: 'Prosím vyplňte všechna povinná pole kladnými hodnotami.' };
       }
@@ -695,7 +742,8 @@
         debt: [],
         investment: [],
         invested: [],
-        profit: []
+        profit: [],
+        property: []
       };
 
       yearlyRows.push({ year: 0, endBalance: mortgageBalance[0], investmentValue: investmentValue[0], interestSum: 0, principalSum: 0 });
@@ -704,6 +752,7 @@
       yearlySeries.investment.push(investmentValue[0]);
       yearlySeries.invested.push(investedNet[0]);
       yearlySeries.profit.push(investmentValue[0] - investedNet[0]);
+      yearlySeries.property.push(propertyValue);
 
       for (let y = 1; y <= years; y++) {
         const monthEnd = y * 12;
@@ -722,6 +771,7 @@
         yearlySeries.investment.push(investmentValue[monthEnd]);
         yearlySeries.invested.push(investedNet[monthEnd]);
         yearlySeries.profit.push(investmentValue[monthEnd] - investedNet[monthEnd]);
+        yearlySeries.property.push(propertyValue * Math.pow(1 + propertyGrowthRate, y));
       }
 
       let breakEvenMonth = null;
@@ -733,12 +783,12 @@
       }
 
       return {
-        inputs: { years, basis },
+        inputs: { years, basis, propertyValue, propertyGrowthPct },
         monthlyPayment,
         totalPaid: monthlyPayment * totalMonths,
         finalInvestmentValue: investmentValue[totalMonths],
         breakEvenMonth,
-        seriesMonthly: { cumulativeInterest, cumulativePrincipal },
+        seriesMonthly: { cumulativeInterest, cumulativePrincipal, mortgageBalance, investmentValue, investedNet },
         seriesYearly: yearlySeries,
         yearlyRows
       };
@@ -760,7 +810,7 @@
 
     function setInterestPrincipalForXYears(data) {
       const years = data.inputs.years;
-      const xInput = Number(els.yearsToCheck.value);
+      const xInput = parseIntCz(els.yearsToCheck.value);
       const safeX = Number.isFinite(xInput) ? Math.max(1, Math.floor(xInput)) : 1;
       const clampedYears = Math.min(years, safeX);
       if (String(els.yearsToCheck.value) !== String(safeX)) {
@@ -775,6 +825,50 @@
       els.principalXLabel.textContent = `Úmor celkem za ${clampedYears} let`;
       els.interestInXValue.textContent = formatCurrency(interestTotal, 0);
       els.principalInXValue.textContent = formatCurrency(principalTotal, 0);
+    }
+
+    function setInsight(data) {
+      const years = data.inputs.years;
+      const totalMonths = years * 12;
+      const be = data.breakEvenMonth;
+      const invSeries = data.seriesMonthly.investmentValue;
+      const debtSeries = data.seriesMonthly.mortgageBalance;
+      const investedSeries = data.seriesMonthly.investedNet;
+
+      if (be != null) {
+        const y = Math.floor(be / 12);
+        const m = be % 12;
+        const remMonths = Math.max(0, totalMonths - be);
+        const dy = Math.floor(remMonths / 12);
+        const dm = remMonths % 12;
+        const invAtBE = invSeries[be] || 0;
+        const debtAtBE = debtSeries[be] || 0;
+        const surplus = invAtBE - debtAtBE;
+        const propAtBE = data.inputs.propertyValue * Math.pow(1 + data.inputs.propertyGrowthPct / 100, be / 12);
+
+        els.insightTitle.textContent = 'Díky investici můžete hypotéku doplatit dříve';
+        els.insightText.innerHTML = `Při tomto nastavení investice dorovná zůstatek dluhu za <strong>${y} let a ${m} měsíců</strong>.<br>To je o <strong>${dy} let a ${dm} měsíců</strong> dříve než standardních ${years} let splácení.`;
+        els.insightLines.innerHTML = `
+          <div class="line"><span>Hodnota investice v době doplacení</span><strong>${formatCurrency(invAtBE,0)}</strong></div>
+          <div class="line"><span>Zůstatek dluhu v té době</span><strong>${formatCurrency(debtAtBE,0)}</strong></div>
+          <div class="line"><span>Přebytek po doplacení (investice – dluh)</span><strong>${formatCurrency(surplus,0)}</strong></div>
+          <div class="line"><span>Odhad hodnoty nemovitosti v době doplacení</span><strong>${formatCurrency(propAtBE,0)}</strong></div>
+        `;
+      } else {
+        const finalInv = invSeries[totalMonths] || 0;
+        const investedEnd = investedSeries[totalMonths] || 0;
+        const profit = finalInv - investedEnd;
+        const propAtEnd = data.inputs.propertyValue * Math.pow(1 + data.inputs.propertyGrowthPct / 100, years);
+
+        els.insightTitle.textContent = 'Investice hypotéku během splatnosti nedorovná';
+        els.insightText.innerHTML = `Do ${years} let investice nedosáhne výše zůstatku dluhu.<br>Po doplacení hypotéky budete mít z investice přibližně <strong>${formatCurrency(finalInv,0)}</strong>.`;
+        els.insightLines.innerHTML = `
+          <div class="line"><span>Hodnota investice na konci</span><strong>${formatCurrency(finalInv,0)}</strong></div>
+          <div class="line"><span>Investováno celkem</span><strong>${formatCurrency(investedEnd,0)}</strong></div>
+          <div class="line"><span>Výnos</span><strong>${formatCurrency(profit,0)}</strong></div>
+          <div class="line"><span>Odhad hodnoty nemovitosti na konci splatnosti</span><strong>${formatCurrency(propAtEnd,0)}</strong></div>
+        `;
+      }
     }
 
     function renderYearlyTable(rows) {
@@ -814,7 +908,7 @@
       const x = (year) => left + (year / years) * innerW;
       const y = (value) => top + (1 - value / maxY) * innerH;
 
-      const yTicks = 4;
+      const yTicks = els.chartWrap.clientWidth < 720 ? 3 : 4;
       const xStep = Math.max(1, Math.ceil(years / 10));
       const defs = `
         <defs>
@@ -851,7 +945,8 @@
           seriesPaths.push(`<path d="${fillPath}" fill="url(#investmentFill)" stroke="none"/>`);
         }
 
-        seriesPaths.push(`<path d="${d}" fill="none" stroke="${seriesConfig[key].color}" stroke-width="2.2" stroke-linecap="round"/>`);
+        const dashed = key === 'property' ? 'stroke-dasharray="6 5"' : '';
+        seriesPaths.push(`<path d="${d}" fill="none" stroke="${seriesConfig[key].color}" stroke-width="2.2" stroke-linecap="round" ${dashed}/>`);
       });
 
       let breakEvenLine = '';
@@ -921,12 +1016,14 @@
       const invested = ySeries.invested[year];
       const debt = ySeries.debt[year];
       const profit = inv - invested;
+      const propertyAtYear = data.seriesYearly.property[year] || 0;
 
       els.chartTooltip.innerHTML = `
         <strong>${year}. Rok</strong>
         <div class="row"><span>Výnos</span><span>${formatCurrency(profit, 0)}</span></div>
         <div class="row"><span>Výše investice</span><span>${formatCurrency(inv, 0)}</span></div>
         <div class="row"><span>Zůstatek dluhu</span><span>${formatCurrency(debt, 0)}</span></div>
+        <div class="row"><span>Odhad hodnoty nemovitosti</span><span>${formatCurrency(propertyAtYear, 0)}</span></div>
       `;
 
       const wrapRect = els.chartWrap.getBoundingClientRect();
@@ -982,6 +1079,7 @@
       setError('');
       setSummary(data);
       setInterestPrincipalForXYears(data);
+      setInsight(data);
       renderYearlyTable(data.yearlyRows);
       renderChart(data);
     }
@@ -996,8 +1094,11 @@
         el.addEventListener('input', () => { sanitizePercentInput(el); scheduleRecalc(); });
       });
 
-      [els.yearsInput, els.useAct360, els.yearsToCheck].forEach((el) => el.addEventListener('input', scheduleRecalc));
-      els.calculateBtn.addEventListener('click', recalcAll);
+      document.querySelectorAll('.int-input').forEach((el) => {
+        el.addEventListener('input', () => { sanitizeIntInput(el); scheduleRecalc(); });
+      });
+
+      [els.useAct360].forEach((el) => el.addEventListener('input', scheduleRecalc));
       els.toggleResultsTable.addEventListener('change', () => {
         els.resultsTableWrap.classList.toggle('hidden', !els.toggleResultsTable.checked);
       });
@@ -1005,14 +1106,15 @@
       els.resetBtn.addEventListener('click', () => {
         els.propertyValue.value = '6 000 000';
         els.loanAmount.value = '4 500 000';
-        els.yearsInput.value = 30;
+        els.yearsInput.value = '30';
         els.annualRate.value = '4,89';
+        els.propertyGrowthPct.value = '3,0';
         els.useAct360.checked = false;
         els.lumpSum.value = '300 000';
         els.monthlyContribution.value = '5 000';
         els.investmentAnnualReturn.value = '7';
         els.entryFeePct.value = '1,5';
-        els.yearsToCheck.value = 10;
+        els.yearsToCheck.value = '10';
         els.toggleResultsTable.checked = false;
         els.resultsTableWrap.classList.add('hidden');
 
