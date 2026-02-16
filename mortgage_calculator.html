@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FKI Hypoteční kalkulačka</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
@@ -20,6 +19,12 @@
       --color-card: #FFFFFF;
       --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
       --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
+      --series-debt: #d946ef;
+      --series-investment: #166534;
+      --series-invested: #0ea5e9;
+      --series-profit: #14b8a6;
+      --series-interest: #f59e0b;
+      --series-principal: #7c3aed;
     }
 
     html, body {
@@ -27,17 +32,15 @@
       font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
       background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
       color: var(--color-text);
-      scroll-behavior: smooth;
+      margin: 0;
     }
 
-    .tabular { font-variant-numeric: tabular-nums; }
-
     .shell {
-      max-width: 1150px;
+      max-width: 1220px;
       margin: 0 auto;
-      padding: 2.25rem 1.2rem 3rem;
+      padding: 2rem 1rem 3rem;
       display: grid;
-      gap: 1.2rem;
+      gap: 1rem;
     }
 
     .card {
@@ -45,34 +48,32 @@
         radial-gradient(circle at 85% 15%, rgba(13, 44, 84, 0.06), transparent 38%),
         var(--color-card);
       border: 1px solid var(--color-border);
-      border-radius: 1.4rem;
+      border-radius: 1.35rem;
       box-shadow: var(--color-shadow);
-      padding: 1.2rem;
-      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-      animation: fadeIn 0.35s ease-out;
+      padding: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
     .card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-2px);
       border-color: var(--color-border-strong);
       box-shadow: var(--color-shadow-strong);
     }
 
-    .brand-row {
+    .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
       flex-wrap: wrap;
-      margin-bottom: 0.8rem;
+      gap: .8rem;
     }
 
     .brand-logo {
-      font-size: 1.8rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: var(--color-primary);
+      font-size: 1.65rem;
+      letter-spacing: .12em;
       text-transform: uppercase;
+      color: var(--color-primary);
+      font-weight: 700;
     }
 
     .brand-logo span { color: var(--color-accent); }
@@ -80,375 +81,1012 @@
     .pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.45rem;
-      padding: 0.5rem 1rem;
       border-radius: 999px;
-      background: rgba(13, 44, 84, 0.08);
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: .4rem .8rem;
       color: var(--color-primary);
       font-weight: 600;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border: 1px solid rgba(13, 44, 84, 0.08);
+      background: rgba(13, 44, 84, 0.08);
+      border: 1px solid rgba(13, 44, 84, 0.12);
     }
 
-    .hero-title {
-      font-size: clamp(1.35rem, 2.4vw, 2rem);
+    .subtitle {
+      color: var(--color-muted);
+      margin: .4rem 0 0;
+      font-size: .9rem;
+    }
+
+    .layout {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1.2fr .8fr;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .section-title {
+      margin: 0 0 .6rem;
+      font-size: 1.05rem;
       color: var(--color-primary);
       font-weight: 700;
-      line-height: 1.2;
-      margin: 0;
     }
 
-    .hero-desc {
-      margin-top: 0.5rem;
-      color: var(--color-muted);
-      font-size: 0.95rem;
-    }
-
-    .grid {
-      display: grid;
-      gap: .9rem;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      margin-top: 1rem;
-    }
-
-    label {
-      display: grid;
-      gap: 0.35rem;
-      font-size: 0.88rem;
-      color: var(--color-muted);
-      font-weight: 500;
-    }
-
-    .glass-input {
-      background: rgba(255, 255, 255, 0.94);
+    .block {
       border: 1px solid var(--color-border);
-      border-radius: 0.9rem;
-      padding: 0.62rem 0.75rem;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-      color: var(--color-text);
-      font-size: 0.95rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,.84);
+      padding: .85rem;
+      margin-top: .7rem;
     }
 
-    .glass-input:focus {
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: .7rem;
+    }
+
+    .field { display: grid; gap: .28rem; }
+    .field label { font-size: .82rem; color: var(--color-muted); font-weight: 600; }
+
+    .input, .range {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: .8rem;
+      padding: .58rem .7rem;
+      font-size: .92rem;
+      color: var(--color-text);
+      background: rgba(255,255,255,.94);
+    }
+
+    .input:focus, .range:focus {
       border-color: var(--color-accent);
       box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
       outline: none;
     }
 
-    .primary-btn, .secondary-btn {
+    .row-range {
+      display: grid;
+      grid-template-columns: 1fr 110px;
+      gap: .4rem;
+      align-items: center;
+    }
+
+    .switch {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      border-radius: 0.9rem;
-      padding: 0.65rem 1.1rem;
+      gap: .45rem;
+      font-size: .86rem;
+      color: var(--color-primary);
       font-weight: 600;
-      font-size: 0.93rem;
-      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+      margin-top: .2rem;
+    }
+
+    .actions { display: flex; gap: .5rem; margin-top: .8rem; }
+    .btn {
       border: 1px solid transparent;
+      border-radius: .85rem;
+      padding: .55rem .9rem;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .btn-primary { background: var(--color-primary); color: #fff; }
+    .btn-primary:hover { background: #143d76; }
+    .btn-secondary {
+      background: rgba(77,177,200,.12);
+      color: var(--color-primary);
+      border-color: rgba(77,177,200,.35);
+    }
+
+    .summary-main {
+      font-size: .82rem;
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      font-weight: 600;
+    }
+
+    .summary-value {
+      margin: .2rem 0 .8rem;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: .55rem;
+      margin-bottom: .6rem;
+    }
+
+    .metric {
+      border: 1px solid var(--color-border);
+      border-radius: .9rem;
+      background: rgba(255,255,255,.86);
+      padding: .6rem;
+    }
+
+    .metric small {
+      color: var(--color-muted);
+      display: block;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 600;
+      margin-bottom: .2rem;
+    }
+
+    .metric strong { color: var(--color-primary); font-size: .97rem; }
+
+    .summary-lines {
+      margin-top: .7rem;
+      border-top: 1px dashed var(--color-border-strong);
+      padding-top: .65rem;
+      display: grid;
+      gap: .5rem;
+    }
+
+    .line {
+      display: flex;
+      justify-content: space-between;
+      gap: .7rem;
+      font-size: .86rem;
+    }
+
+    .line span:first-child { color: var(--color-muted); }
+    .line strong { color: var(--color-primary); }
+
+    .legend-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem 1rem;
+      margin-top: .4rem;
+      margin-bottom: .6rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .83rem;
+      color: var(--color-text);
+      user-select: none;
+    }
+
+    .dot {
+      width: .68rem;
+      height: .68rem;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .graph-wrap {
+      position: relative;
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(248,250,252,.95));
+      overflow: hidden;
+      min-height: 420px;
+    }
+
+    #chartSvg {
+      width: 100%;
+      height: 430px;
+      display: block;
+    }
+
+    #chartTooltip {
+      position: absolute;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity .15s ease;
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: .7rem;
+      box-shadow: var(--color-shadow);
+      padding: .5rem .6rem;
+      min-width: 170px;
+      font-size: .8rem;
+    }
+
+    #chartTooltip strong {
+      color: var(--color-primary);
+      display: block;
+      margin-bottom: .3rem;
+    }
+
+    #chartTooltip .row {
+      display: flex;
+      justify-content: space-between;
+      gap: .7rem;
+      margin: .16rem 0;
+    }
+
+    .toggle-table {
+      margin-top: .75rem;
+      margin-bottom: .55rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      color: var(--color-primary);
+      font-weight: 600;
+      font-size: .86rem;
       cursor: pointer;
     }
 
-    .primary-btn {
-      background: var(--color-primary);
-      color: white;
-      border-color: var(--color-primary);
-      box-shadow: var(--color-shadow);
-    }
-
-    .primary-btn:hover {
-      background: #143d76;
-      border-color: #143d76;
-      box-shadow: var(--color-shadow-strong);
-    }
-
-    .secondary-btn {
-      background: rgba(77, 177, 200, 0.12);
-      color: var(--color-primary);
-      border-color: rgba(77, 177, 200, 0.4);
-    }
-
-    .secondary-btn:hover {
-      background: rgba(77, 177, 200, 0.18);
-      border-color: rgba(77, 177, 200, 0.55);
-    }
-
-    .actions {
-      margin-top: 1rem;
-      display: flex;
-      gap: .6rem;
-      flex-wrap: wrap;
-    }
-
-    .error {
-      margin-top: .65rem;
-      min-height: 1.3rem;
-      color: #b91c1c;
-      font-size: .9rem;
-      font-weight: 500;
-    }
-
-    .stats {
-      display: grid;
-      gap: 0.75rem;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
-
-    .stat {
-      background: rgba(255, 255, 255, 0.86);
-      border: 1px solid var(--color-border);
-      border-radius: 1rem;
-      padding: 0.85rem;
-      transition: transform 0.2s ease;
-    }
-
-    .stat:hover { transform: translateY(-2px); }
-
-    .stat small {
-      color: var(--color-muted);
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      display: block;
-      margin-bottom: 0.2rem;
-      font-weight: 600;
-    }
-
-    .stat strong {
-      color: var(--color-primary);
-      font-size: 1.1rem;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
     .table-wrap {
-      margin-top: .5rem;
-      max-height: 420px;
+      max-height: 360px;
       overflow: auto;
       border: 1px solid var(--color-border);
-      border-radius: 1rem;
-      background: rgba(255, 255, 255, 0.85);
+      border-radius: .95rem;
+      background: rgba(255,255,255,.9);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: .86rem;
-    }
-
-    thead th {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: rgba(77, 177, 200, 0.12);
-      color: var(--color-primary);
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      font-size: .84rem;
     }
 
     th, td {
       border-bottom: 1px solid var(--color-border);
-      padding: .48rem .4rem;
       text-align: right;
+      padding: .42rem .45rem;
       white-space: nowrap;
     }
 
     th:first-child, td:first-child { text-align: left; }
 
-    tbody tr:nth-child(2n) { background: rgba(13, 44, 84, 0.02); }
-
-    .section-title {
-      margin: 0 0 .75rem;
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(77,177,200,.13);
       color: var(--color-primary);
-      font-size: 1.05rem;
-      font-weight: 700;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    tbody tr:nth-child(2n) { background: rgba(13,44,84,.02); }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <main class="shell tabular">
+  <main class="shell">
     <section class="card">
-      <div class="brand-row">
+      <div class="header">
         <div class="brand-logo">FKI <span>KALK</span></div>
-        <span class="pill">Hypoteční nástroj pro poradce</span>
+        <span class="pill">Investice vs. hypotéka</span>
       </div>
-      <h1 class="hero-title">Hypoteční kalkulačka – splátka, LTV, úmor a úrok</h1>
-      <p class="hero-desc">Stylizováno ve stejném vizuálním kabátku jako reporty FKI: firemní barvy, karty, zvýraznění, jemné animace a moderní layout.</p>
+      <p class="subtitle">Porovnání vývoje zůstatku hypotéky a investice s day-count režimem ACT/365 vs. ČS ACT/360.</p>
+    </section>
 
-      <div class="grid">
-        <label>Výše hypotéky (Kč)
-          <input class="glass-input" id="loanAmount" type="number" min="1" step="1000" value="4500000" />
-        </label>
-        <label>Roční úroková sazba (%)
-          <input class="glass-input" id="rate" type="number" min="0" step="0.01" value="4.89" />
-        </label>
-        <label>Splatnost (roky)
-          <input class="glass-input" id="years" type="number" min="1" step="1" value="30" />
-        </label>
-        <label>Hodnota nemovitosti (Kč)
-          <input class="glass-input" id="propertyValue" type="number" min="1" step="1000" value="6000000" />
-        </label>
-      </div>
+    <section class="layout">
+      <article class="card">
+        <h2 class="section-title">Vstupy</h2>
 
-      <div class="actions">
-        <button class="primary-btn" id="calculateBtn" type="button">Spočítat</button>
-        <button class="secondary-btn" id="resetBtn" type="button">Reset</button>
-      </div>
+        <div class="block">
+          <h3 class="section-title" style="font-size:.95rem;margin-bottom:.5rem;">Hypotéka</h3>
+          <div class="grid-2">
+            <div class="field">
+              <label for="propertyValue">Zástavní hodnota nemovitosti (Kč)</label>
+              <input class="input" id="propertyValue" type="number" min="1" step="1000" value="6000000" />
+            </div>
+            <div class="field">
+              <label for="loanAmount">Výše úvěru (Kč)</label>
+              <input class="input" id="loanAmount" type="number" min="1" step="1000" value="4500000" />
+            </div>
+            <div class="field">
+              <label for="yearsSlider">Počet let splácení</label>
+              <div class="row-range">
+                <input class="range" id="yearsSlider" type="range" min="1" max="40" step="1" value="30" />
+                <input class="input" id="yearsInput" type="number" min="1" max="40" step="1" value="30" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="rateSlider">Úrok p.a. (%)</label>
+              <div class="row-range">
+                <input class="range" id="rateSlider" type="range" min="0" max="15" step="0.01" value="4.89" />
+                <input class="input" id="annualRate" type="number" min="0" max="15" step="0.01" value="4.89" />
+              </div>
+            </div>
+          </div>
+          <label class="switch"><input id="useAct360" type="checkbox" /> Česká spořitelna (ACT/360)</label>
+        </div>
 
-      <div id="error" class="error"></div>
+        <div class="block">
+          <h3 class="section-title" style="font-size:.95rem;margin-bottom:.5rem;">Investice</h3>
+          <div class="grid-2">
+            <div class="field">
+              <label for="lumpSum">Jednorázová investiční platba (Kč)</label>
+              <input class="input" id="lumpSum" type="number" min="0" step="1000" value="300000" />
+            </div>
+            <div class="field">
+              <label for="monthlyContribution">Měsíční vklad (Kč)</label>
+              <input class="input" id="monthlyContribution" type="number" min="0" step="100" value="5000" />
+            </div>
+            <div class="field">
+              <label for="invReturnSlider">Zhodnocení p.a. (%)</label>
+              <div class="row-range">
+                <input class="range" id="invReturnSlider" type="range" min="0" max="20" step="0.01" value="7" />
+                <input class="input" id="investmentAnnualReturn" type="number" min="0" max="20" step="0.01" value="7" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="entryFeePct">Vstupní poplatek (%)</label>
+              <input class="input" id="entryFeePct" type="number" min="0" max="20" step="0.01" value="1.5" />
+            </div>
+          </div>
+        </div>
+
+        <div class="block">
+          <label class="switch"><input id="toggleAdvanced" type="checkbox" /> Rozšířené parametry</label>
+          <div id="advancedFields" class="grid-2 hidden" style="margin-top:.55rem;">
+            <div class="field">
+              <label for="monthlyIncome">Měsíční příjem (Kč)</label>
+              <input class="input" id="monthlyIncome" type="number" min="0" step="1000" placeholder="např. 65 000" />
+            </div>
+            <div class="field">
+              <label for="monthlyObligations">Měsíční závazky (Kč)</label>
+              <input class="input" id="monthlyObligations" type="number" min="0" step="500" placeholder="např. 8 000" />
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="calculateBtn" class="btn btn-primary" type="button">Spočítat</button>
+          <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+        </div>
+        <div id="error" class="subtitle" style="color:#b91c1c;min-height:1.2rem;"></div>
+      </article>
+
+      <aside class="card">
+        <div class="summary-main">Výše měsíční splátky</div>
+        <div id="monthlyPaymentValue" class="summary-value">—</div>
+
+        <div class="metrics">
+          <div class="metric"><small>DTI</small><strong id="dtiValue">—</strong></div>
+          <div class="metric"><small>DSTI</small><strong id="dstiValue">—</strong></div>
+          <div class="metric"><small>LTV</small><strong id="ltvValue">—</strong></div>
+        </div>
+
+        <div class="summary-lines">
+          <div class="line"><span>Možná doba splatnosti</span><strong id="possibleRepaymentValue">—</strong></div>
+          <div class="line"><span>Celková splatná částka</span><strong id="totalPaidValue">—</strong></div>
+          <div class="line"><span>Hodnota investice</span><strong id="finalInvestmentValue">—</strong></div>
+        </div>
+      </aside>
     </section>
 
     <section class="card">
-      <h2 class="section-title">Souhrn výpočtu</h2>
-      <div class="stats">
-        <div class="stat"><small>Měsíční splátka</small><strong id="monthlyPayment">-</strong></div>
-        <div class="stat"><small>LTV</small><strong id="ltv">-</strong></div>
-        <div class="stat"><small>Celkem zaplaceno</small><strong id="totalPaid">-</strong></div>
-        <div class="stat"><small>Celkem úroky</small><strong id="totalInterest">-</strong></div>
-        <div class="stat"><small>Celkem úmor jistiny</small><strong id="totalPrincipal">-</strong></div>
+      <h2 class="section-title">Graf vývoje</h2>
+      <div style="font-size:.83rem;color:var(--color-muted);margin-bottom:.4rem;">Zobrazit v grafu:</div>
+      <div class="legend-controls" id="legendControls"></div>
+      <div class="graph-wrap" id="chartWrap">
+        <svg id="chartSvg" viewBox="0 0 1000 430" preserveAspectRatio="none"></svg>
+        <div id="chartTooltip"></div>
       </div>
-    </section>
 
-    <section class="card">
-      <h2 class="section-title">Amortizační plán (měsíční rozpad splátky)</h2>
-      <div class="table-wrap">
+      <label class="toggle-table"><input id="toggleResultsTable" type="checkbox" /> Tabulka s výslednými hodnotami</label>
+      <div id="resultsTableWrap" class="table-wrap hidden">
         <table>
           <thead>
             <tr>
-              <th>Měsíc</th>
-              <th>Splátka</th>
+              <th>Rok</th>
+              <th>Jistina na konci období</th>
+              <th>Hodnota investice</th>
               <th>Úrok</th>
-              <th>Úmor jistiny</th>
-              <th>Zůstatek jistiny</th>
+              <th>Úmor</th>
             </tr>
           </thead>
-          <tbody id="scheduleBody"></tbody>
+          <tbody id="yearlyTableBody"></tbody>
         </table>
       </div>
     </section>
   </main>
 
   <script>
-    const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
-    const percent = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatCurrency = (v, digits = 0) => new Intl.NumberFormat('cs-CZ', {
+      style: 'currency', currency: 'CZK', maximumFractionDigits: digits, minimumFractionDigits: digits
+    }).format(v || 0);
+
+    const formatNumber = (v, digits = 2) => new Intl.NumberFormat('cs-CZ', {
+      minimumFractionDigits: digits, maximumFractionDigits: digits
+    }).format(v);
+
+    const byId = (id) => document.getElementById(id);
 
     const els = {
-      loanAmount: document.getElementById('loanAmount'),
-      rate: document.getElementById('rate'),
-      years: document.getElementById('years'),
-      propertyValue: document.getElementById('propertyValue'),
-      error: document.getElementById('error'),
-      monthlyPayment: document.getElementById('monthlyPayment'),
-      ltv: document.getElementById('ltv'),
-      totalPaid: document.getElementById('totalPaid'),
-      totalInterest: document.getElementById('totalInterest'),
-      totalPrincipal: document.getElementById('totalPrincipal'),
-      scheduleBody: document.getElementById('scheduleBody'),
-      calculateBtn: document.getElementById('calculateBtn'),
-      resetBtn: document.getElementById('resetBtn')
+      propertyValue: byId('propertyValue'),
+      loanAmount: byId('loanAmount'),
+      yearsSlider: byId('yearsSlider'),
+      yearsInput: byId('yearsInput'),
+      rateSlider: byId('rateSlider'),
+      annualRate: byId('annualRate'),
+      useAct360: byId('useAct360'),
+      lumpSum: byId('lumpSum'),
+      monthlyContribution: byId('monthlyContribution'),
+      invReturnSlider: byId('invReturnSlider'),
+      investmentAnnualReturn: byId('investmentAnnualReturn'),
+      entryFeePct: byId('entryFeePct'),
+      toggleAdvanced: byId('toggleAdvanced'),
+      advancedFields: byId('advancedFields'),
+      monthlyIncome: byId('monthlyIncome'),
+      monthlyObligations: byId('monthlyObligations'),
+      calculateBtn: byId('calculateBtn'),
+      resetBtn: byId('resetBtn'),
+      error: byId('error'),
+      monthlyPaymentValue: byId('monthlyPaymentValue'),
+      dtiValue: byId('dtiValue'),
+      dstiValue: byId('dstiValue'),
+      ltvValue: byId('ltvValue'),
+      possibleRepaymentValue: byId('possibleRepaymentValue'),
+      totalPaidValue: byId('totalPaidValue'),
+      finalInvestmentValue: byId('finalInvestmentValue'),
+      chartSvg: byId('chartSvg'),
+      chartWrap: byId('chartWrap'),
+      chartTooltip: byId('chartTooltip'),
+      legendControls: byId('legendControls'),
+      toggleResultsTable: byId('toggleResultsTable'),
+      resultsTableWrap: byId('resultsTableWrap'),
+      yearlyTableBody: byId('yearlyTableBody')
     };
 
-    function clearOutput() {
-      els.monthlyPayment.textContent = '-';
-      els.ltv.textContent = '-';
-      els.totalPaid.textContent = '-';
-      els.totalInterest.textContent = '-';
-      els.totalPrincipal.textContent = '-';
-      els.scheduleBody.innerHTML = '';
+    const seriesConfig = {
+      debt: { label: 'Zůstatek dluhu', color: getComputedStyle(document.documentElement).getPropertyValue('--series-debt').trim(), defaultOn: true },
+      investment: { label: 'Hodnota investice', color: getComputedStyle(document.documentElement).getPropertyValue('--series-investment').trim(), defaultOn: true },
+      invested: { label: 'Investováno celkem', color: getComputedStyle(document.documentElement).getPropertyValue('--series-invested').trim(), defaultOn: false },
+      profit: { label: 'Výnos', color: getComputedStyle(document.documentElement).getPropertyValue('--series-profit').trim(), defaultOn: false },
+      cumInterest: { label: 'Kumulované úroky hypotéky', color: getComputedStyle(document.documentElement).getPropertyValue('--series-interest').trim(), defaultOn: false },
+      cumPrincipal: { label: 'Kumulovaný úmor', color: getComputedStyle(document.documentElement).getPropertyValue('--series-principal').trim(), defaultOn: false }
+    };
+
+    const chartState = {
+      enabled: Object.fromEntries(Object.entries(seriesConfig).map(([k, v]) => [k, v.defaultOn])),
+      hoverYear: null,
+      data: null,
+      padding: { left: 78, right: 26, top: 24, bottom: 46 },
+      width: 1000,
+      height: 430
+    };
+
+    function syncPair(a, b, fallback = 0) {
+      const n = Number(a.value);
+      if (Number.isFinite(n)) {
+        b.value = a.value;
+      } else {
+        a.value = fallback;
+        b.value = fallback;
+      }
     }
 
-    function validateInputs(loanAmount, rate, years, propertyValue) {
-      if (loanAmount <= 0 || rate < 0 || years <= 0 || propertyValue <= 0) {
-        return 'Všechna pole musí mít kladné hodnoty (sazba může být 0).';
-      }
-      if (loanAmount > propertyValue) {
-        return 'Výše hypotéky nemůže být vyšší než hodnota nemovitosti pro výpočet LTV.';
-      }
-      return '';
+    function addMonths(date, count) {
+      const d = new Date(date);
+      d.setMonth(d.getMonth() + count);
+      return d;
     }
 
-    function calculateMortgage() {
-      const loanAmount = Number(els.loanAmount.value);
-      const annualRate = Number(els.rate.value);
-      const years = Number(els.years.value);
+    function getDefaultStartDate() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+
+    function buildDaysArray(totalMonths, startDate) {
+      const days = [];
+      for (let i = 0; i < totalMonths; i++) {
+        const current = addMonths(startDate, i);
+        const next = addMonths(startDate, i + 1);
+        const diff = Math.round((next - current) / (1000 * 60 * 60 * 24));
+        days.push(diff);
+      }
+      return days;
+    }
+
+    function solveMonthlyPayment({ loanAmount, annualRatePct, totalMonths, daysArray, basis }) {
+      if (loanAmount <= 0 || totalMonths <= 0) return 0;
+      if (annualRatePct === 0) return loanAmount / totalMonths;
+
+      const annualRate = annualRatePct / 100;
+
+      const simulateBalance = (payment) => {
+        let balance = loanAmount;
+        for (let i = 0; i < totalMonths; i++) {
+          const interest = balance * annualRate * (daysArray[i] / basis);
+          const principal = payment - interest;
+          balance -= principal;
+        }
+        return balance;
+      };
+
+      let low = 0;
+      let high = Math.max(loanAmount / totalMonths * 2, loanAmount * (annualRate / 12 + 0.02));
+      while (simulateBalance(high) > 0) {
+        high *= 2;
+        if (high > loanAmount * 10) break;
+      }
+
+      for (let i = 0; i < 60; i++) {
+        const mid = (low + high) / 2;
+        const bal = simulateBalance(mid);
+        if (bal > 0) {
+          low = mid;
+        } else {
+          high = mid;
+        }
+      }
+
+      return (low + high) / 2;
+    }
+
+    function calculateData() {
       const propertyValue = Number(els.propertyValue.value);
+      const loanAmount = Number(els.loanAmount.value);
+      const years = Number(els.yearsInput.value);
+      const annualRatePct = Number(els.annualRate.value);
+      const lumpSum = Number(els.lumpSum.value);
+      const monthlyContribution = Number(els.monthlyContribution.value);
+      const investmentAnnualReturn = Number(els.investmentAnnualReturn.value);
+      const entryFeePct = Number(els.entryFeePct.value);
+      const monthlyIncome = Number(els.monthlyIncome.value);
+      const monthlyObligations = Number(els.monthlyObligations.value || 0);
+      const basis = els.useAct360.checked ? 360 : 365;
 
-      const validation = validateInputs(loanAmount, annualRate, years, propertyValue);
-      if (validation) {
-        els.error.textContent = validation;
-        clearOutput();
-        return;
+      if ([propertyValue, loanAmount, years, annualRatePct, lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct]
+        .some((v) => Number.isNaN(v) || v < 0) || propertyValue <= 0 || loanAmount <= 0 || years <= 0) {
+        return { error: 'Prosím vyplňte všechna povinná pole kladnými hodnotami.' };
       }
 
-      els.error.textContent = '';
+      const totalMonths = years * 12;
+      const startDate = getDefaultStartDate();
+      const daysArray = buildDaysArray(totalMonths, startDate);
+      const monthlyPayment = solveMonthlyPayment({ loanAmount, annualRatePct, totalMonths, daysArray, basis });
+      const annualRate = annualRatePct / 100;
 
-      const months = years * 12;
-      const monthlyRate = annualRate / 100 / 12;
-      const monthlyPayment = monthlyRate === 0
-        ? loanAmount / months
-        : loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+      const entryFeeMultiplier = Math.max(0, 1 - entryFeePct / 100);
+      const netLump = lumpSum * entryFeeMultiplier;
+      const netMonthly = monthlyContribution * entryFeeMultiplier;
+      const invMonthlyRate = Math.pow(1 + investmentAnnualReturn / 100, 1 / 12) - 1;
+
+      const mortgageBalance = new Array(totalMonths + 1).fill(0);
+      const investmentValue = new Array(totalMonths + 1).fill(0);
+      const investedNet = new Array(totalMonths + 1).fill(0);
+      const cumulativeInterest = new Array(totalMonths + 1).fill(0);
+      const cumulativePrincipal = new Array(totalMonths + 1).fill(0);
+      const monthlyInterest = new Array(totalMonths + 1).fill(0);
+      const monthlyPrincipal = new Array(totalMonths + 1).fill(0);
+
+      mortgageBalance[0] = loanAmount;
+      investmentValue[0] = netLump;
+      investedNet[0] = netLump;
 
       let balance = loanAmount;
-      let totalInterest = 0;
-      let totalPrincipal = 0;
-      let rows = '';
+      let invValue = netLump;
+      let invNetSum = netLump;
+      let cumInterest = 0;
+      let cumPrincipal = 0;
 
-      for (let month = 1; month <= months; month++) {
-        const interest = balance * monthlyRate;
+      for (let m = 1; m <= totalMonths; m++) {
+        const days = daysArray[m - 1];
+        const interest = balance * annualRate * (days / basis);
         let principal = monthlyPayment - interest;
 
-        if (month === months) {
-          principal = balance;
+        if (principal > balance) principal = balance;
+        if (principal < 0) principal = 0;
+
+        balance = Math.max(0, balance - principal);
+        cumInterest += interest;
+        cumPrincipal += principal;
+
+        invValue = invValue * (1 + invMonthlyRate) + netMonthly;
+        invNetSum += netMonthly;
+
+        mortgageBalance[m] = balance;
+        investmentValue[m] = invValue;
+        investedNet[m] = invNetSum;
+        cumulativeInterest[m] = cumInterest;
+        cumulativePrincipal[m] = cumPrincipal;
+        monthlyInterest[m] = interest;
+        monthlyPrincipal[m] = principal;
+      }
+
+      const yearlyRows = [];
+      const yearlySeries = {
+        year: [],
+        debt: [],
+        investment: [],
+        invested: [],
+        profit: [],
+        cumInterest: [],
+        cumPrincipal: []
+      };
+
+      yearlyRows.push({
+        year: 0,
+        endBalance: mortgageBalance[0],
+        investmentValue: investmentValue[0],
+        interestSum: 0,
+        principalSum: 0
+      });
+
+      yearlySeries.year.push(0);
+      yearlySeries.debt.push(mortgageBalance[0]);
+      yearlySeries.investment.push(investmentValue[0]);
+      yearlySeries.invested.push(investedNet[0]);
+      yearlySeries.profit.push(investmentValue[0] - investedNet[0]);
+      yearlySeries.cumInterest.push(0);
+      yearlySeries.cumPrincipal.push(0);
+
+      for (let y = 1; y <= years; y++) {
+        const monthEnd = y * 12;
+        const monthStart = (y - 1) * 12 + 1;
+        let yearInterest = 0;
+        let yearPrincipal = 0;
+
+        for (let m = monthStart; m <= monthEnd; m++) {
+          yearInterest += monthlyInterest[m];
+          yearPrincipal += monthlyPrincipal[m];
         }
 
-        balance -= principal;
-        if (balance < 0) {
-          balance = 0;
+        yearlyRows.push({
+          year: y,
+          endBalance: mortgageBalance[monthEnd],
+          investmentValue: investmentValue[monthEnd],
+          interestSum: yearInterest,
+          principalSum: yearPrincipal
+        });
+
+        yearlySeries.year.push(y);
+        yearlySeries.debt.push(mortgageBalance[monthEnd]);
+        yearlySeries.investment.push(investmentValue[monthEnd]);
+        yearlySeries.invested.push(investedNet[monthEnd]);
+        yearlySeries.profit.push(investmentValue[monthEnd] - investedNet[monthEnd]);
+        yearlySeries.cumInterest.push(cumulativeInterest[monthEnd]);
+        yearlySeries.cumPrincipal.push(cumulativePrincipal[monthEnd]);
+      }
+
+      let breakEvenMonth = null;
+      for (let m = 0; m <= totalMonths; m++) {
+        if (investmentValue[m] >= mortgageBalance[m]) {
+          breakEvenMonth = m;
+          break;
         }
-
-        totalInterest += interest;
-        totalPrincipal += principal;
-
-        rows += `<tr>
-          <td>${month}</td>
-          <td>${currency.format(monthlyPayment)}</td>
-          <td>${currency.format(interest)}</td>
-          <td>${currency.format(principal)}</td>
-          <td>${currency.format(balance)}</td>
-        </tr>`;
       }
 
       const ltv = (loanAmount / propertyValue) * 100;
-      const totalPaid = monthlyPayment * months;
+      const dti = monthlyIncome > 0 ? loanAmount / (monthlyIncome * 12) : null;
+      const dsti = monthlyIncome > 0 ? ((monthlyPayment + monthlyObligations) / monthlyIncome) * 100 : null;
 
-      els.monthlyPayment.textContent = currency.format(monthlyPayment);
-      els.ltv.textContent = `${percent.format(ltv)} %`;
-      els.totalPaid.textContent = currency.format(totalPaid);
-      els.totalInterest.textContent = currency.format(totalInterest);
-      els.totalPrincipal.textContent = currency.format(totalPrincipal);
-      els.scheduleBody.innerHTML = rows;
+      return {
+        inputs: { propertyValue, loanAmount, years, annualRatePct, monthlyIncome, monthlyObligations, basis },
+        monthlyPayment,
+        totalPaid: monthlyPayment * totalMonths,
+        finalInvestmentValue: investmentValue[totalMonths],
+        ltv,
+        dti,
+        dsti,
+        breakEvenMonth,
+        seriesMonthly: { mortgageBalance, investmentValue, investedNet, cumulativeInterest, cumulativePrincipal },
+        seriesYearly: yearlySeries,
+        yearlyRows
+      };
     }
 
-    els.calculateBtn.addEventListener('click', calculateMortgage);
+    function setSummary(data) {
+      els.monthlyPaymentValue.textContent = formatCurrency(data.monthlyPayment, 0);
+      els.ltvValue.textContent = `${formatNumber(data.ltv, 2)} %`;
+      els.dtiValue.textContent = data.dti == null ? '—' : formatNumber(data.dti, 2);
+      els.dstiValue.textContent = data.dsti == null ? '—' : `${formatNumber(data.dsti, 2)} %`;
+      els.totalPaidValue.textContent = formatCurrency(data.totalPaid, 0);
+      els.finalInvestmentValue.textContent = formatCurrency(data.finalInvestmentValue, 0);
 
-    els.resetBtn.addEventListener('click', () => {
-      els.loanAmount.value = 4500000;
-      els.rate.value = 4.89;
-      els.years.value = 30;
-      els.propertyValue.value = 6000000;
-      els.error.textContent = '';
-      clearOutput();
-      calculateMortgage();
-    });
+      if (data.breakEvenMonth == null) {
+        els.possibleRepaymentValue.textContent = 'Nedosaženo';
+      } else {
+        const y = Math.floor(data.breakEvenMonth / 12);
+        const m = data.breakEvenMonth % 12;
+        els.possibleRepaymentValue.textContent = `${y} a ${m} měsíců`;
+      }
+    }
 
-    calculateMortgage();
+    function renderYearlyTable(rows) {
+      els.yearlyTableBody.innerHTML = rows.map((r) => `
+        <tr>
+          <td>${r.year}</td>
+          <td>${formatCurrency(r.endBalance, 0)}</td>
+          <td>${formatCurrency(r.investmentValue, 0)}</td>
+          <td>${formatCurrency(r.interestSum, 0)}</td>
+          <td>${formatCurrency(r.principalSum, 0)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function makePath(points) {
+      if (!points.length) return '';
+      let d = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 1; i < points.length; i++) d += ` L ${points[i].x} ${points[i].y}`;
+      return d;
+    }
+
+    function renderChart(data) {
+      chartState.data = data;
+      const svg = els.chartSvg;
+      const W = chartState.width;
+      const H = chartState.height;
+      const { left, right, top, bottom } = chartState.padding;
+      const innerW = W - left - right;
+      const innerH = H - top - bottom;
+
+      const years = data.inputs.years;
+      const ySeries = data.seriesYearly;
+      const activeKeys = Object.keys(chartState.enabled).filter((k) => chartState.enabled[k]);
+      const allActiveValues = activeKeys.flatMap((key) => ySeries[key]);
+      const maxY = Math.max(...allActiveValues, data.inputs.loanAmount, 1);
+
+      const x = (year) => left + (year / years) * innerW;
+      const y = (value) => top + (1 - value / maxY) * innerH;
+
+      const yTicks = 5;
+      const xStep = Math.max(1, Math.ceil(years / 10));
+      const defs = `
+        <defs>
+          <linearGradient id="investmentFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(22,101,52,0.22)" />
+            <stop offset="100%" stop-color="rgba(22,101,52,0)" />
+          </linearGradient>
+        </defs>
+      `;
+
+      let grid = '';
+      for (let i = 0; i <= yTicks; i++) {
+        const ratio = i / yTicks;
+        const yy = top + ratio * innerH;
+        const val = maxY * (1 - ratio);
+        grid += `<line x1="${left}" y1="${yy}" x2="${W - right}" y2="${yy}" stroke="#e8edf3" stroke-dasharray="3 4"/>`;
+        grid += `<text x="${left - 10}" y="${yy + 4}" text-anchor="end" font-size="11" fill="#7b8794">${formatCurrency(val, 0)}</text>`;
+      }
+
+      for (let yr = 0; yr <= years; yr += xStep) {
+        const xx = x(yr);
+        grid += `<line x1="${xx}" y1="${top}" x2="${xx}" y2="${H - bottom}" stroke="#f0f4f8"/>`;
+        grid += `<text x="${xx}" y="${H - bottom + 18}" text-anchor="middle" font-size="11" fill="#7b8794">${yr}</text>`;
+      }
+
+      const seriesPaths = [];
+      activeKeys.forEach((key) => {
+        const points = ySeries.year.map((yr, i) => ({ x: x(yr), y: y(ySeries[key][i]) }));
+        const d = makePath(points);
+        if (!d) return;
+
+        if (key === 'investment') {
+          const fillPath = `${d} L ${x(years)} ${y(0)} L ${x(0)} ${y(0)} Z`;
+          seriesPaths.push(`<path d="${fillPath}" fill="url(#investmentFill)" stroke="none"/>`);
+        }
+
+        seriesPaths.push(`<path d="${d}" fill="none" stroke="${seriesConfig[key].color}" stroke-width="2.2" stroke-linecap="round"/>`);
+      });
+
+      let breakEvenLine = '';
+      if (data.breakEvenMonth != null) {
+        const yr = data.breakEvenMonth / 12;
+        const xx = x(Math.min(years, yr));
+        breakEvenLine = `
+          <line x1="${xx}" y1="${top}" x2="${xx}" y2="${H - bottom}" stroke="#ef4444" stroke-dasharray="4 5"/>
+          <text x="${xx + 4}" y="${top + 14}" font-size="11" fill="#ef4444">Průsečík</text>
+        `;
+      }
+
+      let hoverBits = '';
+      if (chartState.hoverYear != null) {
+        const year = chartState.hoverYear;
+        const xx = x(year);
+        hoverBits += `<line x1="${xx}" y1="${top}" x2="${xx}" y2="${H - bottom}" stroke="#94a3b8" stroke-dasharray="3 4"/>`;
+        activeKeys.forEach((key) => {
+          const value = ySeries[key][year];
+          hoverBits += `<circle cx="${xx}" cy="${y(value)}" r="4" fill="${seriesConfig[key].color}" stroke="#fff" stroke-width="1.5"/>`;
+        });
+      }
+
+      const overlay = `<rect id="chartHit" x="${left}" y="${top}" width="${innerW}" height="${innerH}" fill="transparent"/>`;
+
+      svg.innerHTML = `
+        ${defs}
+        ${grid}
+        ${breakEvenLine}
+        ${seriesPaths.join('')}
+        ${hoverBits}
+        <line x1="${left}" y1="${H - bottom}" x2="${W - right}" y2="${H - bottom}" stroke="#b7c3d0"/>
+        <line x1="${left}" y1="${top}" x2="${left}" y2="${H - bottom}" stroke="#b7c3d0"/>
+        <text x="${left + innerW / 2}" y="${H - 10}" text-anchor="middle" font-size="12" fill="#64748b">Doba (roky)</text>
+        <text x="18" y="${top + innerH / 2}" transform="rotate(-90 18 ${top + innerH / 2})" text-anchor="middle" font-size="12" fill="#64748b">Hodnota (Kč)</text>
+        ${overlay}
+      `;
+
+      bindChartInteractions(data);
+    }
+
+    function bindChartInteractions(data) {
+      const hit = byId('chartHit');
+      if (!hit) return;
+      const { left, right } = chartState.padding;
+      const innerW = chartState.width - left - right;
+      const years = data.inputs.years;
+
+      const onMove = (evt) => {
+        const rect = els.chartSvg.getBoundingClientRect();
+        const px = evt.clientX - rect.left;
+        const clamped = Math.max(left, Math.min(chartState.width - right, (px / rect.width) * chartState.width));
+        const ratio = (clamped - left) / innerW;
+        const year = Math.max(0, Math.min(years, Math.round(ratio * years)));
+        chartState.hoverYear = year;
+        renderChart(data);
+        showTooltip(evt.clientX, evt.clientY, year, data);
+      };
+
+      const onLeave = () => {
+        chartState.hoverYear = null;
+        els.chartTooltip.style.opacity = '0';
+        renderChart(data);
+      };
+
+      hit.addEventListener('mousemove', onMove);
+      hit.addEventListener('mouseleave', onLeave);
+    }
+
+    function showTooltip(clientX, clientY, year, data) {
+      const ySeries = data.seriesYearly;
+      const inv = ySeries.investment[year];
+      const invested = ySeries.invested[year];
+      const debt = ySeries.debt[year];
+      const profit = inv - invested;
+
+      els.chartTooltip.innerHTML = `
+        <strong>${year}. Rok</strong>
+        <div class="row"><span>Výnos</span><span>${formatCurrency(profit, 0)}</span></div>
+        <div class="row"><span>Výše investice</span><span>${formatCurrency(inv, 0)}</span></div>
+        <div class="row"><span>Zůstatek dluhu</span><span>${formatCurrency(debt, 0)}</span></div>
+      `;
+
+      const wrapRect = els.chartWrap.getBoundingClientRect();
+      const ttRect = els.chartTooltip.getBoundingClientRect();
+      let x = clientX - wrapRect.left + 16;
+      let y = clientY - wrapRect.top - 10;
+      if (x + ttRect.width > wrapRect.width - 8) x = wrapRect.width - ttRect.width - 8;
+      if (y + ttRect.height > wrapRect.height - 8) y = wrapRect.height - ttRect.height - 8;
+      if (y < 8) y = 8;
+
+      els.chartTooltip.style.left = `${x}px`;
+      els.chartTooltip.style.top = `${y}px`;
+      els.chartTooltip.style.opacity = '1';
+    }
+
+    function renderLegend() {
+      els.legendControls.innerHTML = Object.entries(seriesConfig).map(([key, config]) => `
+        <label class="legend-item">
+          <input type="checkbox" data-series="${key}" ${chartState.enabled[key] ? 'checked' : ''} />
+          <span class="dot" style="background:${config.color}"></span>
+          ${config.label}
+        </label>
+      `).join('');
+
+      els.legendControls.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          chartState.enabled[cb.dataset.series] = cb.checked;
+          if (chartState.data) renderChart(chartState.data);
+        });
+      });
+    }
+
+    function setError(msg = '') {
+      els.error.textContent = msg;
+    }
+
+    let rafPending = false;
+    function scheduleRecalc() {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        recalcAll();
+      });
+    }
+
+    function recalcAll() {
+      const data = calculateData();
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+      setError('');
+      setSummary(data);
+      renderYearlyTable(data.yearlyRows);
+      renderChart(data);
+    }
+
+    function bindInputSync() {
+      els.yearsSlider.addEventListener('input', () => { syncPair(els.yearsSlider, els.yearsInput, 30); scheduleRecalc(); });
+      els.yearsInput.addEventListener('input', () => { syncPair(els.yearsInput, els.yearsSlider, 30); scheduleRecalc(); });
+      els.rateSlider.addEventListener('input', () => { syncPair(els.rateSlider, els.annualRate, 4.89); scheduleRecalc(); });
+      els.annualRate.addEventListener('input', () => { syncPair(els.annualRate, els.rateSlider, 4.89); scheduleRecalc(); });
+      els.invReturnSlider.addEventListener('input', () => { syncPair(els.invReturnSlider, els.investmentAnnualReturn, 7); scheduleRecalc(); });
+      els.investmentAnnualReturn.addEventListener('input', () => { syncPair(els.investmentAnnualReturn, els.invReturnSlider, 7); scheduleRecalc(); });
+
+      [
+        els.propertyValue, els.loanAmount, els.useAct360, els.lumpSum, els.monthlyContribution,
+        els.entryFeePct, els.monthlyIncome, els.monthlyObligations
+      ].forEach((el) => el.addEventListener('input', scheduleRecalc));
+
+      els.calculateBtn.addEventListener('click', recalcAll);
+
+      els.toggleAdvanced.addEventListener('change', () => {
+        els.advancedFields.classList.toggle('hidden', !els.toggleAdvanced.checked);
+        scheduleRecalc();
+      });
+
+      els.toggleResultsTable.addEventListener('change', () => {
+        els.resultsTableWrap.classList.toggle('hidden', !els.toggleResultsTable.checked);
+      });
+
+      els.resetBtn.addEventListener('click', () => {
+        const defaults = {
+          propertyValue: 6000000,
+          loanAmount: 4500000,
+          years: 30,
+          annualRate: 4.89,
+          act360: false,
+          lumpSum: 300000,
+          monthlyContribution: 5000,
+          invReturn: 7,
+          entryFeePct: 1.5,
+          monthlyIncome: '',
+          monthlyObligations: ''
+        };
+
+        els.propertyValue.value = defaults.propertyValue;
+        els.loanAmount.value = defaults.loanAmount;
+        els.yearsSlider.value = defaults.years;
+        els.yearsInput.value = defaults.years;
+        els.rateSlider.value = defaults.annualRate;
+        els.annualRate.value = defaults.annualRate;
+        els.useAct360.checked = defaults.act360;
+        els.lumpSum.value = defaults.lumpSum;
+        els.monthlyContribution.value = defaults.monthlyContribution;
+        els.invReturnSlider.value = defaults.invReturn;
+        els.investmentAnnualReturn.value = defaults.invReturn;
+        els.entryFeePct.value = defaults.entryFeePct;
+        els.monthlyIncome.value = defaults.monthlyIncome;
+        els.monthlyObligations.value = defaults.monthlyObligations;
+        els.toggleAdvanced.checked = false;
+        els.advancedFields.classList.add('hidden');
+        els.toggleResultsTable.checked = false;
+        els.resultsTableWrap.classList.add('hidden');
+
+        chartState.enabled = Object.fromEntries(Object.entries(seriesConfig).map(([k, v]) => [k, v.defaultOn]));
+        renderLegend();
+        recalcAll();
+      });
+
+      window.addEventListener('resize', () => { if (chartState.data) renderChart(chartState.data); });
+    }
+
+    function init() {
+      renderLegend();
+      bindInputSync();
+      recalcAll();
+    }
+
+    init();
   </script>
 </body>
 </html>

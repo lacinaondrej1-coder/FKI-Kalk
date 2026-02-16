@@ -1,9 +1,16 @@
 # FKI Kalk projekt
 
-Projekt obsahuje samostatnou hypoteční kalkulačku pro finanční poradce ve vizuálním stylu FKI reportů.
+Projekt obsahuje single-file hypoteční kalkulačku v designu FKI s porovnáním investice vs. hypotéky.
 
-- `mortgage_calculator.html` – výpočet měsíční splátky, LTV a kompletní amortizační plán (úrok + úmor jistiny).
+## Soubor
+
+- `mortgage_calculator.html`
+  - anuitní splátka hypotéky (day-count ACT/365 vs. Česká spořitelna ACT/360)
+  - investiční simulace (jednorázový vklad, měsíční vklad, vstupní poplatek, zhodnocení)
+  - interaktivní SVG graf s přepínáním ukazatelů
+  - roční výsledková tabulka (Rok | Jistina | Hodnota investice | Úrok | Úmor)
+  - souhrnné metriky: měsíční splátka, DTI, DSTI, LTV, možná doba splatnosti
 
 ## Spuštění
 
-Stačí otevřít soubor `mortgage_calculator.html` v prohlížeči.
+Otevřete soubor `mortgage_calculator.html` v prohlížeči.
