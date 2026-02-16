@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FKI Hypoteční kalkulačka</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    :root {
+      --color-bg-start: #FDFEFF;
+      --color-bg-end: #F8F9FA;
+      --color-primary: #0d2c54;
+      --color-accent: #4DB1C8;
+      --color-text: #33373D;
+      --color-muted: #888B90;
+      --color-border: #EAECEE;
+      --color-border-strong: #D0E0E8;
+      --color-card: #FFFFFF;
+      --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
+      --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+      color: var(--color-text);
+      scroll-behavior: smooth;
+    }
+
+    .tabular { font-variant-numeric: tabular-nums; }
+
+    .shell {
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 2.25rem 1.2rem 3rem;
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .card {
+      background: radial-gradient(circle at 18% 20%, rgba(77, 177, 200, 0.08), transparent 42%),
+        radial-gradient(circle at 85% 15%, rgba(13, 44, 84, 0.06), transparent 38%),
+        var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 1.4rem;
+      box-shadow: var(--color-shadow);
+      padding: 1.2rem;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      animation: fadeIn 0.35s ease-out;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--color-border-strong);
+      box-shadow: var(--color-shadow-strong);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.8rem;
+    }
+
+    .brand-logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--color-primary);
+      text-transform: uppercase;
+    }
+
+    .brand-logo span { color: var(--color-accent); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      background: rgba(13, 44, 84, 0.08);
+      color: var(--color-primary);
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(13, 44, 84, 0.08);
+    }
+
+    .hero-title {
+      font-size: clamp(1.35rem, 2.4vw, 2rem);
+      color: var(--color-primary);
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .hero-desc {
+      margin-top: 0.5rem;
+      color: var(--color-muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: .9rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 1rem;
+    }
+
+    label {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.88rem;
+      color: var(--color-muted);
+      font-weight: 500;
+    }
+
+    .glass-input {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--color-border);
+      border-radius: 0.9rem;
+      padding: 0.62rem 0.75rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      color: var(--color-text);
+      font-size: 0.95rem;
+    }
+
+    .glass-input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
+      outline: none;
+    }
+
+    .primary-btn, .secondary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      border-radius: 0.9rem;
+      padding: 0.65rem 1.1rem;
+      font-weight: 600;
+      font-size: 0.93rem;
+      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .primary-btn {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+      box-shadow: var(--color-shadow);
+    }
+
+    .primary-btn:hover {
+      background: #143d76;
+      border-color: #143d76;
+      box-shadow: var(--color-shadow-strong);
+    }
+
+    .secondary-btn {
+      background: rgba(77, 177, 200, 0.12);
+      color: var(--color-primary);
+      border-color: rgba(77, 177, 200, 0.4);
+    }
+
+    .secondary-btn:hover {
+      background: rgba(77, 177, 200, 0.18);
+      border-color: rgba(77, 177, 200, 0.55);
+    }
+
+    .actions {
+      margin-top: 1rem;
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+    }
+
+    .error {
+      margin-top: .65rem;
+      min-height: 1.3rem;
+      color: #b91c1c;
+      font-size: .9rem;
+      font-weight: 500;
+    }
+
+    .stats {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      padding: 0.85rem;
+      transition: transform 0.2s ease;
+    }
+
+    .stat:hover { transform: translateY(-2px); }
+
+    .stat small {
+      color: var(--color-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: block;
+      margin-bottom: 0.2rem;
+      font-weight: 600;
+    }
+
+    .stat strong {
+      color: var(--color-primary);
+      font-size: 1.1rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .table-wrap {
+      margin-top: .5rem;
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .86rem;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(77, 177, 200, 0.12);
+      color: var(--color-primary);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--color-border);
+      padding: .48rem .4rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+
+    tbody tr:nth-child(2n) { background: rgba(13, 44, 84, 0.02); }
+
+    .section-title {
+      margin: 0 0 .75rem;
+      color: var(--color-primary);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell tabular">
+    <section class="card">
+      <div class="brand-row">
+        <div class="brand-logo">FKI <span>KALK</span></div>
+        <span class="pill">Hypoteční nástroj pro poradce</span>
+      </div>
+      <h1 class="hero-title">Hypoteční kalkulačka – splátka, LTV, úmor a úrok</h1>
+      <p class="hero-desc">Stylizováno ve stejném vizuálním kabátku jako reporty FKI: firemní barvy, karty, zvýraznění, jemné animace a moderní layout.</p>
+
+      <div class="grid">
+        <label>Výše hypotéky (Kč)
+          <input class="glass-input" id="loanAmount" type="number" min="1" step="1000" value="4500000" />
+        </label>
+        <label>Roční úroková sazba (%)
+          <input class="glass-input" id="rate" type="number" min="0" step="0.01" value="4.89" />
+        </label>
+        <label>Splatnost (roky)
+          <input class="glass-input" id="years" type="number" min="1" step="1" value="30" />
+        </label>
+        <label>Hodnota nemovitosti (Kč)
+          <input class="glass-input" id="propertyValue" type="number" min="1" step="1000" value="6000000" />
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="primary-btn" id="calculateBtn" type="button">Spočítat</button>
+        <button class="secondary-btn" id="resetBtn" type="button">Reset</button>
+      </div>
+
+      <div id="error" class="error"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Souhrn výpočtu</h2>
+      <div class="stats">
+        <div class="stat"><small>Měsíční splátka</small><strong id="monthlyPayment">-</strong></div>
+        <div class="stat"><small>LTV</small><strong id="ltv">-</strong></div>
+        <div class="stat"><small>Celkem zaplaceno</small><strong id="totalPaid">-</strong></div>
+        <div class="stat"><small>Celkem úroky</small><strong id="totalInterest">-</strong></div>
+        <div class="stat"><small>Celkem úmor jistiny</small><strong id="totalPrincipal">-</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Amortizační plán (měsíční rozpad splátky)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Měsíc</th>
+              <th>Splátka</th>
+              <th>Úrok</th>
+              <th>Úmor jistiny</th>
+              <th>Zůstatek jistiny</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
+    const percent = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const els = {
+      loanAmount: document.getElementById('loanAmount'),
+      rate: document.getElementById('rate'),
+      years: document.getElementById('years'),
+      propertyValue: document.getElementById('propertyValue'),
+      error: document.getElementById('error'),
+      monthlyPayment: document.getElementById('monthlyPayment'),
+      ltv: document.getElementById('ltv'),
+      totalPaid: document.getElementById('totalPaid'),
+      totalInterest: document.getElementById('totalInterest'),
+      totalPrincipal: document.getElementById('totalPrincipal'),
+      scheduleBody: document.getElementById('scheduleBody'),
+      calculateBtn: document.getElementById('calculateBtn'),
+      resetBtn: document.getElementById('resetBtn')
+    };
+
+    function clearOutput() {
+      els.monthlyPayment.textContent = '-';
+      els.ltv.textContent = '-';
+      els.totalPaid.textContent = '-';
+      els.totalInterest.textContent = '-';
+      els.totalPrincipal.textContent = '-';
+      els.scheduleBody.innerHTML = '';
+    }
+
+    function validateInputs(loanAmount, rate, years, propertyValue) {
+      if (loanAmount <= 0 || rate < 0 || years <= 0 || propertyValue <= 0) {
+        return 'Všechna pole musí mít kladné hodnoty (sazba může být 0).';
+      }
+      if (loanAmount > propertyValue) {
+        return 'Výše hypotéky nemůže být vyšší než hodnota nemovitosti pro výpočet LTV.';
+      }
+      return '';
+    }
+
+    function calculateMortgage() {
+      const loanAmount = Number(els.loanAmount.value);
+      const annualRate = Number(els.rate.value);
+      const years = Number(els.years.value);
+      const propertyValue = Number(els.propertyValue.value);
+
+      const validation = validateInputs(loanAmount, annualRate, years, propertyValue);
+      if (validation) {
+        els.error.textContent = validation;
+        clearOutput();
+        return;
+      }
+
+      els.error.textContent = '';
+
+      const months = years * 12;
+      const monthlyRate = annualRate / 100 / 12;
+      const monthlyPayment = monthlyRate === 0
+        ? loanAmount / months
+        : loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+
+      let balance = loanAmount;
+      let totalInterest = 0;
+      let totalPrincipal = 0;
+      let rows = '';
+
+      for (let month = 1; month <= months; month++) {
+        const interest = balance * monthlyRate;
+        let principal = monthlyPayment - interest;
+
+        if (month === months) {
+          principal = balance;
+        }
+
+        balance -= principal;
+        if (balance < 0) {
+          balance = 0;
+        }
+
+        totalInterest += interest;
+        totalPrincipal += principal;
+
+        rows += `<tr>
+          <td>${month}</td>
+          <td>${currency.format(monthlyPayment)}</td>
+          <td>${currency.format(interest)}</td>
+          <td>${currency.format(principal)}</td>
+          <td>${currency.format(balance)}</td>
+        </tr>`;
+      }
+
+      const ltv = (loanAmount / propertyValue) * 100;
+      const totalPaid = monthlyPayment * months;
+
+      els.monthlyPayment.textContent = currency.format(monthlyPayment);
+      els.ltv.textContent = `${percent.format(ltv)} %`;
+      els.totalPaid.textContent = currency.format(totalPaid);
+      els.totalInterest.textContent = currency.format(totalInterest);
+      els.totalPrincipal.textContent = currency.format(totalPrincipal);
+      els.scheduleBody.innerHTML = rows;
+    }
+
+    els.calculateBtn.addEventListener('click', calculateMortgage);
+
+    els.resetBtn.addEventListener('click', () => {
+      els.loanAmount.value = 4500000;
+      els.rate.value = 4.89;
+      els.years.value = 30;
+      els.propertyValue.value = 6000000;
+      els.error.textContent = '';
+      clearOutput();
+      calculateMortgage();
+    });
+
+    calculateMortgage();
+  </script>
+</body>
+</html>
