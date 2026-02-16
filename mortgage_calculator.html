@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hypoteční kalkulačka pro finanční poradce</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1b2a3a;
+      --muted: #5f6f82;
+      --primary: #0b4aa2;
+      --accent: #13a2c7;
+      --border: #dbe5f0;
+      --danger: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 1.25rem;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 1rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 8px 24px rgba(11, 74, 162, 0.08);
+    }
+    h1, h2 { margin: 0 0 .65rem; }
+    h1 { font-size: 1.35rem; color: var(--primary); }
+    h2 { font-size: 1.05rem; color: var(--primary); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: .8rem;
+    }
+    label { display: grid; gap: .3rem; font-size: .92rem; color: var(--muted); }
+    input {
+      width: 100%;
+      padding: .65rem .7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: .95rem;
+    }
+    input:focus { outline: 2px solid rgba(19,162,199,0.35); border-color: var(--accent); }
+    .actions { margin-top: .8rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+    button {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      padding: .68rem .95rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary { background: #6b7f97; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: .7rem;
+      margin-top: .35rem;
+    }
+    .stat {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .75rem;
+      background: #fbfdff;
+    }
+    .stat small { color: var(--muted); display: block; }
+    .stat strong { font-size: 1.1rem; color: var(--primary); }
+    .error { color: var(--danger); font-size: .9rem; margin-top: .35rem; min-height: 1.25rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .89rem; }
+    th, td { border-bottom: 1px solid var(--border); padding: .45rem .35rem; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    .table-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .muted { color: var(--muted); font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Hypoteční kalkulačka (splátka, LTV, úmor a úrok)</h1>
+      <p class="muted">Zadejte výši hypotéky, úrokovou sazbu, splatnost a hodnotu nemovitosti. Výstup je připravený pro rychlé použití v poradenství.</p>
+      <div class="grid">
+        <label>Výše hypotéky (Kč)
+          <input id="loanAmount" type="number" min="1" step="1000" value="4500000" />
+        </label>
+        <label>Roční úroková sazba (%)
+          <input id="rate" type="number" min="0" step="0.01" value="4.89" />
+        </label>
+        <label>Splatnost (roky)
+          <input id="years" type="number" min="1" step="1" value="30" />
+        </label>
+        <label>Hodnota nemovitosti (Kč)
+          <input id="propertyValue" type="number" min="1" step="1000" value="6000000" />
+        </label>
+      </div>
+      <div class="actions">
+        <button id="calculateBtn">Spočítat</button>
+        <button class="secondary" id="resetBtn" type="button">Reset</button>
+      </div>
+      <div id="error" class="error"></div>
+    </section>
+
+    <section class="card">
+      <h2>Souhrn</h2>
+      <div class="stats">
+        <div class="stat"><small>Měsíční splátka</small><strong id="monthlyPayment">-</strong></div>
+        <div class="stat"><small>LTV</small><strong id="ltv">-</strong></div>
+        <div class="stat"><small>Celkem zaplaceno</small><strong id="totalPaid">-</strong></div>
+        <div class="stat"><small>Celkem úroky</small><strong id="totalInterest">-</strong></div>
+        <div class="stat"><small>Celkem úmor jistiny</small><strong id="totalPrincipal">-</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Amortizační plán (měsíční rozpad splátky)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Měsíc</th>
+              <th>Splátka</th>
+              <th>Úrok</th>
+              <th>Úmor jistiny</th>
+              <th>Zůstatek jistiny</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const currency = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
+    const percent = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const els = {
+      loanAmount: document.getElementById('loanAmount'),
+      rate: document.getElementById('rate'),
+      years: document.getElementById('years'),
+      propertyValue: document.getElementById('propertyValue'),
+      error: document.getElementById('error'),
+      monthlyPayment: document.getElementById('monthlyPayment'),
+      ltv: document.getElementById('ltv'),
+      totalPaid: document.getElementById('totalPaid'),
+      totalInterest: document.getElementById('totalInterest'),
+      totalPrincipal: document.getElementById('totalPrincipal'),
+      scheduleBody: document.getElementById('scheduleBody'),
+      calculateBtn: document.getElementById('calculateBtn'),
+      resetBtn: document.getElementById('resetBtn')
+    };
+
+    function clearOutput() {
+      els.monthlyPayment.textContent = '-';
+      els.ltv.textContent = '-';
+      els.totalPaid.textContent = '-';
+      els.totalInterest.textContent = '-';
+      els.totalPrincipal.textContent = '-';
+      els.scheduleBody.innerHTML = '';
+    }
+
+    function validateInputs(loanAmount, rate, years, propertyValue) {
+      if (loanAmount <= 0 || rate < 0 || years <= 0 || propertyValue <= 0) {
+        return 'Všechna pole musí mít kladné hodnoty (sazba může být 0).';
+      }
+      if (loanAmount > propertyValue) {
+        return 'Výše hypotéky nemůže být vyšší než hodnota nemovitosti pro výpočet LTV.';
+      }
+      return '';
+    }
+
+    function calculateMortgage() {
+      const loanAmount = Number(els.loanAmount.value);
+      const annualRate = Number(els.rate.value);
+      const years = Number(els.years.value);
+      const propertyValue = Number(els.propertyValue.value);
+
+      const validation = validateInputs(loanAmount, annualRate, years, propertyValue);
+      if (validation) {
+        els.error.textContent = validation;
+        clearOutput();
+        return;
+      }
+      els.error.textContent = '';
+
+      const months = years * 12;
+      const monthlyRate = annualRate / 100 / 12;
+      const monthlyPayment = monthlyRate === 0
+        ? loanAmount / months
+        : loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+
+      let balance = loanAmount;
+      let totalInterest = 0;
+      let totalPrincipal = 0;
+      let rows = '';
+
+      for (let month = 1; month <= months; month++) {
+        const interest = balance * monthlyRate;
+        let principal = monthlyPayment - interest;
+
+        if (month === months) {
+          principal = balance;
+        }
+
+        balance -= principal;
+        if (balance < 0) balance = 0;
+
+        totalInterest += interest;
+        totalPrincipal += principal;
+
+        rows += `<tr>
+          <td>${month}</td>
+          <td>${currency.format(monthlyPayment)}</td>
+          <td>${currency.format(interest)}</td>
+          <td>${currency.format(principal)}</td>
+          <td>${currency.format(balance)}</td>
+        </tr>`;
+      }
+
+      const ltv = (loanAmount / propertyValue) * 100;
+      const totalPaid = monthlyPayment * months;
+
+      els.monthlyPayment.textContent = currency.format(monthlyPayment);
+      els.ltv.textContent = `${percent.format(ltv)} %`;
+      els.totalPaid.textContent = currency.format(totalPaid);
+      els.totalInterest.textContent = currency.format(totalInterest);
+      els.totalPrincipal.textContent = currency.format(totalPrincipal);
+      els.scheduleBody.innerHTML = rows;
+    }
+
+    els.calculateBtn.addEventListener('click', calculateMortgage);
+    els.resetBtn.addEventListener('click', () => {
+      els.loanAmount.value = 4500000;
+      els.rate.value = 4.89;
+      els.years.value = 30;
+      els.propertyValue.value = 6000000;
+      els.error.textContent = '';
+      clearOutput();
+    });
+
+    calculateMortgage();
+  </script>
+</body>
+</html>
