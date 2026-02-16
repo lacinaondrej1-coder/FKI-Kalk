@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FKI Hypoteční kalkulačka</title>
+  <title>Fairlife – Hypoteční kalkulačka</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
@@ -23,8 +23,6 @@
       --series-investment: #166534;
       --series-invested: #0ea5e9;
       --series-profit: #14b8a6;
-      --series-interest: #f59e0b;
-      --series-principal: #7c3aed;
     }
 
     html, body {
@@ -35,8 +33,15 @@
       margin: 0;
     }
 
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; }
+
     .shell {
-      max-width: 1220px;
+      max-width: 1240px;
       margin: 0 auto;
       padding: 2rem 1rem 3rem;
       display: grid;
@@ -60,36 +65,20 @@
       box-shadow: var(--color-shadow-strong);
     }
 
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: .8rem;
-    }
-
     .brand-logo {
-      font-size: 1.65rem;
-      letter-spacing: .12em;
-      text-transform: uppercase;
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      letter-spacing: .02em;
       color: var(--color-primary);
       font-weight: 700;
+      line-height: 1.1;
     }
-
     .brand-logo span { color: var(--color-accent); }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      font-size: .75rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      padding: .4rem .8rem;
+    .brand-subtitle {
+      margin-top: .35rem;
       color: var(--color-primary);
       font-weight: 600;
-      background: rgba(13, 44, 84, 0.08);
-      border: 1px solid rgba(13, 44, 84, 0.12);
+      font-size: 1.05rem;
     }
 
     .subtitle {
@@ -126,14 +115,23 @@
 
     .grid-2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: .7rem;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      gap: .75rem;
     }
 
-    .field { display: grid; gap: .28rem; }
-    .field label { font-size: .82rem; color: var(--color-muted); font-weight: 600; }
+    @media (max-width: 1100px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
 
-    .input, .range {
+    .field { display: grid; gap: .28rem; min-width: 0; }
+    .field label {
+      font-size: .82rem;
+      color: var(--color-muted);
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .input {
       width: 100%;
       border: 1px solid var(--color-border);
       border-radius: .8rem;
@@ -141,19 +139,13 @@
       font-size: .92rem;
       color: var(--color-text);
       background: rgba(255,255,255,.94);
+      min-width: 0;
     }
 
-    .input:focus, .range:focus {
+    .input:focus {
       border-color: var(--color-accent);
       box-shadow: 0 0 0 4px rgba(77, 177, 200, 0.18);
       outline: none;
-    }
-
-    .row-range {
-      display: grid;
-      grid-template-columns: 1fr 110px;
-      gap: .4rem;
-      align-items: center;
     }
 
     .switch {
@@ -164,10 +156,10 @@
       color: var(--color-primary);
       font-weight: 600;
       cursor: pointer;
-      margin-top: .2rem;
+      margin-top: .45rem;
     }
 
-    .actions { display: flex; gap: .5rem; margin-top: .8rem; }
+    .actions { display: flex; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
     .btn {
       border: 1px solid transparent;
       border-radius: .85rem;
@@ -199,36 +191,11 @@
       font-size: clamp(1.5rem, 4vw, 2.2rem);
       color: var(--color-primary);
       font-weight: 700;
+      overflow-wrap: anywhere;
     }
-
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: .55rem;
-      margin-bottom: .6rem;
-    }
-
-    .metric {
-      border: 1px solid var(--color-border);
-      border-radius: .9rem;
-      background: rgba(255,255,255,.86);
-      padding: .6rem;
-    }
-
-    .metric small {
-      color: var(--color-muted);
-      display: block;
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      font-weight: 600;
-      margin-bottom: .2rem;
-    }
-
-    .metric strong { color: var(--color-primary); font-size: .97rem; }
 
     .summary-lines {
-      margin-top: .7rem;
+      margin-top: .2rem;
       border-top: 1px dashed var(--color-border-strong);
       padding-top: .65rem;
       display: grid;
@@ -243,7 +210,7 @@
     }
 
     .line span:first-child { color: var(--color-muted); }
-    .line strong { color: var(--color-primary); }
+    .line strong { color: var(--color-primary); text-align: right; }
 
     .legend-controls {
       display: flex;
@@ -275,12 +242,12 @@
       border-radius: 1rem;
       background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(248,250,252,.95));
       overflow: hidden;
-      min-height: 420px;
+      min-height: 470px;
     }
 
     #chartSvg {
       width: 100%;
-      height: 430px;
+      height: 470px;
       display: block;
     }
 
@@ -311,6 +278,27 @@
       justify-content: space-between;
       gap: .7rem;
       margin: .16rem 0;
+    }
+
+    .mini-card {
+      margin-top: .9rem;
+      border: 1px solid var(--color-border);
+      border-radius: .9rem;
+      background: rgba(255,255,255,.9);
+      padding: .8rem;
+      display: grid;
+      gap: .55rem;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: minmax(160px, 220px) 1fr;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    @media (max-width: 700px) {
+      .mini-grid { grid-template-columns: 1fr; }
     }
 
     .toggle-table {
@@ -366,10 +354,8 @@
 <body>
   <main class="shell">
     <section class="card">
-      <div class="header">
-        <div class="brand-logo">FKI <span>KALK</span></div>
-        <span class="pill">Investice vs. hypotéka</span>
-      </div>
+      <div class="brand-logo">Fair<span>life</span></div>
+      <div class="brand-subtitle">Hypoteční kalkulačka</div>
       <p class="subtitle">Porovnání vývoje zůstatku hypotéky a investice s day-count režimem ACT/365 vs. ČS ACT/360.</p>
     </section>
 
@@ -382,25 +368,19 @@
           <div class="grid-2">
             <div class="field">
               <label for="propertyValue">Zástavní hodnota nemovitosti (Kč)</label>
-              <input class="input" id="propertyValue" type="number" min="1" step="1000" value="6000000" />
+              <input class="input money-input" id="propertyValue" type="text" inputmode="numeric" pattern="[0-9 ]*" value="6 000 000" />
             </div>
             <div class="field">
               <label for="loanAmount">Výše úvěru (Kč)</label>
-              <input class="input" id="loanAmount" type="number" min="1" step="1000" value="4500000" />
+              <input class="input money-input" id="loanAmount" type="text" inputmode="numeric" pattern="[0-9 ]*" value="4 500 000" />
             </div>
             <div class="field">
-              <label for="yearsSlider">Počet let splácení</label>
-              <div class="row-range">
-                <input class="range" id="yearsSlider" type="range" min="1" max="40" step="1" value="30" />
-                <input class="input" id="yearsInput" type="number" min="1" max="40" step="1" value="30" />
-              </div>
+              <label for="yearsInput">Počet let splácení</label>
+              <input class="input" id="yearsInput" type="number" min="1" max="40" step="1" value="30" />
             </div>
             <div class="field">
-              <label for="rateSlider">Úrok p.a. (%)</label>
-              <div class="row-range">
-                <input class="range" id="rateSlider" type="range" min="0" max="15" step="0.01" value="4.89" />
-                <input class="input" id="annualRate" type="number" min="0" max="15" step="0.01" value="4.89" />
-              </div>
+              <label for="annualRate">Úrok p.a. (%)</label>
+              <input class="input percent-input" id="annualRate" type="text" inputmode="decimal" value="4,89" />
             </div>
           </div>
           <label class="switch"><input id="useAct360" type="checkbox" /> Česká spořitelna (ACT/360)</label>
@@ -411,36 +391,19 @@
           <div class="grid-2">
             <div class="field">
               <label for="lumpSum">Jednorázová investiční platba (Kč)</label>
-              <input class="input" id="lumpSum" type="number" min="0" step="1000" value="300000" />
+              <input class="input money-input" id="lumpSum" type="text" inputmode="numeric" pattern="[0-9 ]*" value="300 000" />
             </div>
             <div class="field">
               <label for="monthlyContribution">Měsíční vklad (Kč)</label>
-              <input class="input" id="monthlyContribution" type="number" min="0" step="100" value="5000" />
+              <input class="input money-input" id="monthlyContribution" type="text" inputmode="numeric" pattern="[0-9 ]*" value="5 000" />
             </div>
             <div class="field">
-              <label for="invReturnSlider">Zhodnocení p.a. (%)</label>
-              <div class="row-range">
-                <input class="range" id="invReturnSlider" type="range" min="0" max="20" step="0.01" value="7" />
-                <input class="input" id="investmentAnnualReturn" type="number" min="0" max="20" step="0.01" value="7" />
-              </div>
+              <label for="investmentAnnualReturn">Zhodnocení p.a. (%)</label>
+              <input class="input percent-input" id="investmentAnnualReturn" type="text" inputmode="decimal" value="7" />
             </div>
             <div class="field">
               <label for="entryFeePct">Vstupní poplatek (%)</label>
-              <input class="input" id="entryFeePct" type="number" min="0" max="20" step="0.01" value="1.5" />
-            </div>
-          </div>
-        </div>
-
-        <div class="block">
-          <label class="switch"><input id="toggleAdvanced" type="checkbox" /> Rozšířené parametry</label>
-          <div id="advancedFields" class="grid-2 hidden" style="margin-top:.55rem;">
-            <div class="field">
-              <label for="monthlyIncome">Měsíční příjem (Kč)</label>
-              <input class="input" id="monthlyIncome" type="number" min="0" step="1000" placeholder="např. 65 000" />
-            </div>
-            <div class="field">
-              <label for="monthlyObligations">Měsíční závazky (Kč)</label>
-              <input class="input" id="monthlyObligations" type="number" min="0" step="500" placeholder="např. 8 000" />
+              <input class="input percent-input" id="entryFeePct" type="text" inputmode="decimal" value="1,5" />
             </div>
           </div>
         </div>
@@ -456,12 +419,6 @@
         <div class="summary-main">Výše měsíční splátky</div>
         <div id="monthlyPaymentValue" class="summary-value">—</div>
 
-        <div class="metrics">
-          <div class="metric"><small>DTI</small><strong id="dtiValue">—</strong></div>
-          <div class="metric"><small>DSTI</small><strong id="dstiValue">—</strong></div>
-          <div class="metric"><small>LTV</small><strong id="ltvValue">—</strong></div>
-        </div>
-
         <div class="summary-lines">
           <div class="line"><span>Možná doba splatnosti</span><strong id="possibleRepaymentValue">—</strong></div>
           <div class="line"><span>Celková splatná částka</span><strong id="totalPaidValue">—</strong></div>
@@ -475,8 +432,22 @@
       <div style="font-size:.83rem;color:var(--color-muted);margin-bottom:.4rem;">Zobrazit v grafu:</div>
       <div class="legend-controls" id="legendControls"></div>
       <div class="graph-wrap" id="chartWrap">
-        <svg id="chartSvg" viewBox="0 0 1000 430" preserveAspectRatio="none"></svg>
+        <svg id="chartSvg" viewBox="0 0 1000 470" preserveAspectRatio="none"></svg>
         <div id="chartTooltip"></div>
+      </div>
+
+      <div class="mini-card">
+        <div class="section-title" style="font-size:.95rem;margin:0;">Kolik jsem zaplatil na úrocích / umořil za X let</div>
+        <div class="mini-grid">
+          <div class="field" style="margin:0;">
+            <label for="yearsToCheck">Za kolik let (1–N)?</label>
+            <input id="yearsToCheck" class="input" type="number" min="1" step="1" value="10" />
+          </div>
+          <div style="display:grid;gap:.5rem;">
+            <div class="line"><span id="interestXLabel">Úroky celkem za 10 let</span><strong id="interestInXValue">—</strong></div>
+            <div class="line"><span id="principalXLabel">Úmor celkem za 10 let</span><strong id="principalInXValue">—</strong></div>
+          </div>
+        </div>
       </div>
 
       <label class="toggle-table"><input id="toggleResultsTable" type="checkbox" /> Tabulka s výslednými hodnotami</label>
@@ -498,43 +469,54 @@
   </main>
 
   <script>
-    const formatCurrency = (v, digits = 0) => new Intl.NumberFormat('cs-CZ', {
-      style: 'currency', currency: 'CZK', maximumFractionDigits: digits, minimumFractionDigits: digits
-    }).format(v || 0);
+    const toNormalSpace = (text) => String(text).replace(/\u00A0/g, ' ');
 
-    const formatNumber = (v, digits = 2) => new Intl.NumberFormat('cs-CZ', {
-      minimumFractionDigits: digits, maximumFractionDigits: digits
-    }).format(v);
+    const formatCurrency = (v, digits = 0) => toNormalSpace(new Intl.NumberFormat('cs-CZ', {
+      style: 'currency', currency: 'CZK', maximumFractionDigits: digits, minimumFractionDigits: digits
+    }).format(v || 0));
+
+    const formatGroupedInt = (v) => toNormalSpace(new Intl.NumberFormat('cs-CZ', {
+      maximumFractionDigits: 0
+    }).format(v || 0));
+
+    const parseIntCz = (text) => Number(String(text ?? '').replace(/\s+/g, ''));
+    const parseFloatCz = (text) => Number(String(text ?? '').replace(/\s+/g, '').replace(',', '.'));
+
+    const formatAxisCz = (value) => {
+      if (value >= 1_000_000) {
+        const fixed = value % 1_000_000 === 0 ? 0 : 1;
+        return `${(value / 1_000_000).toFixed(fixed).replace('.', ',')} mil`;
+      }
+      if (value >= 1_000) {
+        return `${(value / 1_000).toFixed(0).replace('.', ',')} tis`;
+      }
+      return String(Math.round(value)).replace('.', ',');
+    };
 
     const byId = (id) => document.getElementById(id);
 
     const els = {
       propertyValue: byId('propertyValue'),
       loanAmount: byId('loanAmount'),
-      yearsSlider: byId('yearsSlider'),
       yearsInput: byId('yearsInput'),
-      rateSlider: byId('rateSlider'),
       annualRate: byId('annualRate'),
       useAct360: byId('useAct360'),
       lumpSum: byId('lumpSum'),
       monthlyContribution: byId('monthlyContribution'),
-      invReturnSlider: byId('invReturnSlider'),
       investmentAnnualReturn: byId('investmentAnnualReturn'),
       entryFeePct: byId('entryFeePct'),
-      toggleAdvanced: byId('toggleAdvanced'),
-      advancedFields: byId('advancedFields'),
-      monthlyIncome: byId('monthlyIncome'),
-      monthlyObligations: byId('monthlyObligations'),
       calculateBtn: byId('calculateBtn'),
       resetBtn: byId('resetBtn'),
       error: byId('error'),
       monthlyPaymentValue: byId('monthlyPaymentValue'),
-      dtiValue: byId('dtiValue'),
-      dstiValue: byId('dstiValue'),
-      ltvValue: byId('ltvValue'),
       possibleRepaymentValue: byId('possibleRepaymentValue'),
       totalPaidValue: byId('totalPaidValue'),
       finalInvestmentValue: byId('finalInvestmentValue'),
+      yearsToCheck: byId('yearsToCheck'),
+      interestXLabel: byId('interestXLabel'),
+      principalXLabel: byId('principalXLabel'),
+      interestInXValue: byId('interestInXValue'),
+      principalInXValue: byId('principalInXValue'),
       chartSvg: byId('chartSvg'),
       chartWrap: byId('chartWrap'),
       chartTooltip: byId('chartTooltip'),
@@ -547,29 +529,40 @@
     const seriesConfig = {
       debt: { label: 'Zůstatek dluhu', color: getComputedStyle(document.documentElement).getPropertyValue('--series-debt').trim(), defaultOn: true },
       investment: { label: 'Hodnota investice', color: getComputedStyle(document.documentElement).getPropertyValue('--series-investment').trim(), defaultOn: true },
-      invested: { label: 'Investováno celkem', color: getComputedStyle(document.documentElement).getPropertyValue('--series-invested').trim(), defaultOn: false },
-      profit: { label: 'Výnos', color: getComputedStyle(document.documentElement).getPropertyValue('--series-profit').trim(), defaultOn: false },
-      cumInterest: { label: 'Kumulované úroky hypotéky', color: getComputedStyle(document.documentElement).getPropertyValue('--series-interest').trim(), defaultOn: false },
-      cumPrincipal: { label: 'Kumulovaný úmor', color: getComputedStyle(document.documentElement).getPropertyValue('--series-principal').trim(), defaultOn: false }
+      invested: { label: 'Investováno celkem', color: getComputedStyle(document.documentElement).getPropertyValue('--series-invested').trim(), defaultOn: true },
+      profit: { label: 'Výnos', color: getComputedStyle(document.documentElement).getPropertyValue('--series-profit').trim(), defaultOn: false }
     };
 
     const chartState = {
       enabled: Object.fromEntries(Object.entries(seriesConfig).map(([k, v]) => [k, v.defaultOn])),
       hoverYear: null,
       data: null,
-      padding: { left: 78, right: 26, top: 24, bottom: 46 },
+      padding: { left: 102, right: 26, top: 22, bottom: 54 },
       width: 1000,
-      height: 430
+      height: 470
     };
 
-    function syncPair(a, b, fallback = 0) {
-      const n = Number(a.value);
-      if (Number.isFinite(n)) {
-        b.value = a.value;
-      } else {
-        a.value = fallback;
-        b.value = fallback;
+    function sanitizeMoneyInput(el) {
+      el.value = el.value.replace(/[^\d ]/g, '');
+    }
+
+    function sanitizePercentInput(el) {
+      el.value = el.value.replace(/[^\d.,]/g, '');
+      const commas = (el.value.match(/,/g) || []).length;
+      const dots = (el.value.match(/\./g) || []).length;
+      if (commas + dots > 1) {
+        const first = el.value.search(/[.,]/);
+        el.value = `${el.value.slice(0, first + 1)}${el.value.slice(first + 1).replace(/[.,]/g, '')}`;
       }
+    }
+
+    function formatMoneyInputOnBlur(el) {
+      const n = parseIntCz(el.value);
+      if (!Number.isFinite(n) || n < 0) {
+        el.value = '';
+        return;
+      }
+      el.value = formatGroupedInt(n);
     }
 
     function addMonths(date, count) {
@@ -620,27 +613,22 @@
       for (let i = 0; i < 60; i++) {
         const mid = (low + high) / 2;
         const bal = simulateBalance(mid);
-        if (bal > 0) {
-          low = mid;
-        } else {
-          high = mid;
-        }
+        if (bal > 0) low = mid;
+        else high = mid;
       }
 
       return (low + high) / 2;
     }
 
     function calculateData() {
-      const propertyValue = Number(els.propertyValue.value);
-      const loanAmount = Number(els.loanAmount.value);
+      const propertyValue = parseIntCz(els.propertyValue.value);
+      const loanAmount = parseIntCz(els.loanAmount.value);
       const years = Number(els.yearsInput.value);
-      const annualRatePct = Number(els.annualRate.value);
-      const lumpSum = Number(els.lumpSum.value);
-      const monthlyContribution = Number(els.monthlyContribution.value);
-      const investmentAnnualReturn = Number(els.investmentAnnualReturn.value);
-      const entryFeePct = Number(els.entryFeePct.value);
-      const monthlyIncome = Number(els.monthlyIncome.value);
-      const monthlyObligations = Number(els.monthlyObligations.value || 0);
+      const annualRatePct = parseFloatCz(els.annualRate.value);
+      const lumpSum = parseIntCz(els.lumpSum.value);
+      const monthlyContribution = parseIntCz(els.monthlyContribution.value);
+      const investmentAnnualReturn = parseFloatCz(els.investmentAnnualReturn.value);
+      const entryFeePct = parseFloatCz(els.entryFeePct.value);
       const basis = els.useAct360.checked ? 360 : 365;
 
       if ([propertyValue, loanAmount, years, annualRatePct, lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct]
@@ -707,26 +695,15 @@
         debt: [],
         investment: [],
         invested: [],
-        profit: [],
-        cumInterest: [],
-        cumPrincipal: []
+        profit: []
       };
 
-      yearlyRows.push({
-        year: 0,
-        endBalance: mortgageBalance[0],
-        investmentValue: investmentValue[0],
-        interestSum: 0,
-        principalSum: 0
-      });
-
+      yearlyRows.push({ year: 0, endBalance: mortgageBalance[0], investmentValue: investmentValue[0], interestSum: 0, principalSum: 0 });
       yearlySeries.year.push(0);
       yearlySeries.debt.push(mortgageBalance[0]);
       yearlySeries.investment.push(investmentValue[0]);
       yearlySeries.invested.push(investedNet[0]);
       yearlySeries.profit.push(investmentValue[0] - investedNet[0]);
-      yearlySeries.cumInterest.push(0);
-      yearlySeries.cumPrincipal.push(0);
 
       for (let y = 1; y <= years; y++) {
         const monthEnd = y * 12;
@@ -739,21 +716,12 @@
           yearPrincipal += monthlyPrincipal[m];
         }
 
-        yearlyRows.push({
-          year: y,
-          endBalance: mortgageBalance[monthEnd],
-          investmentValue: investmentValue[monthEnd],
-          interestSum: yearInterest,
-          principalSum: yearPrincipal
-        });
-
+        yearlyRows.push({ year: y, endBalance: mortgageBalance[monthEnd], investmentValue: investmentValue[monthEnd], interestSum: yearInterest, principalSum: yearPrincipal });
         yearlySeries.year.push(y);
         yearlySeries.debt.push(mortgageBalance[monthEnd]);
         yearlySeries.investment.push(investmentValue[monthEnd]);
         yearlySeries.invested.push(investedNet[monthEnd]);
         yearlySeries.profit.push(investmentValue[monthEnd] - investedNet[monthEnd]);
-        yearlySeries.cumInterest.push(cumulativeInterest[monthEnd]);
-        yearlySeries.cumPrincipal.push(cumulativePrincipal[monthEnd]);
       }
 
       let breakEvenMonth = null;
@@ -764,20 +732,13 @@
         }
       }
 
-      const ltv = (loanAmount / propertyValue) * 100;
-      const dti = monthlyIncome > 0 ? loanAmount / (monthlyIncome * 12) : null;
-      const dsti = monthlyIncome > 0 ? ((monthlyPayment + monthlyObligations) / monthlyIncome) * 100 : null;
-
       return {
-        inputs: { propertyValue, loanAmount, years, annualRatePct, monthlyIncome, monthlyObligations, basis },
+        inputs: { years, basis },
         monthlyPayment,
         totalPaid: monthlyPayment * totalMonths,
         finalInvestmentValue: investmentValue[totalMonths],
-        ltv,
-        dti,
-        dsti,
         breakEvenMonth,
-        seriesMonthly: { mortgageBalance, investmentValue, investedNet, cumulativeInterest, cumulativePrincipal },
+        seriesMonthly: { cumulativeInterest, cumulativePrincipal },
         seriesYearly: yearlySeries,
         yearlyRows
       };
@@ -785,9 +746,6 @@
 
     function setSummary(data) {
       els.monthlyPaymentValue.textContent = formatCurrency(data.monthlyPayment, 0);
-      els.ltvValue.textContent = `${formatNumber(data.ltv, 2)} %`;
-      els.dtiValue.textContent = data.dti == null ? '—' : formatNumber(data.dti, 2);
-      els.dstiValue.textContent = data.dsti == null ? '—' : `${formatNumber(data.dsti, 2)} %`;
       els.totalPaidValue.textContent = formatCurrency(data.totalPaid, 0);
       els.finalInvestmentValue.textContent = formatCurrency(data.finalInvestmentValue, 0);
 
@@ -798,6 +756,25 @@
         const m = data.breakEvenMonth % 12;
         els.possibleRepaymentValue.textContent = `${y} a ${m} měsíců`;
       }
+    }
+
+    function setInterestPrincipalForXYears(data) {
+      const years = data.inputs.years;
+      const xInput = Number(els.yearsToCheck.value);
+      const safeX = Number.isFinite(xInput) ? Math.max(1, Math.floor(xInput)) : 1;
+      const clampedYears = Math.min(years, safeX);
+      if (String(els.yearsToCheck.value) !== String(safeX)) {
+        els.yearsToCheck.value = safeX;
+      }
+
+      const month = Math.min(clampedYears * 12, years * 12);
+      const interestTotal = data.seriesMonthly.cumulativeInterest[month] || 0;
+      const principalTotal = data.seriesMonthly.cumulativePrincipal[month] || 0;
+
+      els.interestXLabel.textContent = `Úroky celkem za ${clampedYears} let`;
+      els.principalXLabel.textContent = `Úmor celkem za ${clampedYears} let`;
+      els.interestInXValue.textContent = formatCurrency(interestTotal, 0);
+      els.principalInXValue.textContent = formatCurrency(principalTotal, 0);
     }
 
     function renderYearlyTable(rows) {
@@ -832,12 +809,12 @@
       const ySeries = data.seriesYearly;
       const activeKeys = Object.keys(chartState.enabled).filter((k) => chartState.enabled[k]);
       const allActiveValues = activeKeys.flatMap((key) => ySeries[key]);
-      const maxY = Math.max(...allActiveValues, data.inputs.loanAmount, 1);
+      const maxY = Math.max(...allActiveValues, 1);
 
       const x = (year) => left + (year / years) * innerW;
       const y = (value) => top + (1 - value / maxY) * innerH;
 
-      const yTicks = 5;
+      const yTicks = 4;
       const xStep = Math.max(1, Math.ceil(years / 10));
       const defs = `
         <defs>
@@ -854,13 +831,13 @@
         const yy = top + ratio * innerH;
         const val = maxY * (1 - ratio);
         grid += `<line x1="${left}" y1="${yy}" x2="${W - right}" y2="${yy}" stroke="#e8edf3" stroke-dasharray="3 4"/>`;
-        grid += `<text x="${left - 10}" y="${yy + 4}" text-anchor="end" font-size="11" fill="#7b8794">${formatCurrency(val, 0)}</text>`;
+        grid += `<text x="${left - 12}" y="${yy + 4}" text-anchor="end" font-size="11" fill="#7b8794">${formatAxisCz(val)}</text>`;
       }
 
       for (let yr = 0; yr <= years; yr += xStep) {
         const xx = x(yr);
         grid += `<line x1="${xx}" y1="${top}" x2="${xx}" y2="${H - bottom}" stroke="#f0f4f8"/>`;
-        grid += `<text x="${xx}" y="${H - bottom + 18}" text-anchor="middle" font-size="11" fill="#7b8794">${yr}</text>`;
+        grid += `<text x="${xx}" y="${H - bottom + 20}" text-anchor="middle" font-size="11" fill="#7b8794">${yr}</text>`;
       }
 
       const seriesPaths = [];
@@ -881,10 +858,7 @@
       if (data.breakEvenMonth != null) {
         const yr = data.breakEvenMonth / 12;
         const xx = x(Math.min(years, yr));
-        breakEvenLine = `
-          <line x1="${xx}" y1="${top}" x2="${xx}" y2="${H - bottom}" stroke="#ef4444" stroke-dasharray="4 5"/>
-          <text x="${xx + 4}" y="${top + 14}" font-size="11" fill="#ef4444">Průsečík</text>
-        `;
+        breakEvenLine = `<line x1="${xx}" y1="${top}" x2="${xx}" y2="${H - bottom}" stroke="#ef4444" stroke-dasharray="4 5"/>`;
       }
 
       let hoverBits = '';
@@ -908,8 +882,8 @@
         ${hoverBits}
         <line x1="${left}" y1="${H - bottom}" x2="${W - right}" y2="${H - bottom}" stroke="#b7c3d0"/>
         <line x1="${left}" y1="${top}" x2="${left}" y2="${H - bottom}" stroke="#b7c3d0"/>
-        <text x="${left + innerW / 2}" y="${H - 10}" text-anchor="middle" font-size="12" fill="#64748b">Doba (roky)</text>
-        <text x="18" y="${top + innerH / 2}" transform="rotate(-90 18 ${top + innerH / 2})" text-anchor="middle" font-size="12" fill="#64748b">Hodnota (Kč)</text>
+        <text x="${left + innerW / 2}" y="${H - 12}" text-anchor="middle" font-size="12" fill="#64748b">Doba (roky)</text>
+        <text x="18" y="${top + innerH / 2}" transform="rotate(-90 18 ${top + innerH / 2})" text-anchor="middle" font-size="12" fill="#64748b">Hodnota (tis./mil.)</text>
         ${overlay}
       `;
 
@@ -923,7 +897,7 @@
       const innerW = chartState.width - left - right;
       const years = data.inputs.years;
 
-      const onMove = (evt) => {
+      hit.addEventListener('mousemove', (evt) => {
         const rect = els.chartSvg.getBoundingClientRect();
         const px = evt.clientX - rect.left;
         const clamped = Math.max(left, Math.min(chartState.width - right, (px / rect.width) * chartState.width));
@@ -932,16 +906,13 @@
         chartState.hoverYear = year;
         renderChart(data);
         showTooltip(evt.clientX, evt.clientY, year, data);
-      };
+      });
 
-      const onLeave = () => {
+      hit.addEventListener('mouseleave', () => {
         chartState.hoverYear = null;
         els.chartTooltip.style.opacity = '0';
         renderChart(data);
-      };
-
-      hit.addEventListener('mousemove', onMove);
-      hit.addEventListener('mouseleave', onLeave);
+      });
     }
 
     function showTooltip(clientX, clientY, year, data) {
@@ -1010,65 +981,38 @@
       }
       setError('');
       setSummary(data);
+      setInterestPrincipalForXYears(data);
       renderYearlyTable(data.yearlyRows);
       renderChart(data);
     }
 
-    function bindInputSync() {
-      els.yearsSlider.addEventListener('input', () => { syncPair(els.yearsSlider, els.yearsInput, 30); scheduleRecalc(); });
-      els.yearsInput.addEventListener('input', () => { syncPair(els.yearsInput, els.yearsSlider, 30); scheduleRecalc(); });
-      els.rateSlider.addEventListener('input', () => { syncPair(els.rateSlider, els.annualRate, 4.89); scheduleRecalc(); });
-      els.annualRate.addEventListener('input', () => { syncPair(els.annualRate, els.rateSlider, 4.89); scheduleRecalc(); });
-      els.invReturnSlider.addEventListener('input', () => { syncPair(els.invReturnSlider, els.investmentAnnualReturn, 7); scheduleRecalc(); });
-      els.investmentAnnualReturn.addEventListener('input', () => { syncPair(els.investmentAnnualReturn, els.invReturnSlider, 7); scheduleRecalc(); });
-
-      [
-        els.propertyValue, els.loanAmount, els.useAct360, els.lumpSum, els.monthlyContribution,
-        els.entryFeePct, els.monthlyIncome, els.monthlyObligations
-      ].forEach((el) => el.addEventListener('input', scheduleRecalc));
-
-      els.calculateBtn.addEventListener('click', recalcAll);
-
-      els.toggleAdvanced.addEventListener('change', () => {
-        els.advancedFields.classList.toggle('hidden', !els.toggleAdvanced.checked);
-        scheduleRecalc();
+    function bindInputs() {
+      document.querySelectorAll('.money-input').forEach((el) => {
+        el.addEventListener('input', () => { sanitizeMoneyInput(el); scheduleRecalc(); });
+        el.addEventListener('blur', () => { formatMoneyInputOnBlur(el); scheduleRecalc(); });
       });
 
+      document.querySelectorAll('.percent-input').forEach((el) => {
+        el.addEventListener('input', () => { sanitizePercentInput(el); scheduleRecalc(); });
+      });
+
+      [els.yearsInput, els.useAct360, els.yearsToCheck].forEach((el) => el.addEventListener('input', scheduleRecalc));
+      els.calculateBtn.addEventListener('click', recalcAll);
       els.toggleResultsTable.addEventListener('change', () => {
         els.resultsTableWrap.classList.toggle('hidden', !els.toggleResultsTable.checked);
       });
 
       els.resetBtn.addEventListener('click', () => {
-        const defaults = {
-          propertyValue: 6000000,
-          loanAmount: 4500000,
-          years: 30,
-          annualRate: 4.89,
-          act360: false,
-          lumpSum: 300000,
-          monthlyContribution: 5000,
-          invReturn: 7,
-          entryFeePct: 1.5,
-          monthlyIncome: '',
-          monthlyObligations: ''
-        };
-
-        els.propertyValue.value = defaults.propertyValue;
-        els.loanAmount.value = defaults.loanAmount;
-        els.yearsSlider.value = defaults.years;
-        els.yearsInput.value = defaults.years;
-        els.rateSlider.value = defaults.annualRate;
-        els.annualRate.value = defaults.annualRate;
-        els.useAct360.checked = defaults.act360;
-        els.lumpSum.value = defaults.lumpSum;
-        els.monthlyContribution.value = defaults.monthlyContribution;
-        els.invReturnSlider.value = defaults.invReturn;
-        els.investmentAnnualReturn.value = defaults.invReturn;
-        els.entryFeePct.value = defaults.entryFeePct;
-        els.monthlyIncome.value = defaults.monthlyIncome;
-        els.monthlyObligations.value = defaults.monthlyObligations;
-        els.toggleAdvanced.checked = false;
-        els.advancedFields.classList.add('hidden');
+        els.propertyValue.value = '6 000 000';
+        els.loanAmount.value = '4 500 000';
+        els.yearsInput.value = 30;
+        els.annualRate.value = '4,89';
+        els.useAct360.checked = false;
+        els.lumpSum.value = '300 000';
+        els.monthlyContribution.value = '5 000';
+        els.investmentAnnualReturn.value = '7';
+        els.entryFeePct.value = '1,5';
+        els.yearsToCheck.value = 10;
         els.toggleResultsTable.checked = false;
         els.resultsTableWrap.classList.add('hidden');
 
@@ -1082,7 +1026,7 @@
 
     function init() {
       renderLegend();
-      bindInputSync();
+      bindInputs();
       recalcAll();
     }
 
