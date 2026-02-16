@@ -327,6 +327,11 @@
       .mini-grid { grid-template-columns: 1fr; }
     }
 
+    @media (max-width: 720px) {
+      .line { flex-wrap: wrap; }
+      .line strong { margin-left: 0; }
+    }
+
     .toggle-table {
       margin-top: .75rem;
       margin-bottom: .55rem;
@@ -339,7 +344,8 @@
       cursor: pointer;
     }
 
-    .table-wrap {
+     .table-wrap {
+      position: relative;
       max-height: 360px;
       overflow: auto;
       border: 1px solid var(--color-border);
@@ -349,6 +355,7 @@
 
     table {
       width: 100%;
+      min-width: 900px;
       border-collapse: separate;
       border-spacing: 0;
       font-size: .84rem;
@@ -368,13 +375,17 @@
       top: 0;
       z-index: 5;
       background: #E6F4F8;
+      background-clip: padding-box;
       color: var(--color-primary);
       font-size: .78rem;
       text-transform: uppercase;
       letter-spacing: .05em;
       box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+      white-space: normal;
+      line-height: 1.2;
     }
 
+    tbody td { white-space: nowrap; }
     tbody tr:nth-child(2n) { background: rgba(13,44,84,.02); }
     .hidden { display: none !important; }
   </style>
@@ -688,6 +699,7 @@
       const daysArray = buildDaysArray(totalMonths, startDate);
       const monthlyPayment = solveMonthlyPayment({ loanAmount, annualRatePct, totalMonths, daysArray, basis });
       const annualRate = annualRatePct / 100;
+      const propertyGrowthRate = propertyGrowthPct / 100;
 
       const entryFeeMultiplier = Math.max(0, 1 - entryFeePct / 100);
       const netLump = lumpSum * entryFeeMultiplier;
@@ -1071,17 +1083,22 @@
     }
 
     function recalcAll() {
-      const data = calculateData();
-      if (data.error) {
-        setError(data.error);
-        return;
+      try {
+        const data = calculateData();
+        if (data.error) {
+          setError(data.error);
+          return;
+        }
+        setError('');
+        setSummary(data);
+        setInterestPrincipalForXYears(data);
+        setInsight(data);
+        renderYearlyTable(data.yearlyRows);
+        renderChart(data);
+      } catch (e) {
+        console.error(e);
+        setError(`Interní chyba výpočtu: ${e?.message || e}`);
       }
-      setError('');
-      setSummary(data);
-      setInterestPrincipalForXYears(data);
-      setInsight(data);
-      renderYearlyTable(data.yearlyRows);
-      renderChart(data);
     }
 
     function bindInputs() {
@@ -1098,7 +1115,10 @@
         el.addEventListener('input', () => { sanitizeIntInput(el); scheduleRecalc(); });
       });
 
-      [els.useAct360].forEach((el) => el.addEventListener('input', scheduleRecalc));
+      [els.useAct360].forEach((el) => {
+        el.addEventListener('input', scheduleRecalc);
+        el.addEventListener('change', scheduleRecalc);
+      });
       els.toggleResultsTable.addEventListener('change', () => {
         els.resultsTableWrap.classList.toggle('hidden', !els.toggleResultsTable.checked);
       });
