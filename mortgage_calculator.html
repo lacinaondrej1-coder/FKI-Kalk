@@ -74,30 +74,19 @@
 
     .main-layout {
       display: grid;
-      grid-template-columns: minmax(290px, 420px) minmax(480px, 1.6fr) minmax(290px, 420px);
-      gap: .9rem;
+      grid-template-columns: 1fr;
+      gap: 1rem;
       align-items: start;
     }
 
-    @media (max-width: 1220px) {
-      .main-layout { grid-template-columns: 1fr; }
-    }
-
     .left-panel, .right-panel {
-      position: sticky;
-      top: 12px;
-      max-height: calc(100vh - 24px);
-      overflow: auto;
-      scrollbar-gutter: stable both-edges;
+      position: static;
+      max-height: none;
+      overflow: visible;
     }
 
-    @media (max-width: 1220px) {
-      .left-panel, .right-panel {
-        position: static;
-        max-height: none;
-        overflow: visible;
-      }
-    }
+    .flow-card { padding: 1.15rem; }
+    .flow-stack { display: grid; gap: 1rem; }
 
     .section-title {
       margin: 0 0 .65rem;
@@ -147,12 +136,8 @@
 
     .scenario-cards {
       display: grid;
-      gap: .7rem;
-      grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 1420px) {
-      .scenario-cards { grid-template-columns: 1fr 1fr; }
+      gap: .9rem;
+      grid-template-columns: 1fr !important;
     }
 
     .scenario-card {
@@ -223,6 +208,10 @@
 
     @media (min-width: 1100px) {
       .pair-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      .pair-grid { grid-template-columns: 1fr; }
     }
 
     .field {
@@ -495,7 +484,7 @@
     </section>
 
     <section class="main-layout">
-      <aside class="left-panel card">
+      <section class="left-panel card flow-card flow-stack">
         <h2 class="section-title">Vstupy</h2>
         <label class="switch"><input id="compareMode" type="checkbox" /> Porovnat 2 strategie</label>
         <div class="compare-actions hidden" id="copyActions">
@@ -503,7 +492,7 @@
           <button class="btn btn-soft" id="copyBToA" type="button">Kopírovat B → A</button>
         </div>
 
-        <div class="pair-grid" style="margin-bottom:.7rem;">
+        <div class="pair-grid">
           <div class="field">
             <label for="propertyValue">Zástavní hodnota nemovitosti (Kč)</label>
             <input class="input money-input shared-input" id="propertyValue" data-key="propertyValue" type="text" inputmode="numeric" pattern="[0-9 ]*" value="6 000 000" />
@@ -516,56 +505,10 @@
 
         <div class="scenario-cards" id="scenarioCards"></div>
         <div class="error-text" id="inputError"></div>
-      </aside>
-
-      <section class="center-stack">
-        <section class="card">
-          <h2 class="section-title">Graf a přepínače</h2>
-          <div class="legend-controls" id="legendControls"></div>
-          <div class="graph-wrap" id="chartWrap">
-            <svg id="chartSvg" viewBox="0 0 1000 470" preserveAspectRatio="none"></svg>
-            <div id="chartTooltip"></div>
-          </div>
-
-          <div class="xyears-card" style="margin-top:.7rem;">
-            <div class="section-title" style="font-size:.95rem;margin:0 0 .45rem;">Kolik jsem zaplatil na úrocích / umořil za X let</div>
-            <div class="pair-grid">
-              <div class="field" style="margin:0;">
-                <label for="yearsToCheck">Za kolik let (1–N)?</label>
-                <input id="yearsToCheck" class="input int-input" type="text" inputmode="numeric" pattern="[0-9]*" value="10" />
-              </div>
-              <div style="display:grid;gap:.5rem;min-width:0;">
-                <div class="line"><span id="interestXLabel">Úroky celkem za 10 let</span><strong id="interestInXValue">—</strong></div>
-                <div class="line"><span id="principalXLabel">Úmor celkem za 10 let</span><strong id="principalInXValue">—</strong></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="card">
-          <label class="toggle-table"><input id="toggleResultsTable" type="checkbox" /> Tabulka s výslednými hodnotami</label>
-          <div class="tabs hidden" id="tableTabs">
-            <button class="tab-btn active" data-table-tab="A" type="button">Tabulka A</button>
-            <button class="tab-btn" data-table-tab="B" type="button">Tabulka B</button>
-          </div>
-          <div id="resultsTableWrap" class="table-wrap hidden">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rok</th>
-                  <th>Jistina na konci období</th>
-                  <th>Hodnota investice</th>
-                  <th>Úrok</th>
-                  <th>Úmor</th>
-                </tr>
-              </thead>
-              <tbody id="yearlyTableBody"></tbody>
-            </table>
-          </div>
-        </section>
       </section>
 
-      <aside class="right-panel card" id="resultPanel">
+      <section class="right-panel card flow-card flow-stack" id="resultPanel">
+        <h2 class="section-title">Souhrn výsledků</h2>
         <div class="tabs" id="resultTabs">
           <button class="tab-btn active" data-result-tab="A" type="button">Strategie A</button>
           <button class="tab-btn hidden" data-result-tab="B" type="button">Strategie B</button>
@@ -581,7 +524,7 @@
           </div>
         </div>
 
-        <div class="compare-box hidden" id="compareBox">
+        <div class="compare-box hidden" id="compareBox" style="border-top:1px solid var(--color-border); padding-top:.9rem;">
           <div class="section-title" style="font-size:.95rem;margin-bottom:.45rem;">Srovnání A vs B</div>
           <div class="line"><span>Rozdíl měsíční splátky (B − A)</span><strong id="cmpPayment">—</strong></div>
           <div class="line"><span>Rozdíl celkové splatné částky (B − A)</span><strong id="cmpTotalPaid">—</strong></div>
@@ -590,11 +533,57 @@
           <div class="line"><span>Rozdíl času break-even (B vs A)</span><strong id="cmpBreakDiff">—</strong></div>
         </div>
 
-        <div class="insight-card">
+        <div class="insight-card" style="border-top:1px solid var(--color-border); padding-top:.9rem;">
           <div class="insight-badge">Výsledek</div>
           <div id="insightContent" style="display:grid;gap:.72rem;margin-top:.5rem;"></div>
         </div>
-      </aside>
+      </section>
+
+      <section class="card flow-card flow-stack">
+        <h2 class="section-title">Graf</h2>
+        <div class="legend-controls" id="legendControls"></div>
+        <div class="graph-wrap" id="chartWrap">
+          <svg id="chartSvg" viewBox="0 0 1000 470" preserveAspectRatio="none"></svg>
+          <div id="chartTooltip"></div>
+        </div>
+
+        <div class="xyears-card" style="margin-top:1rem;">
+          <div class="section-title" style="font-size:.95rem;margin:0 0 .45rem;">Kolik jsem zaplatil na úrocích / umořil za X let</div>
+          <div class="pair-grid">
+            <div class="field" style="margin:0;">
+              <label for="yearsToCheck">Za kolik let (1–N)?</label>
+              <input id="yearsToCheck" class="input int-input" type="text" inputmode="numeric" pattern="[0-9]*" value="10" />
+            </div>
+            <div style="display:grid;gap:.5rem;min-width:0;">
+              <div class="line"><span id="interestXLabel">Úroky celkem za 10 let</span><strong id="interestInXValue">—</strong></div>
+              <div class="line"><span id="principalXLabel">Úmor celkem za 10 let</span><strong id="principalInXValue">—</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card flow-card flow-stack">
+        <h2 class="section-title">Tabulky</h2>
+        <label class="toggle-table"><input id="toggleResultsTable" type="checkbox" /> Tabulka s výslednými hodnotami</label>
+        <div class="tabs hidden" id="tableTabs">
+          <button class="tab-btn active" data-table-tab="A" type="button">Tabulka A</button>
+          <button class="tab-btn" data-table-tab="B" type="button">Tabulka B</button>
+        </div>
+        <div id="resultsTableWrap" class="table-wrap hidden">
+          <table>
+            <thead>
+              <tr>
+                <th>Rok</th>
+                <th>Jistina na konci období</th>
+                <th>Hodnota investice</th>
+                <th>Úrok</th>
+                <th>Úmor</th>
+              </tr>
+            </thead>
+            <tbody id="yearlyTableBody"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
