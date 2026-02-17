@@ -368,6 +368,23 @@
     .line span:first-child { min-width: 0; overflow-wrap: anywhere; color: var(--color-muted); }
     .line strong { margin-left: auto; white-space: nowrap; color: var(--color-primary); }
 
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      padding: 0 .32rem;
+      height: 18px;
+      border-radius: 999px;
+      font-size: .66rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: #0d2c54;
+      background: rgba(77,177,200,.2);
+      border: 1px solid rgba(77,177,200,.4);
+      margin-right: .24rem;
+    }
+
     @media (max-width: 720px) {
       .line { flex-wrap: wrap; }
       .line strong { margin-left: 0; }
@@ -750,15 +767,25 @@
     }
 
     function getScenarioInputs(name) {
+      const raw = {
+        loanAmount: byId(`loanAmount_${name}`).value,
+        years: byId(`years_${name}`).value,
+        annualRatePct: byId(`annualRate_${name}`).value,
+        lumpSum: byId(`lumpSum_${name}`).value,
+        monthlyContribution: byId(`monthlyContribution_${name}`).value,
+        investmentAnnualReturn: byId(`investmentAnnualReturn_${name}`).value,
+        entryFeePct: byId(`entryFeePct_${name}`).value
+      };
       return {
-        loanAmount: parseIntCz(byId(`loanAmount_${name}`).value),
-        years: parseIntCz(byId(`years_${name}`).value),
-        annualRatePct: parseFloatCz(byId(`annualRate_${name}`).value),
+        loanAmount: parseIntCz(raw.loanAmount),
+        years: parseIntCz(raw.years),
+        annualRatePct: parseFloatCz(raw.annualRatePct),
         useAct360: byId(`useAct360_${name}`).checked,
-        lumpSum: parseIntCz(byId(`lumpSum_${name}`).value),
-        monthlyContribution: parseIntCz(byId(`monthlyContribution_${name}`).value),
-        investmentAnnualReturn: parseFloatCz(byId(`investmentAnnualReturn_${name}`).value),
-        entryFeePct: parseFloatCz(byId(`entryFeePct_${name}`).value)
+        lumpSum: parseIntCz(raw.lumpSum),
+        monthlyContribution: parseIntCz(raw.monthlyContribution),
+        investmentAnnualReturn: parseFloatCz(raw.investmentAnnualReturn),
+        entryFeePct: parseFloatCz(raw.entryFeePct),
+        raw
       };
     }
 
@@ -781,14 +808,31 @@
       const { propertyValue, propertyGrowthPct } = shared;
       const {
         loanAmount, years, annualRatePct, useAct360,
-        lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct
+        lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct, raw
       } = inputs;
 
       const basis = useAct360 ? 360 : 365;
 
-      const values = [propertyValue, propertyGrowthPct, loanAmount, years, annualRatePct, lumpSum, monthlyContribution, investmentAnnualReturn, entryFeePct];
-      if (values.some((v) => Number.isNaN(v) || v < 0) || propertyValue <= 0 || loanAmount <= 0 || years <= 0) {
-        return { error: 'Vyplňte kladné hodnoty u všech povinných polí.' };
+      const invalid = [];
+      if (!(propertyValue > 0)) invalid.push('Zástavní hodnota nemovitosti');
+      if (!String(raw?.loanAmount ?? '').trim()) invalid.push('Výše úvěru');
+      if (!String(raw?.years ?? '').trim()) invalid.push('Počet let splácení');
+      if (!String(raw?.annualRatePct ?? '').trim()) invalid.push('Úrok p.a.');
+      if (!String(raw?.lumpSum ?? '').trim()) invalid.push('Jednorázová investice');
+      if (!String(raw?.monthlyContribution ?? '').trim()) invalid.push('Měsíční vklad');
+      if (!String(raw?.investmentAnnualReturn ?? '').trim()) invalid.push('Zhodnocení p.a.');
+      if (!String(raw?.entryFeePct ?? '').trim()) invalid.push('Vstupní poplatek');
+      if (!(propertyGrowthPct >= 0) || Number.isNaN(propertyGrowthPct)) invalid.push('Růst hodnoty nemovitosti');
+      if (!(loanAmount > 0)) invalid.push('Výše úvěru');
+      if (!(years > 0)) invalid.push('Počet let splácení');
+      if (!(annualRatePct >= 0) || Number.isNaN(annualRatePct)) invalid.push('Úrok p.a.');
+      if (!(lumpSum >= 0) || Number.isNaN(lumpSum)) invalid.push('Jednorázová investice');
+      if (!(monthlyContribution >= 0) || Number.isNaN(monthlyContribution)) invalid.push('Měsíční vklad');
+      if (!(investmentAnnualReturn >= 0) || Number.isNaN(investmentAnnualReturn)) invalid.push('Zhodnocení p.a.');
+      if (!(entryFeePct >= 0) || Number.isNaN(entryFeePct)) invalid.push('Vstupní poplatek');
+
+      if (invalid.length) {
+        return { error: `Vyplňte kladné hodnoty u: ${invalid.join(', ')}.` };
       }
 
       const totalMonths = years * 12;
@@ -976,6 +1020,9 @@
         state.activeResultTab = 'A';
         state.activeTableTab = 'A';
         activateTabs();
+      } else {
+        state.chart.enabled.debtB = true;
+        state.chart.enabled.investB = true;
       }
 
       scheduleRecalc();
@@ -1166,10 +1213,10 @@
       const property = data.seriesYearly.property[year];
       const profit = inv - invested;
       return `
-        <div class="row"><span><strong>${label}</strong> Výnos</span><span>${formatCurrency(profit, 0)}</span></div>
-        <div class="row"><span><strong>${label}</strong> Investice</span><span>${formatCurrency(inv, 0)}</span></div>
-        <div class="row"><span><strong>${label}</strong> Dluh</span><span>${formatCurrency(debt, 0)}</span></div>
-        <div class="row"><span><strong>${label}</strong> Nemovitost</span><span>${formatCurrency(property, 0)}</span></div>
+        <div class="row"><span><span class="badge">${label}</span> Výnos</span><span>${formatCurrency(profit, 0)}</span></div>
+        <div class="row"><span><span class="badge">${label}</span> Investice</span><span>${formatCurrency(inv, 0)}</span></div>
+        <div class="row"><span><span class="badge">${label}</span> Dluh</span><span>${formatCurrency(debt, 0)}</span></div>
+        <div class="row"><span><span class="badge">${label}</span> Nemovitost</span><span>${formatCurrency(property, 0)}</span></div>
       `;
     }
 
