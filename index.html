@@ -1,0 +1,1508 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FKI – Provize (vstupní a následné)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+    :root {
+      color-scheme: light;
+      --color-bg-start: #f8fcff;
+      --color-bg-end: #f3f6fa;
+      --color-primary: #0d2c54;
+      --color-accent: #4db1c8;
+      --color-text: #1f2a37;
+      --color-muted: #6b7280;
+      --color-border: #e5eaf0;
+      --color-border-strong: #d4dbe5;
+      --color-card: #ffffff;
+      --color-shadow: 0 10px 25px -10px rgba(13, 44, 84, 0.1);
+      --color-shadow-strong: 0 18px 38px -18px rgba(13, 44, 84, 0.15);
+    }
+    body {
+      font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+      color: var(--color-text);
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'tnum' 1, 'lnum' 1;
+    }
+    .card {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 1.45rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--color-shadow);
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--color-shadow-strong);
+    }
+    .brand-header {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0 0 36px 36px;
+    }
+    .brand-backdrop {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.9) 60%, rgba(247, 250, 253, 0.92) 100%);
+      border: 1px solid var(--color-border);
+      border-radius: 0 0 36px 36px;
+      box-shadow: var(--color-shadow);
+      pointer-events: none;
+    }
+    .brand-header-inner { position: relative; z-index: 1; }
+    .app-shell { max-width: 1160px; margin: 0 auto; padding: 0 1.5rem 2rem; }
+    .hero-badges span { background: #ffffff; border: 1px solid var(--color-border); color: var(--color-primary); }
+    .donut-legend { max-height: 320px; overflow-y: auto; padding-right: 0.25rem; }
+    .donut-legend li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; }
+    .donut-legend .label { display: flex; align-items: center; gap: 0.5rem; color: var(--color-text); }
+    .donut-legend .dot { width: 10px; height: 10px; border-radius: 999px; }
+    .col-aum { min-width: 220px; width: 220px; }
+    @media (min-width: 768px) {
+      .col-aum { min-width: 240px; width: 240px; }
+    }
+    .table-head {
+      background: #f3f6fb;
+      color: var(--color-primary);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+    .separator-row td { padding: 12px 0; border: none; }
+    .highlight-row {
+      background: rgba(77, 177, 200, 0.12);
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 var(--color-border-strong);
+    }
+    input:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 0;
+      box-shadow: 0 0 0 6px rgba(77, 177, 200, 0.16);
+    }
+    .pill {
+      background: rgba(13, 44, 84, 0.08);
+      color: var(--color-primary);
+      border: 1px solid rgba(13, 44, 84, 0.14);
+      letter-spacing: 0.1em;
+    }
+    .badge-soft {
+      background: #ffffff;
+      color: var(--color-primary);
+      border: 1px solid var(--color-border);
+      letter-spacing: 0.08em;
+    }
+    .glass { backdrop-filter: blur(10px); }
+    .primary-btn,
+    .secondary-btn,
+    .danger-btn {
+      border-radius: 9999px;
+      font-weight: 600;
+      padding: 0.7rem 1.35rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+    .primary-btn {
+      background: linear-gradient(120deg, #0d2c54, #4db1c8);
+      color: white;
+      box-shadow: 0 10px 25px -14px rgba(13, 44, 84, 0.28);
+    }
+    .secondary-btn {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      color: var(--color-primary);
+    }
+    .danger-btn {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #c53030;
+    }
+    .primary-btn:hover, .secondary-btn:hover, .danger-btn:hover { transform: translateY(-2px); box-shadow: var(--color-shadow-strong); }
+    .glass-input {
+      border-radius: 0.9rem;
+      border: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.98);
+      padding: 0.75rem 1rem;
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+    .glass-input::placeholder { color: var(--color-muted); }
+    .table-input {
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.8rem;
+      border: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.96);
+      text-align: right;
+      color: var(--color-primary);
+    }
+    .table-input.has-error {
+      border-color: #e53e3e;
+      box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.18);
+    }
+    .brand-logo span { color: var(--color-accent); }
+    .toast {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 50;
+      background: #ffe8e6;
+      color: #7c1f1f;
+      border: 1px solid #f5b1aa;
+      border-radius: 0.9rem;
+      padding: 0.75rem 1rem;
+      box-shadow: var(--color-shadow);
+      display: none;
+    }
+    .input-suffix {
+      position: absolute;
+      inset-y: 0;
+      right: 0.65rem;
+      display: inline-flex;
+      align-items: center;
+      color: var(--color-muted);
+      font-weight: 700;
+      pointer-events: none;
+    }
+    tbody tr.data-row:nth-child(even) { background: #f9fbff; }
+    tbody tr.data-row:hover { background: rgba(77, 177, 200, 0.1); }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="brand-header">
+    <div class="brand-backdrop"></div>
+    <div class="brand-header-inner app-shell py-8 md:py-12">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+        <div class="space-y-4 max-w-2xl">
+          <div class="flex items-center gap-3">
+            <div class="brand-logo text-2xl font-bold tracking-tight leading-none">Fair<span>Life</span></div>
+            <span class="pill rounded-full px-3 py-1 text-xs font-semibold uppercase">FKI / Provize</span>
+          </div>
+          <div class="space-y-3">
+            <h1 class="text-3xl md:text-4xl font-semibold tracking-wide text-[var(--color-primary)]">FKI – Provize (vstupní a následné)</h1>
+            <p class="text-sm md:text-base text-[var(--color-muted)]">Interní kalkulačka pro výpočet získatelských a následných provizí.</p>
+            <div class="flex flex-wrap gap-2 text-xs font-semibold hero-badges">
+              <span class="rounded-full px-3 py-1">Interní použití • FairLife</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-4 w-full lg:w-5/12">
+          <div class="flex flex-wrap gap-2 justify-start lg:justify-end">
+            <button id="exportJsonBtn" class="primary-btn">Export JSON</button>
+            <button id="importJsonBtn" class="secondary-btn">Import JSON</button>
+            <button id="fillTestButton" class="secondary-btn">Test: 10 000 000</button>
+            <button id="resetButton" class="danger-btn">Vymazat</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <input id="importJsonFile" type="file" accept="application/json" class="hidden" />
+  <div id="toast" class="toast"></div>
+
+  <main class="app-shell -mt-12 space-y-8">
+      <section class="card p-6 md:p-8">
+        <div class="flex flex-col gap-2 mb-6">
+          <p class="text-sm uppercase tracking-wide text-[var(--color-muted)]">Nastavení</p>
+          <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Globální nastavení</h2>
+          <p class="text-[var(--color-muted)]">Koeficient a vstupní poplatek ovlivňují výpočty v obou tabulkách.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="card p-4 flex flex-col gap-2">
+            <label class="text-sm font-semibold text-[var(--color-muted)]" for="coefInput">Koeficient</label>
+            <input id="coefInput" type="number" step="any" class="glass-input" value="60" />
+          </div>
+          <div class="card p-4 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-[var(--color-muted)]" for="entryFeeInput">Vstupní poplatek (%)</label>
+              <span class="text-xs text-[var(--color-muted)]">Zadejte procenta, např. 1,5</span>
+            </div>
+            <div class="relative">
+              <input id="entryFeeInput" type="number" step="any" class="glass-input pr-10" value="1" />
+              <span class="absolute inset-y-0 right-3 flex items-center text-[var(--color-muted)] font-semibold">%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    <section class="card p-6 md:p-8 space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část A</div>
+          <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Získatelské provize</h2>
+        </div>
+        <div class="flex flex-col gap-2 items-start md:items-end">
+          <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: INITIAL_FUNDS</p>
+          <div class="flex flex-wrap gap-2">
+            <button id="initialShowAll" class="secondary-btn text-sm px-3 py-2">Zobrazit vše</button>
+            <button id="initialHideZero" class="secondary-btn text-sm px-3 py-2">Skrýt nulové</button>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="table-head">
+            <tr>
+              <th class="px-3 py-2 text-center">SKRÝT</th>
+              <th class="px-3 py-2 text-left">#</th>
+              <th class="px-3 py-2 text-left">FOND</th>
+              <th class="px-3 py-2 text-right col-aum">AÚM (KČ)</th>
+              <th class="px-3 py-2 text-right">PROVIZE Z POPLATKU</th>
+              <th class="px-3 py-2 text-right">VSTUPNÍ BONUS</th>
+              <th class="px-3 py-2 text-right">PROVIZE CELKEM</th>
+              <th class="px-3 py-2 text-right">BODY</th>
+              <th class="px-3 py-2 text-left">POZNÁMKA</th>
+            </tr>
+          </thead>
+          <tbody id="initialBody" class="divide-y divide-[var(--color-border)]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card p-6 md:p-8 space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 pill rounded-full px-3 py-1 text-xs font-semibold uppercase">Část B</div>
+          <h2 class="text-2xl font-semibold text-[var(--color-primary)]">Následné provize</h2>
+        </div>
+        <div class="flex flex-col gap-2 items-start md:items-end">
+          <p class="text-sm text-[var(--color-muted)]">Sazby a pravidla: TRAIL_FUNDS</p>
+          <div class="flex flex-wrap gap-2">
+            <button id="trailShowAll" class="secondary-btn text-sm px-3 py-2">Zobrazit vše</button>
+            <button id="trailHideZero" class="secondary-btn text-sm px-3 py-2">Skrýt nulové</button>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="table-head">
+            <tr>
+              <th class="px-3 py-2 text-center">SKRÝT</th>
+              <th class="px-3 py-2 text-left">#</th>
+              <th class="px-3 py-2 text-left">FOND</th>
+              <th class="px-3 py-2 text-right col-aum">AÚM (KČ)</th>
+              <th class="px-3 py-2 text-right">ROČNÍ NÁSLEDNÁ PROVIZE</th>
+              <th class="px-3 py-2 text-right">SAZBA (%)</th>
+              <th class="px-3 py-2 text-left">POZNÁMKA</th>
+            </tr>
+          </thead>
+          <tbody id="trailBody" class="divide-y divide-[var(--color-border)]"></tbody>
+        </table>
+      </div>
+
+      <div class="card p-6 md:p-8 space-y-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="space-y-1">
+            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Vlastní fondy (následky)</h3>
+            <p class="text-sm text-[var(--color-muted)]">Přidejte vlastní fondy mimo pevný seznam.</p>
+          </div>
+          <button id="addCustomFund" class="secondary-btn text-sm px-4 py-2">+ Přidat fond</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="table-head">
+              <tr>
+                <th class="px-3 py-2 text-left">NÁZEV FONDU</th>
+                <th class="px-3 py-2 text-right col-aum">AÚM (KČ)</th>
+                <th class="px-3 py-2 text-right">SAZBA (%)</th>
+                <th class="px-3 py-2 text-right">ROČNÍ NÁSLEDNÁ PROVIZE</th>
+                <th class="px-3 py-2 text-center">SKRÝT</th>
+                <th class="px-3 py-2 text-center">AKCE</th>
+              </tr>
+            </thead>
+            <tbody id="customTrailBody" class="divide-y divide-[var(--color-border)]"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card p-6 md:p-8 space-y-6">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div class="space-y-1">
+            <h3 class="text-lg font-semibold text-[var(--color-primary)]">Rozložení portfolia (následky)</h3>
+            <p class="text-sm text-[var(--color-muted)]">Zobrazuje pouze nezakryté fondy s AÚM &gt; 0.</p>
+          </div>
+        </div>
+        <div class="flex flex-col xl:flex-row gap-6 xl:items-start">
+          <div class="relative flex items-center justify-center mx-auto">
+            <svg id="donutChart" viewBox="0 0 200 200" class="w-72 h-72 md:w-80 md:h-80 lg:w-[22rem] lg:h-[22rem]"></svg>
+            <div id="donutEmpty" class="absolute inset-0 flex items-center justify-center text-[var(--color-muted)] text-sm text-center px-4 hidden">Zatím není co zobrazit</div>
+            <div id="donutTotal" class="absolute inset-0 flex flex-col items-center justify-center text-center text-[var(--color-primary)] font-semibold leading-tight pointer-events-none hidden">
+              <span class="text-[0.7rem] uppercase tracking-wide text-[var(--color-muted)]">Celkem</span>
+              <span class="text-base md:text-lg" id="donutTotalValue">0 Kč</span>
+            </div>
+          </div>
+          <ul id="donutLegend" class="donut-legend flex-1 text-sm divide-y divide-[var(--color-border)]"></ul>
+        </div>
+      </div>
+
+      <div class="card p-6 md:p-8 space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-lg font-semibold text-[var(--color-primary)]">Cíl následných provizí</h3>
+        </div>
+        <div class="space-y-5">
+          <div class="grid grid-cols-3 gap-4 text-xs uppercase tracking-wide text-[var(--color-muted)]">
+            <span>Cíl</span><span class="text-right">Aktuálně</span><span class="text-right">Zbývá</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div class="space-y-2">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalInput">Ročně</label>
+              <div class="relative">
+                <input id="goalInput" type="text" inputmode="numeric" class="w-full glass-input pr-10" value="1200000" />
+                <span class="input-suffix">Kč</span>
+              </div>
+            </div>
+            <p id="currentAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+            <p id="gapAnnual" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+          </div>
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div class="space-y-2">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalQuarterlyInput">Kvartálně</label>
+              <div class="relative">
+                <input id="goalQuarterlyInput" type="text" inputmode="numeric" class="w-full glass-input pr-10" value="300000" />
+                <span class="input-suffix">Kč</span>
+              </div>
+            </div>
+            <p id="currentQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+            <p id="gapQuarterly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+          </div>
+          <div class="grid grid-cols-3 gap-4 items-center">
+            <div class="space-y-2">
+              <label class="text-xs uppercase tracking-wide text-[var(--color-muted)]" for="goalMonthlyInput">Měsíčně</label>
+              <div class="relative">
+                <input id="goalMonthlyInput" type="text" inputmode="numeric" class="w-full glass-input pr-10" value="100000" />
+                <span class="input-suffix">Kč</span>
+              </div>
+            </div>
+            <p id="currentMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+            <p id="gapMonthly" class="text-lg font-semibold text-[var(--color-primary)] text-right">0 Kč</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 flex flex-col gap-2 justify-center bg-[rgba(13,44,84,0.03)]">
+        <p class="text-xs uppercase tracking-wide text-[var(--color-muted)]">Vážená průměrná sazba portfolia (efektivní)</p>
+        <p id="weightedRate" class="text-2xl font-semibold text-[var(--color-primary)]">Zatím není dost dat pro výpočet</p>
+      </div>
+    </section>
+    </main>
+  </div>
+
+  <script>
+    const DENOM = 250;
+    const CHART_COLORS = [
+      '#0d2c54',
+      '#4DB1C8',
+      '#6E7DA2',
+      '#A4C4BC',
+      '#F2D7B6',
+      '#8FA6BF',
+      '#C8D8E4',
+      '#E0A899'
+    ];
+    const INITIAL_FUNDS = [
+      {"label":"2.","fund":"R2P","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"3.","fund":"NEMOMAX","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"4.","fund":"VIHOREV","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"5.","fund":"AGUILA","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"6.","fund":"DOMUS","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2% vstupní bonus"},
+      {"label":"7.","fund":"4GIMEL","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"8.","fund":"REALIA","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"9.","fund":"REALIA eur","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"10.","fund":"Domoplán","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"3% vstupní bonus přes BT"},
+      {"label":"11.","fund":"Gartal","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"12.","fund":"WERO","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2%"},
+      {"label":"13.","fund":"Spilberk","bonusRate":0.02,"bonusMode":"cash","pointsMode":"cash_bonus_to_points","note":"výplata mimo BT, 2% vstupní bonus"},
+      {"label":"14.","fund":"Avant Loan","bonusRate":0.025,"bonusMode":"bt_points","pointsMode":"standard","note":"2,5% vstupní bonus přes BT"},
+      {"label":"15.","fund":"Real Luxembourg","bonusRate":0.03,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"16.","fund":"Semper CZK i EUR","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+
+      {"label":"17.","fund":"EBM","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+
+      {"label":"18.","fund":null,"type":"separator"},
+
+      {"label":"19.","fund":"FČKD","bonusRate":0,"bonusMode":"none","pointsMode":"cash_bonus_to_points","note":""},
+      {"label":"20.","fund":"Reverzní hypo","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus, výplata přes BT od 1.8.2024"},
+      {"label":"21.","fund":"PFFL","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"23.","fund":"Julius Meinl","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"24.","fund":"Adax","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vyplácené v polovině roku 2026"},
+      {"label":"25.","fund":"ESG Senior Care","bonusRate":0.01,"bonusMode":"bt_points","pointsMode":"standard","note":"1% vstupní bonus přes BT"},
+      {"label":"26.","fund":"Silverline","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"27.","fund":"Vigo","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"28.","fund":"ARTEFIN","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"výplata mimo BT, 2%"},
+      {"label":"33.","fund":"KOOR","bonusRate":0.01,"bonusMode":"bt_points","pointsMode":"standard","note":"1% vstupní bonus přes BT"},
+      {"label":"29.","fund":"Penta","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"22.","fund":"Direct PRO","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"22b.","fund":"Direct Vigo","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""},
+      {"label":"30.","fund":"J&T Arch","bonusRate":0.01,"bonusMode":"bt_points","pointsMode":"standard","note":""},
+      {"label":"31.","fund":"ATRIS","bonusRate":0.02,"bonusMode":"bt_points","pointsMode":"standard","note":"2% vstupní bonus přes BT"},
+      {"label":"32.","fund":"Edward","bonusRate":0,"bonusMode":"none","pointsMode":"standard","note":""}
+    ];
+
+    const TRAIL_FUNDS = [
+      {"label":"2.","fund":"R2P do konce 2024","annualRate":0.029,"note":"prémiové akcie od 5 mio(výnos 10-11%)"},
+      {"label":"3.","fund":"R2P 2025 +","annualRate":0.024,"note":"prémiové akcie od 5 mio(výnos 10-11%)"},
+      {"label":"4.","fund":"NEMOMAX","annualRate":0.009,"note":""},
+      {"label":"5.","fund":"VIHOREV","annualRate":0.009,"note":""},
+      {"label":"6.","fund":"AGUILA","annualRate":0.009,"note":""},
+      {"label":"7.","fund":"DOMUS","annualRate":0.007,"note":""},
+      {"label":"8.","fund":"4GIMEL","annualRate":0.0075,"note":"možnost success fee až 2% (z objemu výše odměny IZ je navýšena... akcie) od 6 % p.a. do 20 % p.a., 10 % ze zisku nad 20 % p.a.)"},
+      {"label":"9.","fund":"REALIA","annualRate":0.01,"note":""},
+      {"label":"10.","fund":"REALIA eur","annualRate":0.011,"note":""},
+      {"label":"11.","fund":"WERO","annualRate":0.01,"note":"investice od 15mio: možnost podílet se na koupi bioplynky"},
+      {"label":"12.","fund":"Gartal","annualRate":0.01,"note":""},
+      {"label":"13.","fund":"Domoplán, Brixx, Mariánská cesta","annualRate":0.005,"note":""},
+      {"label":"14.","fund":"Spilberk","annualRate":0.01,"note":""},
+      {"label":"15.","fund":"Avant Loan","annualRate":0.008,"note":""},
+      {"label":"16.","fund":"Real Luxembourg","annualRate":0.01,"note":""},
+      {"label":"17.","fund":"Semper CZK i EUR","annualRate":0.01,"note":""},
+      {"label":"18.","fund":"EBM","annualRate":0.01,"note":""},
+
+      {"label":"19.","fund":null,"type":"separator"},
+
+      {"label":"20.","fund":"FČKD","annualRate":0.006,"note":"aktuálně pod Effektou- nutné zřídit si přístupy"},
+      {"label":"21.","fund":"REVERZNÍ HYPO","annualRate":0.0105,"note":""},
+      {"label":"22.","fund":"PFFL","annualRate":0.006,"note":""},
+      {"label":"23.","fund":"Julius Meinl","annualRate":0.012,"note":""},
+      {"label":"24.","fund":"Adax","annualRate":0.01,"note":""},
+
+      {"label":"25.","fund":"Silverline","annualRate":0.0065,"note":"0,5% se připočítává k management fee a vyplácí se jako bonus v červenci 2026"},
+
+      {"label":"26.","fund":"ARTEFIN- HENRY","annualRate":0.0085,"note":""},
+      {"label":"27.","fund":"ZDR","annualRate":0.006,"note":""},
+      {"label":"28.","fund":"Fond Českého bydlení","annualRate":0.006,"note":""},
+      {"label":"29.","fund":"VIGO public (retailový fond)","annualRate":0.006,"note":""},
+      {"label":"30.","fund":"Direct PRO","annualRate":0.008,"note":""},
+      {"label":"31.","fund":"ESG Senior care","annualRate":0.01,"note":""},
+      {"label":"38.","fund":"KOOR","annualRate":0.009,"note":""},
+      {"label":"32.","fund":"Penta PE, RE","annualRate":0.008,"note":""},
+
+      {"label":"33.","fund":null,"type":"separator"},
+      {"label":"34.","fund":null,"type":"separator"},
+
+      {"label":"35.","fund":"J @ T Arch","annualRate":0.008,"note":""},
+      {"label":"36.","fund":"ATRIS","annualRate":0.008,"note":""},
+      {"label":"37.","fund":"Edward MP4+","annualRate":0.0139,"note":"Při dosažení vyššího objemu než 1mio dochází ke snížení na 1,29%(individuálně u každého klienta)"},
+    ];
+
+    const initialBody = document.getElementById('initialBody');
+    const trailBody = document.getElementById('trailBody');
+    const customTrailBody = document.getElementById('customTrailBody');
+    const coefInput = document.getElementById('coefInput');
+    const entryFeeInput = document.getElementById('entryFeeInput');
+    const goalInput = document.getElementById('goalInput');
+    const goalQuarterlyInput = document.getElementById('goalQuarterlyInput');
+    const goalMonthlyInput = document.getElementById('goalMonthlyInput');
+    const currentAnnual = document.getElementById('currentAnnual');
+    const currentQuarterly = document.getElementById('currentQuarterly');
+    const currentMonthly = document.getElementById('currentMonthly');
+    const gapAnnual = document.getElementById('gapAnnual');
+    const gapQuarterly = document.getElementById('gapQuarterly');
+    const gapMonthly = document.getElementById('gapMonthly');
+    const weightedRateEl = document.getElementById('weightedRate');
+    const resetButton = document.getElementById('resetButton');
+    const fillTestButton = document.getElementById('fillTestButton');
+    const initialShowAll = document.getElementById('initialShowAll');
+    const initialHideZero = document.getElementById('initialHideZero');
+    const trailShowAll = document.getElementById('trailShowAll');
+    const trailHideZero = document.getElementById('trailHideZero');
+    const addCustomFund = document.getElementById('addCustomFund');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const importJsonBtn = document.getElementById('importJsonBtn');
+    const importJsonFile = document.getElementById('importJsonFile');
+    const toastEl = document.getElementById('toast');
+    const donutChart = document.getElementById('donutChart');
+    const donutLegend = document.getElementById('donutLegend');
+    const donutEmpty = document.getElementById('donutEmpty');
+    const donutTotal = document.getElementById('donutTotal');
+    const donutTotalValue = document.getElementById('donutTotalValue');
+
+    const STORAGE_KEYS = {
+      coef: 'fki_coef',
+      entryFee: 'fki_entry_fee',
+      initialAum: 'fki_initial_aum',
+      trailAum: 'fki_trail_aum',
+      goal: 'fki_goal',
+      hiddenInitial: 'fki_hidden_initial',
+      hiddenTrail: 'fki_hidden_trail',
+      customTrailFunds: 'fki_custom_trail_funds'
+    };
+
+    const hiddenState = {
+      initial: JSON.parse(localStorage.getItem(STORAGE_KEYS.hiddenInitial) || '{}'),
+      trail: JSON.parse(localStorage.getItem(STORAGE_KEYS.hiddenTrail) || '{}')
+    };
+
+    let customTrailFunds = [];
+
+    function showToast(message) {
+      if (!toastEl) return;
+      toastEl.textContent = message;
+      toastEl.style.display = 'block';
+      setTimeout(() => { toastEl.style.display = 'none'; }, 3000);
+    }
+
+    function recalcAll() {
+      calculateInitialRows();
+      calculateTrailRows();
+      persistValues();
+    }
+
+    function sanitizeNumber(value) {
+      if (value === undefined || value === null) return 0;
+      const raw = String(value).trim();
+      if (!raw) return 0;
+
+      const noSpaces = raw.replace(/\s+/g, '');
+      const separators = noSpaces.match(/[.,]/g) || [];
+
+      if (separators.length === 0) {
+        const num = parseFloat(noSpaces);
+        return isNaN(num) ? 0 : num;
+      }
+
+      const hasComma = noSpaces.includes(',');
+      const hasDot = noSpaces.includes('.');
+
+      if ((hasComma && hasDot) || separators.length === 1) {
+        const lastComma = noSpaces.lastIndexOf(',');
+        const lastDot = noSpaces.lastIndexOf('.');
+        const decimalIndex = Math.max(lastComma, lastDot);
+        const integerPart = noSpaces.slice(0, decimalIndex).replace(/[.,]/g, '');
+        const decimalPart = noSpaces.slice(decimalIndex + 1).replace(/[.,]/g, '');
+        const composed = `${integerPart}.${decimalPart}`;
+        const num = parseFloat(composed);
+        return isNaN(num) ? 0 : num;
+      }
+
+      const num = parseFloat(noSpaces.replace(/[.,]/g, ''));
+      return isNaN(num) ? 0 : num;
+    }
+
+    function formatAum(value) {
+      const num = Math.round(Number(value) || 0);
+      return num.toLocaleString('cs-CZ');
+    }
+
+    function evaluateExpression(rawValue) {
+      if (rawValue === undefined || rawValue === null) return { valid: true, value: 0 };
+      const normalized = String(rawValue).trim();
+      if (!normalized) return { valid: true, value: 0 };
+
+      const strippedSeparators = normalized.replace(/[\s.,]/g, '');
+      if (!strippedSeparators) return { valid: true, value: 0 };
+
+      if (/[^0-9+\-()]/.test(strippedSeparators)) {
+        return { valid: false };
+      }
+
+      try {
+        const value = Function('return (' + strippedSeparators + ')')();
+        const numericValue = Number.isFinite(value) ? Math.round(Number(value)) : NaN;
+        if (Number.isNaN(numericValue)) return { valid: false };
+        return { valid: true, value: numericValue };
+      } catch (e) {
+        return { valid: false };
+      }
+    }
+
+    function evaluateAumExpression(rawValue) {
+      return evaluateExpression(rawValue);
+    }
+
+    function formatCurrency(value) {
+      const number = Math.round(value || 0);
+      return number.toLocaleString('cs-CZ') + ' Kč';
+    }
+
+    function formatPercent(value) {
+      const num = Number(value) || 0;
+      return num.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatPoints(value) {
+      const number = Math.round(value || 0);
+      return number.toLocaleString('cs-CZ');
+    }
+
+    function getNoteClass(note) {
+      return /mimo\s*bt/i.test(String(note || ''))
+        ? 'text-[#15803d] font-semibold'
+        : 'text-[var(--color-muted)]';
+    }
+
+    function getRateValue(input) {
+      return sanitizeNumber(input?.dataset.value ?? input?.value);
+    }
+
+    function setRateValue(input, value) {
+      const numericValue = Math.max(0, Number(value) || 0);
+      input.dataset.value = numericValue;
+      input.dataset.lastValid = numericValue;
+      input.value = formatPercent(numericValue);
+    }
+
+    function getAumValue(input) {
+      return sanitizeNumber(input?.dataset.value ?? input?.value);
+    }
+
+    function setAumValue(input, value) {
+      const numericValue = Math.max(0, Math.round(Number(value) || 0));
+      input.dataset.value = numericValue;
+      input.dataset.lastValid = numericValue;
+      input.value = formatAum(numericValue);
+    }
+
+    function getGoalValue(input) {
+      return sanitizeNumber(input?.dataset.value ?? input?.value);
+    }
+
+    function setGoalValue(input, value) {
+      const numericValue = Math.max(0, Math.round(Number(value) || 0));
+      input.dataset.value = numericValue;
+      input.dataset.lastValid = numericValue;
+      input.value = formatAum(numericValue);
+    }
+
+    function syncGoals(source = 'annual') {
+      let annual = getGoalValue(goalInput);
+      if (source === 'quarterly') {
+        annual = getGoalValue(goalQuarterlyInput) * 4;
+      } else if (source === 'monthly') {
+        annual = getGoalValue(goalMonthlyInput) * 12;
+      }
+      annual = Math.max(0, annual);
+      setGoalValue(goalInput, annual);
+      setGoalValue(goalQuarterlyInput, annual / 4);
+      setGoalValue(goalMonthlyInput, annual / 12);
+    }
+
+    function applyVisibility(type, index) {
+      const hidden = Boolean(hiddenState[type]?.[index]);
+      const rowSelector = type === 'initial' ? `[data-initial-row="${index}"]` : `[data-trail-row="${index}"]`;
+      const checkboxSelector = type === 'initial' ? `[data-initial-hide="${index}"]` : `[data-trail-hide="${index}"]`;
+      const row = document.querySelector(rowSelector);
+      const checkbox = document.querySelector(checkboxSelector);
+      if (checkbox) checkbox.checked = hidden;
+      if (row) row.style.display = hidden ? 'none' : '';
+    }
+
+    function applyCustomVisibility(id) {
+      const row = document.querySelector(`[data-custom-row="${id}"]`);
+      if (row) {
+        const fund = customTrailFunds.find((item) => item.id === id);
+        row.style.display = fund?.hidden ? 'none' : '';
+      }
+    }
+
+    function createCustomFund() {
+      return {
+        id: `custom-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        name: '',
+        aum: 0,
+        annualRate: 0,
+        hidden: false
+      };
+    }
+
+    function persistValues() {
+      const initialAum = {};
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+        initialAum[input.dataset.key] = input.dataset.value ?? '';
+      });
+      const trailAum = {};
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+        trailAum[input.dataset.key] = input.dataset.value ?? '';
+      });
+      localStorage.setItem(STORAGE_KEYS.coef, coefInput.value);
+      localStorage.setItem(STORAGE_KEYS.entryFee, entryFeeInput.value);
+      localStorage.setItem(STORAGE_KEYS.goal, getGoalValue(goalInput));
+      localStorage.setItem(STORAGE_KEYS.initialAum, JSON.stringify(initialAum));
+      localStorage.setItem(STORAGE_KEYS.trailAum, JSON.stringify(trailAum));
+      localStorage.setItem(STORAGE_KEYS.hiddenInitial, JSON.stringify(hiddenState.initial));
+      localStorage.setItem(STORAGE_KEYS.hiddenTrail, JSON.stringify(hiddenState.trail));
+      localStorage.setItem(STORAGE_KEYS.customTrailFunds, JSON.stringify(customTrailFunds));
+    }
+
+    function loadPersistedValues() {
+      const coef = localStorage.getItem(STORAGE_KEYS.coef);
+      const entryFee = localStorage.getItem(STORAGE_KEYS.entryFee);
+      const goal = localStorage.getItem(STORAGE_KEYS.goal);
+      const initialAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.initialAum) || '{}');
+      const trailAum = JSON.parse(localStorage.getItem(STORAGE_KEYS.trailAum) || '{}');
+      const customFunds = JSON.parse(localStorage.getItem(STORAGE_KEYS.customTrailFunds) || '[]');
+      if (coef !== null) coefInput.value = coef;
+      if (entryFee !== null) entryFeeInput.value = entryFee;
+      if (goal !== null) setGoalValue(goalInput, goal);
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+        if (initialAum[input.dataset.key] !== undefined) setAumValue(input, initialAum[input.dataset.key]);
+      });
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+        if (trailAum[input.dataset.key] !== undefined) setAumValue(input, trailAum[input.dataset.key]);
+      });
+      if (Array.isArray(customFunds)) {
+        customTrailFunds = customFunds.map((fund) => ({
+          id: fund.id || createCustomFund().id,
+          name: fund.name || '',
+          aum: Number(fund.aum) || 0,
+          annualRate: Number(fund.annualRate) || 0,
+          hidden: Boolean(fund.hidden)
+        }));
+        buildCustomTrailTable();
+      }
+      syncGoals('annual');
+    }
+
+    function calculateInitialRows() {
+      const coef = sanitizeNumber(coefInput.value);
+      const entryFeePercent = sanitizeNumber(entryFeeInput.value);
+      const entryFeeDecimal = entryFeePercent / 100;
+      let totalAum = 0, totalFee = 0, totalBonus = 0, totalCommission = 0, totalPoints = 0;
+
+      INITIAL_FUNDS.forEach((row, index) => {
+        const input = document.querySelector(`[data-initial-aum="${index}"]`);
+        if (hiddenState.initial[index]) return;
+        const aum = getAumValue(input);
+        const feeCommission = aum * entryFeeDecimal / DENOM * coef;
+        let bonusCommission = 0;
+        if (row.bonusMode === 'bt_points') {
+          bonusCommission = aum * row.bonusRate / DENOM * coef;
+        } else if (row.bonusMode === 'cash') {
+          bonusCommission = aum * row.bonusRate;
+        }
+        const total = feeCommission + bonusCommission;
+        let points = 0;
+        if (coef > 0) {
+          if (row.pointsMode === 'cash_bonus_to_points') {
+            points = (feeCommission / coef) + (bonusCommission / 1000) * 4;
+          } else {
+            points = total / coef;
+          }
+        }
+
+        if (!row.type) {
+          totalAum += aum;
+          totalFee += feeCommission;
+          totalBonus += bonusCommission;
+          totalCommission += total;
+          totalPoints += points;
+        }
+
+        const cells = document.querySelectorAll(`[data-row="initial-${index}"]`);
+        if (cells.length) {
+          cells[0].textContent = formatCurrency(feeCommission);
+          cells[1].textContent = formatCurrency(bonusCommission);
+          cells[2].textContent = formatCurrency(total);
+          cells[3].textContent = formatPoints(points);
+        }
+      });
+
+      document.getElementById('initialTotalAum').textContent = formatCurrency(totalAum);
+      document.getElementById('initialTotalFee').textContent = formatCurrency(totalFee);
+      document.getElementById('initialTotalBonus').textContent = formatCurrency(totalBonus);
+      document.getElementById('initialTotalCommission').textContent = formatCurrency(totalCommission);
+      document.getElementById('initialTotalPoints').textContent = formatPoints(totalPoints);
+    }
+
+    function calculateTrailRows() {
+      const coef = sanitizeNumber(coefInput.value);
+      let totalAum = 0, totalTrail = 0;
+      const donutData = [];
+
+      TRAIL_FUNDS.forEach((row, index) => {
+        const input = document.querySelector(`[data-trail-aum="${index}"]`);
+        if (hiddenState.trail[index]) return;
+        const aum = getAumValue(input);
+        const annualTrail = aum * row.annualRate / DENOM * coef;
+
+        if (!row.type) {
+          totalAum += aum;
+          totalTrail += annualTrail;
+          if (aum > 0) {
+            donutData.push({ label: row.fund, value: aum, index });
+          }
+        }
+
+        const cells = document.querySelectorAll(`[data-row="trail-${index}"]`);
+        if (cells.length) {
+          cells[0].textContent = formatCurrency(annualTrail);
+          cells[1].textContent = formatPercent(row.annualRate * 100) + ' %';
+        }
+      });
+
+      customTrailFunds.forEach((fund) => {
+        const row = document.querySelector(`[data-custom-row="${fund.id}"]`);
+        const aumInput = row?.querySelector('[data-custom-aum]');
+        const rateInput = row?.querySelector('[data-custom-rate]');
+        if (!aumInput || !rateInput) return;
+        if (fund.hidden) return;
+        const aum = getAumValue(aumInput);
+        const ratePercent = getRateValue(rateInput);
+        const annualTrail = aum * (ratePercent / 100) / DENOM * coef;
+        totalAum += aum;
+        totalTrail += annualTrail;
+        if (aum > 0) {
+          donutData.push({ label: fund.name || 'Vlastní fond', value: aum, index: fund.id });
+        }
+        const output = row.querySelector('[data-custom-output]');
+        if (output) output.textContent = formatCurrency(annualTrail);
+      });
+
+      document.getElementById('trailTotalAum').textContent = formatCurrency(totalAum);
+      document.getElementById('trailTotalAnnual').textContent = formatCurrency(totalTrail);
+
+      if (totalAum === 0) {
+        weightedRateEl.textContent = 'Zatím není dost dat pro výpočet';
+      } else {
+        const effectiveRate = (totalTrail / totalAum) * 100;
+        weightedRateEl.textContent = formatPercent(effectiveRate) + ' % p.a.';
+      }
+      updateGoalOutputs(totalTrail);
+      updateDonutChart(donutData);
+    }
+
+    function updateGoalOutputs(totalTrail) {
+      const goalAnnual = Math.max(0, getGoalValue(goalInput));
+      const goalQuarterly = goalAnnual / 4;
+      const goalMonthly = goalAnnual / 12;
+
+      const currentQuarterlyValue = totalTrail / 4;
+      const currentMonthlyValue = totalTrail / 12;
+
+      currentAnnual.textContent = formatCurrency(totalTrail);
+      currentQuarterly.textContent = formatCurrency(currentQuarterlyValue);
+      currentMonthly.textContent = formatCurrency(currentMonthlyValue);
+
+      gapAnnual.textContent = formatCurrency(Math.max(goalAnnual - totalTrail, 0));
+      gapQuarterly.textContent = formatCurrency(Math.max(goalQuarterly - currentQuarterlyValue, 0));
+      gapMonthly.textContent = formatCurrency(Math.max(goalMonthly - currentMonthlyValue, 0));
+
+      setGoalValue(goalQuarterlyInput, goalQuarterly);
+      setGoalValue(goalMonthlyInput, goalMonthly);
+    }
+
+    function updateDonutChart(data = []) {
+      if (!donutChart || !donutLegend || !donutEmpty) return;
+      donutChart.innerHTML = '';
+      donutLegend.innerHTML = '';
+      donutEmpty.classList.add('hidden');
+      donutTotal?.classList.add('hidden');
+
+      const filtered = data.filter((item) => item.value > 0);
+      const total = filtered.reduce((sum, item) => sum + item.value, 0);
+      if (total <= 0) {
+        donutEmpty.classList.remove('hidden');
+        if (donutTotal) donutTotal.classList.add('hidden');
+        return;
+      }
+
+      filtered.sort((a, b) => b.value - a.value);
+      const displayData = filtered;
+
+      const hashToIndex = (value) => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        const stringValue = String(value || '');
+        let hash = 0;
+        for (let i = 0; i < stringValue.length; i += 1) {
+          hash = (hash * 31 + stringValue.charCodeAt(i)) % 997;
+        }
+        return hash;
+      };
+      const getColor = (idx) => CHART_COLORS[(hashToIndex(idx)) % CHART_COLORS.length];
+      const radius = 78;
+      const center = 100;
+      const circumference = 2 * Math.PI * radius;
+      let offset = 0;
+
+      const baseCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      baseCircle.setAttribute('cx', center);
+      baseCircle.setAttribute('cy', center);
+      baseCircle.setAttribute('r', radius);
+      baseCircle.setAttribute('fill', 'none');
+      baseCircle.setAttribute('stroke', 'rgba(77, 177, 200, 0.28)');
+      baseCircle.setAttribute('stroke-width', '24');
+      donutChart.appendChild(baseCircle);
+
+      displayData.forEach((item, idx) => {
+        const fraction = item.value / total;
+        const dash = fraction * circumference;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', center);
+        circle.setAttribute('cy', center);
+        circle.setAttribute('r', radius);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', getColor(item.index ?? idx));
+        circle.setAttribute('stroke-width', '24');
+        circle.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
+        circle.setAttribute('stroke-dashoffset', -offset);
+        circle.setAttribute('class', 'donut-segment');
+        circle.dataset.seg = idx;
+        circle.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+        circle.style.transformOrigin = '100px 100px';
+        donutChart.appendChild(circle);
+        offset += dash;
+      });
+
+      const innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      innerCircle.setAttribute('cx', center);
+      innerCircle.setAttribute('cy', center);
+      innerCircle.setAttribute('r', '54');
+      innerCircle.setAttribute('fill', '#ffffff');
+      innerCircle.setAttribute('stroke', '#EAECEE');
+      innerCircle.setAttribute('stroke-width', '1.4');
+      donutChart.appendChild(innerCircle);
+
+      displayData.forEach((item, idx) => {
+        const percent = ((item.value / total) * 100).toFixed(1);
+        const li = document.createElement('li');
+        li.dataset.seg = idx;
+        li.innerHTML = `
+          <div class="label"><span class="dot" style="background:${getColor(item.index ?? idx)}"></span><span>${item.label}</span></div>
+          <div class="text-right whitespace-nowrap">
+            <div class="font-semibold text-[var(--color-primary)]">${formatCurrency(item.value)}</div>
+            <div class="text-xs text-[var(--color-muted)]">${percent} %</div>
+          </div>
+        `;
+        donutLegend.appendChild(li);
+      });
+
+      if (donutTotal && donutTotalValue) {
+        donutTotalValue.textContent = formatCurrency(total);
+        donutTotal.classList.remove('hidden');
+      }
+
+      const segments = donutChart.querySelectorAll('.donut-segment');
+      const legendItems = donutLegend.querySelectorAll('li');
+
+      const highlight = (active) => {
+        segments.forEach((seg) => {
+          const isActive = active === null || seg.dataset.seg === active;
+          seg.style.opacity = isActive ? '1' : '0.35';
+          seg.style.transform = seg.dataset.seg === active ? 'scale(1.03)' : 'scale(1)';
+        });
+        legendItems.forEach((item) => {
+          const isActive = active === null || item.dataset.seg === active;
+          item.style.opacity = isActive ? '1' : '0.6';
+        });
+      };
+
+      legendItems.forEach((item) => {
+        item.addEventListener('mouseenter', () => highlight(item.dataset.seg));
+        item.addEventListener('mouseleave', () => highlight(null));
+      });
+
+      segments.forEach((seg) => {
+        seg.addEventListener('mouseenter', () => highlight(seg.dataset.seg));
+        seg.addEventListener('mouseleave', () => highlight(null));
+      });
+    }
+
+    function buildInitialTable() {
+      initialBody.innerHTML = '';
+      INITIAL_FUNDS.forEach((row, index) => {
+        if (row.type === 'separator') {
+          const tr = document.createElement('tr');
+          tr.className = 'separator-row';
+          tr.innerHTML = '<td colspan="9"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
+          initialBody.appendChild(tr);
+          return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'data-row transition-colors';
+        tr.setAttribute('data-initial-row', index);
+        const noteClass = getNoteClass(row.note);
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-initial-hide="${index}" class="h-4 w-4" aria-label="Skrýt ${row.fund}" /></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
+          <td class="px-3 py-2">${row.fund}</td>
+          <td class="px-3 py-2 text-right col-aum">
+            <div class="relative">
+              <input type="text" data-initial-aum="${index}" data-key="${index}" class="w-full table-input pr-3" inputmode="numeric" placeholder="0" />
+            </div>
+          </td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="initial-${index}"></td>
+          <td class="px-3 py-2 ${noteClass} text-xs md:text-sm">${row.note || ''}</td>
+        `;
+        initialBody.appendChild(tr);
+      });
+
+      const totalRow = document.createElement('tr');
+      totalRow.className = 'highlight-row';
+      totalRow.innerHTML = `
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold">Celkem</td>
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold text-right col-aum" id="initialTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalFee">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalBonus">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalCommission">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="initialTotalPoints">0</td>
+        <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
+      `;
+      initialBody.appendChild(totalRow);
+
+      Object.keys(hiddenState.initial).forEach((key) => applyVisibility('initial', key));
+    }
+
+    function buildTrailTable() {
+      trailBody.innerHTML = '';
+      TRAIL_FUNDS.forEach((row, index) => {
+        if (row.type === 'separator') {
+          const tr = document.createElement('tr');
+          tr.className = 'separator-row';
+          tr.innerHTML = '<td colspan="7"><div class="h-px bg-[var(--color-border-strong)]"></div></td>';
+          trailBody.appendChild(tr);
+          return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'data-row transition-colors';
+        tr.setAttribute('data-trail-row', index);
+        const noteClass = getNoteClass(row.note);
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-trail-hide="${index}" class="h-4 w-4" aria-label="Skrýt ${row.fund}" /></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)]">${row.label}</td>
+          <td class="px-3 py-2">${row.fund}</td>
+          <td class="px-3 py-2 text-right col-aum">
+            <div class="relative">
+              <input type="text" data-trail-aum="${index}" data-key="${index}" class="w-full table-input pr-3" inputmode="numeric" placeholder="0" />
+            </div>
+          </td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="trail-${index}"></td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-row="trail-${index}"></td>
+          <td class="px-3 py-2 ${noteClass} text-xs md:text-sm">${row.note || ''}</td>
+        `;
+        trailBody.appendChild(tr);
+      });
+
+      const totalRow = document.createElement('tr');
+      totalRow.className = 'highlight-row';
+      totalRow.innerHTML = `
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold">Celkem</td>
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold text-right col-aum" id="trailTotalAum">0 Kč</td>
+        <td class="px-3 py-2 font-bold text-right" id="trailTotalAnnual">0 Kč</td>
+        <td class="px-3 py-2 font-bold"></td>
+        <td class="px-3 py-2 font-bold text-[var(--color-muted)]">Součty</td>
+      `;
+      trailBody.appendChild(totalRow);
+
+      Object.keys(hiddenState.trail).forEach((key) => applyVisibility('trail', key));
+    }
+
+    function buildCustomTrailTable() {
+      if (!customTrailBody) return;
+      customTrailBody.innerHTML = '';
+      if (!Array.isArray(customTrailFunds)) customTrailFunds = [];
+
+      customTrailFunds.forEach((fund) => {
+        const tr = document.createElement('tr');
+        tr.className = 'data-row transition-colors';
+        tr.setAttribute('data-custom-row', fund.id);
+        tr.innerHTML = `
+          <td class="px-3 py-2">
+            <input type="text" data-custom-name="${fund.id}" class="w-full table-input text-left" placeholder="Název fondu" />
+          </td>
+          <td class="px-3 py-2 text-right col-aum">
+            <div class="relative">
+              <input type="text" data-custom-aum="${fund.id}" class="w-full table-input pr-3" inputmode="numeric" placeholder="0" />
+            </div>
+          </td>
+          <td class="px-3 py-2 text-right">
+            <div class="relative">
+              <input type="text" data-custom-rate="${fund.id}" class="w-full table-input pr-8" inputmode="decimal" placeholder="0,00" />
+              <span class="input-suffix">%</span>
+            </div>
+          </td>
+          <td class="px-3 py-2 font-semibold text-[var(--color-primary)] text-right" data-custom-output="${fund.id}">0 Kč</td>
+          <td class="px-3 py-2 text-center align-middle"><input type="checkbox" data-custom-hide="${fund.id}" class="h-4 w-4" aria-label="Skrýt ${fund.name || 'fond'}" /></td>
+          <td class="px-3 py-2 text-center"><button type="button" data-custom-delete="${fund.id}" class="danger-btn text-xs px-3 py-1">Smazat</button></td>
+        `;
+        customTrailBody.appendChild(tr);
+
+        const nameInput = tr.querySelector('[data-custom-name]');
+        const aumInput = tr.querySelector('[data-custom-aum]');
+        const rateInput = tr.querySelector('[data-custom-rate]');
+        const hideInput = tr.querySelector('[data-custom-hide]');
+        if (nameInput) nameInput.value = fund.name || '';
+        if (aumInput) setAumValue(aumInput, fund.aum || 0);
+        if (rateInput) setRateValue(rateInput, fund.annualRate || 0);
+        if (hideInput) hideInput.checked = Boolean(fund.hidden);
+        applyCustomVisibility(fund.id);
+      });
+    }
+
+    function buildSnapshot() {
+      const initialAum = {};
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+        initialAum[input.dataset.key] = Number(input.dataset.value || 0);
+      });
+      const trailAum = {};
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+        trailAum[input.dataset.key] = Number(input.dataset.value || 0);
+      });
+      return {
+        type: 'fki-aum-snapshot',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        coef: sanitizeNumber(coefInput.value),
+        entryFeePercent: sanitizeNumber(entryFeeInput.value),
+        goalAnnual: getGoalValue(goalInput),
+        periodMode: 'annual',
+        initialAum,
+        trailAum,
+        hiddenInitial: hiddenState.initial,
+        hiddenTrail: hiddenState.trail,
+        customTrailFunds
+      };
+    }
+
+    function applyImportedSnapshot(data) {
+      if (!data || data.type !== 'fki-aum-snapshot' || Number(data.version) < 1) {
+        showToast('Neplatný JSON soubor.');
+        return;
+      }
+      if (data.coef !== undefined) coefInput.value = data.coef;
+      if (data.entryFeePercent !== undefined) entryFeeInput.value = data.entryFeePercent;
+      if (data.goalAnnual !== undefined) setGoalValue(goalInput, data.goalAnnual);
+      if (data.initialAum) {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+          if (data.initialAum[input.dataset.key] !== undefined) setAumValue(input, data.initialAum[input.dataset.key]);
+        });
+      }
+      if (data.trailAum) {
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+          if (data.trailAum[input.dataset.key] !== undefined) setAumValue(input, data.trailAum[input.dataset.key]);
+        });
+      }
+      if (Array.isArray(data.customTrailFunds)) {
+        customTrailFunds = data.customTrailFunds.map((fund) => ({
+          id: fund.id || createCustomFund().id,
+          name: fund.name || '',
+          aum: Number(fund.aum) || 0,
+          annualRate: Number(fund.annualRate) || 0,
+          hidden: Boolean(fund.hidden)
+        }));
+        buildCustomTrailTable();
+      }
+      hiddenState.initial = data.hiddenInitial || {};
+      hiddenState.trail = data.hiddenTrail || {};
+      Object.keys(hiddenState.initial).forEach((key) => applyVisibility('initial', key));
+      Object.keys(hiddenState.trail).forEach((key) => applyVisibility('trail', key));
+      customTrailFunds.forEach((fund) => applyCustomVisibility(fund.id));
+      syncGoals('annual');
+      recalcAll();
+    }
+
+    function attachListeners() {
+      initialBody.addEventListener('focusin', (event) => {
+        if (event.target.matches('[data-initial-aum]')) {
+          event.target.value = event.target.dataset.value ?? '';
+          event.target.classList.remove('has-error');
+        }
+      });
+
+      trailBody.addEventListener('focusin', (event) => {
+        if (event.target.matches('[data-trail-aum]')) {
+          event.target.value = event.target.dataset.value ?? '';
+          event.target.classList.remove('has-error');
+        }
+      });
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('focusin', (event) => {
+          if (event.target.matches('[data-custom-aum]') || event.target.matches('[data-custom-rate]')) {
+            event.target.value = event.target.dataset.value ?? '';
+            event.target.classList.remove('has-error');
+          }
+        });
+      }
+
+      function handleBlur(event) {
+        const input = event.target;
+        const result = evaluateAumExpression(input.value);
+        if (!result.valid) {
+          input.classList.add('has-error');
+          const fallback = input.dataset.lastValid ? Number(input.dataset.lastValid) : 0;
+          input.value = formatAum(fallback);
+          return;
+        }
+        input.classList.remove('has-error');
+        setAumValue(input, result.value);
+        recalcAll();
+      }
+
+      initialBody.addEventListener('blur', (event) => {
+        if (event.target.matches('[data-initial-aum]')) handleBlur(event);
+      }, true);
+
+      trailBody.addEventListener('blur', (event) => {
+        if (event.target.matches('[data-trail-aum]')) handleBlur(event);
+      }, true);
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('blur', (event) => {
+          if (event.target.matches('[data-custom-aum]')) {
+            handleBlur(event);
+            const input = event.target;
+            const fund = customTrailFunds.find((item) => item.id === input.dataset.customAum);
+            if (fund) {
+              fund.aum = getAumValue(input);
+            }
+          }
+        }, true);
+      }
+
+      initialBody.addEventListener('keydown', (event) => {
+        if (event.target.matches('[data-initial-aum]') && event.key === 'Enter') {
+          event.preventDefault();
+          event.target.blur();
+        }
+      });
+
+      trailBody.addEventListener('keydown', (event) => {
+        if (event.target.matches('[data-trail-aum]') && event.key === 'Enter') {
+          event.preventDefault();
+          event.target.blur();
+        }
+      });
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('keydown', (event) => {
+          if (event.target.matches('[data-custom-aum]') && event.key === 'Enter') {
+            event.preventDefault();
+            event.target.blur();
+          }
+        });
+      }
+
+      [goalInput, goalQuarterlyInput, goalMonthlyInput].forEach((input) => {
+        input.addEventListener('focusin', () => {
+          input.value = input.dataset.value ?? '';
+          input.classList.remove('has-error');
+        });
+      });
+
+      function handleGoalBlur(event) {
+        const input = event.target;
+        const result = evaluateExpression(input.value);
+        const source = input === goalQuarterlyInput ? 'quarterly' : input === goalMonthlyInput ? 'monthly' : 'annual';
+        if (!result.valid) {
+          input.classList.add('has-error');
+          const fallback = input.dataset.lastValid ? Number(input.dataset.lastValid) : 0;
+          input.value = formatAum(fallback);
+          return;
+        }
+        input.classList.remove('has-error');
+        setGoalValue(input, result.value);
+        syncGoals(source);
+        recalcAll();
+      }
+
+      [goalInput, goalQuarterlyInput, goalMonthlyInput].forEach((input) => {
+        input.addEventListener('blur', (event) => handleGoalBlur(event));
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.target.blur();
+          }
+        });
+      });
+
+      initialBody.addEventListener('change', (event) => {
+        if (event.target.matches('[data-initial-hide]')) {
+          hiddenState.initial[event.target.dataset.initialHide] = event.target.checked;
+          applyVisibility('initial', event.target.dataset.initialHide);
+          recalcAll();
+        }
+      });
+
+      trailBody.addEventListener('change', (event) => {
+        if (event.target.matches('[data-trail-hide]')) {
+          hiddenState.trail[event.target.dataset.trailHide] = event.target.checked;
+          applyVisibility('trail', event.target.dataset.trailHide);
+          recalcAll();
+        }
+      });
+
+      if (customTrailBody) {
+        customTrailBody.addEventListener('input', (event) => {
+          if (event.target.matches('[data-custom-name]')) {
+            const fund = customTrailFunds.find((item) => item.id === event.target.dataset.customName);
+            if (fund) {
+              fund.name = event.target.value;
+              recalcAll();
+            }
+          }
+        });
+
+        customTrailBody.addEventListener('blur', (event) => {
+          if (event.target.matches('[data-custom-rate]')) {
+            const input = event.target;
+            const fund = customTrailFunds.find((item) => item.id === input.dataset.customRate);
+            if (!fund) return;
+            const numericValue = Math.max(0, sanitizeNumber(input.value));
+            fund.annualRate = numericValue;
+            setRateValue(input, numericValue);
+            recalcAll();
+          }
+        }, true);
+
+        customTrailBody.addEventListener('keydown', (event) => {
+          if (event.target.matches('[data-custom-rate]') && event.key === 'Enter') {
+            event.preventDefault();
+            event.target.blur();
+          }
+        });
+
+        customTrailBody.addEventListener('change', (event) => {
+          if (event.target.matches('[data-custom-hide]')) {
+            const fund = customTrailFunds.find((item) => item.id === event.target.dataset.customHide);
+            if (fund) {
+              fund.hidden = event.target.checked;
+              applyCustomVisibility(fund.id);
+              recalcAll();
+            }
+          }
+        });
+
+        customTrailBody.addEventListener('click', (event) => {
+          if (event.target.matches('[data-custom-delete]')) {
+            const id = event.target.dataset.customDelete;
+            customTrailFunds = customTrailFunds.filter((fund) => fund.id !== id);
+            buildCustomTrailTable();
+            recalcAll();
+          }
+        });
+      }
+
+      [coefInput, entryFeeInput].forEach((input) => {
+        input.addEventListener('input', recalcAll);
+      });
+
+      resetButton.addEventListener('click', () => {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
+        coefInput.value = '60';
+        entryFeeInput.value = '1';
+        setGoalValue(goalInput, 1200000);
+        syncGoals('annual');
+        recalcAll();
+      });
+
+      fillTestButton.addEventListener('click', () => {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+          if (!hiddenState.initial[input.dataset.key]) setAumValue(input, 10000000);
+        });
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+          if (!hiddenState.trail[input.dataset.key]) setAumValue(input, 10000000);
+        });
+        recalcAll();
+      });
+
+      initialShowAll.addEventListener('click', () => {
+        hiddenState.initial = {};
+        document.querySelectorAll('[data-initial-hide]').forEach((checkbox) => (checkbox.checked = false));
+        document.querySelectorAll('[data-initial-row]').forEach((row) => (row.style.display = ''));
+        recalcAll();
+      });
+
+      trailShowAll.addEventListener('click', () => {
+        hiddenState.trail = {};
+        document.querySelectorAll('[data-trail-hide]').forEach((checkbox) => (checkbox.checked = false));
+        document.querySelectorAll('[data-trail-row]').forEach((row) => (row.style.display = ''));
+        recalcAll();
+      });
+
+      initialHideZero.addEventListener('click', () => {
+        document.querySelectorAll('[data-initial-aum]').forEach((input) => {
+          if (getAumValue(input) === 0) {
+            hiddenState.initial[input.dataset.key] = true;
+            applyVisibility('initial', input.dataset.key);
+          }
+        });
+        recalcAll();
+      });
+
+      trailHideZero.addEventListener('click', () => {
+        document.querySelectorAll('[data-trail-aum]').forEach((input) => {
+          if (getAumValue(input) === 0) {
+            hiddenState.trail[input.dataset.key] = true;
+            applyVisibility('trail', input.dataset.key);
+          }
+        });
+        recalcAll();
+      });
+
+      if (addCustomFund) {
+        addCustomFund.addEventListener('click', () => {
+          customTrailFunds.push(createCustomFund());
+          buildCustomTrailTable();
+          recalcAll();
+        });
+      }
+
+      exportJsonBtn.addEventListener('click', () => {
+        const snapshot = buildSnapshot();
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const today = new Date().toISOString().slice(0, 10);
+        link.href = url;
+        link.download = `FKI AUM ${today}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      importJsonBtn.addEventListener('click', () => importJsonFile.click());
+
+      importJsonFile.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          applyImportedSnapshot(data);
+          persistValues();
+        } catch (error) {
+          showToast('Import se nepodařil. Zkontrolujte soubor.');
+        } finally {
+          event.target.value = '';
+        }
+      });
+    }
+
+    function init() {
+      buildInitialTable();
+      buildTrailTable();
+      buildCustomTrailTable();
+      document.querySelectorAll('[data-initial-aum]').forEach((input) => setAumValue(input, 0));
+      document.querySelectorAll('[data-trail-aum]').forEach((input) => setAumValue(input, 0));
+      document.querySelectorAll('[data-custom-aum]').forEach((input) => setAumValue(input, 0));
+      setGoalValue(goalInput, sanitizeNumber(goalInput.value));
+      setGoalValue(goalQuarterlyInput, sanitizeNumber(goalQuarterlyInput.value));
+      setGoalValue(goalMonthlyInput, sanitizeNumber(goalMonthlyInput.value));
+      loadPersistedValues();
+      syncGoals('annual');
+      recalcAll();
+      attachListeners();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
